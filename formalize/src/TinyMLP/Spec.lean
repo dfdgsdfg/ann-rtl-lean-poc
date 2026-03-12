@@ -67,19 +67,70 @@ def wrap32 (x : Int) : Int :=
   change (Int32.ofInt (wrap32 x + y)).toInt = (Int32.ofInt (x + y)).toInt
   rw [Int32.ofInt_add, Int32.ofInt_wrap32, ← Int32.ofInt_add]
 
+def Int16Bounds (x : Int) : Prop :=
+  -2 ^ 15 ≤ x ∧ x < 2 ^ 15
+
+def Int24Bounds (x : Int) : Prop :=
+  -2 ^ 23 ≤ x ∧ x < 2 ^ 23
+
+def Int32Bounds (x : Int) : Prop :=
+  -2 ^ 31 ≤ x ∧ x < 2 ^ 31
+
+abbrev Int16Val := { x : Int // Int16Bounds x }
+abbrev Int24Val := { x : Int // Int24Bounds x }
+abbrev Int32Val := { x : Int // Int32Bounds x }
+
+theorem wrap16_in_bounds (x : Int) : Int16Bounds (wrap16 x) := by
+  unfold Int16Bounds wrap16
+  exact ⟨(Int16.ofInt x).le_toInt, (Int16.ofInt x).toInt_lt⟩
+
+theorem wrap32_in_bounds (x : Int) : Int32Bounds (wrap32 x) := by
+  unfold Int32Bounds wrap32
+  exact ⟨(Int32.ofInt x).le_toInt, (Int32.ofInt x).toInt_lt⟩
+
+def Int16Val.ofInt (x : Int) : Int16Val :=
+  ⟨wrap16 x, wrap16_in_bounds x⟩
+
+def Int32Val.ofInt (x : Int) : Int32Val :=
+  ⟨wrap32 x, wrap32_in_bounds x⟩
+
+def Int16Val.toInt (x : Int16Val) : Int :=
+  x.1
+
+def Int24Val.toInt (x : Int24Val) : Int :=
+  x.1
+
+def Int32Val.toInt (x : Int32Val) : Int :=
+  x.1
+
+@[simp] theorem Int16Val.toInt_ofInt (x : Int) :
+    (Int16Val.ofInt x).toInt = wrap16 x := by
+  rfl
+
+@[simp] theorem Int32Val.toInt_ofInt (x : Int) :
+    (Int32Val.ofInt x).toInt = wrap32 x := by
+  rfl
+
+@[simp] theorem Int32Val.ofInt_add_wrapped (x y : Int) :
+    Int32Val.ofInt (wrap32 x + wrap32 y) = Int32Val.ofInt (x + y) := by
+  apply Subtype.ext
+  change wrap32 (wrap32 x + wrap32 y) = wrap32 (x + y)
+  rw [wrap32_add_wrap32]
+  rw [Int.add_comm x (wrap32 y), wrap32_add_wrap32, Int.add_comm y x]
+
 structure Hidden16 where
-  h0 : Int
-  h1 : Int
-  h2 : Int
-  h3 : Int
-  h4 : Int
-  h5 : Int
-  h6 : Int
-  h7 : Int
+  h0 : Int16Val
+  h1 : Int16Val
+  h2 : Int16Val
+  h3 : Int16Val
+  h4 : Int16Val
+  h5 : Int16Val
+  h6 : Int16Val
+  h7 : Int16Val
 deriving Repr, DecidableEq
 
 structure Acc32 where
-  toInt : Int
+  raw : Int32Val
 deriving Repr, DecidableEq
 
 def Input.getNat (input : Input) : Nat → Int
@@ -99,6 +150,13 @@ def Input8.getNat (input : Input8) : Nat → Int
   | 3 => input.x3.toInt
   | _ => 0
 
+def Input8.getInt8Nat (input : Input8) : Nat → Int8
+  | 0 => input.x0
+  | 1 => input.x1
+  | 2 => input.x2
+  | 3 => input.x3
+  | _ => Int8.ofInt 0
+
 def Input8.get (input : Input8) (idx : Fin inputCount) : Int :=
   input.getNat idx.1
 
@@ -106,13 +164,28 @@ def Hidden.zero : Hidden :=
   { h0 := 0, h1 := 0, h2 := 0, h3 := 0, h4 := 0, h5 := 0, h6 := 0, h7 := 0 }
 
 def Hidden16.zero : Hidden16 :=
-  { h0 := 0, h1 := 0, h2 := 0, h3 := 0, h4 := 0, h5 := 0, h6 := 0, h7 := 0 }
+  { h0 := Int16Val.ofInt 0
+  , h1 := Int16Val.ofInt 0
+  , h2 := Int16Val.ofInt 0
+  , h3 := Int16Val.ofInt 0
+  , h4 := Int16Val.ofInt 0
+  , h5 := Int16Val.ofInt 0
+  , h6 := Int16Val.ofInt 0
+  , h7 := Int16Val.ofInt 0
+  }
 
 def Acc32.ofInt (x : Int) : Acc32 :=
-  { toInt := wrap32 x }
+  { raw := Int32Val.ofInt x }
 
 def Acc32.zero : Acc32 :=
   Acc32.ofInt 0
+
+def Acc32.toInt (acc : Acc32) : Int :=
+  acc.raw.toInt
+
+@[simp] theorem Acc32.toInt_mk (raw : Int32Val) :
+    ({ raw := raw } : Acc32).toInt = raw.toInt := by
+  rfl
 
 def Hidden.getNat (hidden : Hidden) : Nat → Int
   | 0 => hidden.h0
@@ -128,7 +201,7 @@ def Hidden.getNat (hidden : Hidden) : Nat → Int
 def Hidden.get (hidden : Hidden) (idx : Fin hiddenCount) : Int :=
   hidden.getNat idx.1
 
-def Hidden16.getNat (hidden : Hidden16) : Nat → Int
+def Hidden16.getCellNat (hidden : Hidden16) : Nat → Int16Val
   | 0 => hidden.h0
   | 1 => hidden.h1
   | 2 => hidden.h2
@@ -137,7 +210,10 @@ def Hidden16.getNat (hidden : Hidden16) : Nat → Int
   | 5 => hidden.h5
   | 6 => hidden.h6
   | 7 => hidden.h7
-  | _ => 0
+  | _ => Int16Val.ofInt 0
+
+def Hidden16.getNat (hidden : Hidden16) : Nat → Int
+  | idx => (hidden.getCellNat idx).toInt
 
 def Hidden16.get (hidden : Hidden16) (idx : Fin hiddenCount) : Int :=
   hidden.getNat idx.1
@@ -159,14 +235,14 @@ def Hidden.setNat (hidden : Hidden) (idx : Nat) (value : Int) : Hidden :=
 
 def Hidden16.setNat (hidden : Hidden16) (idx : Nat) (value : Int) : Hidden16 :=
   match idx with
-  | 0 => { hidden with h0 := wrap16 value }
-  | 1 => { hidden with h1 := wrap16 value }
-  | 2 => { hidden with h2 := wrap16 value }
-  | 3 => { hidden with h3 := wrap16 value }
-  | 4 => { hidden with h4 := wrap16 value }
-  | 5 => { hidden with h5 := wrap16 value }
-  | 6 => { hidden with h6 := wrap16 value }
-  | 7 => { hidden with h7 := wrap16 value }
+  | 0 => { hidden with h0 := Int16Val.ofInt value }
+  | 1 => { hidden with h1 := Int16Val.ofInt value }
+  | 2 => { hidden with h2 := Int16Val.ofInt value }
+  | 3 => { hidden with h3 := Int16Val.ofInt value }
+  | 4 => { hidden with h4 := Int16Val.ofInt value }
+  | 5 => { hidden with h5 := Int16Val.ofInt value }
+  | 6 => { hidden with h6 := Int16Val.ofInt value }
+  | 7 => { hidden with h7 := Int16Val.ofInt value }
   | _ => hidden
 
 def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
@@ -181,18 +257,18 @@ def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
   }
 
 def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
-  { h0 := wrap16 hidden.h0
-  , h1 := wrap16 hidden.h1
-  , h2 := wrap16 hidden.h2
-  , h3 := wrap16 hidden.h3
-  , h4 := wrap16 hidden.h4
-  , h5 := wrap16 hidden.h5
-  , h6 := wrap16 hidden.h6
-  , h7 := wrap16 hidden.h7
+  { h0 := Int16Val.ofInt hidden.h0
+  , h1 := Int16Val.ofInt hidden.h1
+  , h2 := Int16Val.ofInt hidden.h2
+  , h3 := Int16Val.ofInt hidden.h3
+  , h4 := Int16Val.ofInt hidden.h4
+  , h5 := Int16Val.ofInt hidden.h5
+  , h6 := Int16Val.ofInt hidden.h6
+  , h7 := Int16Val.ofInt hidden.h7
   }
 
 @[simp] theorem Acc32.toInt_zero : Acc32.zero.toInt = 0 := by
-  simp [Acc32.zero, Acc32.ofInt, wrap32]
+  simp [Acc32.zero, Acc32.ofInt, Acc32.toInt, Int32Val.ofInt, Int32Val.toInt, wrap32]
 
 @[simp] theorem Acc32.toInt_ofInt (x : Int) :
     (Acc32.ofInt x).toInt = wrap32 x := by
@@ -204,23 +280,25 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
     omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
-    have hout : ∀ k : Nat, Hidden16.zero.getNat (8 + k) = 0 := by
-      intro k
-      induction k with
-      | zero =>
-          rfl
-      | succ k ih =>
-          simp [Nat.add_comm, Nat.add_assoc, Hidden16.getNat] at ih ⊢
-    simpa using hout k
+    have h0 : 8 + k ≠ 0 := by omega
+    have h1 : 8 + k ≠ 1 := by omega
+    have h2 : 8 + k ≠ 2 := by omega
+    have h3 : 8 + k ≠ 3 := by omega
+    have h4 : 8 + k ≠ 4 := by omega
+    have h5 : 8 + k ≠ 5 := by omega
+    have h6 : 8 + k ≠ 6 := by omega
+    have h7 : 8 + k ≠ 7 := by omega
+    simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt,
+      wrap16, h0, h1, h2, h3, h4, h5, h6, h7]
 
 @[simp] theorem Hidden16.getNat_ofHidden (hidden : Hidden) (idx : Nat) :
     (Hidden16.ofHidden hidden).getNat idx = wrap16 (hidden.getNat idx) := by
@@ -228,24 +306,25 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
     omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
-    have hout : ∀ k : Nat,
-        (Hidden16.ofHidden hidden).getNat (8 + k) = wrap16 (hidden.getNat (8 + k)) := by
-      intro k
-      induction k with
-      | zero =>
-          rfl
-      | succ k ih =>
-          simp [Nat.add_comm, Nat.add_assoc, Hidden16.getNat, Hidden.getNat, wrap16] at ih ⊢
-    simpa using hout k
+    have h0 : 8 + k ≠ 0 := by omega
+    have h1 : 8 + k ≠ 1 := by omega
+    have h2 : 8 + k ≠ 2 := by omega
+    have h3 : 8 + k ≠ 3 := by omega
+    have h4 : 8 + k ≠ 4 := by omega
+    have h5 : 8 + k ≠ 5 := by omega
+    have h6 : 8 + k ≠ 6 := by omega
+    have h7 : 8 + k ≠ 7 := by omega
+    simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt,
+      wrap16, Hidden.getNat, h0, h1, h2, h3, h4, h5, h6, h7]
 
 @[simp] theorem Hidden16.toHidden_ofHidden (hidden : Hidden) :
     (Hidden16.ofHidden hidden).toHidden =
@@ -262,7 +341,7 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
 
 @[simp] theorem Hidden16.ofHidden_zero :
     Hidden16.ofHidden Hidden.zero = Hidden16.zero := by
-  simp [Hidden16.ofHidden, Hidden.zero, Hidden16.zero, wrap16]
+  simp [Hidden16.ofHidden, Hidden.zero, Hidden16.zero, Int16Val.ofInt]
 
 theorem wrap16_eq_self_of_bounds {x : Int} (hlo : 0 ≤ x) (hhi : x ≤ 32767) :
     wrap16 x = x := by
@@ -779,6 +858,7 @@ theorem outputScoreSpec8_bounds (input : Input8) :
         relu (hiddenPreFromGetter input.getNat 7) := by
     simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_7 input
   simp [outputScoreSpecFromHidden16, outputScoreSpec8, outputScoreSpecFromHidden, Hidden16.ofHidden,
-    hiddenSpec8, hiddenSpecFromGetter, hiddenSpecAtFromGetter, w2At, b2, h2, h4, h5, h6, h7]
+    Int16Val.ofInt, Int16Val.toInt, hiddenSpec8, hiddenSpecFromGetter, hiddenSpecAtFromGetter,
+    w2At, b2, h2, h4, h5, h6, h7]
 
 end TinyMLP

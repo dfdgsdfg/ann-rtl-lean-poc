@@ -84,8 +84,8 @@ theorem temporal_biasOutput_registers_result (sample : CtrlSample) (s : State)
     (hphase : s.phase = .biasOutput) :
     timedStep sample s =
       { s with
-          accumulator := Acc32.ofInt (acc32 s.accumulator.toInt b2)
-          output := (Acc32.ofInt (acc32 s.accumulator.toInt b2)).toInt > 0
+          accumulator := acc32 s.accumulator bias2Term
+          output := (acc32 s.accumulator bias2Term).toInt > 0
           phase := .done } ∧
     ¬ outputValidOf s ∧
     outputValidOf (timedStep sample s) :=

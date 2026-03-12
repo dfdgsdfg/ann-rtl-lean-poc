@@ -49,19 +49,17 @@ def step (s : State) : State :=
   | .macHidden =>
       if _h : s.inputIdx < inputCount then
         { s with
-            accumulator := Acc32.ofInt (acc32 s.accumulator.toInt
-              (mul8x8To16 (w1At s.hiddenIdx s.inputIdx) (s.regs.getNat s.inputIdx))
-            )
+            accumulator := acc32 s.accumulator (hiddenMacTermAt s.regs s.hiddenIdx s.inputIdx)
             inputIdx := s.inputIdx + 1 }
       else
         { s with phase := .biasHidden }
   | .biasHidden =>
       { s with
-          accumulator := Acc32.ofInt (acc32 s.accumulator.toInt (b1At s.hiddenIdx))
+          accumulator := acc32 s.accumulator (bias1Term s.hiddenIdx)
           phase := .actHidden }
   | .actHidden =>
       { s with
-          hidden := s.hidden.setNat s.hiddenIdx (relu16 s.accumulator.toInt)
+          hidden := s.hidden.setNat s.hiddenIdx (relu16 s.accumulator).toInt
           accumulator := Acc32.zero
           inputIdx := 0
           phase := .nextHidden }
@@ -73,13 +71,12 @@ def step (s : State) : State :=
   | .macOutput =>
       if _h : s.inputIdx < hiddenCount then
         { s with
-            accumulator := Acc32.ofInt (acc32 s.accumulator.toInt
-              (mul16x8To24 (s.hidden.getNat s.inputIdx) (w2At s.inputIdx)))
+            accumulator := acc32 s.accumulator (outputMacTermAt s.hidden s.inputIdx)
             inputIdx := s.inputIdx + 1 }
       else
         { s with phase := .biasOutput }
   | .biasOutput =>
-      let finalAcc := Acc32.ofInt (acc32 s.accumulator.toInt b2)
+      let finalAcc := acc32 s.accumulator bias2Term
       { s with
           accumulator := finalAcc
           output := finalAcc.toInt > 0

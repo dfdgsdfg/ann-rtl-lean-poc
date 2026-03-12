@@ -381,15 +381,15 @@ theorem biasOutput_registers_result (sample : CtrlSample) (s : State)
     (hphase : s.phase = .biasOutput) :
     timedStep sample s =
       { s with
-          accumulator := Acc32.ofInt (acc32 s.accumulator.toInt b2)
-          output := (Acc32.ofInt (acc32 s.accumulator.toInt b2)).toInt > 0
+          accumulator := acc32 s.accumulator bias2Term
+          output := (acc32 s.accumulator bias2Term).toInt > 0
           phase := .done } ∧
     ¬ outputValidOf s ∧
     outputValidOf (timedStep sample s) := by
   cases s with
   | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
       cases phase <;> simp at hphase
-      simp [timedStep, step, outputValidOf, doneOf, acc32]
+      simp [timedStep, step, outputValidOf, doneOf, acc32, bias2Term]
 
 theorem holdHigh_accepts (input : Input8) :
     acceptedStart (holdHigh 0) (initialState input) := by
