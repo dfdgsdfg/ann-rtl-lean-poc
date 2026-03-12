@@ -1,0 +1,5 @@
+{
+  "contract_weights": "contract/result/weights.json",
+  "selected_run": "ann/results/latest",
+  "weights_quantized": "ann/results/latest/weights_quantized.json"
+}

@@ -1,0 +1,95 @@
+import TinyMLP.FixedPoint
+
+namespace TinyMLP
+
+inductive Phase
+  | idle
+  | loadInput
+  | macHidden
+  | biasHidden
+  | actHidden
+  | nextHidden
+  | macOutput
+  | biasOutput
+  | done
+deriving Repr, DecidableEq
+
+structure State where
+  regs : Input8
+  hidden : Hidden16
+  accumulator : Acc32
+  hiddenIdx : Nat
+  inputIdx : Nat
+  phase : Phase
+  output : Bool
+deriving Repr, DecidableEq
+
+def initialState (input : Input8) : State :=
+  { regs := input
+  , hidden := Hidden16.zero
+  , accumulator := Acc32.zero
+  , hiddenIdx := 0
+  , inputIdx := 0
+  , phase := .idle
+  , output := false
+  }
+
+def step (s : State) : State :=
+  match s.phase with
+  | .idle =>
+      { s with phase := .loadInput }
+  | .loadInput =>
+      { s with
+          hidden := Hidden16.zero
+          accumulator := Acc32.zero
+          hiddenIdx := 0
+          inputIdx := 0
+          output := false
+          phase := .macHidden }
+  | .macHidden =>
+      if _h : s.inputIdx < inputCount then
+        { s with
+            accumulator := Acc32.ofInt (acc32 s.accumulator.toInt
+              (mul8x8To16 (w1At s.hiddenIdx s.inputIdx) (s.regs.getNat s.inputIdx))
+            )
+            inputIdx := s.inputIdx + 1 }
+      else
+        { s with phase := .biasHidden }
+  | .biasHidden =>
+      { s with
+          accumulator := Acc32.ofInt (acc32 s.accumulator.toInt (b1At s.hiddenIdx))
+          phase := .actHidden }
+  | .actHidden =>
+      { s with
+          hidden := s.hidden.setNat s.hiddenIdx (relu16 s.accumulator.toInt)
+          accumulator := Acc32.zero
+          inputIdx := 0
+          phase := .nextHidden }
+  | .nextHidden =>
+      if _h : s.hiddenIdx + 1 < hiddenCount then
+        { s with hiddenIdx := s.hiddenIdx + 1, phase := .macHidden }
+      else
+        { s with hiddenIdx := 0, inputIdx := 0, phase := .macOutput }
+  | .macOutput =>
+      if _h : s.inputIdx < hiddenCount then
+        { s with
+            accumulator := Acc32.ofInt (acc32 s.accumulator.toInt
+              (mul16x8To24 (s.hidden.getNat s.inputIdx) (w2At s.inputIdx)))
+            inputIdx := s.inputIdx + 1 }
+      else
+        { s with phase := .biasOutput }
+  | .biasOutput =>
+      let finalAcc := Acc32.ofInt (acc32 s.accumulator.toInt b2)
+      { s with
+          accumulator := finalAcc
+          output := finalAcc.toInt > 0
+          phase := .done }
+  | .done => s
+
+def run : Nat → State → State
+  | 0, s => s
+  | n + 1, s => run n (step s)
+
+def totalCycles : Nat := 76
+
+end TinyMLP

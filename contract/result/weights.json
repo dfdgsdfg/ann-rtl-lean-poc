@@ -1,0 +1,130 @@
+{
+  "arithmetic": {
+    "accumulator_bits": 32,
+    "bias_bits": 32,
+    "hidden_activation_bits": 16,
+    "hidden_product_bits": 16,
+    "input_bits": 8,
+    "output_product_bits": 24,
+    "output_weight_bits": 8,
+    "overflow": "two_complement_wraparound",
+    "sign_extension": "required_between_product_and_accumulator_stages"
+  },
+  "b1": [
+    0,
+    0,
+    1,
+    1,
+    0,
+    2,
+    1,
+    -1
+  ],
+  "b2": -1,
+  "boundedness": {
+    "hidden_activation": {
+      "bits": 16,
+      "max_bound": 637,
+      "min_bound": 0
+    },
+    "hidden_pre_activation": {
+      "bits": 32,
+      "max_bound": 637,
+      "min_bound": -638
+    },
+    "hidden_product": {
+      "bits": 16,
+      "max_bound": 254,
+      "min_bound": -256
+    },
+    "input_range": {
+      "max": 127,
+      "min": -128
+    },
+    "output_accumulator": {
+      "bits": 32,
+      "max_bound": 1020,
+      "min_bound": -1021
+    },
+    "output_product": {
+      "bits": 24,
+      "max_bound": 637,
+      "min_bound": -512
+    },
+    "scope": "all_signed_int8_inputs",
+    "status": "verified"
+  },
+  "dataset_version": "relu_teacher_v2",
+  "hidden_size": 8,
+  "input_size": 4,
+  "quantization": {
+    "bias_bits": 32,
+    "clipping": "signed_saturating",
+    "rounding": "half_away_from_zero",
+    "weight_bits": 8
+  },
+  "schema_version": 1,
+  "selected_run": "ann/results/latest",
+  "source": "trained_selected_quantized",
+  "training_seed": 20260312,
+  "w1": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      -1
+    ],
+    [
+      2,
+      1,
+      1,
+      -1
+    ],
+    [
+      0,
+      0,
+      0,
+      -1
+    ],
+    [
+      -1,
+      0,
+      0,
+      0
+    ],
+    [
+      -1,
+      1,
+      -1,
+      1
+    ],
+    [
+      0,
+      -1,
+      1,
+      -1
+    ],
+    [
+      1,
+      2,
+      0,
+      0
+    ]
+  ],
+  "w2": [
+    0,
+    0,
+    1,
+    0,
+    -1,
+    -1,
+    1,
+    -1
+  ]
+}

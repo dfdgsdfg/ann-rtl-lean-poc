@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+if __package__ in (None, ""):
+    ROOT = Path(__file__).resolve().parents[2]
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from contract.src.artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
+    from contract.src.downstream_sync import expected_downstream_artifacts, sync_downstream
+    from contract.src.gen_vectors import TEST_VECTORS_PATH, generate_vectors, render_vectors
+    from contract.src.schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
+else:
+    from .artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
+    from .downstream_sync import expected_downstream_artifacts, sync_downstream
+    from .gen_vectors import TEST_VECTORS_PATH, generate_vectors, render_vectors
+    from .schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
+
+
+def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
+    if run_dir is not None:
+        return resolve_metadata_path(run_dir)
+
+    if SELECTED_RUN_PATH.exists():
+        selected_meta = validate_selected_run_metadata(read_json(SELECTED_RUN_PATH))
+        candidate_dir = resolve_metadata_path(selected_meta["selected_run"])
+        if candidate_dir.exists():
+            return candidate_dir
+
+    return LATEST_RESULTS_DIR
+
+
+def _write_selected_run_metadata(selected_dir: Path, quantized_path: Path) -> dict[str, str]:
+    payload = {
+        "selected_run": relative_to_root(selected_dir),
+        "weights_quantized": relative_to_root(quantized_path),
+        "contract_weights": relative_to_root(CONTRACT_WEIGHTS_PATH),
+    }
+    write_json(SELECTED_RUN_PATH, payload)
+    return payload
+
+
+def freeze_contract(run_dir: Path | None = None) -> Path:
+    selected_dir = resolve_selected_run_dir(run_dir)
+    quantized_path = selected_dir / "weights_quantized.json"
+    if not quantized_path.exists():
+        raise FileNotFoundError(f"missing quantized weights at {quantized_path}")
+
+    analysis_payload = build_analysis_payload(
+        read_json(quantized_path),
+        selected_run=relative_to_root(selected_dir),
+    )
+    write_json(CONTRACT_WEIGHTS_PATH, analysis_payload)
+    sync_downstream(analysis_payload)
+    generate_vectors()
+    _write_selected_run_metadata(selected_dir, quantized_path)
+    validate_contract()
+    return CONTRACT_WEIGHTS_PATH
+
+
+def validate_contract() -> None:
+    contract_payload = validate_analysis_payload(read_json(CONTRACT_WEIGHTS_PATH), label="contract result")
+    selected_meta = validate_selected_run_metadata(read_json(SELECTED_RUN_PATH))
+
+    expected_selected_run = str(contract_payload["selected_run"])
+    if selected_meta["selected_run"] != expected_selected_run:
+        raise ValueError(
+            "selected run metadata does not match contract result: "
+            f"{selected_meta['selected_run']} != {expected_selected_run}"
+        )
+
+    expected_contract_path = relative_to_root(CONTRACT_WEIGHTS_PATH)
+    if selected_meta["contract_weights"] != expected_contract_path:
+        raise ValueError(
+            "selected run metadata does not point to the canonical contract weights: "
+            f"{selected_meta['contract_weights']} != {expected_contract_path}"
+        )
+
+    quantized_path = resolve_metadata_path(selected_meta["weights_quantized"])
+    if not quantized_path.exists():
+        raise FileNotFoundError(f"missing recorded quantized weights at {quantized_path}")
+
+    selected_dir = resolve_metadata_path(selected_meta["selected_run"])
+    if not selected_dir.exists():
+        raise FileNotFoundError(f"missing recorded selected run directory at {selected_dir}")
+
+    expected_quantized_path = selected_dir / "weights_quantized.json"
+    if quantized_path.resolve() != expected_quantized_path.resolve():
+        raise ValueError(
+            "selected run metadata does not point to the selected run quantized weights: "
+            f"{quantized_path} != {expected_quantized_path}"
+        )
+
+    quantized_payload = build_analysis_payload(
+        read_json(quantized_path),
+        selected_run=selected_meta["selected_run"],
+        source=str(contract_payload["source"]),
+    )
+    if contract_payload != quantized_payload:
+        raise ValueError("contract result payload does not match the selected quantized weights")
+
+    for generated_path, expected_text in expected_downstream_artifacts(contract_payload).items():
+        if not generated_path.exists():
+            raise FileNotFoundError(f"missing generated contract artifact at {generated_path}")
+        actual_text = generated_path.read_text(encoding="utf-8")
+        if actual_text != expected_text:
+            raise ValueError(f"generated contract artifact is out of sync: {generated_path}")
+
+    if not TEST_VECTORS_PATH.exists():
+        raise FileNotFoundError(f"missing generated contract artifact at {TEST_VECTORS_PATH}")
+    actual_vectors = TEST_VECTORS_PATH.read_text(encoding="ascii")
+    expected_vectors = render_vectors(contract_payload)
+    if actual_vectors != expected_vectors:
+        raise ValueError(f"generated contract artifact is out of sync: {TEST_VECTORS_PATH}")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Freeze or validate the implementation contract")
+    parser.add_argument("--run-dir", type=Path, default=None, help="Optional ANN run directory with weights_quantized.json")
+    parser.add_argument("--check", action="store_true", help="Validate the current frozen contract without rewriting artifacts")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    if args.check:
+        validate_contract()
+        print("contract validation passed")
+        return
+
+    out_path = freeze_contract(args.run_dir)
+    print(f"wrote {out_path}")
+
+
+if __name__ == "__main__":
+    main()

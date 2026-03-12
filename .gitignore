@@ -1,0 +1,10 @@
+.lake/
+.lake-build/
+build/
+**/__pycache__/
+*.olean
+*.ilean
+*.c
+ann/results/scratch/
+ann/results/tmp/
+*.log

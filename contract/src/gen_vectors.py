@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Iterable, Sequence
+
+from .artifacts import CONTRACT_WEIGHTS_PATH, ROOT
+from .params import HIDDEN_SIZE, INPUT_SIZE
+from .quantize_helpers import relu, wrap_signed
+from .schema import coerce_weights_payload
+
+TEST_VECTORS_PATH = ROOT / "simulations" / "rtl" / "test_vectors.mem"
+
+VECTORS = (
+    (-8, -3, 2, 1),
+    (7, -2, 3, -1),
+    (12, 6, -5, -2),
+    (-4, 9, -3, 7),
+    (0, 0, 0, 0),
+    (15, -16, 12, -8),
+    (-32, 31, -7, 9),
+    (63, -12, 5, -1),
+    (-11, -9, 14, 8),
+    (20, 2, -18, 3),
+    (-64, 5, 33, -17),
+    (19, -21, 11, 4),
+    (-7, 4, -12, 13),
+    (9, 9, 9, 9),
+    (-15, -15, 10, 10),
+    (27, -4, -8, 2),
+)
+
+
+def _normalize_input(values: Iterable[int]) -> tuple[int, int, int, int]:
+    data = tuple(wrap_signed(v, 8) for v in values)
+    if len(data) != INPUT_SIZE:
+        raise ValueError(f"expected {INPUT_SIZE} inputs, got {len(data)}")
+    return data  # type: ignore[return-value]
+
+
+def _score(values: Sequence[int], weights: dict[str, object]) -> int:
+    xs = _normalize_input(values)
+    w1 = weights["w1"]
+    b1 = weights["b1"]
+    hidden: list[int] = []
+    for i in range(HIDDEN_SIZE):
+        acc = 0
+        for j in range(INPUT_SIZE):
+            product = wrap_signed(xs[j] * w1[i][j], 16)
+            acc = wrap_signed(acc + product, 32)
+        acc = wrap_signed(acc + b1[i], 32)
+        hidden.append(wrap_signed(relu(acc), 16))
+
+    w2 = weights["w2"]
+    b2 = weights["b2"]
+    acc = 0
+    for i in range(HIDDEN_SIZE):
+        product = wrap_signed(hidden[i] * w2[i], 24)
+        acc = wrap_signed(acc + product, 32)
+    return wrap_signed(acc + b2, 32)
+
+
+def _infer(values: Sequence[int], weights: dict[str, object]) -> int:
+    return int(_score(values, weights=weights) > 0)
+
+
+def _pack_vector(values: Sequence[int], expected: int) -> int:
+    xs = _normalize_input(values)
+    word = expected & 0x1
+    for value in xs:
+        word = (word << 8) | (value & 0xFF)
+    return word
+
+
+def _load_contract_weights() -> dict[str, object]:
+    if not CONTRACT_WEIGHTS_PATH.exists():
+        raise FileNotFoundError(f"missing contract weights file: {CONTRACT_WEIGHTS_PATH}")
+    return coerce_weights_payload(
+        json.loads(CONTRACT_WEIGHTS_PATH.read_text(encoding="utf-8")),
+        label="contract weights",
+    )
+
+
+def render_vectors(weights: dict[str, object]) -> str:
+    lines = []
+    for vector in VECTORS:
+        expected = _infer(vector, weights=weights)
+        lines.append(f"{_pack_vector(vector, expected):09x}")
+    return "\n".join(lines) + "\n"
+
+
+def generate_vectors() -> Path:
+    weights = _load_contract_weights()
+    TEST_VECTORS_PATH.write_text(render_vectors(weights), encoding="ascii")
+    return TEST_VECTORS_PATH

@@ -1,0 +1,1 @@
+"""Contract-domain Python package."""
