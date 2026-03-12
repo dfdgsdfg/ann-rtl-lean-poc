@@ -8,7 +8,7 @@ def w1Int8At (hiddenIdx inputIdx : Nat) : Int8 :=
 def w2Int8At (idx : Nat) : Int8 :=
   Int8.ofInt (w2At idx)
 
-theorem w1Int8At_toInt (hiddenIdx inputIdx : Nat) (hinput : inputIdx < inputCount) :
+@[simp] theorem w1Int8At_toInt (hiddenIdx inputIdx : Nat) (hinput : inputIdx < inputCount) :
     (w1Int8At hiddenIdx inputIdx).toInt = w1At hiddenIdx inputIdx := by
   have hi :
       hiddenIdx = 0 ∨ hiddenIdx = 1 ∨ hiddenIdx = 2 ∨ hiddenIdx = 3 ∨
@@ -65,7 +65,7 @@ theorem w1Int8At_toInt (hiddenIdx inputIdx : Nat) (hinput : inputIdx < inputCoun
       have h7 : 8 + k ≠ 7 := by omega
       simp [w1Int8At, w1At, h0, h1, h2, h3, h4, h5, h6, h7]
 
-theorem w2Int8At_toInt (idx : Nat) (hidx : idx < hiddenCount) :
+@[simp] theorem w2Int8At_toInt (idx : Nat) (hidx : idx < hiddenCount) :
     (w2Int8At idx).toInt = w2At idx := by
   have hcases :
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 := by
@@ -210,18 +210,18 @@ def outputScoreFixedFromHidden (hidden : Hidden16) : Acc32 :=
 theorem hiddenMacTermAt_toInt (input : Input8) (hiddenIdx inputIdx : Nat) :
     (hinput : inputIdx < inputCount) →
     (hiddenMacTermAt input hiddenIdx inputIdx).toInt =
-      w1At hiddenIdx inputIdx * input.getNat inputIdx := by
+      w1At hiddenIdx inputIdx * (toMathInput input).getNat inputIdx := by
   intro hinput
   simp [hiddenMacTermAt, w1Int8At_toInt hiddenIdx inputIdx hinput, Int.mul_comm]
 
 @[simp] theorem hiddenMacAccAt_toInt (input : Input8) (idx : Nat) :
-    (hiddenMacAccAt input idx).toInt = wrap32 (hiddenDotAt8 input idx) := by
+    (hiddenMacAccAt input idx).toInt = wrap32 (hiddenDotAt (toMathInput input) idx) := by
   have hdot :
-      hiddenDotAt8 input idx =
-        w1At idx 0 * input.getNat 0 +
-          w1At idx 1 * input.getNat 1 +
-          w1At idx 2 * input.getNat 2 +
-          w1At idx 3 * input.getNat 3 := by
+      hiddenDotAt (toMathInput input) idx =
+        w1At idx 0 * (toMathInput input).getNat 0 +
+          w1At idx 1 * (toMathInput input).getNat 1 +
+          w1At idx 2 * (toMathInput input).getNat 2 +
+          w1At idx 3 * (toMathInput input).getNat 3 := by
     rfl
   rw [hdot]
   have h0 := hiddenMacTermAt_toInt input idx 0 (by decide)
@@ -231,15 +231,21 @@ theorem hiddenMacTermAt_toInt (input : Input8) (hiddenIdx inputIdx : Nat) :
   simp [hiddenMacAccAt, acc32, Acc32.toInt_ofInt, h0, h1, h2, h3, wrap32_add_wrap32, Int.add_assoc]
 
 theorem outputMacTermAt_toInt (hidden : Hidden16) (idx : Nat) (hidx : idx < hiddenCount) :
-    (outputMacTermAt hidden idx).toInt = hidden.getNat idx * w2At idx := by
-  simp [outputMacTermAt, w2Int8At_toInt idx hidx]
+    (outputMacTermAt hidden idx).toInt = hidden.toHidden.getNat idx * w2At idx := by
+  have hcases :
+      idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 := by
+    unfold hiddenCount at hidx
+    omega
+  rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [outputMacTermAt, Hidden16.getCellNat, Hidden16.getNat, Hidden16.toHidden,
+      Hidden.getNat, Int16Val.toInt, w2Int8At, w2At]
 
 @[simp] theorem outputMacAccFromHidden_toInt (hidden : Hidden16) :
     (outputMacAccFromHidden hidden).toInt =
-      wrap32 (hidden.getNat 0 * w2At 0 + hidden.getNat 1 * w2At 1 +
-        hidden.getNat 2 * w2At 2 + hidden.getNat 3 * w2At 3 +
-        hidden.getNat 4 * w2At 4 + hidden.getNat 5 * w2At 5 +
-        hidden.getNat 6 * w2At 6 + hidden.getNat 7 * w2At 7) := by
+      wrap32 (hidden.toHidden.getNat 0 * w2At 0 + hidden.toHidden.getNat 1 * w2At 1 +
+        hidden.toHidden.getNat 2 * w2At 2 + hidden.toHidden.getNat 3 * w2At 3 +
+        hidden.toHidden.getNat 4 * w2At 4 + hidden.toHidden.getNat 5 * w2At 5 +
+        hidden.toHidden.getNat 6 * w2At 6 + hidden.toHidden.getNat 7 * w2At 7) := by
   have h0 := outputMacTermAt_toInt hidden 0 (by decide)
   have h1 := outputMacTermAt_toInt hidden 1 (by decide)
   have h2 := outputMacTermAt_toInt hidden 2 (by decide)
@@ -260,13 +266,13 @@ theorem outputMacTermAt_toInt (hidden : Hidden16) (idx : Nat) (hidx : idx < hidd
   rfl
 
 @[simp] theorem hiddenPreFixedAt_toInt (input : Input8) (idx : Nat) :
-    (hiddenPreFixedAt input idx).toInt = wrap32 (hiddenPreAt8 input idx) := by
+    (hiddenPreFixedAt input idx).toInt = wrap32 (hiddenPreAt (toMathInput input) idx) := by
   have hpre :
-      hiddenPreAt8 input idx =
-        w1At idx 0 * input.getNat 0 +
-          w1At idx 1 * input.getNat 1 +
-          w1At idx 2 * input.getNat 2 +
-          w1At idx 3 * input.getNat 3 +
+      hiddenPreAt (toMathInput input) idx =
+        w1At idx 0 * (toMathInput input).getNat 0 +
+          w1At idx 1 * (toMathInput input).getNat 1 +
+          w1At idx 2 * (toMathInput input).getNat 2 +
+          w1At idx 3 * (toMathInput input).getNat 3 +
           b1At idx := by
     rfl
   rw [hpre]
@@ -278,7 +284,7 @@ theorem outputMacTermAt_toInt (hidden : Hidden16) (idx : Nat) (hidx : idx < hidd
     wrap32_add_wrap32, Int.add_assoc, wrap32_b1At]
 
 private theorem wrap32_hiddenPreAt8 (input : Input8) (idx : Nat) (hidx : idx < hiddenCount) :
-    wrap32 (hiddenPreAt8 input idx) = hiddenPreAt8 input idx := by
+    wrap32 (hiddenPreAt (toMathInput input) idx) = hiddenPreAt (toMathInput input) idx := by
   have hcases :
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 := by
     unfold hiddenCount at hidx
@@ -294,13 +300,12 @@ private theorem wrap32_hiddenPreAt8 (input : Input8) (idx : Nat) (hidx : idx < h
   · simpa using wrap32_hiddenPreAt8_7 input
 
 theorem hiddenFixedAt_eq_ofInt_hiddenSpecAt8 (input : Input8) (idx : Nat) (hidx : idx < hiddenCount) :
-    hiddenFixedAt input idx = Int16Val.ofInt (hiddenSpecAt8 input idx) := by
+    hiddenFixedAt input idx = Int16Val.ofInt (hiddenSpecAt (toMathInput input) idx) := by
   apply Subtype.ext
-  change (hiddenFixedAt input idx).toInt = wrap16 (hiddenSpecAt8 input idx)
+  change (hiddenFixedAt input idx).toInt = wrap16 (hiddenSpecAt (toMathInput input) idx)
   simp [hiddenFixedAt, hiddenPreFixedAt_toInt]
-  rw [← hiddenPreAt8_eq_hiddenPreAt_toMathInput input idx,
-    ← hiddenSpecAt8_eq_hiddenSpecAt_toMathInput input idx, wrap32_hiddenPreAt8 input idx hidx]
-  have hspec : hiddenSpecAt8 input idx = relu (hiddenPreAt8 input idx) := by
+  rw [wrap32_hiddenPreAt8 input idx hidx]
+  have hspec : hiddenSpecAt (toMathInput input) idx = relu (hiddenPreAt (toMathInput input) idx) := by
     rfl
   rw [hspec]
 
@@ -316,8 +321,8 @@ def hiddenFixed (input : Input8) : Hidden16 :=
   }
 
 @[simp] theorem hiddenFixed_eq_hiddenSpec8 (input : Input8) :
-    hiddenFixed input = Hidden16.ofHidden (hiddenSpec8 input) := by
-  simp [hiddenFixed, Hidden16.ofHidden, hiddenSpec8_eq_fields,
+    hiddenFixed input = Hidden16.ofHidden (hiddenSpec (toMathInput input)) := by
+  simp [hiddenFixed, Hidden16.ofHidden, hiddenSpec_eq_fields,
     hiddenFixedAt_eq_ofInt_hiddenSpecAt8 input 0 (by decide),
     hiddenFixedAt_eq_ofInt_hiddenSpecAt8 input 1 (by decide),
     hiddenFixedAt_eq_ofInt_hiddenSpecAt8 input 2 (by decide),
@@ -328,36 +333,36 @@ def hiddenFixed (input : Input8) : Hidden16 :=
     hiddenFixedAt_eq_ofInt_hiddenSpecAt8 input 7 (by decide)]
 
 @[simp] theorem hiddenFixed_toHidden_eq_hiddenSpec8 (input : Input8) :
-    (hiddenFixed input).toHidden = hiddenSpec8 input := by
-  rw [hiddenFixed_eq_hiddenSpec8, Hidden16.toHidden_ofHidden, hiddenSpec8_eq_fields]
+    (hiddenFixed input).toHidden = hiddenSpec (toMathInput input) := by
+  rw [hiddenFixed_eq_hiddenSpec8, Hidden16.toHidden_ofHidden, hiddenSpec_eq_fields]
   rw [wrap16_hiddenSpecAt8_0, wrap16_hiddenSpecAt8_1, wrap16_hiddenSpecAt8_2,
     wrap16_hiddenSpecAt8_3, wrap16_hiddenSpecAt8_4, wrap16_hiddenSpecAt8_5,
     wrap16_hiddenSpecAt8_6, wrap16_hiddenSpecAt8_7]
 
 @[simp] theorem hiddenFixed_eq_hiddenSpec (input : Input8) :
     (hiddenFixed input).toHidden = hiddenSpec (toMathInput input) := by
-  rw [hiddenFixed_toHidden_eq_hiddenSpec8, hiddenSpec8_eq_hiddenSpec_toMathInput]
+  exact hiddenFixed_toHidden_eq_hiddenSpec8 input
 
 @[simp] theorem outputScoreFixedFromHidden_toInt (hidden : Hidden16) :
-    (outputScoreFixedFromHidden hidden).toInt = wrap32 (outputScoreSpecFromHidden16 hidden) := by
+    (outputScoreFixedFromHidden hidden).toInt = wrap32 (outputScoreSpecFromHidden hidden.toHidden) := by
   rw [show outputScoreFixedFromHidden hidden = acc32 (outputMacAccFromHidden hidden) bias2Term from rfl]
   rw [acc32_toInt, outputMacAccFromHidden_toInt, bias2Term_toInt]
   rw [wrap32_add_wrap32, wrap32_b2]
-  simp [outputScoreSpecFromHidden16, Hidden16.getNat, Hidden16.getCellNat, Int16Val.toInt, b2,
+  simp [outputScoreSpecFromHidden, Hidden.getNat, Hidden16.toHidden, b2,
     Int.add_assoc, Int.mul_comm]
 
 def outputScoreFixed (input : Input8) : Acc32 :=
   outputScoreFixedFromHidden (hiddenFixed input)
 
 @[simp] theorem outputScoreFixed_eq_outputScoreSpec8 (input : Input8) :
-    (outputScoreFixed input).toInt = outputScoreSpec8 input := by
+    (outputScoreFixed input).toInt = outputScoreSpec (toMathInput input) := by
   rw [show outputScoreFixed input = outputScoreFixedFromHidden (hiddenFixed input) from rfl]
-  rw [outputScoreFixedFromHidden_toInt, hiddenFixed_eq_hiddenSpec8,
-    outputScoreSpecFromHidden16_ofHidden_hiddenSpec8, wrap32_outputScoreSpec8]
+  rw [outputScoreFixedFromHidden_toInt, hiddenFixed_toHidden_eq_hiddenSpec8,
+    outputScoreSpecFromHidden_hiddenSpec_eq_outputScoreSpec, wrap32_outputScoreSpec8]
 
 @[simp] theorem outputScoreFixed_eq_outputScoreSpec (input : Input8) :
     (outputScoreFixed input).toInt = outputScoreSpec (toMathInput input) := by
-  rw [outputScoreFixed_eq_outputScoreSpec8, outputScoreSpec8_eq_outputScoreSpec_toMathInput]
+  exact outputScoreFixed_eq_outputScoreSpec8 input
 
 def mlpFixed (input : Input8) : Bool :=
   (outputScoreFixed input).toInt > 0

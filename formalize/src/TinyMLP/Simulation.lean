@@ -151,15 +151,15 @@ private def doneEntry (input : Input8) (hidden : Hidden16) (acc : Acc32) : State
     phase := .done, output := decide (acc.toInt > 0) }
 
 @[simp] private theorem hiddenMacAcc_toInt (input : Input8) (j : Nat) :
-    (hiddenMacAcc input j).toInt = wrap32 (hiddenDotAt8 input j) := by
+    (hiddenMacAcc input j).toInt = wrap32 (hiddenDotAt (toMathInput input) j) := by
   simpa [hiddenMacAcc] using hiddenMacAccAt_toInt input j
 
 @[simp] private theorem hiddenPreAcc_toInt (input : Input8) (j : Nat) :
-    (hiddenPreAcc input j).toInt = wrap32 (hiddenPreAt8 input j) := by
+    (hiddenPreAcc input j).toInt = wrap32 (hiddenPreAt (toMathInput input) j) := by
   simpa [hiddenPreAcc] using hiddenPreFixedAt_toInt input j
 
 @[simp] private theorem finalOutputAcc_toInt (hidden : Hidden16) :
-    (finalOutputAcc hidden).toInt = wrap32 (outputScoreSpecFromHidden16 hidden) := by
+    (finalOutputAcc hidden).toInt = wrap32 (outputScoreSpecFromHidden hidden.toHidden) := by
   simpa [finalOutputAcc] using outputScoreFixedFromHidden_toInt hidden
 
 -- MAC inner loop: 5 steps from macHidden entry to biasHidden

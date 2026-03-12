@@ -239,21 +239,17 @@ def Input.getNat (input : Input) : Nat → Int
 def Input.get (input : Input) (idx : Fin inputCount) : Int :=
   input.getNat idx.1
 
-def Input8.getNat (input : Input8) : Nat → Int
-  | 0 => input.x0.toInt
-  | 1 => input.x1.toInt
-  | 2 => input.x2.toInt
-  | 3 => input.x3.toInt
-  | _ => 0
-
-def Input8.getInt8Nat (input : Input8) : Nat → Int8
+def Input8.getNat (input : Input8) : Nat → Int8
   | 0 => input.x0
   | 1 => input.x1
   | 2 => input.x2
   | 3 => input.x3
   | _ => Int8.ofInt 0
 
-def Input8.get (input : Input8) (idx : Fin inputCount) : Int :=
+def Input8.getInt8Nat (input : Input8) : Nat → Int8 :=
+  input.getNat
+
+def Input8.get (input : Input8) (idx : Fin inputCount) : Int8 :=
   input.getNat idx.1
 
 def Hidden.zero : Hidden :=
@@ -297,7 +293,7 @@ def Hidden.getNat (hidden : Hidden) : Nat → Int
 def Hidden.get (hidden : Hidden) (idx : Fin hiddenCount) : Int :=
   hidden.getNat idx.1
 
-def Hidden16.getCellNat (hidden : Hidden16) : Nat → Int16Val
+def Hidden16.getNat (hidden : Hidden16) : Nat → Int16Val
   | 0 => hidden.h0
   | 1 => hidden.h1
   | 2 => hidden.h2
@@ -308,14 +304,14 @@ def Hidden16.getCellNat (hidden : Hidden16) : Nat → Int16Val
   | 7 => hidden.h7
   | _ => Int16Val.ofInt 0
 
-def Hidden16.getNat (hidden : Hidden16) : Nat → Int
-  | idx => (hidden.getCellNat idx).toInt
+def Hidden16.getCellNat (hidden : Hidden16) : Nat → Int16Val :=
+  hidden.getNat
 
-def Hidden16.get (hidden : Hidden16) (idx : Fin hiddenCount) : Int :=
+def Hidden16.get (hidden : Hidden16) (idx : Fin hiddenCount) : Int16Val :=
   hidden.getNat idx.1
 
 @[simp] theorem Input8.getInt8Nat_toInt (input : Input8) (idx : Nat) :
-    (input.getInt8Nat idx).toInt = input.getNat idx := by
+    (input.getInt8Nat idx).toInt = (toMathInput input).getNat idx := by
   cases idx with
   | zero => rfl
   | succ idx =>
@@ -326,15 +322,8 @@ def Hidden16.get (hidden : Hidden16) (idx : Fin hiddenCount) : Int :=
           | zero => rfl
           | succ idx =>
               cases idx with
-              | zero => rfl
-              | succ idx => rfl
-
-@[simp] theorem Hidden16.getCellNat_toInt (hidden : Hidden16) (idx : Nat) :
-    (hidden.getCellNat idx).toInt = hidden.getNat idx := by
-  rfl
-
-def Hidden16.toIntAt (hidden : Hidden16) (idx : Nat) : Int :=
-  hidden.getNat idx
+                  | zero => rfl
+                  | succ idx => rfl
 
 def Hidden.setNat (hidden : Hidden) (idx : Nat) (value : Int) : Hidden :=
   match idx with
@@ -360,9 +349,6 @@ def Hidden16.setCellNat (hidden : Hidden16) (idx : Nat) (value : Int16Val) : Hid
   | 7 => { hidden with h7 := value }
   | _ => hidden
 
-def Hidden16.setNat (hidden : Hidden16) (idx : Nat) (value : Int) : Hidden16 :=
-  hidden.setCellNat idx (Int16Val.ofInt value)
-
 def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
   { h0 := hidden.h0
   , h1 := hidden.h1
@@ -373,6 +359,37 @@ def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
   , h6 := hidden.h6
   , h7 := hidden.h7
   }
+
+@[simp] theorem Hidden16.getNat_toInt (hidden : Hidden16) (idx : Nat) :
+    (hidden.getNat idx).toInt = hidden.toHidden.getNat idx := by
+  cases idx with
+  | zero => rfl
+  | succ idx =>
+      cases idx with
+      | zero => rfl
+      | succ idx =>
+          cases idx with
+          | zero => rfl
+          | succ idx =>
+              cases idx with
+              | zero => rfl
+              | succ idx =>
+                  cases idx with
+                  | zero => rfl
+                  | succ idx =>
+                      cases idx with
+                      | zero => rfl
+                      | succ idx =>
+                          cases idx with
+                          | zero => rfl
+                          | succ idx =>
+                              cases idx with
+                              | zero => rfl
+                              | succ idx => rfl
+
+@[simp] theorem Hidden16.getCellNat_toInt (hidden : Hidden16) (idx : Nat) :
+    (hidden.getCellNat idx).toInt = hidden.toHidden.getNat idx := by
+  simpa [Hidden16.getCellNat] using Hidden16.getNat_toInt hidden idx
 
 def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
   { h0 := Int16Val.ofInt hidden.h0
@@ -393,19 +410,19 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
   rfl
 
 @[simp] theorem Hidden16.getNat_zero (idx : Nat) :
-    Hidden16.zero.getNat idx = 0 := by
+    Hidden16.zero.getNat idx = Int16Val.ofInt 0 := by
   have hcases :
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
     omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
-  · simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
+  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
     have h0 : 8 + k ≠ 0 := by omega
     have h1 : 8 + k ≠ 1 := by omega
@@ -415,23 +432,22 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
     have h5 : 8 + k ≠ 5 := by omega
     have h6 : 8 + k ≠ 6 := by omega
     have h7 : 8 + k ≠ 7 := by omega
-    simp [Hidden16.zero, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt,
-      wrap16, h0, h1, h2, h3, h4, h5, h6, h7]
+    simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt, h0, h1, h2, h3, h4, h5, h6, h7]
 
 @[simp] theorem Hidden16.getNat_ofHidden (hidden : Hidden) (idx : Nat) :
-    (Hidden16.ofHidden hidden).getNat idx = wrap16 (hidden.getNat idx) := by
+    (Hidden16.ofHidden hidden).getNat idx = Int16Val.ofInt (hidden.getNat idx) := by
   have hcases :
       idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
     omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt, wrap16, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
+  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
     have h0 : 8 + k ≠ 0 := by omega
     have h1 : 8 + k ≠ 1 := by omega
@@ -441,8 +457,8 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
     have h5 : 8 + k ≠ 5 := by omega
     have h6 : 8 + k ≠ 6 := by omega
     have h7 : 8 + k ≠ 7 := by omega
-    simp [Hidden16.ofHidden, Hidden16.getNat, Hidden16.getCellNat, Int16Val.ofInt, Int16Val.toInt,
-      wrap16, Hidden.getNat, h0, h1, h2, h3, h4, h5, h6, h7]
+    simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat, h0, h1, h2, h3, h4,
+      h5, h6, h7]
 
 @[simp] theorem Hidden16.toHidden_ofHidden (hidden : Hidden) :
     (Hidden16.ofHidden hidden).toHidden =
@@ -574,31 +590,16 @@ private def hiddenSpecFromGetter (get : Nat → Int) : Hidden :=
 def hiddenDotAt (input : MathInput) (idx : Nat) : Int :=
   hiddenDotFromGetter input.getNat idx
 
-def hiddenDotAt8 (input : Input8) (idx : Nat) : Int :=
-  hiddenDotFromGetter input.getNat idx
-
 def hiddenPreAt (input : MathInput) (idx : Nat) : Int :=
-  hiddenPreFromGetter input.getNat idx
-
-def hiddenPreAt8 (input : Input8) (idx : Nat) : Int :=
   hiddenPreFromGetter input.getNat idx
 
 def hiddenPre (input : MathInput) (idx : Fin hiddenCount) : Int :=
   hiddenPreAt input idx.1
 
-def hiddenPre8 (input : Input8) (idx : Fin hiddenCount) : Int :=
-  hiddenPreAt8 input idx.1
-
 def hiddenSpecAt (input : MathInput) (idx : Nat) : Int :=
   hiddenSpecAtFromGetter input.getNat idx
 
-def hiddenSpecAt8 (input : Input8) (idx : Nat) : Int :=
-  hiddenSpecAtFromGetter input.getNat idx
-
 def hiddenSpec (input : MathInput) : Hidden :=
-  hiddenSpecFromGetter input.getNat
-
-def hiddenSpec8 (input : Input8) : Hidden :=
   hiddenSpecFromGetter input.getNat
 
 @[simp] theorem hiddenSpec_eq_fields (input : MathInput) :
@@ -614,31 +615,7 @@ def hiddenSpec8 (input : Input8) : Hidden :=
       } := by
   rfl
 
-@[simp] theorem hiddenSpec8_eq_fields (input : Input8) :
-    hiddenSpec8 input =
-      { h0 := hiddenSpecAt8 input 0
-      , h1 := hiddenSpecAt8 input 1
-      , h2 := hiddenSpecAt8 input 2
-      , h3 := hiddenSpecAt8 input 3
-      , h4 := hiddenSpecAt8 input 4
-      , h5 := hiddenSpecAt8 input 5
-      , h6 := hiddenSpecAt8 input 6
-      , h7 := hiddenSpecAt8 input 7
-      } := by
-  rfl
-
 def outputScoreSpecFromHidden (hidden : Hidden) : Int :=
-  w2At 0 * hidden.h0 +
-  w2At 1 * hidden.h1 +
-  w2At 2 * hidden.h2 +
-  w2At 3 * hidden.h3 +
-  w2At 4 * hidden.h4 +
-  w2At 5 * hidden.h5 +
-  w2At 6 * hidden.h6 +
-  w2At 7 * hidden.h7 +
-  b2
-
-def outputScoreSpecFromHidden16 (hidden : Hidden16) : Int :=
   w2At 0 * hidden.h0 +
   w2At 1 * hidden.h1 +
   w2At 2 * hidden.h2 +
@@ -652,67 +629,44 @@ def outputScoreSpecFromHidden16 (hidden : Hidden16) : Int :=
 def outputScoreSpec (input : MathInput) : Int :=
   outputScoreSpecFromHidden (hiddenSpec input)
 
-def outputScoreSpec8 (input : Input8) : Int :=
-  outputScoreSpecFromHidden (hiddenSpec8 input)
-
 def mlpSpec (input : MathInput) : Bool :=
   outputScoreSpec input > 0
 
-@[simp] theorem toMathInput_getNat (input : Input8) (idx : Nat) :
-    (toMathInput input).getNat idx = input.getNat idx := by
-  cases idx <;> rfl
-
-@[simp] theorem hiddenDotAt8_eq_hiddenDotAt_toMathInput (input : Input8) (idx : Nat) :
-    hiddenDotAt8 input idx = hiddenDotAt (toMathInput input) idx := by
-  have hget : (toMathInput input).getNat = input.getNat := by
-    funext i
-    exact toMathInput_getNat input i
-  simp [hiddenDotAt, hiddenDotAt8, hget]
-
-@[simp] theorem hiddenPreAt8_eq_hiddenPreAt_toMathInput (input : Input8) (idx : Nat) :
-    hiddenPreAt8 input idx = hiddenPreAt (toMathInput input) idx := by
-  have hget : (toMathInput input).getNat = input.getNat := by
-    funext i
-    exact toMathInput_getNat input i
-  simp [hiddenPreAt, hiddenPreAt8, hget]
-
-@[simp] theorem hiddenSpecAt8_eq_hiddenSpecAt_toMathInput (input : Input8) (idx : Nat) :
-    hiddenSpecAt8 input idx = hiddenSpecAt (toMathInput input) idx := by
-  have hget : (toMathInput input).getNat = input.getNat := by
-    funext i
-    exact toMathInput_getNat input i
-  simp [hiddenSpecAt, hiddenSpecAt8, hget]
-
-@[simp] theorem hiddenSpec8_eq_hiddenSpec_toMathInput (input : Input8) :
-    hiddenSpec8 input = hiddenSpec (toMathInput input) := by
-  cases input <;>
-    simp [hiddenSpec, hiddenSpec8, hiddenSpecFromGetter, hiddenSpecAtFromGetter,
-      hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat, Input8.getNat]
-
-@[simp] theorem outputScoreSpec8_eq_outputScoreSpec_toMathInput (input : Input8) :
-    outputScoreSpec8 input = outputScoreSpec (toMathInput input) := by
-  simp [outputScoreSpec8, outputScoreSpec]
+theorem toMathInput_getNat (input : Input8) (idx : Nat) :
+    (toMathInput input).getNat idx = (input.getInt8Nat idx).toInt := by
+  cases idx with
+  | zero => rfl
+  | succ idx =>
+      cases idx with
+      | zero => rfl
+      | succ idx =>
+          cases idx with
+          | zero => rfl
+          | succ idx =>
+              cases idx with
+              | zero => rfl
+              | succ idx => rfl
 
 theorem hiddenSpecAt8_0_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 0 ∧ hiddenSpecAt8 input 0 ≤ 0 := by
-  simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter, relu,
-    Input8.getNat, w1At, b1At]
+    0 ≤ hiddenSpecAt (toMathInput input) 0 ∧ hiddenSpecAt (toMathInput input) 0 ≤ 0 := by
+  simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter, relu,
+    toMathInput, Input.getNat, w1At, b1At]
 
 theorem hiddenSpecAt8_1_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 1 ∧ hiddenSpecAt8 input 1 ≤ 128 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 1 ∧ hiddenSpecAt (toMathInput input) 1 ≤ 128 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       by_cases h : 0 < x3.toInt
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_2_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 2 ∧ hiddenSpecAt8 input 2 ≤ 637 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 2 ∧ hiddenSpecAt (toMathInput input) 2 ≤ 637 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -724,40 +678,40 @@ theorem hiddenSpecAt8_2_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       by_cases h : 2 * x0.toInt + x1.toInt + x2.toInt + -x3.toInt + 1 < 0
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_3_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 3 ∧ hiddenSpecAt8 input 3 ≤ 129 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 3 ∧ hiddenSpecAt (toMathInput input) 3 ≤ 129 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       by_cases h : -x3.toInt + 1 < 0
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_4_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 4 ∧ hiddenSpecAt8 input 4 ≤ 128 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 4 ∧ hiddenSpecAt (toMathInput input) 4 ≤ 128 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
       have hx0hi : x0.toInt < 2 ^ 7 := x0.toInt_lt
       by_cases h : 0 < x0.toInt
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_5_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 5 ∧ hiddenSpecAt8 input 5 ≤ 512 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 5 ∧ hiddenSpecAt (toMathInput input) 5 ≤ 512 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -769,14 +723,14 @@ theorem hiddenSpecAt8_5_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       by_cases h : -x0.toInt + x1.toInt + -x2.toInt + x3.toInt + 2 < 0
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_6_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 6 ∧ hiddenSpecAt8 input 6 ≤ 384 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 6 ∧ hiddenSpecAt (toMathInput input) 6 ≤ 384 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx1lo : -2 ^ 7 ≤ x1.toInt := x1.le_toInt
@@ -786,14 +740,14 @@ theorem hiddenSpecAt8_6_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       by_cases h : -x1.toInt + x2.toInt + -x3.toInt + 1 < 0
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 theorem hiddenSpecAt8_7_bounds (input : Input8) :
-    0 ≤ hiddenSpecAt8 input 7 ∧ hiddenSpecAt8 input 7 ≤ 380 := by
+    0 ≤ hiddenSpecAt (toMathInput input) 7 ∧ hiddenSpecAt (toMathInput input) 7 ≤ 380 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -801,27 +755,29 @@ theorem hiddenSpecAt8_7_bounds (input : Input8) :
       have hx1lo : -2 ^ 7 ≤ x1.toInt := x1.le_toInt
       have hx1hi : x1.toInt < 2 ^ 7 := x1.toInt_lt
       by_cases h : x0.toInt + 2 * x1.toInt + -1 < 0
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
-      · simp [hiddenSpecAt8, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
-          relu, Input8.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
+      · simp [hiddenSpecAt, hiddenSpecAtFromGetter, hiddenPreFromGetter, hiddenDotFromGetter,
+          relu, toMathInput, Input.getNat, w1At, b1At, h]
         omega
 
 @[simp] theorem wrap32_hiddenPreAt8_0 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 0) = hiddenPreAt8 input 0 := by
-  simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At, wrap32]
+    wrap32 (hiddenPreAt (toMathInput input) 0) = hiddenPreAt (toMathInput input) 0 := by
+  simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat, w1At,
+    b1At, wrap32]
 
 @[simp] theorem wrap32_hiddenPreAt8_1 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 1) = hiddenPreAt8 input 1 := by
+    wrap32 (hiddenPreAt (toMathInput input) 1) = hiddenPreAt (toMathInput input) 1 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_2 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 2) = hiddenPreAt8 input 2 := by
+    wrap32 (hiddenPreAt (toMathInput input) 2) = hiddenPreAt (toMathInput input) 2 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -833,28 +789,31 @@ theorem hiddenSpecAt8_7_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_3 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 3) = hiddenPreAt8 input 3 := by
+    wrap32 (hiddenPreAt (toMathInput input) 3) = hiddenPreAt (toMathInput input) 3 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_4 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 4) = hiddenPreAt8 input 4 := by
+    wrap32 (hiddenPreAt (toMathInput input) 4) = hiddenPreAt (toMathInput input) 4 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
       have hx0hi : x0.toInt < 2 ^ 7 := x0.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_5 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 5) = hiddenPreAt8 input 5 := by
+    wrap32 (hiddenPreAt (toMathInput input) 5) = hiddenPreAt (toMathInput input) 5 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -866,10 +825,11 @@ theorem hiddenSpecAt8_7_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_6 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 6) = hiddenPreAt8 input 6 := by
+    wrap32 (hiddenPreAt (toMathInput input) 6) = hiddenPreAt (toMathInput input) 6 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx1lo : -2 ^ 7 ≤ x1.toInt := x1.le_toInt
@@ -879,10 +839,11 @@ theorem hiddenSpecAt8_7_bounds (input : Input8) :
       have hx3lo : -2 ^ 7 ≤ x3.toInt := x3.le_toInt
       have hx3hi : x3.toInt < 2 ^ 7 := x3.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap32_hiddenPreAt8_7 (input : Input8) :
-    wrap32 (hiddenPreAt8 input 7) = hiddenPreAt8 input 7 := by
+    wrap32 (hiddenPreAt (toMathInput input) 7) = hiddenPreAt (toMathInput input) 7 := by
   cases input with
   | mk x0 x1 x2 x3 =>
       have hx0lo : -2 ^ 7 ≤ x0.toInt := x0.le_toInt
@@ -890,93 +851,74 @@ theorem hiddenSpecAt8_7_bounds (input : Input8) :
       have hx1lo : -2 ^ 7 ≤ x1.toInt := x1.le_toInt
       have hx1hi : x1.toInt < 2 ^ 7 := x1.toInt_lt
       apply wrap32_eq_self_of_bounds <;>
-        simp [hiddenPreAt8, hiddenPreFromGetter, hiddenDotFromGetter, Input8.getNat, w1At, b1At] <;> omega
+        simp [hiddenPreAt, hiddenPreFromGetter, hiddenDotFromGetter, toMathInput, Input.getNat,
+          w1At, b1At] <;> omega
 
 @[simp] theorem wrap16_hiddenSpecAt8_0 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 0) = hiddenSpecAt8 input 0 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 0) = hiddenSpecAt (toMathInput input) 0 := by
   have h := hiddenSpecAt8_0_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_1 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 1) = hiddenSpecAt8 input 1 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 1) = hiddenSpecAt (toMathInput input) 1 := by
   have h := hiddenSpecAt8_1_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_2 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 2) = hiddenSpecAt8 input 2 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 2) = hiddenSpecAt (toMathInput input) 2 := by
   have h := hiddenSpecAt8_2_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_3 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 3) = hiddenSpecAt8 input 3 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 3) = hiddenSpecAt (toMathInput input) 3 := by
   have h := hiddenSpecAt8_3_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_4 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 4) = hiddenSpecAt8 input 4 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 4) = hiddenSpecAt (toMathInput input) 4 := by
   have h := hiddenSpecAt8_4_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_5 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 5) = hiddenSpecAt8 input 5 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 5) = hiddenSpecAt (toMathInput input) 5 := by
   have h := hiddenSpecAt8_5_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_6 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 6) = hiddenSpecAt8 input 6 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 6) = hiddenSpecAt (toMathInput input) 6 := by
   have h := hiddenSpecAt8_6_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 @[simp] theorem wrap16_hiddenSpecAt8_7 (input : Input8) :
-    wrap16 (hiddenSpecAt8 input 7) = hiddenSpecAt8 input 7 := by
+    wrap16 (hiddenSpecAt (toMathInput input) 7) = hiddenSpecAt (toMathInput input) 7 := by
   have h := hiddenSpecAt8_7_bounds input
   exact wrap16_eq_self_of_bounds h.1 (by omega)
 
 theorem outputScoreSpec8_bounds (input : Input8) :
-    -1021 ≤ outputScoreSpec8 input ∧ outputScoreSpec8 input ≤ 1020 := by
+    -1021 ≤ outputScoreSpec (toMathInput input) ∧ outputScoreSpec (toMathInput input) ≤ 1020 := by
   have h2 := hiddenSpecAt8_2_bounds input
   have h4 := hiddenSpecAt8_4_bounds input
   have h5 := hiddenSpecAt8_5_bounds input
   have h6 := hiddenSpecAt8_6_bounds input
   have h7 := hiddenSpecAt8_7_bounds input
   have h :
-      -1021 ≤ hiddenSpecAt8 input 2 - hiddenSpecAt8 input 4 - hiddenSpecAt8 input 5 +
-        hiddenSpecAt8 input 6 - hiddenSpecAt8 input 7 - 1 ∧
-      hiddenSpecAt8 input 2 - hiddenSpecAt8 input 4 - hiddenSpecAt8 input 5 +
-        hiddenSpecAt8 input 6 - hiddenSpecAt8 input 7 - 1 ≤ 1020 := by
+      -1021 ≤ hiddenSpecAt (toMathInput input) 2 - hiddenSpecAt (toMathInput input) 4 -
+        hiddenSpecAt (toMathInput input) 5 + hiddenSpecAt (toMathInput input) 6 -
+        hiddenSpecAt (toMathInput input) 7 - 1 ∧
+      hiddenSpecAt (toMathInput input) 2 - hiddenSpecAt (toMathInput input) 4 -
+        hiddenSpecAt (toMathInput input) 5 + hiddenSpecAt (toMathInput input) 6 -
+        hiddenSpecAt (toMathInput input) 7 - 1 ≤ 1020 := by
     omega
-  simpa [outputScoreSpec8, outputScoreSpecFromHidden, hiddenSpec8, hiddenSpecFromGetter,
-    hiddenSpecAt8, hiddenSpecAtFromGetter, w2At, b2] using h
+  simpa [outputScoreSpec, outputScoreSpecFromHidden, hiddenSpec, hiddenSpecFromGetter,
+    hiddenSpecAt, hiddenSpecAtFromGetter, toMathInput, Input.getNat, w2At, b2] using h
 
 @[simp] theorem wrap32_outputScoreSpec8 (input : Input8) :
-    wrap32 (outputScoreSpec8 input) = outputScoreSpec8 input := by
+    wrap32 (outputScoreSpec (toMathInput input)) = outputScoreSpec (toMathInput input) := by
   have h := outputScoreSpec8_bounds input
   exact wrap32_eq_self_of_bounds (by omega) (by omega)
 
-@[simp] theorem outputScoreSpecFromHidden16_ofHidden_hiddenSpec8 (input : Input8) :
-    outputScoreSpecFromHidden16 (Hidden16.ofHidden (hiddenSpec8 input)) = outputScoreSpec8 input := by
-  have h2 :
-      wrap16 (relu (hiddenPreFromGetter input.getNat 2)) =
-        relu (hiddenPreFromGetter input.getNat 2) := by
-    simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_2 input
-  have h4 :
-      wrap16 (relu (hiddenPreFromGetter input.getNat 4)) =
-        relu (hiddenPreFromGetter input.getNat 4) := by
-    simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_4 input
-  have h5 :
-      wrap16 (relu (hiddenPreFromGetter input.getNat 5)) =
-        relu (hiddenPreFromGetter input.getNat 5) := by
-    simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_5 input
-  have h6 :
-      wrap16 (relu (hiddenPreFromGetter input.getNat 6)) =
-        relu (hiddenPreFromGetter input.getNat 6) := by
-    simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_6 input
-  have h7 :
-      wrap16 (relu (hiddenPreFromGetter input.getNat 7)) =
-        relu (hiddenPreFromGetter input.getNat 7) := by
-    simpa [hiddenSpecAt8, hiddenSpecAtFromGetter] using wrap16_hiddenSpecAt8_7 input
-  simp [outputScoreSpecFromHidden16, outputScoreSpec8, outputScoreSpecFromHidden, Hidden16.ofHidden,
-    Int16Val.ofInt, Int16Val.toInt, hiddenSpec8, hiddenSpecFromGetter, hiddenSpecAtFromGetter,
-    w2At, b2, h2, h4, h5, h6, h7]
+@[simp] theorem outputScoreSpecFromHidden_hiddenSpec_eq_outputScoreSpec (input : Input8) :
+    outputScoreSpecFromHidden (hiddenSpec (toMathInput input)) = outputScoreSpec (toMathInput input) := by
+  rfl
 
 end TinyMLP
