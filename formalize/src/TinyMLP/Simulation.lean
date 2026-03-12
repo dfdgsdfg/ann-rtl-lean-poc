@@ -114,14 +114,14 @@ private def macHiddenEntry (input : Input8) (hidden : Hidden16) (j : Nat) : Stat
     hiddenIdx := j, inputIdx := 0, phase := .macHidden, output := false }
 
 private def hiddenMacAcc (input : Input8) (j : Nat) : Acc32 :=
-  Acc32.ofInt (hiddenDotAt8 input j)
+  hiddenMacAccAt input j
 
 private def biasHiddenEntry (input : Input8) (hidden : Hidden16) (j : Nat) : State :=
   { regs := input, hidden := hidden, accumulator := hiddenMacAcc input j,
     hiddenIdx := j, inputIdx := inputCount, phase := .biasHidden, output := false }
 
 private def hiddenPreAcc (input : Input8) (j : Nat) : Acc32 :=
-  Acc32.ofInt (hiddenPreAt8 input j)
+  hiddenPreFixedAt input j
 
 private def actHiddenEntry (input : Input8) (hidden : Hidden16) (j : Nat) : State :=
   { regs := input, hidden := hidden, accumulator := hiddenPreAcc input j,
@@ -131,14 +131,8 @@ private def nextHiddenEntry (input : Input8) (hidden : Hidden16) (j : Nat) : Sta
   { regs := input, hidden := hidden, accumulator := Acc32.zero,
     hiddenIdx := j, inputIdx := 0, phase := .nextHidden, output := false }
 
-private def macOutputSum (hidden : Hidden16) : Int :=
-  hidden.getNat 0 * w2At 0 + hidden.getNat 1 * w2At 1 +
-  hidden.getNat 2 * w2At 2 + hidden.getNat 3 * w2At 3 +
-  hidden.getNat 4 * w2At 4 + hidden.getNat 5 * w2At 5 +
-  hidden.getNat 6 * w2At 6 + hidden.getNat 7 * w2At 7
-
 private def macOutputAcc (hidden : Hidden16) : Acc32 :=
-  Acc32.ofInt (macOutputSum hidden)
+  outputMacAccFromHidden hidden
 
 private def macOutputEntry (input : Input8) (hidden : Hidden16) : State :=
   { regs := input, hidden := hidden, accumulator := Acc32.zero,
@@ -149,7 +143,7 @@ private def biasOutputEntry (input : Input8) (hidden : Hidden16) (acc : Acc32) :
     hiddenIdx := 0, inputIdx := hiddenCount, phase := .biasOutput, output := false }
 
 private def finalOutputAcc (hidden : Hidden16) : Acc32 :=
-  Acc32.ofInt (outputScoreSpecFromHidden16 hidden)
+  outputScoreFixedFromHidden hidden
 
 private def doneEntry (input : Input8) (hidden : Hidden16) (acc : Acc32) : State :=
   { regs := input, hidden := hidden, accumulator := acc,
@@ -158,109 +152,30 @@ private def doneEntry (input : Input8) (hidden : Hidden16) (acc : Acc32) : State
 
 @[simp] private theorem hiddenMacAcc_toInt (input : Input8) (j : Nat) :
     (hiddenMacAcc input j).toInt = wrap32 (hiddenDotAt8 input j) := by
-  rfl
+  simpa [hiddenMacAcc] using hiddenMacAccAt_toInt input j
 
 @[simp] private theorem hiddenPreAcc_toInt (input : Input8) (j : Nat) :
     (hiddenPreAcc input j).toInt = wrap32 (hiddenPreAt8 input j) := by
-  rfl
-
-@[simp] private theorem macOutputAcc_toInt (hidden : Hidden16) :
-    (macOutputAcc hidden).toInt = wrap32 (macOutputSum hidden) := by
-  rfl
+  simpa [hiddenPreAcc] using hiddenPreFixedAt_toInt input j
 
 @[simp] private theorem finalOutputAcc_toInt (hidden : Hidden16) :
     (finalOutputAcc hidden).toInt = wrap32 (outputScoreSpecFromHidden16 hidden) := by
-  rfl
+  simpa [finalOutputAcc] using outputScoreFixedFromHidden_toInt hidden
 
 -- MAC inner loop: 5 steps from macHidden entry to biasHidden
 theorem macHidden_5steps (input : Input8) (hidden : Hidden16) (j : Nat) :
     run 5 (macHiddenEntry input hidden j) = biasHiddenEntry input hidden j := by
-  cases input with
-  | mk x0 x1 x2 x3 =>
-      let target : State :=
-        { regs := { x0 := x0, x1 := x1, x2 := x2, x3 := x3 }, hidden := hidden,
-          accumulator := Acc32.ofInt (w1At j 0 * x0.toInt + w1At j 1 * x1.toInt +
-            w1At j 2 * x2.toInt + w1At j 3 * x3.toInt),
-          hiddenIdx := j, inputIdx := inputCount,
-          phase := .biasHidden, output := false }
-      have hrun :
-          run 5 (macHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j) = target := by
-        simp [target, macHiddenEntry, run, step, inputCount, acc32, hiddenMacTermAt, Input8.getNat,
-          Acc32.zero, Acc32.ofInt]
-      change
-        run 5 (macHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j) =
-          biasHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j
-      exact hrun.trans (by rfl)
-
-private theorem hiddenSet_from_wrap32_pre (input : Input8) (hidden : Hidden16) (j : Nat)
-    (hj : j < hiddenCount) (hpre : wrap32 (hiddenPreAt8 input j) = hiddenPreAt8 input j) :
-    hidden.setNat j (wrap16 (if wrap32 (hiddenPreAt8 input j) < 0 then 0 else wrap32 (hiddenPreAt8 input j))) =
-      hidden.setNat j (hiddenSpecAt8 input j) := by
-  have hspec :
-      wrap16 (if wrap32 (hiddenPreAt8 input j) < 0 then 0 else wrap32 (hiddenPreAt8 input j)) =
-        hiddenSpecAt8 input j := by
-    rw [hpre]
-    have hcases :
-        j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by
-      unfold hiddenCount at hj
-      omega
-    rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_0 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_1 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_2 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_3 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_4 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_5 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_6 input
-    · simpa [hiddenSpecAt8, relu] using wrap16_hiddenSpecAt8_7 input
-  exact congrArg (hidden.setNat j) hspec
+  simp [macHiddenEntry, biasHiddenEntry, run, step, inputCount, hiddenMacAcc, hiddenMacAccAt,
+    acc32, Acc32.zero]
 
 private theorem step_biasHidden_observe (input : Input8) (hidden : Hidden16) (j : Nat) :
     step (biasHiddenEntry input hidden j) = actHiddenEntry input hidden j := by
-  cases input with
-  | mk x0 x1 x2 x3 =>
-      let mid : State :=
-        { regs := { x0 := x0, x1 := x1, x2 := x2, x3 := x3 }, hidden := hidden,
-          accumulator := Acc32.ofInt (hiddenDotAt8 { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } j + b1At j),
-          hiddenIdx := j, inputIdx := inputCount,
-          phase := .actHidden, output := false }
-      let target : State :=
-        { regs := { x0 := x0, x1 := x1, x2 := x2, x3 := x3 }, hidden := hidden,
-          accumulator := Acc32.ofInt (w1At j 0 * x0.toInt + w1At j 1 * x1.toInt +
-            w1At j 2 * x2.toInt + w1At j 3 * x3.toInt + b1At j),
-          hiddenIdx := j, inputIdx := inputCount,
-          phase := .actHidden, output := false }
-      have hstep :
-          step (biasHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j) = mid := by
-        simp [mid, biasHiddenEntry, step, hiddenMacAcc, inputCount, acc32, bias1Term, Acc32.ofInt]
-      have hdot :
-          hiddenDotAt8 { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } j =
-            w1At j 0 * x0.toInt + w1At j 1 * x1.toInt +
-            w1At j 2 * x2.toInt + w1At j 3 * x3.toInt := by
-        rfl
-      have hdotMath :
-          hiddenDotAt (toMathInput { x0 := x0, x1 := x1, x2 := x2, x3 := x3 }) j =
-            w1At j 0 * x0.toInt + w1At j 1 * x1.toInt +
-            w1At j 2 * x2.toInt + w1At j 3 * x3.toInt := by
-        rfl
-      have hmid : mid = target := by
-        simp [mid, target, hdotMath]
-      change
-        step (biasHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j) =
-          actHiddenEntry { x0 := x0, x1 := x1, x2 := x2, x3 := x3 } hidden j
-      exact hstep.trans (hmid.trans (by rfl))
+  simp [biasHiddenEntry, actHiddenEntry, step, hiddenMacAcc, hiddenPreAcc, hiddenPreFixedAt]
 
-private theorem step_actHidden_observe (input : Input8) (hidden : Hidden16) (j : Nat)
-    (hj : j < hiddenCount) (hpre : wrap32 (hiddenPreAt8 input j) = hiddenPreAt8 input j) :
+private theorem step_actHidden_observe (input : Input8) (hidden : Hidden16) (j : Nat) :
     step (actHiddenEntry input hidden j) =
-      nextHiddenEntry input (hidden.setNat j (hiddenSpecAt8 input j)) j := by
-  simpa only [actHiddenEntry, nextHiddenEntry, step, relu16, hiddenPreAcc, Acc32.zero,
-    Acc32.toInt_ofInt, Int16Val.ofInt, Int16Val.toInt, relu, wrap16_wrap16, hpre] using
-    congrArg
-      (fun h : Hidden16 =>
-        ({ regs := input, hidden := h, accumulator := Acc32.zero,
-           hiddenIdx := j, inputIdx := 0, phase := .nextHidden, output := false } : State))
-      (hiddenSet_from_wrap32_pre input hidden j hj hpre)
+      nextHiddenEntry input (hidden.setCellNat j (hiddenFixedAt input j)) j := by
+  simp [actHiddenEntry, nextHiddenEntry, step, hiddenPreAcc, hiddenFixedAt]
 
 private theorem step_nextHidden_continue (input : Input8) (hidden : Hidden16) (j : Nat)
     (hj : j + 1 < hiddenCount) :
@@ -275,45 +190,37 @@ private theorem step_nextHidden_finish (input : Input8) (hidden : Hidden16) :
 theorem bias_act_next_3steps (input : Input8) (hidden : Hidden16) (j : Nat)
     (hj : j + 1 < hiddenCount) :
     run 3 (biasHiddenEntry input hidden j) =
-    macHiddenEntry input (hidden.setNat j (hiddenSpecAt8 input j)) (j + 1) := by
+    macHiddenEntry input (hidden.setCellNat j (hiddenFixedAt input j)) (j + 1) := by
   have hjcases : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 := by
     unfold hiddenCount at hj
     omega
   rcases hjcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 0 (by decide)
-      (wrap32_hiddenPreAt8_0 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 0 (hiddenSpecAt8 input 0)) 0 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 1 (by decide)
-      (wrap32_hiddenPreAt8_1 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 1 (hiddenSpecAt8 input 1)) 1 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 2 (by decide)
-      (wrap32_hiddenPreAt8_2 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 2 (hiddenSpecAt8 input 2)) 2 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 3 (by decide)
-      (wrap32_hiddenPreAt8_3 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 3 (hiddenSpecAt8 input 3)) 3 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 4 (by decide)
-      (wrap32_hiddenPreAt8_4 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 4 (hiddenSpecAt8 input 4)) 4 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 5 (by decide)
-      (wrap32_hiddenPreAt8_5 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 5 (hiddenSpecAt8 input 5)) 5 hj
-  · simp [run, step_biasHidden_observe, step_actHidden_observe input hidden 6 (by decide)
-      (wrap32_hiddenPreAt8_6 input)]
-    simpa using step_nextHidden_continue input (hidden.setNat 6 (hiddenSpecAt8 input 6)) 6 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 0 (hiddenFixedAt input 0)) 0 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 1 (hiddenFixedAt input 1)) 1 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 2 (hiddenFixedAt input 2)) 2 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 3 (hiddenFixedAt input 3)) 3 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 4 (hiddenFixedAt input 4)) 4 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 5 (hiddenFixedAt input 5)) 5 hj
+  · simp [run, step_biasHidden_observe, step_actHidden_observe]
+    simpa using step_nextHidden_continue input (hidden.setCellNat 6 (hiddenFixedAt input 6)) 6 hj
 
 -- Bias + Act + Next for j = 7: 3 steps, transitions to macOutput
 theorem bias_act_next_last_3steps (input : Input8) (hidden : Hidden16) :
     run 3 (biasHiddenEntry input hidden 7) =
-    macOutputEntry input (hidden.setNat 7 (hiddenSpecAt8 input 7)) := by
-  simp [run, step_biasHidden_observe, step_nextHidden_finish,
-    step_actHidden_observe input hidden 7 (by decide) (wrap32_hiddenPreAt8_7 input)]
+    macOutputEntry input (hidden.setCellNat 7 (hiddenFixedAt input 7)) := by
+  simp [run, step_biasHidden_observe, step_nextHidden_finish, step_actHidden_observe]
 
 -- One full neuron (8 cycles), j < 7
 theorem one_hidden_neuron_8steps (input : Input8) (hidden : Hidden16) (j : Nat)
     (hj : j + 1 < hiddenCount) :
     run 8 (macHiddenEntry input hidden j) =
-    macHiddenEntry input (hidden.setNat j (hiddenSpecAt8 input j)) (j + 1) := by
+    macHiddenEntry input (hidden.setCellNat j (hiddenFixedAt input j)) (j + 1) := by
   rw [show (8 : Nat) = 5 + 3 from rfl, run_add]
   rw [macHidden_5steps]
   exact bias_act_next_3steps input hidden j hj
@@ -321,25 +228,25 @@ theorem one_hidden_neuron_8steps (input : Input8) (hidden : Hidden16) (j : Nat)
 -- Last neuron (8 cycles), j = 7
 theorem last_hidden_neuron_8steps (input : Input8) (hidden : Hidden16) :
     run 8 (macHiddenEntry input hidden 7) =
-    { regs := input, hidden := hidden.setNat 7 (hiddenSpecAt8 input 7),
+    { regs := input, hidden := hidden.setCellNat 7 (hiddenFixedAt input 7),
       accumulator := Acc32.zero, hiddenIdx := 0, inputIdx := 0,
       phase := .macOutput, output := false } := by
   rw [show (8 : Nat) = 5 + 3 from rfl, run_add]
   rw [macHidden_5steps]
   exact bias_act_next_last_3steps input hidden
 
--- Chain of setNat builds hiddenSpec
+-- Chain of setCellNat builds hiddenFixed
 theorem progressive_hidden_build (input : Input8) :
-    ((((((((Hidden16.zero).setNat 0 (hiddenSpecAt8 input 0)).setNat
-      1 (hiddenSpecAt8 input 1)).setNat
-      2 (hiddenSpecAt8 input 2)).setNat
-      3 (hiddenSpecAt8 input 3)).setNat
-      4 (hiddenSpecAt8 input 4)).setNat
-      5 (hiddenSpecAt8 input 5)).setNat
-      6 (hiddenSpecAt8 input 6)).setNat
-      7 (hiddenSpecAt8 input 7)
-    = Hidden16.ofHidden (hiddenSpec8 input) := by
-  cases input <;> rfl
+    ((((((((Hidden16.zero).setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+      1 (hiddenFixedAt input 1)).setCellNat
+      2 (hiddenFixedAt input 2)).setCellNat
+      3 (hiddenFixedAt input 3)).setCellNat
+      4 (hiddenFixedAt input 4)).setCellNat
+      5 (hiddenFixedAt input 5)).setCellNat
+      6 (hiddenFixedAt input 6)).setCellNat
+      7 (hiddenFixedAt input 7)
+    = hiddenFixed input := by
+  rfl
 
 -- Full hidden layer: 64 cycles
 -- Compose 8 neuron lemmas via run_add
@@ -347,98 +254,86 @@ theorem progressive_hidden_build (input : Input8) :
 private theorem hidden_neurons_0_to_1 (input : Input8) :
     run 8 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      (Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)) 1 :=
+      (Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)) 1 :=
   one_hidden_neuron_8steps input Hidden16.zero 0 (by decide)
 
 private theorem hidden_neurons_0_to_2 (input : Input8) :
     run 16 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      ((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)) 2 := by
+      ((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)) 2 := by
   rw [show (16 : Nat) = 8 + 8 from rfl, run_add, hidden_neurons_0_to_1]
   exact one_hidden_neuron_8steps input _ 1 (by decide)
 
 private theorem hidden_neurons_0_to_3 (input : Input8) :
     run 24 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      (((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)).setNat
-        2 (hiddenSpecAt8 input 2)) 3 := by
+      (((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)).setCellNat
+        2 (hiddenFixedAt input 2)) 3 := by
   rw [show (24 : Nat) = 16 + 8 from rfl, run_add, hidden_neurons_0_to_2]
   exact one_hidden_neuron_8steps input _ 2 (by decide)
 
 private theorem hidden_neurons_0_to_4 (input : Input8) :
     run 32 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      ((((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)).setNat
-        2 (hiddenSpecAt8 input 2)).setNat
-        3 (hiddenSpecAt8 input 3)) 4 := by
+      ((((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)).setCellNat
+        2 (hiddenFixedAt input 2)).setCellNat
+        3 (hiddenFixedAt input 3)) 4 := by
   rw [show (32 : Nat) = 24 + 8 from rfl, run_add, hidden_neurons_0_to_3]
   exact one_hidden_neuron_8steps input _ 3 (by decide)
 
 private theorem hidden_neurons_0_to_5 (input : Input8) :
     run 40 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      (((((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)).setNat
-        2 (hiddenSpecAt8 input 2)).setNat
-        3 (hiddenSpecAt8 input 3)).setNat
-        4 (hiddenSpecAt8 input 4)) 5 := by
+      (((((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)).setCellNat
+        2 (hiddenFixedAt input 2)).setCellNat
+        3 (hiddenFixedAt input 3)).setCellNat
+        4 (hiddenFixedAt input 4)) 5 := by
   rw [show (40 : Nat) = 32 + 8 from rfl, run_add, hidden_neurons_0_to_4]
   exact one_hidden_neuron_8steps input _ 4 (by decide)
 
 private theorem hidden_neurons_0_to_6 (input : Input8) :
     run 48 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      ((((((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)).setNat
-        2 (hiddenSpecAt8 input 2)).setNat
-        3 (hiddenSpecAt8 input 3)).setNat
-        4 (hiddenSpecAt8 input 4)).setNat
-        5 (hiddenSpecAt8 input 5)) 6 := by
+      ((((((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)).setCellNat
+        2 (hiddenFixedAt input 2)).setCellNat
+        3 (hiddenFixedAt input 3)).setCellNat
+        4 (hiddenFixedAt input 4)).setCellNat
+        5 (hiddenFixedAt input 5)) 6 := by
   rw [show (48 : Nat) = 40 + 8 from rfl, run_add, hidden_neurons_0_to_5]
   exact one_hidden_neuron_8steps input _ 5 (by decide)
 
 private theorem hidden_neurons_0_to_7 (input : Input8) :
     run 56 (macHiddenEntry input Hidden16.zero 0) =
     macHiddenEntry input
-      (((((((Hidden16.zero.setNat 0 (hiddenSpecAt8 input 0)).setNat
-        1 (hiddenSpecAt8 input 1)).setNat
-        2 (hiddenSpecAt8 input 2)).setNat
-        3 (hiddenSpecAt8 input 3)).setNat
-        4 (hiddenSpecAt8 input 4)).setNat
-        5 (hiddenSpecAt8 input 5)).setNat
-        6 (hiddenSpecAt8 input 6)) 7 := by
+      (((((((Hidden16.zero.setCellNat 0 (hiddenFixedAt input 0)).setCellNat
+        1 (hiddenFixedAt input 1)).setCellNat
+        2 (hiddenFixedAt input 2)).setCellNat
+        3 (hiddenFixedAt input 3)).setCellNat
+        4 (hiddenFixedAt input 4)).setCellNat
+        5 (hiddenFixedAt input 5)).setCellNat
+        6 (hiddenFixedAt input 6)) 7 := by
   rw [show (56 : Nat) = 48 + 8 from rfl, run_add, hidden_neurons_0_to_6]
   exact one_hidden_neuron_8steps input _ 6 (by decide)
 
 theorem hidden_layer_64steps (input : Input8) :
     run 64 (macHiddenEntry input Hidden16.zero 0) =
-    macOutputEntry input (Hidden16.ofHidden (hiddenSpec8 input)) := by
+    macOutputEntry input (hiddenFixed input) := by
   rw [show (64 : Nat) = 56 + 8 from rfl, run_add, hidden_neurons_0_to_7]
   rw [last_hidden_neuron_8steps]
   rw [progressive_hidden_build]
   rfl
 
 -- Output MAC: 9 cycles (8 MAC iterations + 1 exit to biasOutput)
--- The accumulator naturally computes: hidden.hN * w2At N (note operand order)
 theorem macOutput_9steps (input : Input8) (hidden : Hidden16) :
     run 9 (macOutputEntry input hidden) =
     biasOutputEntry input hidden (macOutputAcc hidden) := by
-  simp [macOutputEntry, biasOutputEntry, run, step, hiddenCount, macOutputAcc, macOutputSum,
-    acc32, outputMacTermAt, Hidden16.getNat, Acc32.zero, Acc32.ofInt]
-
--- Connect the natural accumulation order to the spec.
-private theorem macOutput_acc_eq_spec (hidden : Hidden16) :
-    macOutputSum hidden + b2 =
-    outputScoreSpecFromHidden16 hidden := by
-  simp [macOutputSum, outputScoreSpecFromHidden16, Hidden16.getNat, Hidden16.getCellNat,
-    Int16Val.toInt, b2]
-  simp only [Int.mul_comm (w2At 0) hidden.h0, Int.mul_comm (w2At 1) hidden.h1,
-    Int.mul_comm (w2At 2) hidden.h2, Int.mul_comm (w2At 3) hidden.h3,
-    Int.mul_comm (w2At 4) hidden.h4, Int.mul_comm (w2At 5) hidden.h5,
-    Int.mul_comm (w2At 6) hidden.h6, Int.mul_comm (w2At 7) hidden.h7]
+  simp [macOutputEntry, biasOutputEntry, run, step, hiddenCount, macOutputAcc, outputMacAccFromHidden,
+    acc32, Acc32.zero]
 
 -- Final step: biasOutput → done (1 cycle)
 theorem biasOutput_1step (input : Input8) (hidden : Hidden16) (acc : Acc32) :
@@ -450,11 +345,9 @@ private theorem biasOutput_outputMac_1step (input : Input8) (hidden : Hidden16) 
     step (biasOutputEntry input hidden (macOutputAcc hidden)) =
     doneEntry input hidden (finalOutputAcc hidden) := by
   rw [biasOutput_1step]
-  have hacc : acc32 (macOutputAcc hidden) bias2Term = finalOutputAcc hidden := by
-    change ({ raw := Int32Val.ofInt (wrap32 (macOutputSum hidden) + wrap32 b2) } : Acc32) =
-      ({ raw := Int32Val.ofInt (outputScoreSpecFromHidden16 hidden) } : Acc32)
-    rw [Int32Val.ofInt_add_wrapped, macOutput_acc_eq_spec]
-  simpa [doneEntry] using congrArg (doneEntry input hidden) hacc
+  simpa [macOutputAcc, finalOutputAcc, outputScoreFixedFromHidden] using
+    (congrArg (doneEntry input hidden) rfl : doneEntry input hidden (acc32 (macOutputAcc hidden) bias2Term) =
+      doneEntry input hidden (finalOutputAcc hidden))
 
 -- Main correctness assembly
 theorem rtl_correct (input : Input8) :
@@ -465,13 +358,9 @@ theorem rtl_correct (input : Input8) :
   change (run 1 (run 9 (run 64 (macHiddenEntry input Hidden16.zero 0)))).output = mlpFixed input
   rw [hidden_layer_64steps]
   rw [macOutput_9steps]
-  change (step (biasOutputEntry input (Hidden16.ofHidden (hiddenSpec8 input))
-    (macOutputAcc (Hidden16.ofHidden (hiddenSpec8 input))))).output = mlpFixed input
+  change (step (biasOutputEntry input (hiddenFixed input) (macOutputAcc (hiddenFixed input)))).output =
+    mlpFixed input
   rw [biasOutput_outputMac_1step]
-  change
-    decide ((finalOutputAcc (Hidden16.ofHidden (hiddenSpec8 input))).toInt > 0) =
-      decide ((outputScoreFixed input).toInt > 0)
-  rw [finalOutputAcc_toInt, outputScoreSpecFromHidden16_ofHidden_hiddenSpec8, wrap32_outputScoreSpec8,
-    outputScoreFixed_eq_outputScoreSpec8]
+  simp [doneEntry, mlpFixed, finalOutputAcc, outputScoreFixed]
 
 end TinyMLP

@@ -59,7 +59,7 @@ def step (s : State) : State :=
           phase := .actHidden }
   | .actHidden =>
       { s with
-          hidden := s.hidden.setNat s.hiddenIdx (relu16 s.accumulator).toInt
+          hidden := s.hidden.setCellNat s.hiddenIdx (relu16 s.accumulator)
           accumulator := Acc32.zero
           inputIdx := 0
           phase := .nextHidden }

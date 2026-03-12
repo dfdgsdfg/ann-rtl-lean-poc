@@ -103,6 +103,24 @@ def Int24Val.toInt (x : Int24Val) : Int :=
 def Int32Val.toInt (x : Int32Val) : Int :=
   x.1
 
+theorem Int16Val.le_toInt (x : Int16Val) : -2 ^ 15 ≤ x.toInt :=
+  x.2.1
+
+theorem Int16Val.toInt_lt (x : Int16Val) : x.toInt < 2 ^ 15 :=
+  x.2.2
+
+theorem Int24Val.le_toInt (x : Int24Val) : -2 ^ 23 ≤ x.toInt :=
+  x.2.1
+
+theorem Int24Val.toInt_lt (x : Int24Val) : x.toInt < 2 ^ 23 :=
+  x.2.2
+
+theorem Int32Val.le_toInt (x : Int32Val) : -2 ^ 31 ≤ x.toInt :=
+  x.2.1
+
+theorem Int32Val.toInt_lt (x : Int32Val) : x.toInt < 2 ^ 31 :=
+  x.2.2
+
 @[simp] theorem Int16Val.toInt_ofInt (x : Int) :
     (Int16Val.ofInt x).toInt = wrap16 x := by
   rfl
@@ -117,6 +135,84 @@ def Int32Val.toInt (x : Int32Val) : Int :=
   change wrap32 (wrap32 x + wrap32 y) = wrap32 (x + y)
   rw [wrap32_add_wrap32]
   rw [Int.add_comm x (wrap32 y), wrap32_add_wrap32, Int.add_comm y x]
+
+theorem int8_mul_int8_bounds (lhs rhs : Int8) :
+    Int16Bounds (lhs.toInt * rhs.toInt) := by
+  have hxlo : -(2 ^ 7 : Int) ≤ lhs.toInt := lhs.le_toInt
+  have hxhi : lhs.toInt < 2 ^ 7 := lhs.toInt_lt
+  have hylo : -(2 ^ 7 : Int) ≤ rhs.toInt := rhs.le_toInt
+  have hyhi : rhs.toInt < 2 ^ 7 := rhs.toInt_lt
+  have hxle : lhs.toInt ≤ 2 ^ 7 - 1 := by omega
+  have hyle : rhs.toInt ≤ 2 ^ 7 - 1 := by omega
+  constructor
+  · by_cases hnonneg : 0 ≤ rhs.toInt
+    · have hmul : -(2 ^ 7 : Int) * rhs.toInt ≤ lhs.toInt * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_right hxlo hnonneg
+      have hbase : -(2 ^ 7 : Int) * (2 ^ 7 - 1 : Int) ≤ -(2 ^ 7 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_left (by omega) hyle
+      omega
+    · have hnonpos : rhs.toInt ≤ 0 := by omega
+      have hmul : (2 ^ 7 - 1 : Int) * rhs.toInt ≤ lhs.toInt * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_right hxle hnonpos
+      have hbase : (2 ^ 7 - 1 : Int) * (-(2 ^ 7 : Int)) ≤ (2 ^ 7 - 1 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_left hylo (by omega)
+      omega
+  · by_cases hnonneg : 0 ≤ rhs.toInt
+    · have hmul : lhs.toInt * rhs.toInt ≤ (2 ^ 7 - 1 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_right hxle hnonneg
+      have hbase : (2 ^ 7 - 1 : Int) * rhs.toInt ≤ (2 ^ 7 - 1 : Int) * (2 ^ 7 - 1 : Int) :=
+        Int.mul_le_mul_of_nonneg_left hyle (by omega)
+      omega
+    · have hnonpos : rhs.toInt ≤ 0 := by omega
+      have hmul : lhs.toInt * rhs.toInt ≤ -(2 ^ 7 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_right hxlo hnonpos
+      have hbase : -(2 ^ 7 : Int) * rhs.toInt ≤ -(2 ^ 7 : Int) * (-(2 ^ 7 : Int)) :=
+        Int.mul_le_mul_of_nonpos_left (by omega) hylo
+      omega
+
+theorem int16_mul_int8_bounds (lhs : Int16Val) (rhs : Int8) :
+    Int24Bounds (lhs.toInt * rhs.toInt) := by
+  have hxlo : -(2 ^ 15 : Int) ≤ lhs.toInt := lhs.le_toInt
+  have hxhi : lhs.toInt < 2 ^ 15 := lhs.toInt_lt
+  have hylo : -(2 ^ 7 : Int) ≤ rhs.toInt := rhs.le_toInt
+  have hyhi : rhs.toInt < 2 ^ 7 := rhs.toInt_lt
+  have hxle : lhs.toInt ≤ 2 ^ 15 - 1 := by omega
+  have hyle : rhs.toInt ≤ 2 ^ 7 - 1 := by omega
+  constructor
+  · by_cases hnonneg : 0 ≤ rhs.toInt
+    · have hmul : -(2 ^ 15 : Int) * rhs.toInt ≤ lhs.toInt * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_right hxlo hnonneg
+      have hbase : -(2 ^ 15 : Int) * (2 ^ 7 - 1 : Int) ≤ -(2 ^ 15 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_left (by omega) hyle
+      omega
+    · have hnonpos : rhs.toInt ≤ 0 := by omega
+      have hmul : (2 ^ 15 - 1 : Int) * rhs.toInt ≤ lhs.toInt * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_right hxle hnonpos
+      have hbase : (2 ^ 15 - 1 : Int) * (-(2 ^ 7 : Int)) ≤ (2 ^ 15 - 1 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_left hylo (by omega)
+      omega
+  · by_cases hnonneg : 0 ≤ rhs.toInt
+    · have hmul : lhs.toInt * rhs.toInt ≤ (2 ^ 15 - 1 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonneg_right hxle hnonneg
+      have hbase : (2 ^ 15 - 1 : Int) * rhs.toInt ≤ (2 ^ 15 - 1 : Int) * (2 ^ 7 - 1 : Int) :=
+        Int.mul_le_mul_of_nonneg_left hyle (by omega)
+      omega
+    · have hnonpos : rhs.toInt ≤ 0 := by omega
+      have hmul : lhs.toInt * rhs.toInt ≤ -(2 ^ 15 : Int) * rhs.toInt :=
+        Int.mul_le_mul_of_nonpos_right hxlo hnonpos
+      have hbase : -(2 ^ 15 : Int) * rhs.toInt ≤ -(2 ^ 15 : Int) * (-(2 ^ 7 : Int)) :=
+        Int.mul_le_mul_of_nonpos_left (by omega) hylo
+      omega
+
+theorem int16_to_int32_bounds (x : Int16Val) : Int32Bounds x.toInt := by
+  have hlo : -2 ^ 15 ≤ x.toInt := x.le_toInt
+  have hhi : x.toInt < 2 ^ 15 := x.toInt_lt
+  constructor <;> omega
+
+theorem int24_to_int32_bounds (x : Int24Val) : Int32Bounds x.toInt := by
+  have hlo : -2 ^ 23 ≤ x.toInt := x.le_toInt
+  have hhi : x.toInt < 2 ^ 23 := x.toInt_lt
+  constructor <;> omega
 
 structure Hidden16 where
   h0 : Int16Val
@@ -218,6 +314,25 @@ def Hidden16.getNat (hidden : Hidden16) : Nat → Int
 def Hidden16.get (hidden : Hidden16) (idx : Fin hiddenCount) : Int :=
   hidden.getNat idx.1
 
+@[simp] theorem Input8.getInt8Nat_toInt (input : Input8) (idx : Nat) :
+    (input.getInt8Nat idx).toInt = input.getNat idx := by
+  cases idx with
+  | zero => rfl
+  | succ idx =>
+      cases idx with
+      | zero => rfl
+      | succ idx =>
+          cases idx with
+          | zero => rfl
+          | succ idx =>
+              cases idx with
+              | zero => rfl
+              | succ idx => rfl
+
+@[simp] theorem Hidden16.getCellNat_toInt (hidden : Hidden16) (idx : Nat) :
+    (hidden.getCellNat idx).toInt = hidden.getNat idx := by
+  rfl
+
 def Hidden16.toIntAt (hidden : Hidden16) (idx : Nat) : Int :=
   hidden.getNat idx
 
@@ -233,17 +348,20 @@ def Hidden.setNat (hidden : Hidden) (idx : Nat) (value : Int) : Hidden :=
   | 7 => { hidden with h7 := value }
   | _ => hidden
 
-def Hidden16.setNat (hidden : Hidden16) (idx : Nat) (value : Int) : Hidden16 :=
+def Hidden16.setCellNat (hidden : Hidden16) (idx : Nat) (value : Int16Val) : Hidden16 :=
   match idx with
-  | 0 => { hidden with h0 := Int16Val.ofInt value }
-  | 1 => { hidden with h1 := Int16Val.ofInt value }
-  | 2 => { hidden with h2 := Int16Val.ofInt value }
-  | 3 => { hidden with h3 := Int16Val.ofInt value }
-  | 4 => { hidden with h4 := Int16Val.ofInt value }
-  | 5 => { hidden with h5 := Int16Val.ofInt value }
-  | 6 => { hidden with h6 := Int16Val.ofInt value }
-  | 7 => { hidden with h7 := Int16Val.ofInt value }
+  | 0 => { hidden with h0 := value }
+  | 1 => { hidden with h1 := value }
+  | 2 => { hidden with h2 := value }
+  | 3 => { hidden with h3 := value }
+  | 4 => { hidden with h4 := value }
+  | 5 => { hidden with h5 := value }
+  | 6 => { hidden with h6 := value }
+  | 7 => { hidden with h7 := value }
   | _ => hidden
+
+def Hidden16.setNat (hidden : Hidden16) (idx : Nat) (value : Int) : Hidden16 :=
+  hidden.setCellNat idx (Int16Val.ofInt value)
 
 def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
   { h0 := hidden.h0
