@@ -85,19 +85,13 @@ In this repository, that is the role of the `formalize` domain: connect mathemat
 If you only want the practical starting point, begin with the ANN wrapper:
 
 ```bash
-./scripts/ann.sh --help
-```
-
-Train the model and refresh the default downstream artifacts:
-
-```bash
-./scripts/ann.sh train
+make train
 ```
 
 Evaluate the currently selected quantized result:
 
 ```bash
-./scripts/ann.sh evaluate --artifact quantized
+make evaluate ARGS="--artifact quantized"
 ```
 
 Validate that the frozen contract is still consistent:
@@ -117,18 +111,18 @@ make sim
 Use this when you want to understand or refresh the current repository baseline:
 
 ```bash
-./scripts/ann.sh train
-./scripts/ann.sh evaluate --artifact quantized
-python3 -m contract.src.freeze --check
+make train
+make evaluate ARGS="--artifact quantized"
+make freeze-check
 make sim
 ```
 
 If you want to train into a separate run directory first:
 
 ```bash
-./scripts/ann.sh train --out-dir ann/results/tmp/run_001 --skip-export
-./scripts/ann.sh evaluate --run-dir ann/results/tmp/run_001 --artifact quantized
-./scripts/ann.sh export --run-dir ann/results/tmp/run_001
+make train ARGS="--out-dir ann/results/tmp/run_001 --skip-export"
+make evaluate ARGS="--run-dir ann/results/tmp/run_001 --artifact quantized"
+make export ARGS="--run-dir ann/results/tmp/run_001"
 ```
 
 ## What Gets Generated
@@ -210,27 +204,18 @@ What is still in progress:
 Available ANN commands:
 
 ```bash
-python3 -m ann.cli train
-python3 -m ann.cli evaluate
-python3 -m ann.cli quantize
-python3 -m ann.cli export
-```
-
-Wrapper form:
-
-```bash
-./scripts/ann.sh train
-./scripts/ann.sh evaluate --artifact quantized
-./scripts/ann.sh quantize --artifact selected-float
-./scripts/ann.sh export
+make train
+make evaluate ARGS="--artifact quantized"
+make quantize ARGS="--artifact selected-float"
+make export
 ```
 
 Contract freeze tool:
 
 ```bash
-python3 -m contract.src.freeze
-python3 -m contract.src.freeze --check
-python3 -m contract.src.gen_vectors
+make freeze
+make freeze-check
+make sim-vectors
 ```
 
 The freeze/vector-generation path now fails early if it cannot synthesize at least one positive, zero, and negative score witness from its deterministic candidate pool.

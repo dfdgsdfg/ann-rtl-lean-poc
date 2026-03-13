@@ -36,13 +36,7 @@ The frozen contract also records verified safe bounds for the current weights ov
 To create a fresh ANN result:
 
 ```bash
-./scripts/ann.sh train
-```
-
-Equivalent CLI form:
-
-```bash
-python3 -m ann.cli train
+make train
 ```
 
 Those commands train the ANN, export the quantized result, and refresh the frozen contract plus downstream generated artifacts.

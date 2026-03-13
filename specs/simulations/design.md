@@ -27,8 +27,8 @@ After training finishes, testing should be runnable through a small command sequ
 A practical flow is:
 
 ```text
-./scripts/ann.sh train
-python3 -m contract.src.freeze --check
+make train
+make freeze-check
 make sim
 ```
 

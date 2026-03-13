@@ -1,4 +1,29 @@
-.PHONY: sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors
+.PHONY: train evaluate quantize export freeze freeze-check \
+       sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors
+
+ANN_CLI := python3 -m ann.cli
+
+# --- ANN targets ---
+
+train:
+	$(ANN_CLI) train $(ARGS)
+
+evaluate:
+	$(ANN_CLI) evaluate $(ARGS)
+
+quantize:
+	$(ANN_CLI) quantize $(ARGS)
+
+export:
+	$(ANN_CLI) export $(ARGS)
+
+freeze:
+	python3 -m contract.src.freeze $(ARGS)
+
+freeze-check:
+	python3 -m contract.src.freeze --check
+
+# --- Simulation targets ---
 
 SIM_RTL := rtl/src/mac_unit.sv \
 	rtl/src/relu_unit.sv \
