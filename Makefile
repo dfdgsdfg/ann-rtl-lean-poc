@@ -1,4 +1,4 @@
-.PHONY: sim sim-check-tools sim-iverilog sim-verilator clean-sim
+.PHONY: sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors
 
 SIM_RTL := rtl/src/mac_unit.sv \
 	rtl/src/relu_unit.sv \
@@ -21,17 +21,20 @@ sim-check-tools:
 	@command -v vvp >/dev/null 2>&1 || { echo "missing required tool: vvp"; exit 1; }
 	@command -v verilator >/dev/null 2>&1 || { echo "missing required tool: verilator"; exit 1; }
 
+sim-vectors:
+	python3 -m contract.src.gen_vectors
+
 sim-iverilog: $(IVERILOG_BIN)
 	vvp $(IVERILOG_BIN)
 
-$(IVERILOG_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
+$(IVERILOG_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_META) | sim-vectors
 	@mkdir -p $(dir $@)
 	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(SIM_RTL)
 
 sim-verilator: $(VERILATOR_BIN)
 	$(VERILATOR_BIN)
 
-$(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
+$(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_META) | sim-vectors
 	@mkdir -p $(VERILATOR_DIR)
 	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(VERILATOR_DIR) $(SIM_TB) $(SIM_RTL)
 

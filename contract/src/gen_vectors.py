@@ -139,10 +139,16 @@ def expected_vector_artifacts(weights: dict[str, object]) -> dict[Path, str]:
     }
 
 
+def _write_if_changed(out_path: Path, text: str) -> None:
+    if out_path.exists() and out_path.read_text(encoding="ascii") == text:
+        return
+    out_path.write_text(text, encoding="ascii")
+
+
 def generate_vectors() -> Path:
     weights = _load_contract_weights()
     for out_path, text in expected_vector_artifacts(weights).items():
-        out_path.write_text(text, encoding="ascii")
+        _write_if_changed(out_path, text)
     return TEST_VECTORS_PATH
 
 
