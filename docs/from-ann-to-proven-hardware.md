@@ -398,7 +398,7 @@ This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that R
 The freeze pipeline generates `simulations/rtl/test_vectors.mem` from the frozen weights. Each vector is a packed hex record:
 
 ```text
-[31-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]
+[32-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]
 ```
 
 The generator synthesizes vectors that cover:
