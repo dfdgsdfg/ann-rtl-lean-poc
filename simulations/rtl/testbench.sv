@@ -336,10 +336,9 @@ module testbench;
 
     if (total_errors_count() == 0) begin
       $display("PASS all vectors");
+      $finish;
     end else begin
-      $display("FAIL total_errors=%0d", total_errors_count());
+      $fatal(1, "FAIL total_errors=%0d", total_errors_count());
     end
-
-    $finish;
   end
 endmodule

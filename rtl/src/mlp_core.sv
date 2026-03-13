@@ -89,8 +89,21 @@ module mlp_core (
   );
 
   always_comb begin
+    mac_a = 16'sd0;
+    mac_b = 8'sd0;
+
     if (state == MAC_OUTPUT) begin
-      mac_a = hidden_regs[input_idx[2:0]];
+      unique case (input_idx)
+        4'd0: mac_a = hidden_regs[0];
+        4'd1: mac_a = hidden_regs[1];
+        4'd2: mac_a = hidden_regs[2];
+        4'd3: mac_a = hidden_regs[3];
+        4'd4: mac_a = hidden_regs[4];
+        4'd5: mac_a = hidden_regs[5];
+        4'd6: mac_a = hidden_regs[6];
+        4'd7: mac_a = hidden_regs[7];
+        default: mac_a = 16'sd0;
+      endcase
       mac_b = w2_data;
     end else begin
       unique case (input_idx)
