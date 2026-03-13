@@ -14,6 +14,8 @@ Each domain may contain:
 - `contract`: frozen result and downstream handoff
 - `rtl`: hardware behavior and microarchitecture
 - `formalize`: Lean models and proof targets
+- `formalize-smt`: optional SMT-assisted Lean proof workflow
+- `smt`: solver-backed verification outside Lean
 - `rtl-formalize-synthsis`: Lean Signal-DSL hardware generation via Sparkle
 - `rtl-synthsis`: reactive controller synthesis from temporal specifications
 - `simulations`: vectors, testbench, regression flow
@@ -27,3 +29,9 @@ Main baseline:
 
 Optional Lean-generated RTL path:
 `ann -> contract -> formalize -> rtl-formalize-synthsis -> simulations -> experiments -> asic`
+
+Cross-cutting verification complement:
+`contract -> rtl -> smt`
+
+Optional proof-automation complement:
+`formalize -> formalize-smt`

@@ -12,6 +12,8 @@ The `formalize` domain covers:
 - Supporting invariants and termination proofs
 - Temporal and timing properties over RTL execution traces
 
+In this repository, `formalize` is the canonical vanilla Lean proof path. Solver-assisted Lean automation, if added, belongs to a separate optional domain under `specs/formalize-smt/`.
+
 ## 2. Network Shape
 
 The target network is a `4 → 8 → 1` fixed-point MLP as frozen in `specs/contract/`. Concrete parameters:
@@ -194,6 +196,8 @@ formalize/
 ## 7. Reproducibility Requirements
 
 The formal flow must be reproducible by running `cd formalize && lake build` using the pinned Lean toolchain (currently v4.28.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
+
+The baseline `formalize` build should remain understandable as a solver-independent Lean path. Any optional SMT-assisted theorem automation must be documented separately rather than silently becoming part of the baseline contract.
 
 The repository should clearly show:
 

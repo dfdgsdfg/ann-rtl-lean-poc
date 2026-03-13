@@ -7,8 +7,11 @@ The formalization should be:
 - Close to the intended hardware semantics
 - Layered enough to isolate proof complexity
 - Reproducible from committed sources
+- Reviewable as a vanilla Lean proof path without requiring an external SMT solver
 - Structured so machine proofs do not hide arithmetic assumptions
 - Explicit enough to reason about cycle-level timing behavior
+
+This domain is the canonical baseline formalization. If the repository later adopts SMT-assisted Lean proof automation, that belongs to a separate optional workflow documented under `specs/formalize-smt/`.
 
 ## 2. Modeling Strategy
 
