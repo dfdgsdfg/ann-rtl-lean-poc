@@ -4,13 +4,15 @@ This document describes the actual process used in this repository to turn a tra
 
 The path is:
 
-```text
-ANN training
-  -> quantized weights
-    -> frozen contract
-      -> RTL hardware
-      -> Lean formalization
-      -> simulation testbench
+```mermaid
+graph LR
+    A[ANN Training] --> B[Quantized Weights]
+    B --> C[Frozen Contract]
+    C --> D[RTL Hardware]
+    C --> E[Lean Formalization]
+    C --> F[Simulation Vectors]
+    D --> G[Yosys Synthesis]
+    G --> H[Circuit Schematics]
 ```
 
 Each step narrows the abstraction. By the end, the same set of frozen integers appears in three places: a SystemVerilog ROM, a Lean match expression, and a simulation test vector file. The formal proofs and simulation runs independently confirm that the hardware computes the same function as the math.
@@ -71,11 +73,11 @@ The contract is not just data. It is a decision: these specific numbers, under t
 
 The freeze pipeline (`contract/src/downstream_sync.py`) writes three files from the frozen weights:
 
-```text
-contract/result/weights.json
-  -> rtl/src/weight_rom.sv         (SystemVerilog ROM constants)
-  -> formalize/src/TinyMLP/Spec.lean  (Lean weight definitions)
-  -> simulations/rtl/test_vectors.mem  (packed test vectors with expected scores)
+```mermaid
+graph TD
+    W[contract/result/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
+    W --> SPEC["formalize/src/TinyMLP/Spec.lean<br/>Lean weight definitions"]
+    W --> VEC["simulations/rtl/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
 This guarantees that the RTL ROM, the Lean spec, and the simulation expectations all use the same numbers. There is no manual copying.
@@ -101,10 +103,21 @@ The RTL uses a sequential MAC-reuse architecture: one multiplier, one accumulato
 
 The controller FSM has 9 states:
 
-```text
-IDLE -> LOAD_INPUT -> MAC_HIDDEN -> BIAS_HIDDEN -> ACT_HIDDEN -> NEXT_HIDDEN
-                                                                      |
-                      DONE <- BIAS_OUTPUT <- MAC_OUTPUT <-------------+
+```mermaid
+stateDiagram-v2
+    IDLE --> LOAD_INPUT : start
+    LOAD_INPUT --> MAC_HIDDEN
+    MAC_HIDDEN --> MAC_HIDDEN : inputIdx < 4
+    MAC_HIDDEN --> BIAS_HIDDEN : guard (inputIdx = 4)
+    BIAS_HIDDEN --> ACT_HIDDEN
+    ACT_HIDDEN --> NEXT_HIDDEN
+    NEXT_HIDDEN --> MAC_HIDDEN : hiddenIdx < 7
+    NEXT_HIDDEN --> MAC_OUTPUT : hiddenIdx = 7
+    MAC_OUTPUT --> MAC_OUTPUT : inputIdx < 8
+    MAC_OUTPUT --> BIAS_OUTPUT : guard (inputIdx = 8)
+    BIAS_OUTPUT --> DONE
+    DONE --> DONE : start high
+    DONE --> IDLE : start low
 ```
 
 Each hidden neuron takes 8 cycles:
@@ -168,10 +181,18 @@ The same integers from `contract/result/weights.json` appear here as SystemVeril
 
 The formalization splits the problem into four layers:
 
-1. **Mathematical spec** (`Spec.lean`): pure `Int` arithmetic, no width constraints
-2. **Fixed-point model** (`FixedPoint.lean`): bounded types (`Int8`, `Int16Val`, `Acc32`), wraparound semantics
-3. **Machine model** (`Machine.lean`): FSM states, `step` function, `run`
-4. **Temporal layer** (`Temporal.lean`): sampled `start`, `timedStep`, traces, timing theorems
+```mermaid
+graph TB
+    subgraph "Proof Layers"
+        T["Temporal - Temporal.lean<br/>timedStep, rtlTrace, timing theorems"]
+        M["Machine - Machine.lean<br/>FSM states, step, run"]
+        F["Fixed-Point - FixedPoint.lean<br/>Int8, Int16Val, Acc32, wraparound"]
+        S["Spec - Spec.lean<br/>pure Int arithmetic, no width constraints"]
+    end
+    T --> M
+    M --> F
+    F -->|mlpFixed_eq_mlpSpec| S
+```
 
 This separation exists because the hardest parts of the proof are different in each layer:
 - The spec layer is about arithmetic identities
@@ -293,11 +314,17 @@ The guard cycle appears naturally: when `inputIdx = 4`, the condition `inputIdx 
 
 The proof assembles in stages:
 
-1. **Startup**: `run 2 (initialState input)` reaches `macHiddenEntry` (2 cycles: idle -> loadInput -> macHidden)
-2. **One neuron**: `run 8 (macHiddenEntry input hidden j)` produces `macHiddenEntry` for neuron `j+1` (or `macOutputEntry` for the last neuron)
-3. **Hidden layer**: compose 8 neuron lemmas via `run_add` to get `run 64` from first `macHidden` to `macOutput`
-4. **Output MAC**: `run 9 (macOutputEntry ...)` reaches `biasOutputEntry`
-5. **Final step**: `step (biasOutputEntry ...)` reaches `doneEntry` with the correct output
+```mermaid
+graph LR
+    S["run 2<br/>Startup"] --> H["run 64<br/>Hidden Layer<br/>8 neurons x 8 cycles"]
+    H --> O["run 9<br/>Output MAC"]
+    O --> B["step<br/>Bias + Done"]
+
+    S -.- s1["idle to loadInput<br/>to macHidden"]
+    H -.- s2["8 x 4 MAC + guard<br/>+ bias + act + next"]
+    O -.- s3["8 MAC + guard<br/>to biasOutput"]
+    B -.- s4["biasOutput to done<br/>with correct output"]
+```
 
 The total: `run 76 (initialState input)` has `phase = .done` and `output = mlpFixed input`.
 
@@ -410,22 +437,69 @@ The testbench samples on `negedge clk` to observe post-update register values, a
 
 `make sim` runs the same testbench through both Icarus Verilog and Verilator. The regression passes only if both simulators pass. This catches simulator-specific interpretation differences in the SystemVerilog.
 
-## 6. The Three-Way Agreement
+## 6. Visualizing the RTL
+
+The RTL source files describe the circuit in text. To see the actual hardware structure — gates, registers, muxes, and their connections — we synthesize the design with Yosys and render it as a schematic via netlistsvg.
+
+### Top-Level: mlp_core
+
+![mlp_core](assets/mlp_core.svg)
+
+The top-level wiring. The controller drives the datapath, the weight ROM feeds the MAC unit, and the ReLU output connects back to the hidden register file. This is the hardware equivalent of the Python reference model's loop structure — flattened into parallel, clocked components.
+
+### Controller
+
+![controller](assets/controller.svg)
+
+The FSM. The state register (flip-flops) holds the current phase. The combinational cloud around it computes next-state and control signals (`do_mac_hidden`, `do_mac_output`, etc.). The guard cycle logic is visible as gating conditions on the MAC enable signals.
+
+### MAC Unit
+
+![mac_unit](assets/mac_unit.svg)
+
+The multiplier and accumulator. The parameterized widths (A=16, B=8, ACC=32) determine the physical size of the multiply and add logic.
+
+### ReLU Unit
+
+![relu_unit](assets/relu_unit.svg)
+
+The activation function. A comparator checks whether the input is negative, a mux selects zero or the input, and truncation narrows the result from 32 bits to 16 bits.
+
+### Weight ROM
+
+![weight_rom](assets/weight_rom.svg)
+
+The frozen contract weights synthesized into combinational logic. Each case-statement entry becomes a lookup path from the address inputs to the data output.
+
+### How This Connects to Verification
+
+The schematics show what Yosys _thinks_ the design means after synthesis. Comparing the schematic against the spec catches structural misunderstandings:
+
+- Is the accumulator actually 32 bits?
+- Does the ReLU truncate to 16 bits?
+- Are the weight ROM outputs signed?
+- Is the controller generating the right number of control signals?
+
+These are the same questions the Lean formalization answers mathematically. The schematic answers them visually.
+
+## 7. The Three-Way Agreement
 
 The core claim of this repository is three-way agreement:
 
-```text
-Python reference model    <-->  Lean mlpFixed    <-->  RTL mlp_core
-  (ann/src/model.py)         (FixedPoint.lean)      (rtl/src/*.sv)
+```mermaid
+graph LR
+    PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
+    LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
+    RTL ---|"simulation<br/>test vectors"| PY
 ```
 
 Each pair is connected differently:
 
-- **Python ↔ Lean**: same arithmetic rules, same weights, same wraparound behavior. The Lean `mlpFixed` is a direct Lean transliteration of the Python reference. The bridge theorem `mlpFixed_eq_mlpSpec` then connects fixed-point to math.
+- **Python <-> Lean**: same arithmetic rules, same weights, same wraparound behavior. The Lean `mlpFixed` is a direct Lean transliteration of the Python reference. The bridge theorem `mlpFixed_eq_mlpSpec` then connects fixed-point to math.
 
-- **Lean ↔ RTL**: the Lean `step` function mirrors RTL state transitions. The machine proof (`rtl_correct`) shows that `run 76` produces the same output as `mlpFixed`. The temporal proofs show that the cycle-level timing matches the RTL handshake contract.
+- **Lean <-> RTL**: the Lean `step` function mirrors RTL state transitions. The machine proof (`rtl_correct`) shows that `run 76` produces the same output as `mlpFixed`. The temporal proofs show that the cycle-level timing matches the RTL handshake contract.
 
-- **Python ↔ RTL**: simulation. The testbench feeds the same inputs and expected outputs (generated from the Python model) to the RTL DUT and checks agreement.
+- **Python <-> RTL**: simulation. The testbench feeds the same inputs and expected outputs (generated from the Python model) to the RTL DUT and checks agreement.
 
 No single method covers everything alone:
 - Simulation can't check all 2^32 inputs
@@ -434,7 +508,7 @@ No single method covers everything alone:
 
 Together, they provide confidence from three independent directions that the frozen contract is correctly implemented in hardware.
 
-## 7. What Makes This Hard
+## 8. What Makes This Hard
 
 The arithmetic in this project is small. The hard parts are:
 
