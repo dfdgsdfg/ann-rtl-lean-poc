@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,12 @@ def json_text(payload: dict[str, Any]) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
+def _target_mode(path: Path) -> int:
+    if path.exists():
+        return stat.S_IMODE(path.stat().st_mode)
+    return 0o644
+
+
 def write_text_files(files: dict[Path, tuple[str, str]]) -> None:
     pending: list[tuple[Path, Path]] = []
     try:
@@ -37,6 +44,7 @@ def write_text_files(files: dict[Path, tuple[str, str]]) -> None:
             except Exception:
                 tmp_path.unlink(missing_ok=True)
                 raise
+            tmp_path.chmod(_target_mode(path))
             pending.append((tmp_path, path))
 
         for tmp_path, path in pending:

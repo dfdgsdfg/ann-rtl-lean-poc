@@ -458,10 +458,12 @@ module testbench;
 
     check_load_input_sampling();
 
-    for (idx = 0; idx < NUM_VECTORS; idx = idx + 1) begin
-      run_vector(idx, idx == 0, idx == 0, idx == 1);
-      if (stop_run) begin
-        break;
+    if (!stop_run) begin
+      for (idx = 0; idx < NUM_VECTORS; idx = idx + 1) begin
+        run_vector(idx, idx == 0, idx == 0, idx == 1);
+        if (stop_run) begin
+          break;
+        end
       end
     end
 

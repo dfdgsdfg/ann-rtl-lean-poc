@@ -14,10 +14,16 @@ Each domain may contain:
 - `contract`: frozen result and downstream handoff
 - `rtl`: hardware behavior and microarchitecture
 - `formalize`: Lean models and proof targets
+- `rtl-formalize-synthsis`: Lean Signal-DSL hardware generation via Sparkle
+- `rtl-synthsis`: reactive controller synthesis from temporal specifications
 - `simulations`: vectors, testbench, regression flow
 - `experiments`: optional comparison and evaluation work
 - `asic`: synthesis and physical-design flow
 
 ## Process
 
-`ann -> contract -> rtl -> formalize -> simulations -> experiments -> asic`
+Main baseline:
+`ann -> contract -> rtl -> formalize -> rtl-synthsis -> simulations -> experiments -> asic`
+
+Optional Lean-generated RTL path:
+`ann -> contract -> formalize -> rtl-formalize-synthsis -> simulations -> experiments -> asic`

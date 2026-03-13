@@ -51,7 +51,7 @@ Define the mathematical, fixed-point, and machine models in Lean and prove the i
 Generate vectors and compare RTL behavior against the frozen contract.
 
 6. `experiments`
-Run optional comparisons such as functional sweeps, latency checks, or report comparisons.
+Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
 
 7. `asic`
 Run synthesis and, later, physical-design steps.
@@ -79,6 +79,31 @@ It is also about:
 That is why temporal reasoning matters here. End-state correctness is necessary, but not sufficient. We also need bounded progress, phase ordering, and stable-result properties over execution traces.
 
 In this repository, that is the role of the `formalize` domain: connect mathematical correctness to reactive RTL behavior with machine and temporal proofs.
+
+## Reactive-Synthesis Experiments
+
+Reactive synthesis is separated from the baseline implementation flow.
+
+In this repository it belongs under `experiments`, not under the canonical `rtl/` path.
+
+The intended use is experimental:
+
+- synthesize a controller candidate from a temporal specification
+- compare it against `rtl/src/controller.sv`
+- keep the arithmetic datapath and frozen contract as the baseline unless an experiment explicitly replaces them
+
+That means:
+
+- reactive synthesis is an experiment track, not the source of truth for the shipped RTL
+- Lean/Sparkle-generated RTL is also an experiment track until it proves out against the same regression and QoR checks
+- hand-written `rtl/` remains the canonical implementation baseline
+
+Relevant docs:
+
+- [experiments/README.md](experiments/README.md)
+- [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
+- [specs/rtl-synthsis/requirement.md](specs/rtl-synthsis/requirement.md)
+- [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
 
 ## Dependencies
 
@@ -221,6 +246,7 @@ What is still in progress:
 
 - the repository is not yet a one-command end-to-end flow across every domain
 - the ASIC flow is present as source artifacts, but not yet wrapped in the same CLI style as the ANN flow
+- generated RTL and reactive-synthesis work are experiment tracks, not the canonical implementation flow
 
 ## Current CLI Summary
 

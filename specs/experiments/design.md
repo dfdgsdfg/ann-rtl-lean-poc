@@ -10,6 +10,8 @@ The design should favor:
 - Easy comparison across runs
 - Low setup overhead
 - Traceability back to committed inputs
+- Clear separation between canonical implementation artifacts and experimental generated variants
+- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthsis`, and `rtl-synthsis`
 
 ## 2. Recommended Experiment Tracks
 
@@ -39,6 +41,45 @@ Measure:
 - Area across synthesis runs
 - Timing slack or critical-path changes
 
+### Generated Implementation Comparisons
+
+Compare the committed hand-written RTL against alternative implementation paths such as:
+
+- generated RTL derived from the `rtl-formalize-synthsis` domain
+- translated controller artifacts from the `rtl-synthsis` domain
+- reactive-synthesis-generated FSM candidates
+- mixed-path implementations such as a synthesized controller paired with the hand-written datapath
+
+These experiments should keep the comparison honest:
+
+- `rtl/` stays the baseline implementation
+- generated artifacts live outside `rtl/`
+- the frozen contract remains the semantic anchor
+- `rtl-formalize-synthsis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
+- `rtl-synthsis` is scoped first to the controller, not the ANN datapath
+
+### RTL-Formalize-Synthsis Studies
+
+Compare Sparkle-generated RTL against the hand-written baseline and the pure Lean model.
+
+Typical questions:
+
+- does the Sparkle implementation preserve the current handshake and timing contract?
+- does the generated RTL preserve fixed-point arithmetic and ROM semantics?
+- how much of the baseline can be replaced: controller-only, primitive path, or full core?
+- what trust boundary remains between the pure Lean proof layer and the emitted RTL?
+
+### RTL-Synthsis Studies
+
+Compare controller artifacts produced from temporal specifications against `rtl/src/controller.sv`.
+
+Typical questions:
+
+- does the synthesized controller preserve phase ordering?
+- does it preserve `start` / `busy` / `done` behavior?
+- what environment assumptions were required to make the controller realizable?
+- what is the QoR cost of a synthesized controller versus the hand-written FSM?
+
 ## 3. Recording Strategy
 
 Each experiment should keep a stable mapping between:
@@ -47,17 +88,31 @@ Each experiment should keep a stable mapping between:
 - Tool command
 - Output artifact
 - Result summary
+- Source spec or generator revision when the artifact is generated rather than hand-written
+- Implementation branch and declared scope, such as baseline RTL, Sparkle controller-only RTL, or GR(1)-synthesized controller
+- Validation level, such as theorem-level model comparison, RTL simulation agreement, or QoR-only comparison
 
 This can be implemented with scripts plus short markdown reports.
 
 ## 4. Suggested Workflow
 
 1. Export a fixed parameter set
-2. Generate vectors
-3. Run simulation or synthesis
-4. Parse outputs into a summary
-5. Save the summary in a documented location
+2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthsis`, `rtl-synthsis`, or a mixed path
+3. Generate vectors
+4. Materialize the candidate implementation variant
+5. Run simulation or synthesis
+6. Parse outputs into a summary
+7. Save the summary in a documented location
+
+For implementation-branch comparisons, the summary should include:
+
+- functional agreement against the same vector set
+- cycle/handshake agreement
+- synthesis report deltas
+- exact generator, synthesis-spec, or wrapper provenance
+- declared implementation scope, such as controller-only or full core
+- explicit trust-boundary statement when the artifact comes from `rtl-formalize-synthsis`
 
 ## 5. Success Signal
 
-The experiment layer is doing its job when someone can rerun a comparison and understand what changed without reverse-engineering the repository.
+The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthsis` path, and the `rtl-synthsis` path and understand what changed without reverse-engineering the repository.

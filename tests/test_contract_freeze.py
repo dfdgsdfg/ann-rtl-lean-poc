@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import shutil
+import stat
+import subprocess
 import tempfile
 import unittest
 from contextlib import ExitStack
@@ -12,8 +15,13 @@ from contract.src import downstream_sync, freeze, gen_vectors
 
 ROOT = contract_artifacts.ROOT
 RUN_DIR = ROOT / "ann" / "results" / "latest"
+MAKEFILE_TEMPLATE = ROOT / "Makefile"
 WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "src" / "weight_rom.sv"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Spec.lean"
+CONTRACT_WEIGHTS_TEMPLATE = ROOT / "contract" / "result" / "weights.json"
+SIM_TESTBENCH_TEMPLATE = ROOT / "simulations" / "rtl" / "testbench.sv"
+CONTRACT_SRC_DIR = ROOT / "contract" / "src"
+RTL_SRC_DIR = ROOT / "rtl" / "src"
 
 
 class FreezeContractTests(unittest.TestCase):
@@ -97,6 +105,55 @@ class FreezeContractTests(unittest.TestCase):
             self.vector_meta_path,
         ):
             self.assertTrue(path.exists(), msg=f"expected generated artifact: {path}")
+
+    def test_write_text_files_preserves_existing_file_mode(self) -> None:
+        target = self.temp_root / "contract" / "result" / "preserved.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("before\n", encoding="utf-8")
+        target.chmod(0o754)
+
+        contract_artifacts.write_text_files({target: ("after\n", "utf-8")})
+
+        self.assertEqual(target.read_text(encoding="utf-8"), "after\n")
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o754)
+
+    def test_make_sim_iverilog_bootstraps_missing_vectors_from_existing_stamp(self) -> None:
+        for tool in ("make", "iverilog", "vvp"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"missing required tool: {tool}")
+
+        repo_root = self.temp_root / "sim-repo"
+        (repo_root / "contract" / "result").mkdir(parents=True, exist_ok=True)
+        (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
+        (repo_root / "build" / "sim").mkdir(parents=True, exist_ok=True)
+
+        shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
+        shutil.copy2(CONTRACT_WEIGHTS_TEMPLATE, repo_root / "contract" / "result" / "weights.json")
+        shutil.copy2(SIM_TESTBENCH_TEMPLATE, repo_root / "simulations" / "rtl" / "testbench.sv")
+        shutil.copytree(CONTRACT_SRC_DIR, repo_root / "contract" / "src", dirs_exist_ok=True)
+        shutil.copytree(RTL_SRC_DIR, repo_root / "rtl" / "src", dirs_exist_ok=True)
+
+        stamp_path = repo_root / "build" / "sim" / "vectors.stamp"
+        stamp_path.write_text("stale stamp\n", encoding="utf-8")
+        vectors_path = repo_root / "simulations" / "rtl" / "test_vectors.mem"
+        vector_meta_path = repo_root / "simulations" / "rtl" / "test_vectors_meta.svh"
+        self.assertFalse(vectors_path.exists())
+        self.assertFalse(vector_meta_path.exists())
+
+        result = subprocess.run(
+            ["make", "sim-iverilog"],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("python3 -m contract.src.gen_vectors", output)
+        self.assertIn("PASS all vectors", output)
+        self.assertTrue(vectors_path.exists(), msg="expected test_vectors.mem to be regenerated")
+        self.assertTrue(vector_meta_path.exists(), msg="expected test_vectors_meta.svh to be regenerated")
 
 
 if __name__ == "__main__":
