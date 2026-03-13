@@ -60,6 +60,17 @@ theorem temporal_hiddenGuard_before_biasHidden (sample : CtrlSample) (s : State)
     timedStep sample s = { s with phase := .biasHidden } :=
   hiddenGuard_before_biasHidden sample s hphase hidx
 
+theorem temporal_hiddenGuard_no_mac_work (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
+    SameDataFields s (timedStep sample s) :=
+  hiddenGuard_no_mac_work sample s hphase hidx
+
+theorem temporal_hiddenGuard_no_out_of_range_reads (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
+    SameDataFields s (timedStep sample s) ∧
+      (timedStep sample s).phase = .biasHidden :=
+  hiddenGuard_no_out_of_range_reads sample s hphase hidx
+
 theorem temporal_lastHiddenMac_to_biasHidden (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
     (timedStep sample s).phase = .biasHidden :=
@@ -70,15 +81,46 @@ theorem temporal_lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
     (timedStep sample s).phase = .macOutput :=
   lastHiddenNeuron_to_macOutput sample s hphase hidx
 
+theorem temporal_hiddenBoundary_no_duplicate_or_skip_work (sample₀ sample₁ : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx + 1 = inputCount) :
+    timedStep sample₀ s =
+      { s with
+          accumulator := acc32 s.accumulator (hiddenMacTermAt s.regs s.hiddenIdx s.inputIdx)
+          inputIdx := inputCount } ∧
+    SameDataFields (timedStep sample₀ s) (timedStep sample₁ (timedStep sample₀ s)) ∧
+    (timedStep sample₁ (timedStep sample₀ s)).phase = .biasHidden :=
+  hiddenBoundary_no_duplicate_or_skip_work sample₀ sample₁ s hphase hidx
+
 theorem temporal_outputGuard_before_biasOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
     timedStep sample s = { s with phase := .biasOutput } :=
   outputGuard_before_biasOutput sample s hphase hidx
 
+theorem temporal_outputGuard_no_mac_work (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
+    SameDataFields s (timedStep sample s) :=
+  outputGuard_no_mac_work sample s hphase hidx
+
+theorem temporal_outputGuard_no_out_of_range_reads (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
+    SameDataFields s (timedStep sample s) ∧
+      (timedStep sample s).phase = .biasOutput :=
+  outputGuard_no_out_of_range_reads sample s hphase hidx
+
 theorem temporal_lastOutputMac_to_biasOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
     (timedStep sample s).phase = .biasOutput :=
   lastOutputMac_to_biasOutput sample s hphase hidx
+
+theorem temporal_outputBoundary_no_duplicate_or_skip_work (sample₀ sample₁ : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx + 1 = hiddenCount) :
+    timedStep sample₀ s =
+      { s with
+          accumulator := acc32 s.accumulator (outputMacTermAt s.hidden s.inputIdx)
+          inputIdx := hiddenCount } ∧
+    SameDataFields (timedStep sample₀ s) (timedStep sample₁ (timedStep sample₀ s)) ∧
+    (timedStep sample₁ (timedStep sample₀ s)).phase = .biasOutput :=
+  outputBoundary_no_duplicate_or_skip_work sample₀ sample₁ s hphase hidx
 
 theorem temporal_biasOutput_registers_result (sample : CtrlSample) (s : State)
     (hphase : s.phase = .biasOutput) :

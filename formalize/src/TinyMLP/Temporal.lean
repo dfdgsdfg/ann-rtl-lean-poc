@@ -13,10 +13,16 @@ The public temporal theorem surface for this milestone is:
 - `done_to_idle_when_start_low`
 - `phase_ordering_ok`
 - `hiddenGuard_before_biasHidden`
+- `hiddenGuard_no_mac_work`
+- `hiddenGuard_no_out_of_range_reads`
 - `lastHiddenMac_to_biasHidden`
 - `lastHiddenNeuron_to_macOutput`
+- `hiddenBoundary_no_duplicate_or_skip_work`
 - `outputGuard_before_biasOutput`
+- `outputGuard_no_mac_work`
+- `outputGuard_no_out_of_range_reads`
 - `lastOutputMac_to_biasOutput`
+- `outputBoundary_no_duplicate_or_skip_work`
 - `biasOutput_registers_result`
 -/
 
@@ -35,6 +41,14 @@ def doneOf (s : State) : Prop :=
 
 def outputValidOf (s : State) : Prop :=
   doneOf s
+
+def SameDataFields (before after : State) : Prop :=
+  after.regs = before.regs ∧
+    after.hidden = before.hidden ∧
+    after.accumulator = before.accumulator ∧
+    after.hiddenIdx = before.hiddenIdx ∧
+    after.inputIdx = before.inputIdx ∧
+    after.output = before.output
 
 def stableOutputOn (t : Nat) (trace : Nat → State) : Prop :=
   ∀ n, (∀ m, t ≤ m → m ≤ t + n → doneOf (trace m)) →
@@ -131,6 +145,10 @@ theorem done_to_idle_when_start_low (sample : CtrlSample) (s : State)
     (hdone : doneOf s) (hstart : sample.start = false) :
     timedStep sample s = { s with phase := .idle } :=
   timedStep_done_restart sample s hdone hstart
+
+theorem sameDataFields_of_phaseUpdate (s : State) (phase : Phase) :
+    SameDataFields s { s with phase := phase } := by
+  cases s <;> simp [SameDataFields]
 
 theorem timedStep_eq_step_of_active {sample : CtrlSample} {s : State}
     (hidle : s.phase ≠ .idle) (hdone : s.phase ≠ .done) :
@@ -340,11 +358,41 @@ theorem hiddenGuard_before_biasHidden (sample : CtrlSample) (s : State)
       subst inputIdx
       simp [timedStep, step, inputCount]
 
+theorem hiddenGuard_no_mac_work (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
+    SameDataFields s (timedStep sample s) := by
+  rw [hiddenGuard_before_biasHidden sample s hphase hidx]
+  exact sameDataFields_of_phaseUpdate s .biasHidden
+
+theorem hiddenGuard_no_out_of_range_reads (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
+    SameDataFields s (timedStep sample s) ∧
+      (timedStep sample s).phase = .biasHidden := by
+  rw [hiddenGuard_before_biasHidden sample s hphase hidx]
+  exact ⟨sameDataFields_of_phaseUpdate s .biasHidden, by simp⟩
+
 theorem lastHiddenMac_to_biasHidden (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macHidden) (hidx : s.inputIdx = inputCount) :
     (timedStep sample s).phase = .biasHidden := by
   simpa [hphase, hidx] using congrArg State.phase
     (hiddenGuard_before_biasHidden sample s hphase hidx)
+
+theorem finalHiddenMac_updates_accumulator (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx + 1 = inputCount) :
+    timedStep sample s =
+      { s with
+          accumulator := acc32 s.accumulator (hiddenMacTermAt s.regs s.hiddenIdx s.inputIdx)
+          inputIdx := inputCount } := by
+  cases s with
+  | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
+      cases phase <;> simp at hphase
+      have hlast : inputIdx + 1 = inputCount := by
+        simpa using hidx
+      have hthree : inputIdx = 3 := by
+        unfold inputCount at hlast
+        omega
+      subst inputIdx
+      simp [timedStep, step, inputCount]
 
 theorem lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .nextHidden) (hidx : s.hiddenIdx + 1 = hiddenCount) :
@@ -360,6 +408,30 @@ theorem lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
       subst hiddenIdx
       simp [timedStep, step, hiddenCount]
 
+theorem hiddenBoundary_no_duplicate_or_skip_work (sample₀ sample₁ : CtrlSample) (s : State)
+    (hphase : s.phase = .macHidden) (hidx : s.inputIdx + 1 = inputCount) :
+    timedStep sample₀ s =
+      { s with
+          accumulator := acc32 s.accumulator (hiddenMacTermAt s.regs s.hiddenIdx s.inputIdx)
+          inputIdx := inputCount } ∧
+    SameDataFields (timedStep sample₀ s) (timedStep sample₁ (timedStep sample₀ s)) ∧
+    (timedStep sample₁ (timedStep sample₀ s)).phase = .biasHidden := by
+  have hstep₀ := finalHiddenMac_updates_accumulator sample₀ s hphase hidx
+  refine ⟨hstep₀, ?_, ?_⟩
+  · have hphase₁ : (timedStep sample₀ s).phase = .macHidden := by
+      rw [hstep₀]
+      simp [hphase]
+    have hidx₁ : (timedStep sample₀ s).inputIdx = inputCount := by
+      simp [hstep₀]
+    rw [hiddenGuard_before_biasHidden sample₁ (timedStep sample₀ s) hphase₁ hidx₁]
+    exact sameDataFields_of_phaseUpdate (timedStep sample₀ s) .biasHidden
+  · have hphase₁ : (timedStep sample₀ s).phase = .macHidden := by
+      rw [hstep₀]
+      simp [hphase]
+    have hidx₁ : (timedStep sample₀ s).inputIdx = inputCount := by
+      simp [hstep₀]
+    rw [hiddenGuard_before_biasHidden sample₁ (timedStep sample₀ s) hphase₁ hidx₁]
+
 theorem outputGuard_before_biasOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
     timedStep sample s = { s with phase := .biasOutput } := by
@@ -371,11 +443,65 @@ theorem outputGuard_before_biasOutput (sample : CtrlSample) (s : State)
       subst inputIdx
       simp [timedStep, step, hiddenCount]
 
+theorem outputGuard_no_mac_work (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
+    SameDataFields s (timedStep sample s) := by
+  rw [outputGuard_before_biasOutput sample s hphase hidx]
+  exact sameDataFields_of_phaseUpdate s .biasOutput
+
+theorem outputGuard_no_out_of_range_reads (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
+    SameDataFields s (timedStep sample s) ∧
+      (timedStep sample s).phase = .biasOutput := by
+  rw [outputGuard_before_biasOutput sample s hphase hidx]
+  exact ⟨sameDataFields_of_phaseUpdate s .biasOutput, by simp⟩
+
 theorem lastOutputMac_to_biasOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .macOutput) (hidx : s.inputIdx = hiddenCount) :
     (timedStep sample s).phase = .biasOutput := by
   simpa [hphase, hidx] using congrArg State.phase
     (outputGuard_before_biasOutput sample s hphase hidx)
+
+theorem finalOutputMac_updates_accumulator (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx + 1 = hiddenCount) :
+    timedStep sample s =
+      { s with
+          accumulator := acc32 s.accumulator (outputMacTermAt s.hidden s.inputIdx)
+          inputIdx := hiddenCount } := by
+  cases s with
+  | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
+      cases phase <;> simp at hphase
+      have hlast : inputIdx + 1 = hiddenCount := by
+        simpa using hidx
+      have hseven : inputIdx = 7 := by
+        unfold hiddenCount at hlast
+        omega
+      subst inputIdx
+      simp [timedStep, step, hiddenCount]
+
+theorem outputBoundary_no_duplicate_or_skip_work (sample₀ sample₁ : CtrlSample) (s : State)
+    (hphase : s.phase = .macOutput) (hidx : s.inputIdx + 1 = hiddenCount) :
+    timedStep sample₀ s =
+      { s with
+          accumulator := acc32 s.accumulator (outputMacTermAt s.hidden s.inputIdx)
+          inputIdx := hiddenCount } ∧
+    SameDataFields (timedStep sample₀ s) (timedStep sample₁ (timedStep sample₀ s)) ∧
+    (timedStep sample₁ (timedStep sample₀ s)).phase = .biasOutput := by
+  have hstep₀ := finalOutputMac_updates_accumulator sample₀ s hphase hidx
+  refine ⟨hstep₀, ?_, ?_⟩
+  · have hphase₁ : (timedStep sample₀ s).phase = .macOutput := by
+      rw [hstep₀]
+      simp [hphase]
+    have hidx₁ : (timedStep sample₀ s).inputIdx = hiddenCount := by
+      simp [hstep₀]
+    rw [outputGuard_before_biasOutput sample₁ (timedStep sample₀ s) hphase₁ hidx₁]
+    exact sameDataFields_of_phaseUpdate (timedStep sample₀ s) .biasOutput
+  · have hphase₁ : (timedStep sample₀ s).phase = .macOutput := by
+      rw [hstep₀]
+      simp [hphase]
+    have hidx₁ : (timedStep sample₀ s).inputIdx = hiddenCount := by
+      simp [hstep₀]
+    rw [outputGuard_before_biasOutput sample₁ (timedStep sample₀ s) hphase₁ hidx₁]
 
 theorem biasOutput_registers_result (sample : CtrlSample) (s : State)
     (hphase : s.phase = .biasOutput) :

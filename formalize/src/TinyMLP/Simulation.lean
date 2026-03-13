@@ -152,15 +152,15 @@ private def doneEntry (input : Input8) (hidden : Hidden16) (acc : Acc32) : State
 
 @[simp] private theorem hiddenMacAcc_toInt (input : Input8) (j : Nat) :
     (hiddenMacAcc input j).toInt = wrap32 (hiddenDotAt (toMathInput input) j) := by
-  simpa [hiddenMacAcc] using hiddenMacAccAt_toInt input j
+  exact hiddenMacAccAt_toInt input j
 
 @[simp] private theorem hiddenPreAcc_toInt (input : Input8) (j : Nat) :
     (hiddenPreAcc input j).toInt = wrap32 (hiddenPreAt (toMathInput input) j) := by
-  simpa [hiddenPreAcc] using hiddenPreFixedAt_toInt input j
+  exact hiddenPreFixedAt_toInt input j
 
 @[simp] private theorem finalOutputAcc_toInt (hidden : Hidden16) :
     (finalOutputAcc hidden).toInt = wrap32 (outputScoreSpecFromHidden hidden.toHidden) := by
-  simpa [finalOutputAcc] using outputScoreFixedFromHidden_toInt hidden
+  exact outputScoreFixedFromHidden_toInt hidden
 
 -- MAC inner loop: 5 steps from macHidden entry to biasHidden
 theorem macHidden_5steps (input : Input8) (hidden : Hidden16) (j : Nat) :
@@ -345,9 +345,7 @@ private theorem biasOutput_outputMac_1step (input : Input8) (hidden : Hidden16) 
     step (biasOutputEntry input hidden (macOutputAcc hidden)) =
     doneEntry input hidden (finalOutputAcc hidden) := by
   rw [biasOutput_1step]
-  simpa [macOutputAcc, finalOutputAcc, outputScoreFixedFromHidden] using
-    (congrArg (doneEntry input hidden) rfl : doneEntry input hidden (acc32 (macOutputAcc hidden) bias2Term) =
-      doneEntry input hidden (finalOutputAcc hidden))
+  rfl
 
 -- Main correctness assembly
 theorem rtl_correct (input : Input8) :

@@ -389,7 +389,7 @@ def Hidden16.toHidden (hidden : Hidden16) : Hidden :=
 
 @[simp] theorem Hidden16.getCellNat_toInt (hidden : Hidden16) (idx : Nat) :
     (hidden.getCellNat idx).toInt = hidden.toHidden.getNat idx := by
-  simpa [Hidden16.getCellNat] using Hidden16.getNat_toInt hidden idx
+  exact Hidden16.getNat_toInt hidden idx
 
 def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
   { h0 := Int16Val.ofInt hidden.h0
@@ -411,54 +411,57 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
 
 @[simp] theorem Hidden16.getNat_zero (idx : Nat) :
     Hidden16.zero.getNat idx = Int16Val.ofInt 0 := by
-  have hcases :
-      idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
-    omega
-  rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt]
-  · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
-    have h0 : 8 + k ≠ 0 := by omega
-    have h1 : 8 + k ≠ 1 := by omega
-    have h2 : 8 + k ≠ 2 := by omega
-    have h3 : 8 + k ≠ 3 := by omega
-    have h4 : 8 + k ≠ 4 := by omega
-    have h5 : 8 + k ≠ 5 := by omega
-    have h6 : 8 + k ≠ 6 := by omega
-    have h7 : 8 + k ≠ 7 := by omega
-    simp [Hidden16.zero, Hidden16.getNat, Int16Val.ofInt, h0, h1, h2, h3, h4, h5, h6, h7]
+  cases idx with
+  | zero => rfl
+  | succ idx =>
+      cases idx with
+      | zero => rfl
+      | succ idx =>
+          cases idx with
+          | zero => rfl
+          | succ idx =>
+              cases idx with
+              | zero => rfl
+              | succ idx =>
+                  cases idx with
+                  | zero => rfl
+                  | succ idx =>
+                      cases idx with
+                      | zero => rfl
+                      | succ idx =>
+                          cases idx with
+                          | zero => rfl
+                          | succ idx =>
+                              cases idx with
+                              | zero => rfl
+                              | succ idx => rfl
 
 @[simp] theorem Hidden16.getNat_ofHidden (hidden : Hidden) (idx : Nat) :
     (Hidden16.ofHidden hidden).getNat idx = Int16Val.ofInt (hidden.getNat idx) := by
-  have hcases :
-      idx = 0 ∨ idx = 1 ∨ idx = 2 ∨ idx = 3 ∨ idx = 4 ∨ idx = 5 ∨ idx = 6 ∨ idx = 7 ∨ 8 ≤ idx := by
-    omega
-  rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hge
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat]
-  · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
-    have h0 : 8 + k ≠ 0 := by omega
-    have h1 : 8 + k ≠ 1 := by omega
-    have h2 : 8 + k ≠ 2 := by omega
-    have h3 : 8 + k ≠ 3 := by omega
-    have h4 : 8 + k ≠ 4 := by omega
-    have h5 : 8 + k ≠ 5 := by omega
-    have h6 : 8 + k ≠ 6 := by omega
-    have h7 : 8 + k ≠ 7 := by omega
-    simp [Hidden16.ofHidden, Hidden16.getNat, Int16Val.ofInt, Hidden.getNat, h0, h1, h2, h3, h4,
-      h5, h6, h7]
+  cases idx with
+  | zero => rfl
+  | succ idx =>
+      cases idx with
+      | zero => rfl
+      | succ idx =>
+          cases idx with
+          | zero => rfl
+          | succ idx =>
+              cases idx with
+              | zero => rfl
+              | succ idx =>
+                  cases idx with
+                  | zero => rfl
+                  | succ idx =>
+                      cases idx with
+                      | zero => rfl
+                      | succ idx =>
+                          cases idx with
+                          | zero => rfl
+                          | succ idx =>
+                              cases idx with
+                              | zero => rfl
+                              | succ idx => rfl
 
 @[simp] theorem Hidden16.toHidden_ofHidden (hidden : Hidden) :
     (Hidden16.ofHidden hidden).toHidden =

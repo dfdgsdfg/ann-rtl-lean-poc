@@ -28,42 +28,46 @@ def w2Int8At (idx : Nat) : Int8 :=
   · rcases hj with rfl | rfl | rfl | rfl <;> native_decide
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
     rcases hj with rfl | rfl | rfl | rfl
-    · have h0 : 8 + k ≠ 0 := by omega
-      have h1 : 8 + k ≠ 1 := by omega
-      have h2 : 8 + k ≠ 2 := by omega
-      have h3 : 8 + k ≠ 3 := by omega
-      have h4 : 8 + k ≠ 4 := by omega
-      have h5 : 8 + k ≠ 5 := by omega
-      have h6 : 8 + k ≠ 6 := by omega
-      have h7 : 8 + k ≠ 7 := by omega
-      simp [w1Int8At, w1At, h0, h1, h2, h3, h4, h5, h6, h7]
-    · have h0 : 8 + k ≠ 0 := by omega
-      have h1 : 8 + k ≠ 1 := by omega
-      have h2 : 8 + k ≠ 2 := by omega
-      have h3 : 8 + k ≠ 3 := by omega
-      have h4 : 8 + k ≠ 4 := by omega
-      have h5 : 8 + k ≠ 5 := by omega
-      have h6 : 8 + k ≠ 6 := by omega
-      have h7 : 8 + k ≠ 7 := by omega
-      simp [w1Int8At, w1At, h0, h1, h2, h3, h4, h5, h6, h7]
-    · have h0 : 8 + k ≠ 0 := by omega
-      have h1 : 8 + k ≠ 1 := by omega
-      have h2 : 8 + k ≠ 2 := by omega
-      have h3 : 8 + k ≠ 3 := by omega
-      have h4 : 8 + k ≠ 4 := by omega
-      have h5 : 8 + k ≠ 5 := by omega
-      have h6 : 8 + k ≠ 6 := by omega
-      have h7 : 8 + k ≠ 7 := by omega
-      simp [w1Int8At, w1At, h0, h1, h2, h3, h4, h5, h6, h7]
-    · have h0 : 8 + k ≠ 0 := by omega
-      have h1 : 8 + k ≠ 1 := by omega
-      have h2 : 8 + k ≠ 2 := by omega
-      have h3 : 8 + k ≠ 3 := by omega
-      have h4 : 8 + k ≠ 4 := by omega
-      have h5 : 8 + k ≠ 5 := by omega
-      have h6 : 8 + k ≠ 6 := by omega
-      have h7 : 8 + k ≠ 7 := by omega
-      simp [w1Int8At, w1At, h0, h1, h2, h3, h4, h5, h6, h7]
+    · have hw : w1At (8 + k) 0 = 0 := by
+        have h1 : 8 + k ≠ 1 := by omega
+        have h2 : 8 + k ≠ 2 := by omega
+        have h3 : 8 + k ≠ 3 := by omega
+        have h4 : 8 + k ≠ 4 := by omega
+        have h5 : 8 + k ≠ 5 := by omega
+        have h6 : 8 + k ≠ 6 := by omega
+        have h7 : 8 + k ≠ 7 := by omega
+        simp [w1At, h1, h2, h3, h4, h5, h6, h7]
+      simp [w1Int8At, hw]
+    · have hw : w1At (8 + k) 1 = 0 := by
+        have h1 : 8 + k ≠ 1 := by omega
+        have h2 : 8 + k ≠ 2 := by omega
+        have h3 : 8 + k ≠ 3 := by omega
+        have h4 : 8 + k ≠ 4 := by omega
+        have h5 : 8 + k ≠ 5 := by omega
+        have h6 : 8 + k ≠ 6 := by omega
+        have h7 : 8 + k ≠ 7 := by omega
+        simp [w1At, h1, h2, h3, h4, h5, h6, h7]
+      simp [w1Int8At, hw]
+    · have hw : w1At (8 + k) 2 = 0 := by
+        have h1 : 8 + k ≠ 1 := by omega
+        have h2 : 8 + k ≠ 2 := by omega
+        have h3 : 8 + k ≠ 3 := by omega
+        have h4 : 8 + k ≠ 4 := by omega
+        have h5 : 8 + k ≠ 5 := by omega
+        have h6 : 8 + k ≠ 6 := by omega
+        have h7 : 8 + k ≠ 7 := by omega
+        simp [w1At, h1, h2, h3, h4, h5, h6, h7]
+      simp [w1Int8At, hw]
+    · have hw : w1At (8 + k) 3 = 0 := by
+        have h1 : 8 + k ≠ 1 := by omega
+        have h2 : 8 + k ≠ 2 := by omega
+        have h3 : 8 + k ≠ 3 := by omega
+        have h4 : 8 + k ≠ 4 := by omega
+        have h5 : 8 + k ≠ 5 := by omega
+        have h6 : 8 + k ≠ 6 := by omega
+        have h7 : 8 + k ≠ 7 := by omega
+        simp [w1At, h1, h2, h3, h4, h5, h6, h7]
+      simp [w1Int8At, hw]
 
 @[simp] theorem w2Int8At_toInt (idx : Nat) (hidx : idx < hiddenCount) :
     (w2Int8At idx).toInt = w2At idx := by
@@ -191,15 +195,17 @@ def outputScoreFixedFromHidden (hidden : Hidden16) : Acc32 :=
   · decide
   · decide
   · rcases Nat.exists_eq_add_of_le hge with ⟨k, rfl⟩
-    have h0 : 8 + k ≠ 0 := by omega
-    have h1 : 8 + k ≠ 1 := by omega
-    have h2 : 8 + k ≠ 2 := by omega
-    have h3 : 8 + k ≠ 3 := by omega
-    have h4 : 8 + k ≠ 4 := by omega
-    have h5 : 8 + k ≠ 5 := by omega
-    have h6 : 8 + k ≠ 6 := by omega
-    have h7 : 8 + k ≠ 7 := by omega
-    rw [show b1At (8 + k) = 0 by simp [b1At, h0, h1, h2, h3, h4, h5, h6, h7]]
+    have hb : b1At (8 + k) = 0 := by
+      have h1 : 8 + k ≠ 1 := by omega
+      have h2 : 8 + k ≠ 2 := by omega
+      have h3 : 8 + k ≠ 3 := by omega
+      have h4 : 8 + k ≠ 4 := by omega
+      have h5 : 8 + k ≠ 5 := by omega
+      have h6 : 8 + k ≠ 6 := by omega
+      have h7 : 8 + k ≠ 7 := by omega
+      set_option linter.unusedSimpArgs false in
+        simp [b1At, h1, h2, h3, h4, h5, h6, h7]
+    rw [hb]
     exact wrap32_eq_self_of_bounds (by omega) (by omega)
 
 @[simp] theorem wrap32_b2 :
@@ -290,14 +296,14 @@ private theorem wrap32_hiddenPreAt8 (input : Input8) (idx : Nat) (hidx : idx < h
     unfold hiddenCount at hidx
     omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · simpa using wrap32_hiddenPreAt8_0 input
-  · simpa using wrap32_hiddenPreAt8_1 input
-  · simpa using wrap32_hiddenPreAt8_2 input
-  · simpa using wrap32_hiddenPreAt8_3 input
-  · simpa using wrap32_hiddenPreAt8_4 input
-  · simpa using wrap32_hiddenPreAt8_5 input
-  · simpa using wrap32_hiddenPreAt8_6 input
-  · simpa using wrap32_hiddenPreAt8_7 input
+  · exact wrap32_hiddenPreAt8_0 input
+  · exact wrap32_hiddenPreAt8_1 input
+  · exact wrap32_hiddenPreAt8_2 input
+  · exact wrap32_hiddenPreAt8_3 input
+  · exact wrap32_hiddenPreAt8_4 input
+  · exact wrap32_hiddenPreAt8_5 input
+  · exact wrap32_hiddenPreAt8_6 input
+  · exact wrap32_hiddenPreAt8_7 input
 
 theorem hiddenFixedAt_eq_ofInt_hiddenSpecAt8 (input : Input8) (idx : Nat) (hidx : idx < hiddenCount) :
     hiddenFixedAt input idx = Int16Val.ofInt (hiddenSpecAt (toMathInput input) idx) := by
