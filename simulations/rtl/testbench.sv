@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module testbench;
-  localparam int NUM_VECTORS = 16;
+  `include "test_vectors_meta.svh"
   localparam int EXPECTED_CYCLES = 76;
   localparam int STABILITY_HOLD_CYCLES = 3;
   localparam logic [3:0] IDLE        = 4'd0;

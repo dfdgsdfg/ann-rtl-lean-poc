@@ -10,12 +10,12 @@ if __package__ in (None, ""):
         sys.path.insert(0, str(ROOT))
     from contract.src.artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
     from contract.src.downstream_sync import expected_downstream_artifacts, sync_downstream
-    from contract.src.gen_vectors import TEST_VECTORS_PATH, generate_vectors, render_vectors
+    from contract.src.gen_vectors import expected_vector_artifacts, generate_vectors
     from contract.src.schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
 else:
     from .artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
     from .downstream_sync import expected_downstream_artifacts, sync_downstream
-    from .gen_vectors import TEST_VECTORS_PATH, generate_vectors, render_vectors
+    from .gen_vectors import expected_vector_artifacts, generate_vectors
     from .schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
 
 
@@ -118,12 +118,12 @@ def validate_contract() -> None:
         if actual_text != expected_text:
             raise ValueError(f"generated contract artifact is out of sync: {generated_path}")
 
-    if not TEST_VECTORS_PATH.exists():
-        raise FileNotFoundError(f"missing generated contract artifact at {TEST_VECTORS_PATH}")
-    actual_vectors = TEST_VECTORS_PATH.read_text(encoding="ascii")
-    expected_vectors = render_vectors(contract_payload)
-    if actual_vectors != expected_vectors:
-        raise ValueError(f"generated contract artifact is out of sync: {TEST_VECTORS_PATH}")
+    for generated_path, expected_text in expected_vector_artifacts(contract_payload).items():
+        if not generated_path.exists():
+            raise FileNotFoundError(f"missing generated contract artifact at {generated_path}")
+        actual_text = generated_path.read_text(encoding="ascii")
+        if actual_text != expected_text:
+            raise ValueError(f"generated contract artifact is out of sync: {generated_path}")
 
 
 def parse_args() -> argparse.Namespace:

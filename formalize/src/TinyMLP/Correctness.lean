@@ -16,6 +16,40 @@ theorem rtl_index_safe (n : Nat) (input : Input8) :
     IndexInvariant (run n (initialState input)) := by
   exact initial_run_preserves_indexInvariant n input
 
+theorem rtl_hidden_controller_legal (n : Nat) (input : Input8) :
+    let s := run n (initialState input)
+    (s.phase = .macHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx ≤ inputCount) ∧
+    (s.phase = .biasHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
+    (s.phase = .actHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
+    (s.phase = .nextHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = 0) := by
+  dsimp
+  let s := run n (initialState input)
+  have hs : IndexInvariant s := rtl_index_safe n input
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> intro hphase
+  · exact indexInvariant_macHidden hs hphase
+  · exact indexInvariant_biasHidden hs hphase
+  · exact indexInvariant_actHidden hs hphase
+  · exact indexInvariant_nextHidden hs hphase
+
+theorem rtlTrace_index_safe (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
+    IndexInvariant (rtlTrace input samples n) := by
+  exact rtlTrace_preserves_indexInvariant input samples n
+
+theorem temporal_hidden_controller_legal (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
+    let s := rtlTrace input samples n
+    (s.phase = .macHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx ≤ inputCount) ∧
+    (s.phase = .biasHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
+    (s.phase = .actHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
+    (s.phase = .nextHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = 0) := by
+  dsimp
+  let s := rtlTrace input samples n
+  have hs : IndexInvariant s := rtlTrace_index_safe input samples n
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> intro hphase
+  · exact indexInvariant_macHidden hs hphase
+  · exact indexInvariant_biasHidden hs hphase
+  · exact indexInvariant_actHidden hs hphase
+  · exact indexInvariant_nextHidden hs hphase
+
 theorem rtl_terminates_goal (input : Input8) : rtlTerminationGoal input :=
   rtl_terminates input
 

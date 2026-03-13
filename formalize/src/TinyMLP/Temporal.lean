@@ -156,6 +156,34 @@ theorem timedStep_eq_step_of_active {sample : CtrlSample} {s : State}
     timedStep sample s = step s := by
   cases hphase : s.phase <;> simp [timedStep, hphase] at hidle hdone ⊢
 
+theorem timedStep_preserves_indexInvariant {sample : CtrlSample} {s : State} :
+    IndexInvariant s → IndexInvariant (timedStep sample s) := by
+  intro hs
+  cases hphase : s.phase with
+  | idle =>
+      cases hstart : sample.start with
+      | false =>
+          simpa [timedStep, hphase, hstart] using hs
+      | true =>
+          simpa [timedStep, hphase, hstart] using step_preserves_indexInvariant hs
+  | loadInput =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | macHidden =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | biasHidden =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | actHidden =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | nextHidden =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | macOutput =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | biasOutput =>
+      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+  | done =>
+      cases hstart : sample.start <;>
+        simp [timedStep, hphase, hstart, IndexInvariant, hiddenCount] at hs ⊢ <;> omega
+
 theorem controlOf_timedStep (sample : CtrlSample) (s : State) :
     controlOf (timedStep sample s) = timedControlStep sample (controlOf s) := by
   cases s with
@@ -201,6 +229,15 @@ theorem controlOf_rtlTrace (input : Input8) (samples : Nat → CtrlSample) (n : 
       simp [rtlTrace, timedControlTrace, controlOf, initialState, initialControl]
   | succ n ih =>
       simp [rtlTrace, timedControlTrace, controlOf_timedStep, ih]
+
+theorem rtlTrace_preserves_indexInvariant (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
+    IndexInvariant (rtlTrace input samples n) := by
+  induction n with
+  | zero =>
+      simp [rtlTrace, initialState_indexInvariant]
+  | succ n ih =>
+      simp [rtlTrace]
+      exact timedStep_preserves_indexInvariant ih
 
 private theorem controlRun_active_window (k : Fin totalCycles) (hpos : 0 < k.1) :
     let ph := (controlRun k.1 initialControl).phase
