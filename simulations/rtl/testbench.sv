@@ -152,6 +152,19 @@ module testbench;
           $display("FAIL capture: expected automatic return to IDLE after capture-semantic transaction");
           handshake_errors = handshake_errors + 1;
         end
+        @(negedge clk);
+        if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE ||
+            dut.hidden_idx !== 4'd0 || dut.input_idx !== 4'd0) begin
+          $display(
+            "FAIL capture: expected idle cleanup to zero controller indices hidden_idx=%0d input_idx=%0d state=%0d busy=%0d done=%0d",
+            dut.hidden_idx,
+            dut.input_idx,
+            dut.state,
+            busy,
+            done
+          );
+          handshake_errors = handshake_errors + 1;
+        end
       end
     end
   endtask
@@ -362,10 +375,38 @@ module testbench;
             $display("FAIL idx=%0d: expected one-cycle return to IDLE after dropping start in DONE", vector_idx);
             handshake_errors = handshake_errors + 1;
           end
+          @(negedge clk);
+          if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE ||
+              dut.hidden_idx !== 4'd0 || dut.input_idx !== 4'd0) begin
+            $display(
+              "FAIL idx=%0d: expected idle cleanup after DONE release hidden_idx=%0d input_idx=%0d state=%0d busy=%0d done=%0d",
+              vector_idx,
+              dut.hidden_idx,
+              dut.input_idx,
+              dut.state,
+              busy,
+              done
+            );
+            handshake_errors = handshake_errors + 1;
+          end
         end else begin
           @(negedge clk);
           if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE) begin
             $display("FAIL idx=%0d: expected automatic return to IDLE after DONE with start low", vector_idx);
+            handshake_errors = handshake_errors + 1;
+          end
+          @(negedge clk);
+          if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE ||
+              dut.hidden_idx !== 4'd0 || dut.input_idx !== 4'd0) begin
+            $display(
+              "FAIL idx=%0d: expected idle cleanup after automatic DONE release hidden_idx=%0d input_idx=%0d state=%0d busy=%0d done=%0d",
+              vector_idx,
+              dut.hidden_idx,
+              dut.input_idx,
+              dut.state,
+              busy,
+              done
+            );
             handshake_errors = handshake_errors + 1;
           end
         end

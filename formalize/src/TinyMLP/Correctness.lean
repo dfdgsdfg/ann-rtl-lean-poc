@@ -90,6 +90,11 @@ theorem temporal_done_to_idle_when_start_low (sample : CtrlSample) (s : State)
     timedStep sample s = { s with phase := .idle } :=
   done_to_idle_when_start_low sample s hdone hstart
 
+theorem temporal_idle_wait_cleans_controller_indices (sample : CtrlSample) (s : State)
+    (hidle : s.phase = .idle) (hstart : sample.start = false) :
+    timedStep sample s = { s with hiddenIdx := 0, inputIdx := 0 } :=
+  idle_wait_cleans_controller_indices sample s hidle hstart
+
 theorem temporal_phase_ordering_ok (sample : CtrlSample) (s : State) :
     AllowedPhaseTransition s.phase (timedStep sample s).phase :=
   phase_ordering_ok sample s

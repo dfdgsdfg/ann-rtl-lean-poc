@@ -11,6 +11,7 @@ The public temporal theorem surface for this milestone is:
 - `output_stable_while_done`
 - `done_hold_while_start_high`
 - `done_to_idle_when_start_low`
+- `idle_wait_cleans_controller_indices`
 - `phase_ordering_ok`
 - `hiddenGuard_before_biasHidden`
 - `hiddenGuard_no_mac_work`
@@ -82,7 +83,7 @@ def timedStep (sample : CtrlSample) (s : State) : State :=
       if sample.start then
         { s with phase := .loadInput }
       else
-        s
+        { s with hiddenIdx := 0, inputIdx := 0 }
   | .loadInput =>
       { s with
           regs := sample.inputs
@@ -118,7 +119,7 @@ def timedControlStep (sample : CtrlSample) (cs : ControlState) : ControlState :=
       if sample.start then
         controlStep cs
       else
-        cs
+        { cs with hiddenIdx := 0, inputIdx := 0 }
   | .done =>
       if sample.start then
         cs
@@ -143,12 +144,19 @@ theorem idleState_indexInvariant :
     IndexInvariant idleState := by
   simp [idleState, zeroInput, IndexInvariant]
 
-theorem timedStep_idle_wait (sample : CtrlSample) (s : State)
+theorem idle_wait_cleans_controller_indices (sample : CtrlSample) (s : State)
     (hidle : s.phase = .idle) (hstart : sample.start = false) :
-    timedStep sample s = s := by
+    timedStep sample s = { s with hiddenIdx := 0, inputIdx := 0 } := by
   cases s with
   | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
       cases phase <;> simp [timedStep, hstart] at hidle ⊢
+
+theorem timedControlStep_idle_wait_cleanup (sample : CtrlSample) (cs : ControlState)
+    (hidle : cs.phase = .idle) (hstart : sample.start = false) :
+    timedControlStep sample cs = { cs with hiddenIdx := 0, inputIdx := 0 } := by
+  cases cs with
+  | mk phase hiddenIdx inputIdx =>
+      cases phase <;> simp [timedControlStep, hstart] at hidle ⊢
 
 theorem timedStep_idle_start (sample : CtrlSample) (s : State)
     (hidle : s.phase = .idle) (hstart : sample.start = true) :
@@ -212,7 +220,7 @@ theorem timedStep_preserves_indexInvariant {sample : CtrlSample} {s : State} :
   | idle =>
       cases hstart : sample.start with
       | false =>
-          simpa [timedStep, hphase, hstart] using hs
+          simp [timedStep, hphase, hstart, IndexInvariant, hiddenCount]
       | true =>
           simpa [timedStep, hphase, hstart, IndexInvariant] using hs
   | loadInput =>

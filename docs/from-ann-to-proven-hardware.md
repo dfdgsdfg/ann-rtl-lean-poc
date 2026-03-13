@@ -343,7 +343,11 @@ The operational `step`/`run` model assumes a preloaded transaction input. It doe
 ```lean
 def timedStep (sample : CtrlSample) (s : State) : State :=
   match s.phase with
-  | .idle => if sample.start then { s with phase := .loadInput } else s
+  | .idle =>
+      if sample.start then
+        { s with phase := .loadInput }
+      else
+        { s with hiddenIdx := 0, inputIdx := 0 }
   | .loadInput =>
       { s with regs := sample.inputs, hidden := Hidden16.zero,
                accumulator := Acc32.zero, hiddenIdx := 0,
@@ -353,7 +357,8 @@ def timedStep (sample : CtrlSample) (s : State) : State :=
 ```
 
 This models the RTL exactly:
-- In IDLE, wait for start
+- In IDLE with start low, stay idle and clean `hiddenIdx`/`inputIdx` back to zero
+- In IDLE with start high, accept the transaction and move to `LOAD_INPUT`
 - In LOAD_INPUT, capture the external input bus into `regs`
 - In DONE with start high, hold
 - In DONE with start low, return to IDLE
@@ -370,6 +375,7 @@ The temporal theorems prove timing properties over `rtlTrace`, which applies `ti
 | `output_stable_while_done` | Output doesn't change while machine stays in done |
 | `done_hold_while_start_high` | Machine stays in done while start is held high |
 | `done_to_idle_when_start_low` | Machine returns to idle when start drops |
+| `idle_wait_cleans_controller_indices` | Idle waiting preserves datapath contents while cleaning `hiddenIdx` and `inputIdx` to zero |
 | `phase_ordering_ok` | Every transition follows the allowed phase graph |
 
 The boundary theorems prove that guard cycles are safe:
