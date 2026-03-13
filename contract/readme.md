@@ -113,8 +113,7 @@ Do not edit `contract/result/weights.json` by hand. Re-freeze from an ANN result
 
 ## Specs
 
-The contract requirements and plan live here:
+The contract requirements and design live here:
 
 - `../specs/contract/requirement.md`
 - `../specs/contract/design.md`
-- `../specs/contract/plan.md`
