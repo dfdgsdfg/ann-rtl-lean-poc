@@ -139,7 +139,8 @@ Total: 1 (LOAD_INPUT) + 64 (hidden) + 11 (output) = 76 cycles.
 
 The timing semantics are part of the RTL contract, not implementation details:
 
-- `start` is sampled only in IDLE
+- `start` is sampled in IDLE for transaction acceptance and in DONE for hold/release behavior
+- `in0..in3` are captured on the `LOAD_INPUT` cycle, so they must remain stable through that sampling edge
 - `busy` is a level: high in every state except IDLE and DONE
 - `done` is a level: high in DONE, not a pulse
 - `out_bit` is valid exactly when `done = 1`
@@ -277,7 +278,7 @@ This works because the contract's verified bounds show that no intermediate valu
 
 ### The Machine Model
 
-The machine model maps directly to the RTL FSM:
+The machine state layout mirrors the RTL FSM and datapath registers, but the operational `step`/`run` view intentionally starts from a preloaded input-register state:
 
 ```lean
 inductive Phase
@@ -308,7 +309,7 @@ def step (s : State) : State :=
   -- ...
 ```
 
-The guard cycle appears naturally: when `inputIdx = 4`, the condition `inputIdx < inputCount` is false, so the step just changes the phase. No MAC happens. This matches the RTL exactly.
+The guard cycle appears naturally: when `inputIdx = 4`, the condition `inputIdx < inputCount` is false, so the step just changes the phase. No MAC happens. This matches the RTL exactly once the input register has already been loaded.
 
 ### The Correctness Proof
 
@@ -337,18 +338,23 @@ This is proved by symbolic simulation: unfolding `run` in chunks and equating in
 
 ### The Temporal Layer
 
-The operational `step`/`run` model assumes an accepted transaction. It doesn't model `start` sampling or DONE hold behavior. The temporal layer adds this.
+The operational `step`/`run` model assumes a preloaded transaction input. It does not model external `start` sampling, `LOAD_INPUT` data capture, or DONE hold behavior. The temporal layer adds those interface semantics.
 
 ```lean
 def timedStep (sample : CtrlSample) (s : State) : State :=
   match s.phase with
-  | .idle => if sample.start then step s else s
+  | .idle => if sample.start then { s with phase := .loadInput } else s
+  | .loadInput =>
+      { s with regs := sample.inputs, hidden := Hidden16.zero,
+               accumulator := Acc32.zero, hiddenIdx := 0,
+               inputIdx := 0, output := false, phase := .macHidden }
   | .done => if sample.start then s else { s with phase := .idle }
   | _     => step s
 ```
 
 This models the RTL exactly:
 - In IDLE, wait for start
+- In LOAD_INPUT, capture the external input bus into `regs`
 - In DONE with start high, hold
 - In DONE with start low, return to IDLE
 - In any active state, run the operational step
@@ -358,6 +364,7 @@ The temporal theorems prove timing properties over `rtlTrace`, which applies `ti
 | Theorem | What it says |
 |---------|-------------|
 | `acceptedStart_eventually_done` | Accepted start reaches done in exactly 76 cycles |
+| `acceptedStart_capturedInput_correct` | The final output matches the input sampled on the `LOAD_INPUT` cycle |
 | `busy_during_active_window` | Busy is asserted throughout cycles 1..75 |
 | `done_implies_outputValid` | Done implies the output is valid |
 | `output_stable_while_done` | Output doesn't change while machine stays in done |
@@ -418,6 +425,7 @@ The SystemVerilog testbench (`simulations/rtl/testbench.sv`) drives the DUT and 
 
 **Handshake**:
 - After accepted start, state is LOAD_INPUT and busy is high
+- During LOAD_INPUT, the DUT captures the current `in0..in3` bus value into `input_regs`
 - During active computation, busy stays high
 - In DONE, busy is low
 - With start held high in DONE, machine stays in DONE with stable output

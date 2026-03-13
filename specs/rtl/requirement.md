@@ -106,8 +106,9 @@ The RTL must define and preserve the timing meaning of its control signals.
 
 For the current `4 → 8 → 1` controller, the contract is exact, not approximate:
 
-- `start` is sampled only while the machine is in `IDLE`
+- `start` is sampled in `IDLE` for transaction acceptance and in `DONE` for hold/release behavior
 - if `start = 1` is sampled in `IDLE`, the transaction is accepted on that rising clock edge and the next visible state is `LOAD_INPUT`
+- the transaction input vector is captured from `in0..in3` on the `LOAD_INPUT` cycle, so those inputs must remain stable through that sampling edge
 - `busy` is a level signal defined by `state != IDLE && state != DONE`
 - `done` is a level signal defined by `state == DONE`; it is not a pulse
 - `out_bit` is externally valid exactly when `done = 1`
@@ -122,7 +123,7 @@ The exact restart semantics above are part of the normative RTL contract and mus
 
 Cycle numbers below are counted from the rising edge that accepts `start` in `IDLE`.
 
-- Cycle `1`: `LOAD_INPUT`
+- Cycle `1`: `LOAD_INPUT` and input-vector capture from `in0..in3`
 - Cycles `2..65`: hidden-layer processing
 - Cycles `66..74`: output-layer MAC processing
 - Cycle `75`: `BIAS_OUTPUT`

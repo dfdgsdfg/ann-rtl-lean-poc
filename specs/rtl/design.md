@@ -68,8 +68,9 @@ The top-level ports are:
 
 The current controller exposes a level-based handshake contract:
 
-- `start` is sampled only in `IDLE`
+- `start` is sampled in `IDLE` for transaction acceptance and in `DONE` for hold/release behavior
 - if `start = 1` is sampled in `IDLE`, the transaction is accepted on that edge and the next visible state is `LOAD_INPUT`
+- the transaction input vector is captured from `in0..in3` on the `LOAD_INPUT` cycle, so those inputs must remain stable through that sampling edge
 - `busy` is high in every state except `IDLE` and `DONE`
 - `done` is high in `DONE` and is a level, not a pulse
 - the output bit is externally valid exactly when `done` is high
@@ -88,7 +89,7 @@ Cycle numbers below are counted from the rising edge that accepts `start` while 
 
 | Accepted-start cycle | Visible state | Notes |
 |---|---|---|
-| `1` | `LOAD_INPUT` | Input registers loaded, counters cleared |
+| `1` | `LOAD_INPUT` | Input registers load from `in0..in3`; counters cleared |
 | `2..65` | hidden-layer states | `8` hidden neurons × `8` cycles per neuron |
 | `66..74` | `MAC_OUTPUT` | `8` useful MAC cycles plus `1` guard cycle |
 | `75` | `BIAS_OUTPUT` | Add `b2`, register final accumulator and `out_bit` |

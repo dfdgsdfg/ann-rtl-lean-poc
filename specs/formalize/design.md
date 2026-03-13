@@ -58,7 +58,7 @@ The temporal layer should focus on properties such as:
 - phase ordering cannot skip required computation stages
 - final-iteration boundaries transition to the correct next phase without off-by-one behavior, including the explicit guard cycles in `MAC_HIDDEN` and `MAC_OUTPUT`
 
-Because exact `start` handshake timing is part of the current proof scope, the machine model should include sampled control inputs or an explicit input trace. The project-local temporal layer should then be defined over that trace, rather than over only post-acceptance state evolution.
+Because exact handshake timing is part of the current proof scope, the temporal layer should be defined over an explicit sampled external trace. That trace must include both sampled `start` values and the `in0..in3` transaction input captured on the RTL `LOAD_INPUT` cycle, rather than reasoning only over post-acceptance state evolution.
 
 ## 4. File Responsibilities
 
@@ -121,10 +121,10 @@ The Lean `Phase` constructors map one-to-one to the controller FSM states:
 
 The operational `step` function follows the same datapath work partition and the same per-phase sequencing as `mlp_core.sv`, making the theorem directly traceable to RTL signals without an informal translation step.
 
-The exact `IDLE` and `DONE` handshake semantics are then recovered in the temporal layer:
+The exact `IDLE`, `LOAD_INPUT`, and `DONE` interface semantics are then recovered in the temporal layer:
 
 - the operational `step` view is intentionally simplified for accepted-transaction reasoning
-- the timing-faithful `timedStep` view must match `controller.sv` exactly for sampled `start`, `busy`, `done`, and restart behavior
+- the timing-faithful `timedStep` view must match `controller.sv` exactly for sampled `start`, `LOAD_INPUT` data capture, `busy`, `done`, and restart behavior
 
 The current state-machine model is a good base for end-state correctness, but a timing-faithful layer should additionally model the control-handshake conditions that determine when a transaction is considered accepted.
 
@@ -132,6 +132,8 @@ A practical architecture is to keep two views:
 
 - an operational view based on `step` and `run`
 - a temporal view based on a project-local finite trace derived from that execution
+
+The split is deliberate: the operational view may assume a preloaded `regs` field for symbolic-simulation proofs, while the temporal view must model the external transaction boundary, including the fact that `in0..in3` are sampled on the `LOAD_INPUT` cycle rather than on the accepted-`start` edge.
 
 The proof burden is then split cleanly:
 
@@ -141,7 +143,7 @@ The proof burden is then split cleanly:
 For the current RTL, the timing-faithful view should make the following schedule explicit:
 
 - accepted `start` at cycle `0`
-- `LOAD_INPUT` at cycle `1`
+- `LOAD_INPUT` and external input capture at cycle `1`
 - hidden-layer work across cycles `2..65`
 - output-layer MAC across cycles `66..74`
 - `BIAS_OUTPUT` at cycle `75`

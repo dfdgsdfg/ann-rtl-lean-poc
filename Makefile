@@ -34,8 +34,10 @@ SIM_RTL := rtl/src/mac_unit.sv \
 SIM_TB := simulations/rtl/testbench.sv
 SIM_VECTORS := simulations/rtl/test_vectors.mem
 SIM_VECTOR_META := simulations/rtl/test_vectors_meta.svh
+SIM_VECTOR_DEPS := contract/result/weights.json $(wildcard contract/src/*.py)
 SIM_BUILD_DIR := build/sim
-SIM_INCLUDE_DIRS := -I simulations/rtl
+SIM_VECTOR_STAMP := $(SIM_BUILD_DIR)/vectors.stamp
+SIM_INCLUDE_DIRS := -Isimulations/rtl
 IVERILOG_BIN := $(SIM_BUILD_DIR)/iverilog/testbench.out
 VERILATOR_DIR := $(SIM_BUILD_DIR)/verilator
 VERILATOR_BIN := $(VERILATOR_DIR)/Vtestbench
@@ -47,20 +49,27 @@ sim-check-tools:
 	@command -v vvp >/dev/null 2>&1 || { echo "missing required tool: vvp"; exit 1; }
 	@command -v verilator >/dev/null 2>&1 || { echo "missing required tool: verilator"; exit 1; }
 
-sim-vectors:
-	python3 -m contract.src.gen_vectors
+sim-vectors: $(SIM_VECTORS) $(SIM_VECTOR_META)
 
-sim-iverilog: $(IVERILOG_BIN)
+$(SIM_VECTOR_STAMP): $(SIM_VECTOR_DEPS)
+	@mkdir -p $(dir $@)
+	python3 -m contract.src.gen_vectors
+	@touch $@
+
+$(SIM_VECTORS) $(SIM_VECTOR_META): %: $(SIM_VECTOR_STAMP)
+	@if [ ! -f $@ ]; then rm -f $(SIM_VECTOR_STAMP); $(MAKE) $(SIM_VECTOR_STAMP); fi
+
+sim-iverilog: sim-vectors $(IVERILOG_BIN)
 	vvp $(IVERILOG_BIN)
 
-$(IVERILOG_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_META) | sim-vectors
+$(IVERILOG_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
 	@mkdir -p $(dir $@)
 	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(SIM_RTL)
 
-sim-verilator: $(VERILATOR_BIN)
+sim-verilator: sim-vectors $(VERILATOR_BIN)
 	$(VERILATOR_BIN)
 
-$(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_META) | sim-vectors
+$(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
 	@mkdir -p $(VERILATOR_DIR)
 	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(VERILATOR_DIR) $(SIM_TB) $(SIM_RTL)
 

@@ -29,7 +29,28 @@ The public temporal theorem surface for this milestone is:
 
 structure CtrlSample where
   start : Bool
+  inputs : Input8
 deriving Repr, DecidableEq
+
+def zeroInput : Input8 :=
+  { x0 := Int8.ofInt 0
+  , x1 := Int8.ofInt 0
+  , x2 := Int8.ofInt 0
+  , x3 := Int8.ofInt 0
+  }
+
+def idleState : State :=
+  { regs := zeroInput
+  , hidden := Hidden16.zero
+  , accumulator := Acc32.zero
+  , hiddenIdx := 0
+  , inputIdx := 0
+  , phase := .idle
+  , output := false
+  }
+
+def capturedInput (samples : Nat → CtrlSample) : Input8 :=
+  (samples 1).inputs
 
 def acceptedStart (sample : CtrlSample) (s : State) : Prop :=
   s.phase = .idle ∧ sample.start = true
@@ -59,9 +80,18 @@ def timedStep (sample : CtrlSample) (s : State) : State :=
   match s.phase with
   | .idle =>
       if sample.start then
-        step s
+        { s with phase := .loadInput }
       else
         s
+  | .loadInput =>
+      { s with
+          regs := sample.inputs
+          hidden := Hidden16.zero
+          accumulator := Acc32.zero
+          hiddenIdx := 0
+          inputIdx := 0
+          output := false
+          phase := .macHidden }
   | .done =>
       if sample.start then
         s
@@ -75,9 +105,9 @@ def timedRun : Nat → (Nat → CtrlSample) → State → State
   | n + 1, samples, s =>
       timedRun n (fun k => samples (k + 1)) (timedStep (samples 0) s)
 
-def rtlTrace (input : Input8) (samples : Nat → CtrlSample) : Nat → State
-  | 0 => initialState input
-  | n + 1 => timedStep (samples n) (rtlTrace input samples n)
+def rtlTrace (samples : Nat → CtrlSample) : Nat → State
+  | 0 => idleState
+  | n + 1 => timedStep (samples n) (rtlTrace samples n)
 
 def initialControl : ControlState :=
   { phase := .idle, hiddenIdx := 0, inputIdx := 0 }
@@ -107,7 +137,11 @@ def timedControlTrace (samples : Nat → CtrlSample) : Nat → ControlState
   | n + 1 => timedControlStep (samples n) (timedControlTrace samples n)
 
 def holdHigh : Nat → CtrlSample :=
-  fun _ => { start := true }
+  fun _ => { start := true, inputs := zeroInput }
+
+theorem idleState_indexInvariant :
+    IndexInvariant idleState := by
+  simp [idleState, zeroInput, IndexInvariant]
 
 theorem timedStep_idle_wait (sample : CtrlSample) (s : State)
     (hidle : s.phase = .idle) (hstart : sample.start = false) :
@@ -118,10 +152,25 @@ theorem timedStep_idle_wait (sample : CtrlSample) (s : State)
 
 theorem timedStep_idle_start (sample : CtrlSample) (s : State)
     (hidle : s.phase = .idle) (hstart : sample.start = true) :
-    timedStep sample s = step s := by
+    timedStep sample s = { s with phase := .loadInput } := by
   cases s with
   | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
       cases phase <;> simp [timedStep, hstart] at hidle ⊢
+
+theorem timedStep_loadInput_capture (sample : CtrlSample) (s : State)
+    (hload : s.phase = .loadInput) :
+    timedStep sample s =
+      { s with
+          regs := sample.inputs
+          hidden := Hidden16.zero
+          accumulator := Acc32.zero
+          hiddenIdx := 0
+          inputIdx := 0
+          output := false
+          phase := .macHidden } := by
+  cases s with
+  | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
+      cases phase <;> simp [timedStep] at hload ⊢
 
 theorem timedStep_done_hold (sample : CtrlSample) (s : State)
     (hdone : s.phase = .done) (hstart : sample.start = true) :
@@ -152,9 +201,9 @@ theorem sameDataFields_of_phaseUpdate (s : State) (phase : Phase) :
   cases s <;> simp [SameDataFields]
 
 theorem timedStep_eq_step_of_active {sample : CtrlSample} {s : State}
-    (hidle : s.phase ≠ .idle) (hdone : s.phase ≠ .done) :
+    (hidle : s.phase ≠ .idle) (hload : s.phase ≠ .loadInput) (hdone : s.phase ≠ .done) :
     timedStep sample s = step s := by
-  cases hphase : s.phase <;> simp [timedStep, hphase] at hidle hdone ⊢
+  cases hphase : s.phase <;> simp [timedStep, hphase] at hidle hload hdone ⊢
 
 theorem timedStep_preserves_indexInvariant {sample : CtrlSample} {s : State} :
     IndexInvariant s → IndexInvariant (timedStep sample s) := by
@@ -165,9 +214,9 @@ theorem timedStep_preserves_indexInvariant {sample : CtrlSample} {s : State} :
       | false =>
           simpa [timedStep, hphase, hstart] using hs
       | true =>
-          simpa [timedStep, hphase, hstart] using step_preserves_indexInvariant hs
+          simpa [timedStep, hphase, hstart, IndexInvariant] using hs
   | loadInput =>
-      simpa [timedStep, hphase] using step_preserves_indexInvariant hs
+      simp [timedStep, hphase, IndexInvariant, hiddenCount, inputCount]
   | macHidden =>
       simpa [timedStep, hphase] using step_preserves_indexInvariant hs
   | biasHidden =>
@@ -191,9 +240,9 @@ theorem controlOf_timedStep (sample : CtrlSample) (s : State) :
       cases phase with
       | idle =>
           cases hstart : sample.start <;>
-            simp [timedStep, timedControlStep, controlOf, controlStep, step, hstart]
+            simp [timedStep, timedControlStep, controlOf, controlStep, hstart]
       | loadInput =>
-          simp [timedStep, timedControlStep, controlOf, controlStep, step]
+          simp [timedStep, timedControlStep, controlOf, controlStep]
       | macHidden =>
           by_cases h : inputIdx < inputCount
           · have h4 : inputIdx < 4 := by simpa [inputCount] using h
@@ -222,19 +271,32 @@ theorem controlOf_timedStep (sample : CtrlSample) (s : State) :
           cases hstart : sample.start <;>
             simp [timedStep, timedControlStep, controlOf, hstart]
 
-theorem controlOf_rtlTrace (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
-    controlOf (rtlTrace input samples n) = timedControlTrace samples n := by
+theorem timedControlStep_eq_controlStep_of_active {sample : CtrlSample} {cs : ControlState}
+    (hidle : cs.phase ≠ .idle) (hdone : cs.phase ≠ .done) :
+    timedControlStep sample cs = controlStep cs := by
+  cases hphase : cs.phase <;> simp [timedControlStep, hphase] at hidle hdone ⊢
+
+theorem controlStep_controlRun_comm (n : Nat) (cs : ControlState) :
+    controlRun n (controlStep cs) = controlStep (controlRun n cs) := by
+  induction n generalizing cs with
+  | zero =>
+      simp [controlRun]
+  | succ n ih =>
+      simp [controlRun, ih]
+
+theorem controlOf_rtlTrace (samples : Nat → CtrlSample) (n : Nat) :
+    controlOf (rtlTrace samples n) = timedControlTrace samples n := by
   induction n with
   | zero =>
-      simp [rtlTrace, timedControlTrace, controlOf, initialState, initialControl]
+      simp [rtlTrace, timedControlTrace, controlOf, idleState, initialControl]
   | succ n ih =>
       simp [rtlTrace, timedControlTrace, controlOf_timedStep, ih]
 
-theorem rtlTrace_preserves_indexInvariant (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
-    IndexInvariant (rtlTrace input samples n) := by
+theorem rtlTrace_preserves_indexInvariant (samples : Nat → CtrlSample) (n : Nat) :
+    IndexInvariant (rtlTrace samples n) := by
   induction n with
   | zero =>
-      simp [rtlTrace, initialState_indexInvariant]
+      simp [rtlTrace, idleState_indexInvariant]
   | succ n ih =>
       simp [rtlTrace]
       exact timedStep_preserves_indexInvariant ih
@@ -255,42 +317,119 @@ private theorem run_active_window (input : Input8) (k : Fin totalCycles) (hpos :
   rw [← hphase]
   exact hactive
 
-theorem rtlTrace_matches_run_prefix (input : Input8) (samples : Nat → CtrlSample)
+private theorem controlRun_compute_window (k : Fin totalCycles) (hge : 2 ≤ k.1) :
+    let ph := (controlRun k.1 initialControl).phase
+    ph ≠ .idle ∧ ph ≠ .loadInput ∧ ph ≠ .done := by
+  native_decide +revert
+
+private theorem run_compute_window (input : Input8) (k : Fin totalCycles) (hge : 2 ≤ k.1) :
+    let ph := (run k.1 (initialState input)).phase
+    ph ≠ .idle ∧ ph ≠ .loadInput ∧ ph ≠ .done := by
+  have hphase :
+      (controlRun k.1 initialControl).phase = (run k.1 (initialState input)).phase := by
+    simpa [initialControl, controlOf, initialState] using
+      congrArg ControlState.phase (control_run_agrees k.1 (initialState input))
+  have hactive := controlRun_compute_window k hge
+  rw [← hphase]
+  exact hactive
+
+private theorem rtlTrace_two_matches_run_two (samples : Nat → CtrlSample)
     (hstart : (samples 0).start = true) :
-    ∀ n, n ≤ totalCycles → rtlTrace input samples n = run n (initialState input) := by
+    rtlTrace samples 2 = run 2 (initialState (capturedInput samples)) := by
+  simp [rtlTrace, timedStep, hstart, capturedInput, idleState, initialState, run, step,
+    zeroInput, Hidden16.zero, Acc32.zero, Acc32.ofInt]
+
+theorem rtlTrace_matches_run_after_loadInput (samples : Nat → CtrlSample)
+    (hstart : (samples 0).start = true) :
+    ∀ n, n + 2 ≤ totalCycles →
+      rtlTrace samples (n + 2) = run (n + 2) (initialState (capturedInput samples)) := by
   intro n hle
   induction n with
   | zero =>
-      simp [rtlTrace, run]
+      simpa using rtlTrace_two_matches_run_two samples hstart
   | succ n ih =>
-      rw [rtlTrace, run, ih (Nat.le_of_succ_le hle), step_run_comm n (initialState input)]
+      have hprev : n + 2 ≤ totalCycles := by omega
+      have hlt : n + 2 < totalCycles := by omega
+      let k : Fin totalCycles := ⟨n + 2, hlt⟩
+      have hkge : 2 ≤ k.1 := by
+        simp [k]
+      have hactive : let ph := (run k.1 (initialState (capturedInput samples))).phase
+          ph ≠ .idle ∧ ph ≠ .loadInput ∧ ph ≠ .done :=
+        run_compute_window (capturedInput samples) k hkge
+      calc
+        rtlTrace samples (Nat.succ n + 2) =
+            timedStep (samples (n + 2)) (rtlTrace samples (n + 2)) := by
+              simp [rtlTrace]
+        _ = timedStep (samples (n + 2)) (run (n + 2) (initialState (capturedInput samples))) := by
+              rw [ih hprev]
+        _ = step (run (n + 2) (initialState (capturedInput samples))) := by
+              exact timedStep_eq_step_of_active hactive.1 hactive.2.1 hactive.2.2
+        _ = run (Nat.succ (n + 2)) (initialState (capturedInput samples)) := by
+              simp [run, step_run_comm]
+
+theorem timedControlTrace_matches_controlRun_prefix (samples : Nat → CtrlSample)
+    (hstart : (samples 0).start = true) :
+    ∀ n, n ≤ totalCycles → timedControlTrace samples n = controlRun n initialControl := by
+  intro n hle
+  induction n with
+  | zero =>
+      simp [timedControlTrace, controlRun, initialControl]
+  | succ n ih =>
+      rw [timedControlTrace, controlRun, ih (Nat.le_of_succ_le hle)]
       cases n with
       | zero =>
-          simp [run, initialState, timedStep, hstart]
+          simp [timedControlStep, controlStep, controlRun, initialControl, hstart]
       | succ m =>
           have hlt : Nat.succ m < totalCycles := by
             exact Nat.lt_of_lt_of_le (Nat.lt_succ_self (Nat.succ m)) hle
           let k : Fin totalCycles := ⟨Nat.succ m, hlt⟩
           have hkpos : 0 < k.1 := by
             simp [k]
-          have hbusy : busyOf (run (Nat.succ m) (initialState input)) :=
-            run_active_window input k hkpos
-          exact timedStep_eq_step_of_active hbusy.1 hbusy.2
+          have hactive := controlRun_active_window k hkpos
+          rw [controlStep_controlRun_comm]
+          exact timedControlStep_eq_controlStep_of_active hactive.1 hactive.2
 
-theorem acceptedStart_eventually_done (input : Input8) (samples : Nat → CtrlSample)
-    (haccept : acceptedStart (samples 0) (initialState input)) :
-    doneOf (rtlTrace input samples totalCycles) := by
+theorem acceptedStart_eventually_done (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState) :
+    doneOf (rtlTrace samples totalCycles) := by
   rcases haccept with ⟨_, hstart⟩
-  rw [rtlTrace_matches_run_prefix input samples hstart totalCycles (Nat.le_refl _)]
-  exact rtl_terminates input
+  have hcontrol :
+      timedControlTrace samples totalCycles = controlRun totalCycles initialControl :=
+    timedControlTrace_matches_controlRun_prefix samples hstart totalCycles (Nat.le_refl _)
+  have hphase :
+      (controlOf (rtlTrace samples totalCycles)).phase = .done := by
+    rw [controlOf_rtlTrace, hcontrol]
+    exact controlRun_76_idle_phase
+  simpa [controlOf, doneOf] using hphase
 
-theorem busy_during_active_window (input : Input8) (samples : Nat → CtrlSample)
-    (haccept : acceptedStart (samples 0) (initialState input))
+theorem busy_during_active_window (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState)
     (k : Fin totalCycles) (hpos : 0 < k.1) :
-    busyOf (rtlTrace input samples k.1) := by
+    busyOf (rtlTrace samples k.1) := by
   rcases haccept with ⟨_, hstart⟩
-  rw [rtlTrace_matches_run_prefix input samples hstart k.1 (Nat.le_of_lt k.2)]
-  exact run_active_window input k hpos
+  have hcontrol :
+      timedControlTrace samples k.1 = controlRun k.1 initialControl :=
+    timedControlTrace_matches_controlRun_prefix samples hstart k.1 (Nat.le_of_lt k.2)
+  have hphase :
+      (controlOf (rtlTrace samples k.1)).phase = (controlRun k.1 initialControl).phase := by
+    rw [controlOf_rtlTrace, hcontrol]
+  have hactive := controlRun_active_window k hpos
+  have htracePhase : (rtlTrace samples k.1).phase = (controlRun k.1 initialControl).phase := by
+    simpa [controlOf] using hphase
+  unfold busyOf
+  rw [htracePhase]
+  exact hactive
+
+theorem acceptedStart_capturedInput_correct (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState) :
+    (rtlTrace samples totalCycles).output = mlpFixed (capturedInput samples) := by
+  rcases haccept with ⟨_, hstart⟩
+  have htrace :
+      rtlTrace samples totalCycles = run totalCycles (initialState (capturedInput samples)) := by
+    unfold totalCycles
+    simpa using rtlTrace_matches_run_after_loadInput samples hstart 74 (by decide)
+  rw [htrace]
+  exact rtl_correct (capturedInput samples)
 
 theorem done_implies_outputValid (s : State) :
     doneOf s → outputValidOf s := by
@@ -305,30 +444,30 @@ theorem timedStep_done_preserves_output {sample : CtrlSample} {s : State}
       cases phase <;> cases hstart : sample.start <;>
         simp [doneOf, timedStep, hstart] at hdone hnext ⊢
 
-theorem output_stable_while_done (input : Input8) (samples : Nat → CtrlSample) (t : Nat) :
-    stableOutputOn t (rtlTrace input samples) := by
+theorem output_stable_while_done (samples : Nat → CtrlSample) (t : Nat) :
+    stableOutputOn t (rtlTrace samples) := by
   intro n hdoneWindow
   induction n with
   | zero =>
       rfl
   | succ n ih =>
-      have hprefix : ∀ m, t ≤ m → m ≤ t + n → doneOf (rtlTrace input samples m) := by
+      have hprefix : ∀ m, t ≤ m → m ≤ t + n → doneOf (rtlTrace samples m) := by
         intro m htm hmn
         exact hdoneWindow m htm (Nat.le_trans hmn (Nat.le_succ _))
-      have hcurrDone : doneOf (rtlTrace input samples (t + n)) :=
+      have hcurrDone : doneOf (rtlTrace samples (t + n)) :=
         hdoneWindow (t + n) (Nat.le_add_right _ _) (Nat.le_succ _)
-      have hnextDone : doneOf (rtlTrace input samples (t + n + 1)) := by
+      have hnextDone : doneOf (rtlTrace samples (t + n + 1)) := by
         exact hdoneWindow (t + n + 1) (Nat.le_add_right t (n + 1)) (Nat.le_refl _)
       have hstepOut :
-          (rtlTrace input samples (t + n + 1)).output =
-            (rtlTrace input samples (t + n)).output := by
+          (rtlTrace samples (t + n + 1)).output =
+            (rtlTrace samples (t + n)).output := by
         simpa [rtlTrace] using
           timedStep_done_preserves_output (sample := samples (t + n))
-            (s := rtlTrace input samples (t + n)) hcurrDone hnextDone
+            (s := rtlTrace samples (t + n)) hcurrDone hnextDone
       calc
-        (rtlTrace input samples (t + n + 1)).output =
-            (rtlTrace input samples (t + n)).output := hstepOut
-        _ = (rtlTrace input samples t).output := ih hprefix
+        (rtlTrace samples (t + n + 1)).output =
+            (rtlTrace samples (t + n)).output := hstepOut
+        _ = (rtlTrace samples t).output := ih hprefix
 
 def AllowedPhaseTransition : Phase → Phase → Prop
   | .idle, .idle => True
@@ -354,9 +493,9 @@ theorem phase_ordering_ok (sample : CtrlSample) (s : State) :
       cases phase with
       | idle =>
           cases hstart : sample.start <;>
-            simp [AllowedPhaseTransition, timedStep, step, hstart]
+            simp [AllowedPhaseTransition, timedStep, hstart]
       | loadInput =>
-          simp [AllowedPhaseTransition, timedStep, step]
+          simp [AllowedPhaseTransition, timedStep]
       | macHidden =>
           by_cases h : inputIdx < inputCount
           · have h4 : inputIdx < 4 := by simpa [inputCount] using h
@@ -561,8 +700,8 @@ theorem biasOutput_registers_result (sample : CtrlSample) (s : State)
       cases phase <;> simp at hphase
       simp [timedStep, step, outputValidOf, doneOf, acc32, bias2Term]
 
-theorem holdHigh_accepts (input : Input8) :
-    acceptedStart (holdHigh 0) (initialState input) := by
-  simp [acceptedStart, holdHigh, initialState]
+theorem holdHigh_accepts :
+    acceptedStart (holdHigh 0) idleState := by
+  simp [acceptedStart, holdHigh, idleState, zeroInput]
 
 end TinyMLP

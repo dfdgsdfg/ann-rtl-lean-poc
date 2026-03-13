@@ -62,10 +62,10 @@ Expected top-level definitions:
 
 Theorems about RTL behavior, fixed-point behavior, temporal properties, and machine execution must quantify over the hardware-contract input domain, not over unrestricted mathematical inputs.
 
-For timing-faithful verification, the formalization must also define either:
+For timing-faithful verification, the formalization must also define a sampled external trace that includes:
 
-- an external input trace that includes `start`, or
-- a machine model whose state includes the sampled control inputs needed to reason about handshake timing
+- `start`
+- the sampled `in0..in3` transaction inputs used by the RTL `LOAD_INPUT` cycle
 
 The formalization does not need a full general-purpose temporal-logic framework, but it must support finite-trace properties such as:
 
@@ -80,6 +80,8 @@ The formalization must model the current RTL timing contract exactly:
 - `done` is a level signal equal to `state = DONE`, not a pulse
 - `busy` is true exactly when `state ≠ IDLE ∧ state ≠ DONE`
 - accepted `start` is a sampled event that occurs only from `IDLE`
+- `start` is also sampled in `DONE` to implement hold-high and release-to-`IDLE` behavior
+- the transaction input vector is captured from `in0..in3` on the `LOAD_INPUT` cycle, one cycle after accepted `start`
 - the controller remains in `DONE` while sampled `start = true`
 - a sampled `start = false` in `DONE` returns the machine to `IDLE`
 - externally valid output is first observed together with `done = true`
@@ -116,9 +118,9 @@ This bridge theorem is distinct from the RTL theorem. The hardware-facing proof 
 This repository uses two related timing views:
 
 - an operational `run` view that captures the accepted transaction at a fixed cycle budget
-- a timing-faithful trace view that models sampled `start` and exact `DONE` behavior
+- a timing-faithful trace view that models sampled `start`, `LOAD_INPUT` data capture, and exact `DONE` behavior
 
-The formalization must connect these views and prove that an accepted `start` reaches observable `done` in exactly `76` cycles for the current controller.
+The formalization must connect these views and prove that an accepted `start` reaches observable `done` in exactly `76` cycles for the current controller, and that the final output agrees with the input sampled on the `LOAD_INPUT` cycle.
 
 Temporal correctness is a mandatory part of the formalization scope for this milestone. At minimum, the repository must state and prove named theorems for:
 
@@ -199,7 +201,7 @@ The `formalize` domain is complete when:
 1. The Lean models for spec, fixed-point behavior, machine execution, and temporal/trace reasoning are defined.
 2. The main correctness theorem (`rtlCorrectnessGoal`) is stated and proved over the hardware-contract input domain.
 3. The termination theorem (`rtlTerminationGoal`) is proved.
-4. The mandatory temporal theorem set is stated and proved: accepted `start` reaches `done` at cycle `76`, `busy` holds throughout active execution, `done` implies output validity, `done ∧ start` holds completion, `done ∧ ¬start` returns to `idle`, output remains stable in `done`, and the three named boundary-transition properties are proved with the current guard-cycle semantics.
+4. The mandatory temporal theorem set is stated and proved: accepted `start` reaches `done` at cycle `76`, `busy` holds throughout active execution, `done` implies output validity, `done ∧ start` holds completion, `done ∧ ¬start` returns to `idle`, output remains stable in `done`, the final output agrees with the transaction input sampled on the `LOAD_INPUT` cycle, and the three named boundary-transition properties are proved with the current guard-cycle semantics.
 5. The stronger boundary theorem package is also stated and proved as milestone-critical scope: guard cycles perform no MAC work, boundary steps do not duplicate or skip required work, boundary steps do not perform out-of-range reads, and `BIAS_OUTPUT` is the register-update cycle while `DONE` is the first externally valid completion cycle.
 6. Hardware-facing arithmetic and value-storage types use bounded signed representations that match the contract widths; unrestricted `Int` is confined to the mathematical layer, while controller index legality is enforced by proved invariants rather than bounded index field types.
 7. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.

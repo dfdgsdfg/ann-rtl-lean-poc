@@ -37,6 +37,7 @@ module testbench;
   integer positive_cases;
   integer zero_cases;
   integer negative_cases;
+  integer start_pulse_cases;
   bit stop_run;
 
   mlp_core dut (
@@ -58,12 +59,12 @@ module testbench;
     total_errors_count = output_errors + latency_errors + handshake_errors + boundary_errors + coverage_errors;
   endfunction
 
-  task automatic drive_inputs(input logic [31:0] packed);
+  task automatic drive_inputs(input logic [31:0] packed_word);
     begin
-      in0 = packed[31:24];
-      in1 = packed[23:16];
-      in2 = packed[15:8];
-      in3 = packed[7:0];
+      in0 = packed_word[31:24];
+      in1 = packed_word[23:16];
+      in2 = packed_word[15:8];
+      in3 = packed_word[7:0];
     end
   endtask
 
@@ -88,7 +89,79 @@ module testbench;
     end
   endtask
 
-  task automatic run_vector(input integer vector_idx, input bit hold_done, input bit check_boundaries);
+  task automatic check_load_input_sampling;
+    logic [31:0] early_inputs;
+    logic [31:0] sampled_inputs;
+    integer timeout_cycles;
+    begin
+      early_inputs = 32'h11_22_33_44;
+      sampled_inputs = 32'h80_7f_a5_01;
+      drive_inputs(early_inputs);
+
+      @(negedge clk);
+      start = 1'b1;
+      @(negedge clk);
+
+      if (dut.state !== LOAD_INPUT) begin
+        $display("FAIL capture: expected LOAD_INPUT immediately after start, got state=%0d", dut.state);
+        handshake_errors = handshake_errors + 1;
+      end
+      if (busy !== 1'b1) begin
+        $display("FAIL capture: busy must assert during LOAD_INPUT");
+        handshake_errors = handshake_errors + 1;
+      end
+
+      drive_inputs(sampled_inputs);
+      start = 1'b0;
+      @(negedge clk);
+
+      if (dut.state !== MAC_HIDDEN) begin
+        $display("FAIL capture: expected MAC_HIDDEN after LOAD_INPUT, got state=%0d", dut.state);
+        handshake_errors = handshake_errors + 1;
+      end
+      if ({dut.input_regs[0], dut.input_regs[1], dut.input_regs[2], dut.input_regs[3]} !== sampled_inputs) begin
+        $display(
+          "FAIL capture: input registers did not capture LOAD_INPUT bus value expected=%h got=%h",
+          sampled_inputs,
+          {dut.input_regs[0], dut.input_regs[1], dut.input_regs[2], dut.input_regs[3]}
+        );
+        handshake_errors = handshake_errors + 1;
+      end
+      if (dut.hidden_idx !== 4'd0 || dut.input_idx !== 4'd0) begin
+        $display(
+          "FAIL capture: counters were not cleared on LOAD_INPUT hidden_idx=%0d input_idx=%0d",
+          dut.hidden_idx,
+          dut.input_idx
+        );
+        handshake_errors = handshake_errors + 1;
+      end
+
+      timeout_cycles = 0;
+      while (done !== 1'b1 && timeout_cycles <= EXPECTED_CYCLES + 20) begin
+        @(negedge clk);
+        timeout_cycles = timeout_cycles + 1;
+      end
+
+      if (done !== 1'b1) begin
+        $display("FAIL capture: timed out waiting for capture-semantic transaction to finish");
+        handshake_errors = handshake_errors + 1;
+        stop_run = 1'b1;
+      end else begin
+        @(negedge clk);
+        if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE) begin
+          $display("FAIL capture: expected automatic return to IDLE after capture-semantic transaction");
+          handshake_errors = handshake_errors + 1;
+        end
+      end
+    end
+  endtask
+
+  task automatic run_vector(
+    input integer vector_idx,
+    input bit hold_done,
+    input bit check_boundaries,
+    input bit pulse_start_during_active
+  );
     logic [31:0] packed_inputs;
     logic expected_out;
     logic signed [31:0] expected_score;
@@ -107,6 +180,8 @@ module testbench;
     bit saw_hidden_to_output;
     bit saw_output_guard;
     bit saw_bias_to_done;
+    bit injected_active_start;
+    bit clear_active_start;
     begin
       packed_inputs = vectors[vector_idx][31:0];
       expected_out = vectors[vector_idx][32];
@@ -144,11 +219,31 @@ module testbench;
       saw_hidden_to_output = 1'b0;
       saw_output_guard = 1'b0;
       saw_bias_to_done = 1'b0;
+      injected_active_start = 1'b0;
+      clear_active_start = 1'b0;
 
       while (done !== 1'b1 && !timed_out) begin
         @(negedge clk);
         timeout_cycles = timeout_cycles + 1;
         latency = latency + 1;
+
+        if (clear_active_start) begin
+          start = 1'b0;
+          clear_active_start = 1'b0;
+          if (dut.state == IDLE || dut.state == LOAD_INPUT) begin
+            $display("FAIL idx=%0d latency=%0d: active-window start pulse restarted the transaction", vector_idx, latency);
+            handshake_errors = handshake_errors + 1;
+          end
+        end else if (pulse_start_during_active &&
+                     !injected_active_start &&
+                     dut.state == MAC_HIDDEN &&
+                     dut.hidden_idx == 4'd0 &&
+                     dut.input_idx == 4'd1) begin
+          start = 1'b1;
+          clear_active_start = 1'b1;
+          injected_active_start = 1'b1;
+          start_pulse_cases = start_pulse_cases + 1;
+        end
 
         if (busy !== 1'b1 && done !== 1'b1) begin
           $display("FAIL idx=%0d latency=%0d: busy deasserted during active computation", vector_idx, latency);
@@ -204,6 +299,11 @@ module testbench;
       end
 
       if (!timed_out) begin
+        if (pulse_start_during_active && !injected_active_start) begin
+          $display("FAIL idx=%0d: did not exercise active-window start pulse", vector_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+
         if (busy !== 1'b0) begin
           $display("FAIL idx=%0d: busy asserted while done is high", vector_idx);
           handshake_errors = handshake_errors + 1;
@@ -301,6 +401,7 @@ module testbench;
     positive_cases = 0;
     zero_cases = 0;
     negative_cases = 0;
+    start_pulse_cases = 0;
     stop_run = 1'b0;
 
     $readmemh("simulations/rtl/test_vectors.mem", vectors);
@@ -314,8 +415,10 @@ module testbench;
       handshake_errors = handshake_errors + 1;
     end
 
+    check_load_input_sampling();
+
     for (idx = 0; idx < NUM_VECTORS; idx = idx + 1) begin
-      run_vector(idx, idx == 0, idx == 0);
+      run_vector(idx, idx == 0, idx == 0, idx == 1);
       if (stop_run) begin
         break;
       end
@@ -332,6 +435,10 @@ module testbench;
       end
       if (negative_cases == 0) begin
         $display("FAIL suite: missing negative-score test vector");
+        coverage_errors = coverage_errors + 1;
+      end
+      if (start_pulse_cases == 0) begin
+        $display("FAIL suite: missing active-window start pulse regression");
         coverage_errors = coverage_errors + 1;
       end
     end else begin

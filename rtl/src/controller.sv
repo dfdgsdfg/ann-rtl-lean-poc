@@ -28,6 +28,9 @@ module controller #(
   localparam logic [3:0] MAC_OUTPUT  = 4'd6;
   localparam logic [3:0] BIAS_OUTPUT = 4'd7;
   localparam logic [3:0] DONE        = 4'd8;
+  localparam logic [3:0] INPUT_NEURONS_4B = INPUT_NEURONS[3:0];
+  localparam logic [3:0] HIDDEN_NEURONS_4B = HIDDEN_NEURONS[3:0];
+  localparam logic [3:0] LAST_HIDDEN_IDX = HIDDEN_NEURONS_4B - 4'd1;
 
   logic [3:0] next_state;
 
@@ -35,11 +38,11 @@ module controller #(
     unique case (state)
       IDLE:        next_state = start ? LOAD_INPUT : IDLE;
       LOAD_INPUT:  next_state = MAC_HIDDEN;
-      MAC_HIDDEN:  next_state = (input_idx == INPUT_NEURONS) ? BIAS_HIDDEN : MAC_HIDDEN;
+      MAC_HIDDEN:  next_state = (input_idx == INPUT_NEURONS_4B) ? BIAS_HIDDEN : MAC_HIDDEN;
       BIAS_HIDDEN: next_state = ACT_HIDDEN;
       ACT_HIDDEN:  next_state = NEXT_HIDDEN;
-      NEXT_HIDDEN: next_state = (hidden_idx == HIDDEN_NEURONS-1) ? MAC_OUTPUT : MAC_HIDDEN;
-      MAC_OUTPUT:  next_state = (input_idx == HIDDEN_NEURONS) ? BIAS_OUTPUT : MAC_OUTPUT;
+      NEXT_HIDDEN: next_state = (hidden_idx == LAST_HIDDEN_IDX) ? MAC_OUTPUT : MAC_HIDDEN;
+      MAC_OUTPUT:  next_state = (input_idx == HIDDEN_NEURONS_4B) ? BIAS_OUTPUT : MAC_OUTPUT;
       BIAS_OUTPUT: next_state = DONE;
       DONE:        next_state = start ? DONE : IDLE;
       default:     next_state = IDLE;
@@ -57,11 +60,11 @@ module controller #(
   always_comb begin
     load_input     = (state == LOAD_INPUT);
     clear_acc      = (state == LOAD_INPUT);
-    do_mac_hidden  = (state == MAC_HIDDEN) && (input_idx < INPUT_NEURONS);
+    do_mac_hidden  = (state == MAC_HIDDEN) && (input_idx < INPUT_NEURONS_4B);
     do_bias_hidden = (state == BIAS_HIDDEN);
     do_act_hidden  = (state == ACT_HIDDEN);
     advance_hidden = (state == NEXT_HIDDEN);
-    do_mac_output  = (state == MAC_OUTPUT) && (input_idx < HIDDEN_NEURONS);
+    do_mac_output  = (state == MAC_OUTPUT) && (input_idx < HIDDEN_NEURONS_4B);
     do_bias_output = (state == BIAS_OUTPUT);
     done           = (state == DONE);
     busy           = (state != IDLE) && (state != DONE);

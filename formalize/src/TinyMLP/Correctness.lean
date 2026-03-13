@@ -31,19 +31,19 @@ theorem rtl_hidden_controller_legal (n : Nat) (input : Input8) :
   · exact indexInvariant_actHidden hs hphase
   · exact indexInvariant_nextHidden hs hphase
 
-theorem rtlTrace_index_safe (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
-    IndexInvariant (rtlTrace input samples n) := by
-  exact rtlTrace_preserves_indexInvariant input samples n
+theorem rtlTrace_index_safe (samples : Nat → CtrlSample) (n : Nat) :
+    IndexInvariant (rtlTrace samples n) := by
+  exact rtlTrace_preserves_indexInvariant samples n
 
-theorem temporal_hidden_controller_legal (input : Input8) (samples : Nat → CtrlSample) (n : Nat) :
-    let s := rtlTrace input samples n
+theorem temporal_hidden_controller_legal (samples : Nat → CtrlSample) (n : Nat) :
+    let s := rtlTrace samples n
     (s.phase = .macHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx ≤ inputCount) ∧
     (s.phase = .biasHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
     (s.phase = .actHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = inputCount) ∧
     (s.phase = .nextHidden → s.hiddenIdx < hiddenCount ∧ s.inputIdx = 0) := by
   dsimp
-  let s := rtlTrace input samples n
-  have hs : IndexInvariant s := rtlTrace_index_safe input samples n
+  let s := rtlTrace samples n
+  have hs : IndexInvariant s := rtlTrace_index_safe samples n
   refine ⟨?_, ?_, ?_, ?_⟩ <;> intro hphase
   · exact indexInvariant_macHidden hs hphase
   · exact indexInvariant_biasHidden hs hphase
@@ -56,24 +56,29 @@ theorem rtl_terminates_goal (input : Input8) : rtlTerminationGoal input :=
 theorem rtl_correctness_goal (input : Input8) : rtlCorrectnessGoal input :=
   rtl_correct input
 
-theorem temporal_acceptedStart_eventually_done (input : Input8) (samples : Nat → CtrlSample)
-    (haccept : acceptedStart (samples 0) (initialState input)) :
-    doneOf (rtlTrace input samples totalCycles) :=
-  acceptedStart_eventually_done input samples haccept
+theorem temporal_acceptedStart_eventually_done (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState) :
+    doneOf (rtlTrace samples totalCycles) :=
+  acceptedStart_eventually_done samples haccept
 
-theorem temporal_busy_during_active_window (input : Input8) (samples : Nat → CtrlSample)
-    (haccept : acceptedStart (samples 0) (initialState input))
+theorem temporal_busy_during_active_window (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState)
     (k : Fin totalCycles) (hpos : 0 < k.1) :
-    busyOf (rtlTrace input samples k.1) :=
-  busy_during_active_window input samples haccept k hpos
+    busyOf (rtlTrace samples k.1) :=
+  busy_during_active_window samples haccept k hpos
+
+theorem temporal_acceptedStart_capturedInput_correct (samples : Nat → CtrlSample)
+    (haccept : acceptedStart (samples 0) idleState) :
+    (rtlTrace samples totalCycles).output = mlpFixed (capturedInput samples) :=
+  acceptedStart_capturedInput_correct samples haccept
 
 theorem temporal_done_implies_outputValid (s : State) :
     doneOf s → outputValidOf s :=
   done_implies_outputValid s
 
-theorem temporal_output_stable_while_done (input : Input8) (samples : Nat → CtrlSample) (t : Nat) :
-    stableOutputOn t (rtlTrace input samples) :=
-  output_stable_while_done input samples t
+theorem temporal_output_stable_while_done (samples : Nat → CtrlSample) (t : Nat) :
+    stableOutputOn t (rtlTrace samples) :=
+  output_stable_while_done samples t
 
 theorem temporal_done_hold_while_start_high (sample : CtrlSample) (s : State)
     (hdone : doneOf s) (hstart : sample.start = true) :
