@@ -27,7 +27,7 @@ The formalization must distinguish between:
 - a mathematical input domain used only for the ideal MLP definition
 - a hardware-contract input domain with exactly four signed 8-bit lanes
 
-Only the mathematical layer may use unrestricted `Int`. Every hardware-facing theorem, machine register, and contract-level arithmetic definition must use bounded signed representations that match the contract widths, for example `BitVec`-based wrappers or equivalent bounded types.
+Only the mathematical layer may use unrestricted `Int` for idealized arithmetic semantics. Every hardware-facing value-carrying machine register and contract-level arithmetic definition must use bounded signed representations that match the contract widths, for example `BitVec`-based wrappers or equivalent bounded types. Controller indices may remain `Nat` in the machine model provided their legal ranges and phase-appropriate uses are enforced by proved invariants.
 
 ## 3. Verification Scope
 
@@ -130,6 +130,8 @@ Temporal correctness is a mandatory part of the formalization scope for this mil
 - `done ∧ ¬start` returns the machine to `idle`
 - the final hidden MAC boundary, the final hidden neuron boundary, and the final output MAC boundary each transition to the correct successor phase with the current guard-cycle behavior
 
+These timing theorems are necessary but not sufficient for milestone completion. The stronger boundary package below is also mandatory for this milestone and is not deferred follow-up work.
+
 Supporting proofs must include:
 
 - Termination (phase reaches `.done`)
@@ -157,6 +159,8 @@ The most important boundary obligations are:
 - the next cycle is a guard cycle in `MAC_OUTPUT` with no MAC work, and the following phase is `BIAS_OUTPUT`
 - after `BIAS_OUTPUT`, the next visible state is `DONE`, where valid output is externally observable and remains stable while `DONE` holds
 
+All of the boundary obligations above are milestone-critical. It is not sufficient to prove only the weaker guard-cycle phase-transition facts; the repository must also prove the no-duplicate, no-skip, no-out-of-range-read, and `BIAS_OUTPUT`/`DONE` observability obligations as named public theorems.
+
 ## 6. Lean Artifact Requirements
 
 Lean files:
@@ -168,7 +172,7 @@ formalize/
     TinyMLP/
       Spec.lean            -- pure mathematical model, weight constants, mlpSpec
       FixedPoint.lean      -- hardware-domain arithmetic, Input8, mlpFixed, hardware→math bridge
-      Machine.lean         -- State, Phase, step, run, initialState, totalCycles over bounded machine values
+      Machine.lean         -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
       Temporal.lean        -- temporal/trace layer and mandatory timing theorems
       Simulation.lean      -- operational bridge lemmas used by temporal and end-state proofs
       Correctness.lean     -- top-level goals and proved theorems
@@ -196,7 +200,8 @@ The `formalize` domain is complete when:
 2. The main correctness theorem (`rtlCorrectnessGoal`) is stated and proved over the hardware-contract input domain.
 3. The termination theorem (`rtlTerminationGoal`) is proved.
 4. The mandatory temporal theorem set is stated and proved: accepted `start` reaches `done` at cycle `76`, `busy` holds throughout active execution, `done` implies output validity, `done ∧ start` holds completion, `done ∧ ¬start` returns to `idle`, output remains stable in `done`, and the three named boundary-transition properties are proved with the current guard-cycle semantics.
-5. Hardware-facing theorem statements and machine-register types use bounded signed representations that match the contract widths; unrestricted `Int` is confined to the mathematical layer.
-6. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
-7. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
-8. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.
+5. The stronger boundary theorem package is also stated and proved as milestone-critical scope: guard cycles perform no MAC work, boundary steps do not duplicate or skip required work, boundary steps do not perform out-of-range reads, and `BIAS_OUTPUT` is the register-update cycle while `DONE` is the first externally valid completion cycle.
+6. Hardware-facing arithmetic and value-storage types use bounded signed representations that match the contract widths; unrestricted `Int` is confined to the mathematical layer, while controller index legality is enforced by proved invariants rather than bounded index field types.
+7. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
+8. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
+9. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.

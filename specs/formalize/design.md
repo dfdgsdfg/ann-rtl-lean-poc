@@ -21,7 +21,7 @@ The formal stack should be split into four layers:
 
 This layering keeps arithmetic reasoning separate from control-state reasoning.
 
-The critical design rule is: unrestricted `Int` belongs only to the mathematical layer. Hardware-facing definitions must encode the contract domain in their types.
+The critical design rule is: unrestricted `Int` belongs only to the mathematical layer for arithmetic and value semantics. Hardware-facing data definitions must encode the contract domain in their types. Controller indices may remain `Nat` in the machine model if their legal ranges and phase-appropriate uses are justified by explicit invariants.
 
 Recommended domain split:
 
@@ -34,6 +34,8 @@ Recommended domain split:
 For RTL verification, timing is often the hardest part. End-state functional correctness is not enough by itself.
 
 The temporal theorem set is a required deliverable for this milestone, not future work. The canonical implementation should stay project-local so it is versioned, reviewable, and build-checked with the rest of the formalization.
+
+For this milestone, the stronger boundary package is also required scope, not optional follow-up. Guard-cycle transition facts alone are insufficient; the proof surface must also rule out duplicate work, skipped work, and out-of-range reads at the boundary cycles, and it must make the `BIAS_OUTPUT`/`DONE` observability contract explicit.
 
 The temporal layer only needs the operators that match this controller proof scope:
 
@@ -63,7 +65,7 @@ Because exact `start` handshake timing is part of the current proof scope, the m
 - `TinyMLP.lean`: root import hub — imports all submodules so `lake build` checks everything
 - `Spec.lean`: `MathInput`, pure mathematical model, frozen weight constants (auto-generated block), `mlpSpec`
 - `FixedPoint.lean`: `Input8`, contract-domain arithmetic wrappers, `toMathInput`, `mlpFixed`, and the hardware-to-math bridge theorem
-- `Machine.lean`: `Phase`, `State`, `step`, `run`, `initialState`, `totalCycles`, with bounded hardware-facing storage
+- `Machine.lean`: `Phase`, `State`, `step`, `run`, `initialState`, `totalCycles`, with bounded hardware-facing value storage and invariant-backed controller indices
 - `Temporal.lean`: machine-trace definitions, local temporal operators, and named temporal formulas over controller behavior
 - `Invariants.lean`: `IndexInvariant`, step/run preservation proofs
 - `Correctness.lean`: top-level goal definitions for functional, termination, and temporal properties
@@ -77,12 +79,13 @@ A practical proof order is:
 2. Define `Input8`, contract-domain arithmetic, and `toMathInput`
 3. Define `mlpFixed` over `Input8`
 4. Prove the hardware-to-math bridge theorem over `Input8`
-5. Define `State`, `step`, and `run` over bounded hardware-facing storage
+5. Define `State`, `step`, and `run` over bounded hardware-facing value storage, with controller indices justified by invariants
 6. Define a timing-faithful local trace view over the machine execution
 7. Prove invariants for each FSM phase
 8. Prove termination into `DONE`
 9. Prove temporal properties for `busy`, `done`, phase ordering, and output validity
-10. Prove the machine output equals `mlpFixed`
+10. Prove the stronger boundary package: no duplicate work, no skipped work, no out-of-range reads, and `BIAS_OUTPUT`/`DONE` observability
+11. Prove the machine output equals `mlpFixed`
 
 This order avoids mixing the hardest arithmetic and machine-state obligations too early.
 
@@ -100,7 +103,7 @@ The Lean `State` fields map to RTL signals as follows:
 | `phase : Phase` | `state` (controller) | [3:0] |
 | `output : Bool` | `out_bit` | 1 bit |
 
-The exact Lean wrapper names may vary, but the hardware-facing storage must be width-accurate. Using unrestricted `Int` in these fields should be treated as a temporary simplification, not the target design.
+The exact Lean wrapper names may vary, but the hardware-facing value storage must be width-accurate. In this milestone, `hiddenIdx` and `inputIdx` may remain `Nat`; their legality is part of the invariant layer rather than a requirement to encode them as bounded index field types. Using unrestricted `Int` for arithmetic value storage should be treated as a temporary simplification, not the target design.
 
 The Lean `Phase` constructors map one-to-one to the controller FSM states:
 
@@ -169,10 +172,11 @@ The following timing-focused proof targets are required for milestone completion
 - `done ∧ ¬start` transitions to `idle`
 - the phase trace follows the allowed controller ordering
 - the last hidden MAC step, the hidden guard cycle, the last hidden neuron, the last output MAC step, and the output guard cycle each transition to the correct successor phase
-- boundary steps do not perform out-of-range memory access or reuse stale values
+- boundary steps do not perform out-of-range memory access
+- boundary steps do not duplicate or skip required work
 - `BIAS_OUTPUT` is the register-update cycle for the final output, while `DONE` is the first externally valid-completion cycle
 
-These temporal properties are the minimum proof set needed to claim timing-aware RTL correctness rather than pure end-state equality.
+These temporal properties are the minimum proof set needed to claim timing-aware RTL correctness rather than pure end-state equality. Proving only the weaker guard-cycle transition facts is not enough for milestone completion.
 
 ## 9. Resolved Formal Decisions
 
@@ -183,5 +187,6 @@ These temporal properties are the minimum proof set needed to claim timing-aware
 | How ANN constants enter Lean | **Inline auto-generated block** in `Spec.lean` (between `BEGIN/END AUTO-GENERATED WEIGHTS` markers) | Constants are match-expression definitions (`w1At`, `b1At`, `w2At`, `b2`), generated from the training/export pipeline and committed directly. |
 | Machine model granularity | **One-to-one FSM state mapping with a timing-faithful overlay** | Each RTL state has a corresponding `Phase` constructor. The operational `step` model handles accepted-transaction sequencing; the temporal layer restores exact `IDLE`/`DONE` handshake semantics from the RTL. |
 | Temporal layer implementation | **Use a project-local finite-trace layer** | Keep the temporal vocabulary versioned and build-checked inside this repository. External libraries or papers may inform the design, but they are not dependencies. |
+| Boundary-theorem scope | **The strong boundary package is milestone-critical** | Public proofs must cover no-duplicate/no-skip/no-out-of-range boundary obligations and the `BIAS_OUTPUT`/`DONE` observability contract, not only the weaker guard-cycle phase transitions. |
 | Exact timing contract | **Adopt the current RTL schedule exactly** | `done` is a level in `DONE`, the transaction latency is `76` cycles from accepted `start`, and both MAC phases include a guard cycle after the last useful multiply. |
 | Overflow-bound proofs | **Not optional once arithmetic becomes width-accurate** | If machine storage is modeled with bounded signed types or wraparound semantics, overflow behavior is part of the contract model, not an afterthought. |
