@@ -1,5 +1,8 @@
-import TinyMLP.Spec
-import TinyMLP.FixedPoint
+import TinyMLP.Defs.SpecCore
+import TinyMLP.Interfaces.ArithmeticProofProvider
+import TinyMLP.ProofsVanilla.SpecArithmetic
+import TinyMLP.Defs.FixedPointCore
+import TinyMLP.ProofsVanilla.FixedPoint
 import TinyMLP.Machine
 import TinyMLP.Invariants
 import TinyMLP.Simulation
