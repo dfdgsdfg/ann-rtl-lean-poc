@@ -69,7 +69,7 @@ module testbench;
     begin
       @(negedge clk);
       start = 1'b1;
-      @(posedge clk);
+      @(negedge clk);
 
       if (dut.state !== LOAD_INPUT) begin
         $display("FAIL accept: expected LOAD_INPUT immediately after start, got state=%0d", dut.state);
@@ -81,7 +81,6 @@ module testbench;
       end
 
       if (!hold_done) begin
-        @(negedge clk);
         start = 1'b0;
       end
     end
@@ -144,7 +143,7 @@ module testbench;
       saw_bias_to_done = 1'b0;
 
       while (done !== 1'b1 && !timed_out) begin
-        @(posedge clk);
+        @(negedge clk);
         timeout_cycles = timeout_cycles + 1;
         latency = latency + 1;
 
@@ -239,7 +238,7 @@ module testbench;
         if (hold_done) begin
           saved_out = out_bit;
           for (hold = 0; hold < STABILITY_HOLD_CYCLES; hold = hold + 1) begin
-            @(posedge clk);
+            @(negedge clk);
             if (done !== 1'b1) begin
               $display("FAIL idx=%0d: done deasserted while start held high in DONE (hold=%0d)", vector_idx, hold);
               handshake_errors = handshake_errors + 1;
@@ -254,15 +253,14 @@ module testbench;
             end
           end
 
-          @(negedge clk);
           start = 1'b0;
-          @(posedge clk);
+          @(negedge clk);
           if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE) begin
             $display("FAIL idx=%0d: expected one-cycle return to IDLE after dropping start in DONE", vector_idx);
             handshake_errors = handshake_errors + 1;
           end
         end else begin
-          @(posedge clk);
+          @(negedge clk);
           if (done !== 1'b0 || busy !== 1'b0 || dut.state !== IDLE) begin
             $display("FAIL idx=%0d: expected automatic return to IDLE after DONE with start low", vector_idx);
             handshake_errors = handshake_errors + 1;
@@ -301,7 +299,7 @@ module testbench;
     repeat (4) @(posedge clk);
     rst_n = 1'b1;
 
-    @(posedge clk);
+    @(negedge clk);
     if (busy !== 1'b0 || done !== 1'b0 || dut.state !== IDLE) begin
       $display("FAIL reset: expected IDLE with busy=0 done=0, got state=%0d busy=%0d done=%0d", dut.state, busy, done);
       handshake_errors = handshake_errors + 1;

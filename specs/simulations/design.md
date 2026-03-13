@@ -38,6 +38,8 @@ The `train` command with default settings automatically freezes the contract and
 
 The user should not need to manually copy weights or hand-edit vectors after training.
 
+Vector generation should synthesize dedicated positive, zero, and negative score witnesses during freeze. If the deterministic candidate pool cannot provide one of those classes, freeze should fail before the simulator runs.
+
 ## 4. Testbench Design
 
 The SystemVerilog testbench should:
@@ -45,6 +47,7 @@ The SystemVerilog testbench should:
 - Load embedded or generated vectors
 - Apply `start`
 - Wait until `done`
+- Sample DUT-visible state and control on `negedge clk` after the `posedge` update has settled
 - Compare `out` against the expected value on the `done` cycle
 - Enforce the exact `76`-cycle latency as a failing condition
 - Check the documented `DONE` hold and release semantics

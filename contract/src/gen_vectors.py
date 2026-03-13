@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from itertools import product
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -10,9 +11,10 @@ from .quantize_helpers import relu, wrap_signed
 from .schema import coerce_weights_payload
 
 TEST_VECTORS_PATH = ROOT / "simulations" / "rtl" / "test_vectors.mem"
+FIXED_VECTOR_COUNT = 16
 VECTOR_HEX_WIDTH = 17
 
-VECTORS = (
+SMOKE_VECTORS = (
     (-8, -3, 2, 1),
     (7, -2, 3, -1),
     (12, 6, -5, -2),
@@ -26,10 +28,9 @@ VECTORS = (
     (-64, 5, 33, -17),
     (19, -21, 11, 4),
     (-7, 4, -12, 13),
-    (-8, -8, -7, -8),
-    (-15, -15, 10, 10),
-    (27, -4, -8, 2),
 )
+WITNESS_VALUES = (-32, -16, -8, -4, -2, -1, 0, 1, 2, 4, 8, 16, 32)
+WITNESS_CLASSES = ("positive", "zero", "negative")
 
 
 def _normalize_input(values: Iterable[int]) -> tuple[int, int, int, int]:
@@ -71,6 +72,45 @@ def _pack_vector(values: Sequence[int], score: int) -> int:
     return word
 
 
+def _score_class(score: int) -> str:
+    if score > 0:
+        return "positive"
+    if score == 0:
+        return "zero"
+    return "negative"
+
+
+def _build_vectors(weights: dict[str, object]) -> tuple[tuple[int, int, int, int], ...]:
+    if len(SMOKE_VECTORS) + len(WITNESS_CLASSES) != FIXED_VECTOR_COUNT:
+        raise ValueError(
+            "vector configuration is inconsistent: "
+            f"{len(SMOKE_VECTORS)} smoke vectors + {len(WITNESS_CLASSES)} witness classes "
+            f"!= {FIXED_VECTOR_COUNT}"
+        )
+
+    selected = list(SMOKE_VECTORS)
+    used = set(selected)
+
+    for target_class in WITNESS_CLASSES:
+        witness: tuple[int, int, int, int] | None = None
+        for candidate in product(WITNESS_VALUES, repeat=INPUT_SIZE):
+            vector = tuple(candidate)
+            if vector in used:
+                continue
+            if _score_class(_score(vector, weights=weights)) == target_class:
+                witness = vector
+                break
+        if witness is None:
+            raise ValueError(
+                "unable to synthesize required score-class witnesses "
+                f"for {target_class} from the deterministic candidate pool"
+            )
+        selected.append(witness)
+        used.add(witness)
+
+    return tuple(selected)
+
+
 def _load_contract_weights() -> dict[str, object]:
     if not CONTRACT_WEIGHTS_PATH.exists():
         raise FileNotFoundError(f"missing contract weights file: {CONTRACT_WEIGHTS_PATH}")
@@ -82,7 +122,7 @@ def _load_contract_weights() -> dict[str, object]:
 
 def render_vectors(weights: dict[str, object]) -> str:
     lines = []
-    for vector in VECTORS:
+    for vector in _build_vectors(weights):
         score = _score(vector, weights=weights)
         lines.append(f"{_pack_vector(vector, score):0{VECTOR_HEX_WIDTH}x}")
     return "\n".join(lines) + "\n"

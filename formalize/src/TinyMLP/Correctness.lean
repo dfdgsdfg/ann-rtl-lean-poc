@@ -76,6 +76,12 @@ theorem temporal_lastHiddenMac_to_biasHidden (sample : CtrlSample) (s : State)
     (timedStep sample s).phase = .biasHidden :=
   lastHiddenMac_to_biasHidden sample s hphase hidx
 
+theorem temporal_lastHiddenNeuron_handoff_no_duplicate_or_skip_work
+    (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .nextHidden) (hidx : s.hiddenIdx + 1 = hiddenCount) :
+    timedStep sample s = { s with hiddenIdx := 0, inputIdx := 0, phase := .macOutput } :=
+  lastHiddenNeuron_handoff_no_duplicate_or_skip_work sample s hphase hidx
+
 theorem temporal_lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
     (hphase : s.phase = .nextHidden) (hidx : s.hiddenIdx + 1 = hiddenCount) :
     (timedStep sample s).phase = .macOutput :=

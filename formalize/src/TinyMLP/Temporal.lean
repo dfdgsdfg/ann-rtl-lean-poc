@@ -16,6 +16,7 @@ The public temporal theorem surface for this milestone is:
 - `hiddenGuard_no_mac_work`
 - `hiddenGuard_no_out_of_range_reads`
 - `lastHiddenMac_to_biasHidden`
+- `lastHiddenNeuron_handoff_no_duplicate_or_skip_work`
 - `lastHiddenNeuron_to_macOutput`
 - `hiddenBoundary_no_duplicate_or_skip_work`
 - `outputGuard_before_biasOutput`
@@ -394,9 +395,9 @@ theorem finalHiddenMac_updates_accumulator (sample : CtrlSample) (s : State)
       subst inputIdx
       simp [timedStep, step, inputCount]
 
-theorem lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
+theorem lastHiddenNeuron_handoff_no_duplicate_or_skip_work (sample : CtrlSample) (s : State)
     (hphase : s.phase = .nextHidden) (hidx : s.hiddenIdx + 1 = hiddenCount) :
-    (timedStep sample s).phase = .macOutput := by
+    timedStep sample s = { s with hiddenIdx := 0, inputIdx := 0, phase := .macOutput } := by
   cases s with
   | mk regs hidden accumulator hiddenIdx inputIdx phase output =>
       cases phase <;> simp at hphase
@@ -407,6 +408,12 @@ theorem lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
         omega
       subst hiddenIdx
       simp [timedStep, step, hiddenCount]
+
+theorem lastHiddenNeuron_to_macOutput (sample : CtrlSample) (s : State)
+    (hphase : s.phase = .nextHidden) (hidx : s.hiddenIdx + 1 = hiddenCount) :
+    (timedStep sample s).phase = .macOutput := by
+  simpa using congrArg State.phase
+    (lastHiddenNeuron_handoff_no_duplicate_or_skip_work sample s hphase hidx)
 
 theorem hiddenBoundary_no_duplicate_or_skip_work (sample₀ sample₁ : CtrlSample) (s : State)
     (hphase : s.phase = .macHidden) (hidx : s.inputIdx + 1 = inputCount) :

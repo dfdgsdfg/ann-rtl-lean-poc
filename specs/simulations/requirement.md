@@ -30,6 +30,8 @@ The simulation domain must provide a simple CLI or script entry point so that a 
 
 The shipped regression entry point should run the same bench under both `Icarus Verilog` and `Verilator`.
 
+Module-based testbench assertions over DUT state or control must sample post-update values, not immediate `posedge` values before nonblocking register updates settle.
+
 ## 3. Reference Model Requirements
 
 Simulation outputs must be compared against a Python reference model using the same weights, biases, and input vectors.
@@ -43,6 +45,8 @@ The Python side must support:
 - Running a reference check for a selected trained result
 
 Generated simulation vectors must preserve enough expected data to distinguish positive, zero, and negative output-score cases, not only the final classification bit.
+
+Freeze and vector generation must fail early if the current frozen weights cannot produce at least one positive, zero, and negative score witness from the deterministic candidate pool used by the repository.
 
 ## 4. Test Coverage Requirements
 

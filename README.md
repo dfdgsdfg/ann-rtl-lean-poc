@@ -143,7 +143,7 @@ The main human-facing outputs are:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, and inputs)
+- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, inputs, and generated score-class witnesses)
 
 `contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 
@@ -232,6 +232,8 @@ python3 -m contract.src.freeze
 python3 -m contract.src.freeze --check
 python3 -m contract.src.gen_vectors
 ```
+
+The freeze/vector-generation path now fails early if it cannot synthesize at least one positive, zero, and negative score witness from its deterministic candidate pool.
 
 Simulation commands:
 
