@@ -1,4 +1,5 @@
-import TinyMLP.FixedPoint
+import TinyMLP.Defs.FixedPointCore
+import TinyMLP.ProofsVanilla.SpecArithmetic
 
 namespace TinyMLP
 

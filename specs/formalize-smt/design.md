@@ -27,6 +27,8 @@ Recommended mental model:
 
 The design should avoid turning the project into a solver-script repository wrapped in Lean syntax.
 
+The repository now has a first exposure pass for the arithmetic and shared fixed-point executable layer. The selective-overlay model is therefore implementable for that slice, while the upper machine/temporal stack remains vanilla for now.
+
 ## 3. Separation Strategy
 
 There are three plausible implementation patterns.
@@ -45,7 +47,7 @@ This is also a poor fit for this repository. It weakens the comparison story and
 
 ### 3.3 Selective Overlay
 
-Reuse the existing `formalize` definitions and theorem statements, but reprove only the targeted theorem families with SMT assistance.
+Reuse the existing `formalize` definitions and proof interfaces, but reprove only the targeted theorem families with SMT assistance.
 
 This is viable only if:
 
@@ -61,7 +63,7 @@ For this repository, the selective overlay is the right design. The vanilla `for
 The overlay rule should be explicit:
 
 - `formalize-smt` may import baseline definition modules
-- `formalize-smt` may import theorem statements or shared helper interfaces
+- `formalize-smt` may import shared proof interfaces
 - `formalize-smt` should not import the vanilla proof module for any theorem family it claims to replace
 - `formalize-smt` may still depend on vanilla proofs for unrelated areas that it is not trying to reprove, provided that boundary is documented
 
@@ -71,22 +73,41 @@ This gives the repository a clean trust and comparison story:
 - SMT-assisted proofs are real proofs of the targeted obligations
 - untouched theorem families do not need to be duplicated gratuitously
 
-## 5. Good Initial Targets
+## 5. Exposure Prerequisite
+
+The current preparatory refactor exposes the arithmetic-first boundary as:
+
+- `Defs`
+- `Interfaces`
+- `ProofsVanilla`
+
+Concretely:
+
+- `Defs/SpecCore.lean` exposes shared semantic definitions and frozen constants
+- `Interfaces/ArithmeticProofProvider.lean` exposes the proof-provider interface used by shared fixed-point executable defs
+- `Defs/FixedPointCore.lean` exposes provider-parameterized fixed-point executable definitions
+- `ProofsVanilla/SpecArithmetic.lean` and `ProofsVanilla/FixedPoint.lean` keep the baseline proofs and default provider instance
+
+This is enough to support an SMT-assisted overlay on the arithmetic layer without importing the finished vanilla proofs it wants to replace. The upper machine and temporal stack still require further exposure work if they are ever targeted.
+
+## 6. Good Initial Targets
 
 The first candidate targets should be arithmetic helper lemmas in the existing formalization, not the controller proofs.
 
 Good starting points include:
 
-- bounded multiplication lemmas in `Spec.lean`
+- bounded multiplication lemmas behind `Interfaces/ArithmeticProofProvider`
 - arithmetic side conditions that currently need repeated sign-case splitting
-- width-fit obligations produced by fixed-point helper definitions
+- width-fit obligations produced by `Defs/FixedPointCore.lean`
 
 Bad first targets:
 
 - trace or control invariants in `Temporal.lean`
 - delicate machine-step proofs whose value comes from explicit structural reasoning
 
-## 6. Dependency Strategy
+Those targets are especially suitable once the baseline exposure split exists.
+
+## 7. Dependency Strategy
 
 The SMT-assisted path should use a narrow dependency story.
 
@@ -102,7 +123,7 @@ If `lean-smt` is used, the design should record:
 - which backend solver it depends on
 - which theorem families justify the extra dependency
 
-## 7. Trust Strategy
+## 8. Trust Strategy
 
 The core requirement is that final theorems remain Lean theorems.
 
@@ -120,7 +141,7 @@ The repository should also say plainly whether a theorem family is:
 - inherited unchanged from the vanilla baseline
 - or still pending migration
 
-## 8. Repository Relationship
+## 9. Repository Relationship
 
 The intended relationship among the proof and solver domains is:
 
@@ -134,15 +155,16 @@ This keeps three different kinds of value separate:
 - proof authoring convenience
 - bounded solver-backed verification
 
-## 9. Delivery Plan
+## 10. Delivery Plan
 
 A practical implementation order is:
 
 1. Keep the current `formalize` path unchanged as the baseline.
-2. Identify one or two arithmetic lemma families where SMT assistance would remove obvious manual proof boilerplate.
-3. Share the baseline definitions and theorem statements needed for those lemmas.
-4. Reprove those lemmas in the SMT-assisted lane without importing the finished vanilla proof of the same family.
-5. Compare the result against the vanilla path for readability, maintenance burden, and dependency cost.
-6. Expand only if the gain is clear.
+2. Reuse the existing arithmetic-first exposure split: shared definitions in `Defs/*`, proof interfaces in `Interfaces/*`, and baseline proofs in `ProofsVanilla/*`.
+3. Identify one or two arithmetic lemma families where SMT assistance would remove obvious manual proof boilerplate.
+4. Reuse the exposed baseline definitions and theorem statements for those lemmas.
+5. Reprove those lemmas in the SMT-assisted lane without importing the finished vanilla proof of the same family.
+6. Compare the result against the vanilla path for readability, maintenance burden, and dependency cost.
+7. Expand only if the gain is clear.
 
 This avoids paying solver-integration complexity before the repository has a concrete proof-maintenance problem worth solving.

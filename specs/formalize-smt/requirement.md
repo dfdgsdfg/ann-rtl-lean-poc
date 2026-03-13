@@ -26,6 +26,11 @@ It does not cover:
 - external SMT checking of RTL outside Lean; that belongs to `specs/smt/`
 - broad theorem proving strategy changes unrelated to SMT-assisted automation
 
+This domain also assumes a prerequisite on the baseline Lean structure:
+
+- `formalize/` must expose shared definitions and proof interfaces cleanly enough for an overlay proof lane to import them without importing the finished vanilla proofs of the same theorem families
+- in the current repository, that prerequisite is satisfied first for the arithmetic and shared fixed-point executable layer via `Defs/*`, `Interfaces/ArithmeticProofProvider.lean`, and `ProofsVanilla/*`
+
 ## 3. Baseline Preservation Requirements
 
 The baseline `formalize` domain must remain independently meaningful and buildable.
@@ -39,11 +44,13 @@ Required separation rules:
 
 The preferred architecture is a selective overlay:
 
-- import definitions, structures, constants, and theorem statements from the baseline `formalize` path
+- import definitions, structures, constants, and proof interfaces from the baseline `formalize` path
 - reprove the targeted theorem families inside `formalize-smt`
 - avoid treating the baseline proof modules as an oracle for the very lemmas the SMT-assisted path claims to establish
 
 In particular, if `formalize-smt` claims to provide an SMT-assisted proof of a lemma family, it must not satisfy that claim merely by importing the finished vanilla proof of the same lemmas and wrapping it.
+
+If the baseline does not yet expose that interface boundary, then refactoring `formalize/` is a prerequisite task for `formalize-smt`, not optional cleanup.
 
 If the project adopts an SMT tactic in the existing Lean files rather than forking files, the repository must document whether:
 
@@ -119,6 +126,7 @@ The `formalize-smt` domain is complete for its first milestone when:
 1. A checked-in requirements document and design document exist under `specs/formalize-smt/`.
 2. The repository explicitly identifies `formalize` as the canonical vanilla Lean baseline and `formalize-smt` as optional or secondary.
 3. The repository specifies which theorem classes are appropriate SMT-assistance targets.
-4. The repository specifies the overlay boundary clearly: shared definitions are allowed, but replaced theorem families are reproved rather than imported as solved facts from vanilla proof modules.
-5. The repository specifies the external dependency and trust story clearly.
-6. The repository specifies how the SMT-assisted path coexists with, or is compared against, the vanilla path.
+4. The baseline `formalize` domain exposes shared definitions and proof interfaces cleanly enough that `formalize-smt` can be an overlay instead of a fork or oracle wrapper. For the first milestone, this requirement is scoped to the arithmetic and shared fixed-point executable layer.
+5. The repository specifies the overlay boundary clearly: shared definitions are allowed, but replaced theorem families are reproved rather than imported as solved facts from vanilla proof modules.
+6. The repository specifies the external dependency and trust story clearly.
+7. The repository specifies how the SMT-assisted path coexists with, or is compared against, the vanilla path.

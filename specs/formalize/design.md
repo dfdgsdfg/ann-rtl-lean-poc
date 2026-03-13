@@ -24,6 +24,22 @@ The formal stack should be split into four layers:
 
 This layering keeps arithmetic reasoning separate from control-state reasoning.
 
+If the repository later wants an alternate proof lane such as `formalize-smt`, the baseline should also separate:
+
+- shared definitions and constants
+- proof interfaces for theorem families that shared executable code depends on
+- vanilla proof implementations
+
+The repository now does this for the arithmetic-first exposure pass:
+
+- `TinyMLP/Defs/SpecCore.lean`
+- `TinyMLP/Interfaces/ArithmeticProofProvider.lean`
+- `TinyMLP/Defs/FixedPointCore.lean`
+- `TinyMLP/ProofsVanilla/SpecArithmetic.lean`
+- `TinyMLP/ProofsVanilla/FixedPoint.lean`
+
+Upper layers are intentionally still vanilla in this pass.
+
 The critical design rule is: unrestricted `Int` belongs only to the mathematical layer for arithmetic and value semantics. Hardware-facing data definitions must encode the contract domain in their types. Controller indices may remain `Nat` in the machine model if their legal ranges and phase-appropriate uses are justified by explicit invariants.
 
 Recommended domain split:
@@ -74,13 +90,24 @@ Because exact handshake timing is part of the current proof scope, the temporal 
 ## 4. File Responsibilities
 
 - `TinyMLP.lean`: root import hub — imports all submodules so `lake build` checks everything
-- `Spec.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, frozen weight constants (auto-generated block), and `mlpSpec`
-- `FixedPoint.lean`: contract-domain arithmetic operators, `mlpFixed`, and the hardware-to-math bridge theorem
+- `Defs/SpecCore.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, helper arithmetic/spec definitions, frozen weight constants (auto-generated block), and `mlpSpec`
+- `Interfaces/ArithmeticProofProvider.lean`: the proof-provider boundary for the arithmetic lemmas needed by shared fixed-point executable definitions
+- `Defs/FixedPointCore.lean`: contract-domain executable arithmetic operators, `mlpFixed`, and the shared fixed-point executable surface parameterized by the arithmetic proof provider
+- `ProofsVanilla/SpecArithmetic.lean`: baseline arithmetic helper proofs plus the default `ArithmeticProofProvider` instance
+- `ProofsVanilla/FixedPoint.lean`: baseline fixed-point proofs and the hardware-to-math bridge theorem
 - `Machine.lean`: `Phase`, `State`, `step`, `run`, `initialState`, `totalCycles`, with bounded hardware-facing value storage and invariant-backed controller indices
 - `Temporal.lean`: machine-trace definitions, local temporal operators, and named temporal formulas over controller behavior
 - `Invariants.lean`: `IndexInvariant`, step/run preservation proofs
 - `Correctness.lean`: top-level goal definitions for functional, termination, and temporal properties
 - `Simulation.lean`: supporting operational lemmas that connect `run` to the trace-level temporal statements
+
+If `formalize-smt` is pursued, the baseline exposure point for the first milestone is:
+
+- `Defs`: shared semantic definitions, constants, and executable functions
+- `Interfaces`: proof-provider interfaces consumed by shared defs
+- `ProofsVanilla`: the current baseline proofs
+
+The important point is the separation of reusable semantic surface from proof implementation. In the current implementation, that separation is established first for the arithmetic and shared fixed-point executable layer rather than for the whole proof stack at once.
 
 ## 5. Proof Strategy
 
@@ -99,6 +126,12 @@ A practical proof order is:
 11. Prove the machine output equals `mlpFixed`
 
 This order avoids mixing the hardest arithmetic and machine-state obligations too early.
+
+If an alternate proof lane is planned, add one more preparatory step before that work:
+
+12. Expose shared definitions and proof interfaces independently from the vanilla proof modules
+
+Without that exposure step, a selective-overlay `formalize-smt` path will either duplicate too much code or accidentally depend on the vanilla proofs it is supposed to replace.
 
 ## 6. Machine Modeling Plan
 
@@ -200,7 +233,7 @@ These temporal properties are the minimum proof set needed to claim timing-aware
 |---|---|---|
 | Mathematical vs hardware input domain | **Separate `MathInput` and `Input8`** | Hardware-facing theorems must quantify over representable signed 8-bit inputs. If the mathematical layer uses unrestricted `Int`, it must be reached through an explicit `toMathInput` bridge. |
 | Hardware-to-math relationship | **State it as a separate bridge theorem** | `rtlCorrectnessGoal` should target the contract-domain model. Agreement with the unrestricted mathematical model, if claimed, must be proved separately over `Input8`. |
-| How ANN constants enter Lean | **Inline auto-generated block** in `Spec.lean` (between `BEGIN/END AUTO-GENERATED WEIGHTS` markers) | Constants are match-expression definitions (`w1At`, `b1At`, `w2At`, `b2`), generated from the training/export pipeline and committed directly. |
+| How ANN constants enter Lean | **Inline auto-generated block** in `Defs/SpecCore.lean` (between `BEGIN/END AUTO-GENERATED WEIGHTS` markers) | Constants are match-expression definitions (`w1At`, `b1At`, `w2At`, `b2`), generated from the training/export pipeline and committed directly. |
 | Machine model granularity | **One-to-one FSM state mapping with a timing-faithful overlay** | Each RTL state has a corresponding `Phase` constructor. The operational `step` model handles accepted-transaction sequencing; the temporal layer restores exact `IDLE`/`DONE` handshake semantics from the RTL. |
 | Temporal layer implementation | **Use a project-local finite-trace layer** | Keep the temporal vocabulary versioned and build-checked inside this repository. External libraries or papers may inform the design, but they are not dependencies. |
 | Boundary-theorem scope | **The strong boundary package is milestone-critical** | Public proofs must cover no-duplicate/no-skip/no-out-of-range boundary obligations and the `BIAS_OUTPUT`/`DONE` observability contract, not only the weaker guard-cycle phase transitions. |

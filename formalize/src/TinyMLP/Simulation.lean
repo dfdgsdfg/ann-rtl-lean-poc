@@ -1,4 +1,5 @@
 import TinyMLP.Invariants
+import TinyMLP.ProofsVanilla.FixedPoint
 
 namespace TinyMLP
 

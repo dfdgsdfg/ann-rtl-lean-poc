@@ -22,7 +22,7 @@ The target network is a `4 → 8 → 1` fixed-point MLP as frozen in `specs/cont
 - 8 hidden neurons, with int8 × int8 → int16 MAC accumulated in int32
 - 1 binary output, with int16 × int8 → int24 MAC accumulated in int32
 - ReLU activation on the hidden layer
-- Weights and biases are auto-generated constants embedded directly in `Spec.lean`
+- Weights and biases are auto-generated constants embedded directly in `Defs/SpecCore.lean`
 
 The formalization must distinguish between:
 
@@ -53,6 +53,8 @@ The Lean development must include:
 2. Fixed-point implementation model
 3. RTL machine model
 4. A temporal or trace layer for reasoning about timing-sensitive RTL behavior
+
+The baseline formalization must also expose a reusable interface boundary for future alternate proof lanes. In particular, if the repository wants an SMT-assisted proof overlay later, `formalize/` must make it possible to import shared definitions and proof interfaces without being forced to import the finished vanilla proofs of the same theorem families.
 
 Expected top-level definitions:
 
@@ -182,16 +184,33 @@ Lean files:
 ```text
 formalize/
   src/
-    TinyMLP.lean           -- root import hub (imports all submodules)
+    TinyMLP.lean                          -- root import hub (imports all submodules)
     TinyMLP/
-      Spec.lean            -- mathematical model, Input8/MathInput domains, bounded value wrappers, weight constants, toMathInput, mlpSpec
-      FixedPoint.lean      -- hardware-domain arithmetic, mlpFixed, hardware→math bridge
-      Machine.lean         -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
-      Temporal.lean        -- temporal/trace layer and mandatory timing theorems
-      Simulation.lean      -- operational bridge lemmas used by temporal and end-state proofs
-      Correctness.lean     -- top-level goals and proved theorems
-      Invariants.lean      -- IndexInvariant, step/run preservation proofs
+      Defs/SpecCore.lean                 -- mathematical model, Input8/MathInput domains, bounded value wrappers, shared arithmetic helpers, weight constants, toMathInput, mlpSpec
+      Interfaces/ArithmeticProofProvider.lean
+                                          -- proof interface for arithmetic helper families required by shared fixed-point defs
+      Defs/FixedPointCore.lean           -- hardware-domain executable arithmetic and shared fixed-point definitions
+      ProofsVanilla/SpecArithmetic.lean  -- baseline arithmetic lemmas and default provider instance
+      ProofsVanilla/FixedPoint.lean      -- baseline proofs for fixed-point executable definitions and the hardware→math bridge
+      Machine.lean                       -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
+      Temporal.lean                      -- temporal/trace layer and mandatory timing theorems
+      Simulation.lean                    -- operational bridge lemmas used by temporal and end-state proofs
+      Correctness.lean                   -- top-level goals and proved theorems
+      Invariants.lean                    -- IndexInvariant, step/run preservation proofs
 ```
+
+The current exposure split is arithmetic-first. The repository now exposes the shared arithmetic surface using:
+
+```text
+formalize/
+  src/
+    TinyMLP/
+      Defs/               -- shared definitions, constants, and executable functions
+      Interfaces/         -- proof interfaces consumed by shared defs
+      ProofsVanilla/      -- current baseline proofs and default provider instances
+```
+
+In this first pass, the split is intentionally limited to the arithmetic and fixed-point executable layer. `Machine`, `Invariants`, `Simulation`, `Temporal`, and `Correctness` remain the vanilla lane and consume the default arithmetic provider.
 
 ## 7. Reproducibility Requirements
 
@@ -205,7 +224,7 @@ The repository should clearly show:
 - Which temporal theorem set is mandatory for milestone completion, and where each theorem lives
 - Which project-local temporal layer implementation is used, and where its operators and predicates are defined
 - Which assumptions are required
-- Which generated or fixed constants are used (the `AUTO-GENERATED WEIGHTS` block in `Spec.lean`)
+- Which generated or fixed constants are used (the `AUTO-GENERATED WEIGHTS` block in `Defs/SpecCore.lean`)
 - Whether any optional bounds proofs are incomplete
 
 ## 8. Acceptance Criteria
@@ -221,4 +240,5 @@ The `formalize` domain is complete when:
 7. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
 8. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
 9. Public proof structure follows the project proof-engineering rules: linear arithmetic is pushed into decidable fragments, nonlinear reasoning is factored into helper lemmas, and context-sensitive safety claims carry explicit phase assumptions.
-10. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.
+10. The baseline module structure is exposed cleanly enough that future alternate proof lanes can reuse shared definitions and proof interfaces without importing the finished vanilla proofs of the same theorem families as an oracle. For the first pass, this requirement applies to the arithmetic and shared fixed-point executable layer exposed via `Defs/*` and `Interfaces/ArithmeticProofProvider.lean`.
+11. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.
