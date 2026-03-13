@@ -1,4 +1,4 @@
-# Reactive State Systems, Temporal Logic, and the Prover/Solver Ecosystem
+# Reactive Systems, Temporal Logic, and the Prover/Solver Ecosystem
 
 Date: 2026-03-12
 
@@ -6,7 +6,7 @@ Date: 2026-03-12
 
 What is the current conceptual and tooling landscape for:
 
-- reactive state systems
+- reactive systems
 - temporal logic
 - the related mathematics behind them
 - the theorem prover, model checker, and solver ecosystem around them
@@ -52,11 +52,11 @@ For this repository, the practical recommendation is:
 
 That is the current best fit.
 
-## 1. Reactive State Systems: The Mathematical Backbone
+## 1. Reactive Systems: The Mathematical Backbone
 
 ### 1.1 Core object
 
-A reactive state system is usually modeled as some variant of:
+A reactive system is usually modeled as some variant of:
 
 - a set of states `S`
 - a set of initial states `I`

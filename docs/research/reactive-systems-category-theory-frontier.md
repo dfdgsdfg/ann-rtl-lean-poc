@@ -1,10 +1,10 @@
-# Reactive State Systems, Category Theory, and Frontier Mathematics
+# Reactive Systems, Category Theory, and Frontier Mathematics
 
 Date: 2026-03-12
 
 ## Question
 
-What does category theory contribute to the study of reactive state systems, and what looks like the more frontier mathematical direction in current academia?
+What does category theory contribute to the study of reactive systems, and what looks like the more frontier mathematical direction in current academia?
 
 This note is about the mathematics and semantics side of the topic, not the day-to-day industrial tool stack.
 
@@ -315,7 +315,7 @@ If you want one frontier research path to watch, the strongest candidates are:
 
 ## Bottom Line
 
-Category theory matters for reactive state systems because reactive systems are about:
+Category theory matters for reactive systems because these systems are about:
 
 - state
 - time

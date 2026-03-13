@@ -1,4 +1,4 @@
-# Beginner's Guide to Reactive State Systems and Logical Verification
+# Beginner's Guide to Reactive Systems and Logical Verification
 
 Date: 2026-03-12
 
@@ -15,13 +15,13 @@ It explains the basic ideas using this repository's tiny neural inference RTL as
 
 If you want the deeper theory and tool survey after this guide, read:
 
-- [reactive-state-systems-temporal-logic-ecosystem.md](research/reactive-state-systems-temporal-logic-ecosystem.md)
+- [reactive-systems-temporal-logic-ecosystem.md](research/reactive-systems-temporal-logic-ecosystem.md)
 - [specs/formalize/requirement.md](../specs/formalize/requirement.md)
 - [specs/formalize/design.md](../specs/formalize/design.md)
 
-## 1. What Is a Reactive State System?
+## 1. What Is a Reactive System?
 
-A reactive state system is a system that:
+A reactive system is a system that:
 
 - receives inputs over time
 - keeps internal state
@@ -544,12 +544,12 @@ The core machine step function in [Machine.lean](../formalize/src/TinyMLP/Machin
 
 Its `idle` phase moves directly into `loadInput` on the next `step`.
 
-The repository now also has a timing-faithful trace layer in [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) that models sampled control inputs explicitly through `CtrlSample`, `timedStep`, `acceptedStart`, and `rtlTrace`.
+The repository now also has a timing-faithful trace layer in [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) that models sampled control inputs and `LOAD_INPUT` data capture explicitly through `CtrlSample`, `timedStep`, `acceptedStart`, and `rtlTrace`.
 
 That means:
 
 - the raw machine model is still best understood as "internal computation after acceptance"
-- the temporal layer now handles sampled `start`, `done` hold behavior, and return-to-`idle` behavior
+- the temporal layer now handles sampled `start`, `LOAD_INPUT` data capture, `done` hold behavior, and return-to-`idle` behavior
 - timing-faithful handshake proofs now live in the temporal layer instead of being missing from the repository
 
 This distinction matters. Good verification work is precise about what is modeled and what is abstracted away.
@@ -677,7 +677,7 @@ If you want to learn this repository in a sensible order:
 4. Read [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) to see how sampled `start` and bounded traces are modeled.
 5. Read [Correctness.lean](../formalize/src/TinyMLP/Correctness.lean) to see the top-level theorems.
 6. Read [specs/formalize/requirement.md](../specs/formalize/requirement.md) to see the intended verification scope.
-7. Read [reactive-state-systems-temporal-logic-ecosystem.md](research/reactive-state-systems-temporal-logic-ecosystem.md) if you want the broader theory and tool map.
+7. Read [reactive-systems-temporal-logic-ecosystem.md](research/reactive-systems-temporal-logic-ecosystem.md) if you want the broader theory and tool map.
 
 ## 13. Common Beginner Mistakes
 

@@ -84,7 +84,16 @@ The formalization must model the current RTL timing contract exactly:
 - the transaction input vector is captured from `in0..in3` on the `LOAD_INPUT` cycle, one cycle after accepted `start`
 - the controller remains in `DONE` while sampled `start = true`
 - a sampled `start = false` in `DONE` returns the machine to `IDLE`
+- while sampled `start = false` in `IDLE`, the visible controller phase remains `IDLE`
+- the timing-faithful trace must model the RTL idle-wait cleanup behavior: on the `IDLE ∧ ¬start` self-loop, `hiddenIdx` and `inputIdx` are driven to `0`, including after a `DONE -> IDLE` release followed by continued idle waiting
 - externally valid output is first observed together with `done = true`
+
+Proof-structure requirements for this repository:
+
+- Linear arithmetic obligations should be normalized into the decidable Presburger fragment whenever possible. Index bounds, cycle counts, and phase-legality facts are expected to be discharged by `omega`, `linarith`, `decide`, or `native_decide`.
+- Nonlinear arithmetic, wraparound reasoning, and sign-sensitive case splits must be isolated behind helper lemmas instead of being interleaved throughout top-level machine or temporal proofs.
+- Public theorems must carry the phase and context assumptions they need explicitly. Safety arguments may not rely primarily on out-of-range getters returning zero or out-of-range setters being ignored.
+- Proof structure should avoid hard-coding the current `4 -> 8 -> 1` constants in repetitive public case splits when a reusable finite-index helper or decidable control lemma would suffice.
 
 ## 5. Main Correctness Goal
 
@@ -142,6 +151,7 @@ Supporting proofs must include:
 - Temporal progress from accepted start to done
 - Output stability while the machine remains in `done`
 - Handshake timing consistency for `busy` and `done`
+- Proof that the `IDLE ∧ ¬start` self-loop preserves `IDLE` and performs the documented controller-index cleanup without disturbing the datapath contents
 - Boundary-condition proofs for the final hidden MAC step, the final hidden neuron transition, and the final output MAC step
 - Proof that the hidden and output guard cycles perform no MAC work and only advance control
 - Proof that boundary transitions do not perform out-of-range reads or duplicate or skip required work
@@ -201,9 +211,10 @@ The `formalize` domain is complete when:
 1. The Lean models for spec, fixed-point behavior, machine execution, and temporal/trace reasoning are defined.
 2. The main correctness theorem (`rtlCorrectnessGoal`) is stated and proved over the hardware-contract input domain.
 3. The termination theorem (`rtlTerminationGoal`) is proved.
-4. The mandatory temporal theorem set is stated and proved: accepted `start` reaches `done` at cycle `76`, `busy` holds throughout active execution, `done` implies output validity, `done ∧ start` holds completion, `done ∧ ¬start` returns to `idle`, output remains stable in `done`, the final output agrees with the transaction input sampled on the `LOAD_INPUT` cycle, and the three named boundary-transition properties are proved with the current guard-cycle semantics.
+4. The mandatory temporal theorem set is stated and proved: accepted `start` reaches `done` at cycle `76`, `busy` holds throughout active execution, `done` implies output validity, `done ∧ start` holds completion, `done ∧ ¬start` returns to `idle`, the `IDLE ∧ ¬start` self-loop performs controller cleanup, output remains stable in `done`, the final output agrees with the transaction input sampled on the `LOAD_INPUT` cycle, and the three named boundary-transition properties are proved with the current guard-cycle semantics.
 5. The stronger boundary theorem package is also stated and proved as milestone-critical scope: guard cycles perform no MAC work, boundary steps do not duplicate or skip required work, boundary steps do not perform out-of-range reads, and `BIAS_OUTPUT` is the register-update cycle while `DONE` is the first externally valid completion cycle.
 6. Hardware-facing arithmetic and value-storage types use bounded signed representations that match the contract widths; unrestricted `Int` is confined to the mathematical layer, while controller index legality is enforced by proved invariants rather than bounded index field types.
 7. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
 8. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
-9. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.
+9. Public proof structure follows the project proof-engineering rules: linear arithmetic is pushed into decidable fragments, nonlinear reasoning is factored into helper lemmas, and context-sensitive safety claims carry explicit phase assumptions.
+10. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.

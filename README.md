@@ -80,6 +80,30 @@ That is why temporal reasoning matters here. End-state correctness is necessary,
 
 In this repository, that is the role of the `formalize` domain: connect mathematical correctness to reactive RTL behavior with machine and temporal proofs.
 
+## Dependencies
+
+Install Homebrew packages:
+
+```bash
+brew bundle
+```
+
+Install the npm visualization tool:
+
+```bash
+npm install -g netlistsvg
+```
+
+The Brewfile installs: `icarus-verilog`, `verilator`, `yosys`.
+
+Other tools used by the project (install separately if needed):
+
+| Tool | Purpose | Install |
+|------|---------|---------|
+| Python 3 | ANN training, contract freeze, vector generation | `brew install python@3` or system Python |
+| elan | Lean 4 toolchain manager (formal verification) | `brew install elan-init` |
+| Node.js | Required for netlistsvg | `brew install node` |
+
 ## How To Use It
 
 If you only want the practical starting point, begin with the ANN wrapper:
@@ -171,7 +195,7 @@ Human-facing requirements and design documents for each domain.
 
 If you want the human documentation first, start here:
 
-- [docs/reactive-state-systems-beginners-guide.md](docs/reactive-state-systems-beginners-guide.md)
+- [docs/reactive-systems-beginners-guide.md](docs/reactive-systems-beginners-guide.md)
 - [specs/README.md](specs/README.md)
 - [specs/ann/requirement.md](specs/ann/requirement.md)
 - [specs/contract/requirement.md](specs/contract/requirement.md)
@@ -196,7 +220,6 @@ What is already in place:
 What is still in progress:
 
 - the repository is not yet a one-command end-to-end flow across every domain
-- Lean package wiring still needs cleanup before `lake build` succeeds from the repository root
 - the ASIC flow is present as source artifacts, but not yet wrapped in the same CLI style as the ANN flow
 
 ## Current CLI Summary
@@ -226,6 +249,12 @@ Simulation commands:
 make sim
 make sim-iverilog
 make sim-verilator
+```
+
+Visualization (generates SVG schematics in `docs/assets/`):
+
+```bash
+make show
 ```
 
 ## Notes

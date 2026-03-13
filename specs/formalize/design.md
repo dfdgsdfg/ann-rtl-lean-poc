@@ -29,6 +29,13 @@ Recommended domain split:
 - `Input8`: hardware-contract inputs with four signed 8-bit lanes
 - `toMathInput : Input8 -> MathInput`: explicit interpretation bridge
 
+Proof engineering rules for this repository:
+
+- Separate linear Presburger obligations from nonlinear arithmetic. Index, phase-counting, and simple range obligations should normalize to `omega`, `linarith`, `decide`, or `native_decide`; wraparound, sign-case splits, and other nonlinear facts should be isolated behind helper lemmas.
+- Keep context assumptions explicit. Public safety and transition theorems should state the phase and range hypotheses they rely on, rather than relying on out-of-range getters returning zero or out-of-range setters becoming no-ops.
+- Treat control-context extension explicitly. When a theorem moves from one phase to the next, the statement should make clear which fields are preserved, which are reset, and which new equalities or bounds become available.
+- Prefer decidable fragments for controller proofs. Finite-state control and index reasoning should reduce to the Presburger or finite-decision fragment instead of expanding the current `4 -> 8 -> 1` constants by hand throughout public proofs.
+
 ## 3. Temporal Strategy
 
 For RTL verification, timing is often the hardest part. End-state functional correctness is not enough by itself.
@@ -55,6 +62,7 @@ The temporal layer should focus on properties such as:
 - while the machine remains in `done`, the output stays stable
 - `done ∧ start` keeps the machine in `done`
 - `done ∧ ¬start` returns the machine to `idle`
+- while the machine waits in `IDLE` with sampled `start = false`, the temporal model reflects the RTL idle-cleanup self-loop that drives `hiddenIdx` and `inputIdx` back to `0`
 - phase ordering cannot skip required computation stages
 - final-iteration boundaries transition to the correct next phase without off-by-one behavior, including the explicit guard cycles in `MAC_HIDDEN` and `MAC_OUTPUT`
 
@@ -125,6 +133,7 @@ The exact `IDLE`, `LOAD_INPUT`, and `DONE` interface semantics are then recovere
 
 - the operational `step` view is intentionally simplified for accepted-transaction reasoning
 - the timing-faithful `timedStep` view must match `controller.sv` exactly for sampled `start`, `LOAD_INPUT` data capture, `busy`, `done`, and restart behavior
+- in particular, the `IDLE ∧ ¬start` self-loop is not a pure no-op: the temporal layer must include the datapath cleanup behavior that zeroes the controller indices while the machine waits idle
 
 The current state-machine model is a good base for end-state correctness, but a timing-faithful layer should additionally model the control-handshake conditions that determine when a transaction is considered accepted.
 
@@ -156,6 +165,7 @@ This exact schedule should appear in theorem statements or helper lemmas, not ju
 Recommended invariant categories:
 
 - Indexes always stay in range
+- The idle-wait normal form is explicit: after an `IDLE ∧ ¬start` cleanup step, `hiddenIdx = 0` and `inputIdx = 0`
 - The accumulator matches the current partial sum
 - Hidden activations already written match the fixed-point hidden-layer definition
 - Unwritten hidden slots are irrelevant to the current phase
@@ -172,6 +182,7 @@ The following timing-focused proof targets are required for milestone completion
 - once `done` is reached, output remains stable until restart semantics allow a new transaction
 - `done ∧ start` preserves `done`
 - `done ∧ ¬start` transitions to `idle`
+- the `IDLE ∧ ¬start` self-loop performs the documented controller cleanup: phase stays `IDLE`, `hiddenIdx` and `inputIdx` are driven to `0`, and datapath contents are otherwise preserved
 - the phase trace follows the allowed controller ordering
 - the last hidden MAC step, the hidden guard cycle, the last hidden neuron, the last output MAC step, and the output guard cycle each transition to the correct successor phase
 - boundary steps do not perform out-of-range memory access
