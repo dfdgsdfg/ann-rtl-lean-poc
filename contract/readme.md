@@ -27,7 +27,7 @@ Related provenance lives in `ann/results/selected_run.json`. That file points to
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
 
-`simulations/rtl/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The file is built from a fixed smoke-vector set plus generated positive/zero/negative score witnesses, and vector generation fails early if any required score class cannot be synthesized from the deterministic candidate pool.
+`simulations/rtl/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a fixed deterministic smoke-vector set. A separate strict witness check can verify whether the deterministic candidate pool can still synthesize positive/zero/negative score witnesses for the current frozen model.
 
 ## How To Use It
 
@@ -53,7 +53,7 @@ If you already have a run directory with `weights_quantized.json`, you can freez
 
 ### 2. Freeze the contract
 
-Freeze using the currently recorded run if `ann/results/selected_run.json` exists. If it does not exist, the CLI falls back to `ann/results/latest`.
+Freeze using the currently recorded run if `ann/results/selected_run.json` exists and points to a valid run directory. If the metadata file does not exist, the CLI falls back to `ann/results/latest`. If the metadata file exists but points to a missing run, freeze fails instead of silently using `latest`.
 
 ```bash
 python3 -m contract.src.freeze
@@ -79,6 +79,12 @@ If the contract is already frozen and you only need to refresh `simulations/rtl/
 
 ```bash
 python3 -m contract.src.gen_vectors
+```
+
+Run the separate strict witness check for positive/zero/negative score-class coverage:
+
+```bash
+python3 -m contract.src.gen_vectors --check-witnesses
 ```
 
 ### 5. Read the outputs

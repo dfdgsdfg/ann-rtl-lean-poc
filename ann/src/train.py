@@ -110,6 +110,11 @@ def zero_state() -> dict[str, object]:
     }
 
 
+def require_examples(examples: list[object], *, context: str) -> None:
+    if len(examples) == 0:
+        raise ValueError(f"{context} requires at least one example")
+
+
 def forward_float(inputs: tuple[int, int, int, int], params: dict[str, object]) -> tuple[list[float], list[float], float]:
     pre_hidden: list[float] = []
     hidden: list[float] = []
@@ -162,6 +167,7 @@ def quantized_from_float(params: dict[str, object]) -> dict[str, object]:
 
 
 def evaluate_float(examples: list[object], params: dict[str, object]) -> dict[str, float]:
+    require_examples(examples, context="float evaluation")
     total_loss = 0.0
     correct = 0
     for example in examples:
@@ -177,6 +183,7 @@ def evaluate_float(examples: list[object], params: dict[str, object]) -> dict[st
 
 
 def evaluate_quantized(examples: list[object], quantized: dict[str, object]) -> dict[str, float]:
+    require_examples(examples, context="quantized evaluation")
     total_loss = 0.0
     correct = 0
     for example in examples:
@@ -252,6 +259,12 @@ def write_markdown_summary(path: Path, summary: dict[str, object]) -> None:
 
 
 def train(args: argparse.Namespace) -> Path:
+    if args.train_size <= 0 or args.val_size <= 0:
+        raise ValueError(
+            "train requires non-empty train and val splits; "
+            f"got train_size={args.train_size}, val_size={args.val_size}"
+        )
+
     run_dir = args.out_dir
     ensure_dir(run_dir)
 

@@ -81,11 +81,19 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 
 
 def cmd_quantize(args: argparse.Namespace) -> int:
-    payload, kind, source_path = load_evaluation_payload(
-        run_dir=args.run_dir,
-        weights_path=args.weights,
-        artifact=args.artifact,
-    )
+    try:
+        payload, kind, source_path = load_evaluation_payload(
+            run_dir=args.run_dir,
+            weights_path=args.weights,
+            artifact=args.artifact,
+            expected_kind="float",
+        )
+    except (TypeError, ValueError) as exc:
+        if args.weights is not None:
+            raise ValueError(
+                "quantize expects a float-weight artifact; use --artifact best-float or --artifact selected-float"
+            ) from exc
+        raise
     if kind != "float":
         raise ValueError("quantize expects a float-weight artifact; use --artifact best-float or --artifact selected-float")
 

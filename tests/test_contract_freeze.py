@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import stat
 import subprocess
@@ -59,6 +60,20 @@ class FreezeContractTests(unittest.TestCase):
         stack.enter_context(patch.object(gen_vectors, "TEST_VECTORS_META_PATH", self.vector_meta_path))
         return stack
 
+    def _always_positive_weights(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "source": "trained_selected_quantized",
+            "input_size": 4,
+            "hidden_size": 8,
+            "dataset_version": "test",
+            "training_seed": 0,
+            "w1": [[0, 0, 0, 0] for _ in range(8)],
+            "b1": [0] * 8,
+            "w2": [0] * 8,
+            "b2": 1,
+        }
+
     def test_freeze_contract_does_not_write_partial_artifacts_when_vector_generation_fails(self) -> None:
         self.contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
         self.contract_weights_path.write_text('{"sentinel": "contract"}\n', encoding="utf-8")
@@ -105,6 +120,46 @@ class FreezeContractTests(unittest.TestCase):
             self.vector_meta_path,
         ):
             self.assertTrue(path.exists(), msg=f"expected generated artifact: {path}")
+
+    def test_resolve_selected_run_dir_requires_existing_selected_metadata_target(self) -> None:
+        self.selected_run_path.parent.mkdir(parents=True, exist_ok=True)
+        missing_run = self.temp_root / "ann" / "results" / "missing-run"
+        self.selected_run_path.write_text(
+            json.dumps(
+                {
+                    "selected_run": contract_artifacts.relative_to_root(missing_run),
+                    "weights_quantized": contract_artifacts.relative_to_root(missing_run / "weights_quantized.json"),
+                    "contract_weights": contract_artifacts.relative_to_root(self.contract_weights_path),
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with self._patched_output_paths():
+            with patch.object(freeze, "LATEST_RESULTS_DIR", RUN_DIR):
+                with self.assertRaisesRegex(FileNotFoundError, "selected run metadata points to a missing run directory"):
+                    freeze.freeze_contract()
+
+        self.assertFalse(self.contract_weights_path.exists(), msg="freeze should fail before writing artifacts")
+
+    def test_resolve_selected_run_dir_falls_back_to_latest_when_metadata_missing(self) -> None:
+        with self._patched_output_paths():
+            with patch.object(freeze, "LATEST_RESULTS_DIR", RUN_DIR):
+                resolved = freeze.resolve_selected_run_dir()
+
+        self.assertEqual(resolved, RUN_DIR)
+
+    def test_render_vectors_smoke_only_succeeds_for_always_positive_weights(self) -> None:
+        rendered = gen_vectors.render_vectors(self._always_positive_weights())
+        self.assertEqual(len([line for line in rendered.splitlines() if line]), len(gen_vectors.SMOKE_VECTORS))
+
+    def test_check_witness_coverage_fails_for_always_positive_weights(self) -> None:
+        self.contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
+        self.contract_weights_path.write_text(json.dumps(self._always_positive_weights()), encoding="utf-8")
+
+        with patch.object(gen_vectors, "CONTRACT_WEIGHTS_PATH", self.contract_weights_path):
+            with self.assertRaisesRegex(ValueError, "unable to synthesize required score-class witnesses for zero"):
+                gen_vectors.check_witness_coverage()
 
     def test_write_text_files_preserves_existing_file_mode(self) -> None:
         target = self.temp_root / "contract" / "result" / "preserved.txt"

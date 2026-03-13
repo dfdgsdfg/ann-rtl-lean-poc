@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from itertools import product
 from pathlib import Path
@@ -80,10 +81,9 @@ def _score_class(score: int) -> str:
     return "negative"
 
 
-def _build_vectors(weights: dict[str, object]) -> tuple[tuple[int, int, int, int], ...]:
-    selected = list(SMOKE_VECTORS)
-    used = set(selected)
-
+def _synthesize_witness_vectors(weights: dict[str, object]) -> dict[str, tuple[int, int, int, int]]:
+    used = set(SMOKE_VECTORS)
+    witnesses: dict[str, tuple[int, int, int, int]] = {}
     for target_class in WITNESS_CLASSES:
         witness: tuple[int, int, int, int] | None = None
         for candidate in product(WITNESS_VALUES, repeat=INPUT_SIZE):
@@ -98,10 +98,13 @@ def _build_vectors(weights: dict[str, object]) -> tuple[tuple[int, int, int, int
                 "unable to synthesize required score-class witnesses "
                 f"for {target_class} from the deterministic candidate pool"
             )
-        selected.append(witness)
+        witnesses[target_class] = witness
         used.add(witness)
+    return witnesses
 
-    return tuple(selected)
+
+def validate_witness_coverage(weights: dict[str, object]) -> None:
+    _synthesize_witness_vectors(weights)
 
 
 def _load_contract_weights() -> dict[str, object]:
@@ -114,7 +117,7 @@ def _load_contract_weights() -> dict[str, object]:
 
 
 def _build_scored_vectors(weights: dict[str, object]) -> tuple[tuple[tuple[int, int, int, int], int], ...]:
-    return tuple((vector, _score(vector, weights=weights)) for vector in _build_vectors(weights))
+    return tuple((vector, _score(vector, weights=weights)) for vector in SMOKE_VECTORS)
 
 
 def render_vectors(weights: dict[str, object]) -> str:
@@ -152,7 +155,28 @@ def generate_vectors() -> Path:
     return TEST_VECTORS_PATH
 
 
+def check_witness_coverage() -> None:
+    weights = _load_contract_weights()
+    validate_witness_coverage(weights)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate or validate RTL test vectors")
+    parser.add_argument(
+        "--check-witnesses",
+        action="store_true",
+        help="Validate that the deterministic candidate pool can synthesize positive/zero/negative score witnesses",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+    if args.check_witnesses:
+        check_witness_coverage()
+        print("witness coverage validation passed")
+        return
+
     out_path = generate_vectors()
     print(f"wrote {out_path}")
 

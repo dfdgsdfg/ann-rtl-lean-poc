@@ -54,20 +54,34 @@ def resolve_run_artifact(run_dir: Path | None, artifact: str) -> tuple[Path, str
     return artifact_path, kind
 
 
-def _payload_kind_from_source(payload: dict[str, Any]) -> str:
+def _declared_payload_kind(payload: dict[str, Any]) -> str | None:
     source = str(payload.get("source", ""))
+    if "quantized" in source or source in {"trained_quantized_selected", "trained_selected_quantized"}:
+        return "quantized"
     if "float" in source:
         return "float"
-    if source in {"trained_quantized_selected", "trained_selected_quantized"}:
-        return "quantized"
+    selection_mode = payload.get("selection_mode")
+    if isinstance(selection_mode, str) and selection_mode:
+        return "float"
+    return None
 
-    w1 = payload.get("w1")
-    if isinstance(w1, list):
-        for row in w1:
-            if isinstance(row, list):
-                for value in row:
-                    if isinstance(value, float) and not value.is_integer():
-                        return "float"
+
+def _contains_float(value: object) -> bool:
+    if isinstance(value, float):
+        return True
+    if isinstance(value, list):
+        return any(_contains_float(item) for item in value)
+    return False
+
+
+def _payload_kind_from_source(payload: dict[str, Any]) -> str:
+    declared = _declared_payload_kind(payload)
+    if declared is not None:
+        return declared
+
+    for field in ("w1", "b1", "w2", "b2"):
+        if _contains_float(payload.get(field)):
+            return "float"
     return "quantized"
 
 
@@ -76,13 +90,18 @@ def load_evaluation_payload(
     run_dir: Path | None = None,
     weights_path: Path | None = None,
     artifact: str = "quantized",
+    expected_kind: str | None = None,
 ) -> tuple[dict[str, object], str, Path]:
     if weights_path is not None:
         payload_path = Path(weights_path)
         if not payload_path.exists():
             raise FileNotFoundError(f"missing weights file: {payload_path}")
         raw_payload = json.loads(payload_path.read_text(encoding="utf-8"))
-        kind = _payload_kind_from_source(raw_payload)
+        declared_kind = _declared_payload_kind(raw_payload)
+        if expected_kind is not None and declared_kind is None:
+            kind = expected_kind
+        else:
+            kind = declared_kind or _payload_kind_from_source(raw_payload)
     else:
         payload_path, kind = resolve_run_artifact(run_dir, artifact)
         raw_payload = json.loads(payload_path.read_text(encoding="utf-8"))
@@ -121,6 +140,11 @@ def evaluate_payload(
         examples = dataset["train"] + dataset["val"]
     else:
         raise ValueError(f"unsupported split: {split}")
+
+    if len(examples) == 0:
+        raise ValueError(
+            f"evaluate split '{split}' is empty for train_size={train_size}, val_size={val_size}"
+        )
 
     if kind == "float":
         metrics = evaluate_float(examples, payload)

@@ -44,8 +44,12 @@ def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
     if SELECTED_RUN_PATH.exists():
         selected_meta = validate_selected_run_metadata(read_json(SELECTED_RUN_PATH))
         candidate_dir = resolve_metadata_path(selected_meta["selected_run"])
-        if candidate_dir.exists():
-            return candidate_dir
+        if not candidate_dir.exists():
+            raise FileNotFoundError(
+                "selected run metadata points to a missing run directory: "
+                f"{SELECTED_RUN_PATH} -> {candidate_dir}"
+            )
+        return candidate_dir
 
     return LATEST_RESULTS_DIR
 

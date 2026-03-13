@@ -11,7 +11,8 @@ It takes one toy MLP and pushes it through the full stack:
 3. implement the contract in RTL
 4. model the same behavior in Lean
 5. validate with simulation
-6. synthesize with an open-source ASIC flow
+6. add SMT-backed control verification
+7. synthesize with an open-source ASIC flow
 
 The model is intentionally small enough to inspect by hand:
 
@@ -50,10 +51,13 @@ Define the mathematical, fixed-point, and machine models in Lean and prove the i
 5. `simulations`
 Generate vectors and compare RTL behavior against the frozen contract.
 
-6. `experiments`
+6. `smt`
+Run solver-backed verification for RTL control properties and export the frozen arithmetic assumptions that any future SMT datapath encoding must use.
+
+7. `experiments`
 Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
 
-7. `asic`
+8. `asic`
 Run synthesis and, later, physical-design steps.
 
 ## Why RTL Is Hard
@@ -155,6 +159,12 @@ Run the dual-simulator RTL regression:
 make sim
 ```
 
+Run the solver-backed RTL control checks:
+
+```bash
+make smt
+```
+
 ### Typical Human Workflow
 
 Use this when you want to understand or refresh the current repository baseline:
@@ -164,6 +174,7 @@ make train
 make evaluate ARGS="--artifact quantized"
 make freeze-check
 make sim
+make smt
 ```
 
 If you want to train into a separate run directory first:
@@ -186,7 +197,7 @@ The main human-facing outputs are:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, inputs, and generated score-class witnesses)
+- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke-vector set)
 
 `contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 
@@ -203,6 +214,9 @@ SystemVerilog source for the tiny inference core.
 
 - `formalize/`
 Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.
+
+- `smt/`
+Solver-backed verification artifacts and frozen-contract assumption exports.
 
 - `simulations/`
 RTL testbench and generated test vectors.
