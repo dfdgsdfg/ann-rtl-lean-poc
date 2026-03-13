@@ -170,8 +170,8 @@ formalize/
   src/
     TinyMLP.lean           -- root import hub (imports all submodules)
     TinyMLP/
-      Spec.lean            -- pure mathematical model, weight constants, mlpSpec
-      FixedPoint.lean      -- hardware-domain arithmetic, Input8, mlpFixed, hardware→math bridge
+      Spec.lean            -- mathematical model, Input8/MathInput domains, bounded value wrappers, weight constants, toMathInput, mlpSpec
+      FixedPoint.lean      -- hardware-domain arithmetic, mlpFixed, hardware→math bridge
       Machine.lean         -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
       Temporal.lean        -- temporal/trace layer and mandatory timing theorems
       Simulation.lean      -- operational bridge lemmas used by temporal and end-state proofs

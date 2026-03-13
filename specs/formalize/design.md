@@ -63,8 +63,8 @@ Because exact `start` handshake timing is part of the current proof scope, the m
 ## 4. File Responsibilities
 
 - `TinyMLP.lean`: root import hub — imports all submodules so `lake build` checks everything
-- `Spec.lean`: `MathInput`, pure mathematical model, frozen weight constants (auto-generated block), `mlpSpec`
-- `FixedPoint.lean`: `Input8`, contract-domain arithmetic wrappers, `toMathInput`, `mlpFixed`, and the hardware-to-math bridge theorem
+- `Spec.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, frozen weight constants (auto-generated block), and `mlpSpec`
+- `FixedPoint.lean`: contract-domain arithmetic operators, `mlpFixed`, and the hardware-to-math bridge theorem
 - `Machine.lean`: `Phase`, `State`, `step`, `run`, `initialState`, `totalCycles`, with bounded hardware-facing value storage and invariant-backed controller indices
 - `Temporal.lean`: machine-trace definitions, local temporal operators, and named temporal formulas over controller behavior
 - `Invariants.lean`: `IndexInvariant`, step/run preservation proofs
