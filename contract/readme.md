@@ -34,10 +34,24 @@ The frozen contract also records verified safe bounds for the current weights ov
 To create a fresh ANN result:
 
 ```bash
+./scripts/ann.sh train
+```
+
+Equivalent CLI form:
+
+```bash
+python3 -m ann.cli train
+```
+
+Those commands train the ANN, export the quantized result, and refresh the frozen contract plus downstream generated artifacts.
+
+If you run the lower-level training module directly:
+
+```bash
 python3 ann/src/train.py
 ```
 
-That training flow also exports a quantized result and refreshes the contract.
+it only writes ANN artifacts under `ann/results/` and does not refresh `contract/result/weights.json` or downstream generated files. Run `python3 -m contract.src.freeze` afterward if you use that lower-level entrypoint.
 
 If you already have a run directory with `weights_quantized.json`, you can freeze that run directly.
 

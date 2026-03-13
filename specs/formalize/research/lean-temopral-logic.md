@@ -2,6 +2,8 @@
 
 Date: 2026-03-12 (audited 2026-03-12)
 
+Status: historical research note. For this repository, the current project decision is to use a project-local temporal/trace layer; LeanLTL and similar projects are references only, not recommended dependencies.
+
 ## Question
 
 Is there a mature temporal-logic library in the Lean community that we should depend on for RTL timing verification?
@@ -10,7 +12,7 @@ Is there a mature temporal-logic library in the Lean community that we should de
 
 There is no widely-adopted, community-standard Lean 4 temporal-logic library. However, credible academic work does exist — most notably **LeanLTL**, a peer-reviewed LTL/LTLf framework published at ITP 2025. Two other independent projects (Lentil for TLA, LeanearTemporalLogic for LTL) are also active.
 
-None of these are on Lean Reservoir or widely adopted yet. For this repository, the practical conclusion is: evaluate LeanLTL as a potential dependency for finite-trace reasoning, but be prepared to define a project-local temporal layer if it does not fit.
+None of these are on Lean Reservoir or widely adopted yet. For this repository, the practical conclusion is: use a project-local temporal layer, and treat LeanLTL or similar work as design references only.
 
 ## What I Found
 
@@ -80,19 +82,21 @@ The landscape is no longer "no serious work exists." It is "emerging academic wo
 
 ## Recommendation For This Repository
 
-**Evaluate LeanLTL before building from scratch.** Its LTLf support and custom tactics may cover part of what we need for bounded-trace RTL timing proofs. If it fits:
+**Use a small internal finite-trace temporal layer.** That matches the current repository requirement and keeps the proof vocabulary versioned, reviewable, and build-checked inside this project.
 
-- Depend on LeanLTL for finite-trace temporal operators
-- Build project-specific timing lemmas on top of LeanLTL's primitives
+LeanLTL should be treated as reference material only:
 
-If LeanLTL does not fit (e.g., mismatched trace model, too heavy for our simple FSM), build a small internal finite-trace temporal layer:
+- use it for ideas about finite-trace operators, naming, or proof organization
+- do not make it a required dependency for this repository
+
+The project-local layer can stay intentionally small:
 
 - `Trace := Nat -> State`
 - `AlwaysUpTo : Nat -> (State -> Prop) -> State -> Prop`
 - `EventuallyWithin : Nat -> (State -> Prop) -> State -> Prop`
 - `StableAfter : Nat -> (State -> Prop) -> State -> Prop`
 
-Recommended proof targets (regardless of which approach):
+Recommended proof targets:
 
 - accepted start implies `done` within `N` cycles
 - `busy` remains true throughout the active execution window
@@ -108,14 +112,13 @@ If later we want a richer logic layer, the most realistic next step is probably:
 
 ## Bottom Line
 
-As of 2026-03-12, I would not plan this project around a widely-adopted external Lean temporal-logic library — none exists at that maturity level.
+As of 2026-03-12, I would not plan this project around an external Lean temporal-logic dependency.
 
 I would plan around:
 
 - `mathlib4` for general proof infrastructure
-- **LeanLTL as a candidate dependency** worth evaluating for LTLf support
-- a project-local temporal layer as the fallback if LeanLTL does not fit
-- optional inspiration from Lentil (TLA) and modal/dynamic-logic Lean projects
+- a project-local temporal layer as the repository-standard implementation
+- LeanLTL, Lentil, and adjacent logic projects as optional references for ideas only
 
 ## Sources
 

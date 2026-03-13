@@ -32,12 +32,14 @@ def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
     return LATEST_RESULTS_DIR
 
 
-def _write_selected_run_metadata(selected_dir: Path, quantized_path: Path) -> dict[str, str]:
-    payload = {
+def _write_selected_run_metadata(selected_dir: Path, quantized_path: Path, contract_payload: dict[str, object]) -> dict[str, object]:
+    payload: dict[str, object] = {
         "selected_run": relative_to_root(selected_dir),
         "weights_quantized": relative_to_root(quantized_path),
         "contract_weights": relative_to_root(CONTRACT_WEIGHTS_PATH),
     }
+    if "selected_epoch" in contract_payload:
+        payload["selected_epoch"] = contract_payload["selected_epoch"]
     write_json(SELECTED_RUN_PATH, payload)
     return payload
 
@@ -48,14 +50,15 @@ def freeze_contract(run_dir: Path | None = None) -> Path:
     if not quantized_path.exists():
         raise FileNotFoundError(f"missing quantized weights at {quantized_path}")
 
+    quantized_payload = read_json(quantized_path)
     analysis_payload = build_analysis_payload(
-        read_json(quantized_path),
+        quantized_payload,
         selected_run=relative_to_root(selected_dir),
     )
     write_json(CONTRACT_WEIGHTS_PATH, analysis_payload)
     sync_downstream(analysis_payload)
     generate_vectors()
-    _write_selected_run_metadata(selected_dir, quantized_path)
+    _write_selected_run_metadata(selected_dir, quantized_path, analysis_payload)
     validate_contract()
     return CONTRACT_WEIGHTS_PATH
 
@@ -77,6 +80,13 @@ def validate_contract() -> None:
             "selected run metadata does not point to the canonical contract weights: "
             f"{selected_meta['contract_weights']} != {expected_contract_path}"
         )
+    if "selected_epoch" in contract_payload:
+        expected_selected_epoch = contract_payload["selected_epoch"]
+        if selected_meta.get("selected_epoch") != expected_selected_epoch:
+            raise ValueError(
+                "selected run metadata does not match contract selected epoch: "
+                f"{selected_meta.get('selected_epoch')} != {expected_selected_epoch}"
+            )
 
     quantized_path = resolve_metadata_path(selected_meta["weights_quantized"])
     if not quantized_path.exists():

@@ -177,7 +177,7 @@ formalize/
 
 ## 7. Reproducibility Requirements
 
-The formal flow must be reproducible by running `lake build` from the repository root using the pinned Lean toolchain (currently v4.28.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
+The formal flow must be reproducible by running `cd formalize && lake build` using the pinned Lean toolchain (currently v4.28.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
 
 The repository should clearly show:
 
@@ -199,4 +199,4 @@ The `formalize` domain is complete when:
 5. Hardware-facing theorem statements and machine-register types use bounded signed representations that match the contract widths; unrestricted `Int` is confined to the mathematical layer.
 6. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
 7. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
-8. `lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.
+8. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.

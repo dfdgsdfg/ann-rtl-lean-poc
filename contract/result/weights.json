@@ -64,6 +64,7 @@
     "weight_bits": 8
   },
   "schema_version": 1,
+  "selected_epoch": 51,
   "selected_run": "ann/results/latest",
   "source": "trained_selected_quantized",
   "training_seed": 20260312,

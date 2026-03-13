@@ -23,53 +23,52 @@ The current tree already has:
 - `MathInput` and `Input8`
 - `toMathInput`
 - bounded wrappers for `Hidden16` and `Acc32`
+- explicit contract-domain hidden and output folds in `FixedPoint.lean`
+- an explicit `Int24` output-product stage with typed lifts into `Acc32`
+- a typed hidden-cell write path in `Machine.lean`
 - a build-clean operational proof story over `step` and `run`
 - a project-local temporal layer in `Temporal.lean`
 - the current public temporal theorem package and `Correctness.lean` re-exports
-- a green `lake build` from `formalize/`
+- a green `cd formalize && lake build`
 
-The main remaining work is no longer in the machine state or temporal theorem surface.
-It is in the contract-domain arithmetic layer and the final artifact cleanup around it.
+The main remaining work is now in artifact-surface cleanup and in deciding whether the stronger boundary-theorem package stays in scope for this milestone.
 
 ## 3. Remaining Gaps
 
-### 3.1 Fixed-Point Contract Model Gap
+### 3.1 Artifact-Surface And Naming Gap
 
 Current issue:
 
-- `hiddenFixedAt` is still defined by wrapping `hiddenSpecAt8`
-- `hiddenFixed` is still `Hidden16.ofHidden (hiddenSpec8 input)`
-- `outputScoreFixed` is still `Acc32.ofInt (outputScoreSpecFromHidden16 ...)`
-- the current fixed-point bridge theorem simplifies mainly because the fixed-point layer is built from the spec layer directly
+- the docs still blur goal predicates such as `rtlCorrectnessGoal` / `rtlTerminationGoal` with the proved theorem names `rtl_correctness_goal` / `rtl_terminates_goal`
+- reviewers still need a single place where the current public theorem export surface is listed without having to infer it from helper lemmas
+- the implementation plan should no longer point readers at a fixed-point refactor that has already landed in code
 
 Why this matters:
 
-- the requirement demands a distinct fixed-point implementation model
-- the repository should check agreement between two layers, not repackage one layer as the other
-- the current proof story would hide bugs in the intended contract-domain arithmetic layer
+- acceptance criteria should reference the identifiers that are actually proved and exported
+- reviewers need the docs to match the checked-in artifact surface exactly
+- stale implementation guidance sends work back into already-completed code
 
-### 3.2 Width-Fidelity And Typed-Arithmetic Gap
+### 3.2 Boundary-Theorem Scope Gap
 
 Current issue:
 
-- `mul16x8To24` currently returns `Acc32` instead of an explicit `Int24`-bounded result
-- the output MAC path jumps directly from hidden activation and weight to the accumulator
-- `Hidden16` already stores bounded cells, but the machine still writes activations through `Int` round-trips
-- some hardware-adjacent helper definitions over `Input8` or `Hidden16` still expose unrestricted `Int` as the primary interface
+- the current public temporal surface proves the guard-cycle phase transitions and `biasOutput_registers_result`
+- stronger no-duplicate/no-skip/no-out-of-range boundary theorems are not yet part of the exported surface under the names suggested in this plan
+- the docs currently risk implying that Phase 5 is fully complete even if those stronger statements remain desired
 
 Why this matters:
 
-- the requirement calls out the `int16 × int8 → int24` stage explicitly
-- typed boundaries are what make the hardware-contract layer reviewable
-- the fixed-point layer should stay inside bounded representations until the explicit interpretation step
+- the acceptance contract must say clearly whether the current exported boundary package is sufficient
+- otherwise reviewers cannot tell whether missing stronger boundary theorems are a defect or intentionally deferred work
+- Phase 5 status should reflect the real theorem surface rather than an older plan snapshot
 
 ### 3.3 Reproducibility And Artifact-Surface Gap
 
 Current issue:
 
-- the requirement says `lake build` should work from the repository root, but the current Lean project still lives under `formalize/`
-- the requirement text still mentions Lean `v4.28.0`, while the checked-in `formalize/lean-toolchain` is newer
-- the remaining implementation plan should point reviewers at the fixed-point refactor as the primary open milestone
+- the final docs and verification checklist must consistently use `cd formalize && lake build`, because the Lean project lives under `formalize/`
+- the remaining implementation plan should point reviewers at artifact-surface cleanup and any deliberate boundary-proof strengthening as the primary open work
 
 Why this matters:
 
@@ -80,16 +79,16 @@ Why this matters:
 
 Resolve the remaining work in the following order:
 
-1. keep the current bounded storage layer as the foundation
-2. replace the fixed-point spec shortcuts with explicit bounded folds and an explicit `Int24` output-product stage
-3. propagate the remaining typed-helper cleanup through the machine and simulation proofs
+1. treat the current bounded storage and fixed-point layers as the landed foundation
+2. align the docs and theorem-surface naming with the checked-in code
+3. decide whether the stronger boundary theorems remain milestone-critical; if yes, add them as a scoped follow-up
 4. finish with artifact-surface and reproducibility cleanup
 
 This order keeps proof churn localized:
 
-- the machine and temporal layers already build over bounded state, so the next change should target the contract-domain arithmetic directly
-- the fixed-point refactor should land before any final cleanup of theorem-surface wording
-- reproducibility cleanup should happen after the code surface is stable enough that the docs stop moving
+- the code already contains the bounded arithmetic refactor, so the next edits should not reopen that implementation surface
+- theorem-surface wording and milestone scope should be settled before any optional boundary-proof strengthening
+- reproducibility cleanup should happen after the docs reflect the actual exported artifact
 
 ## 5. Phase Plan
 
@@ -107,7 +106,7 @@ Work items:
 
 - pin the final public theorem names that must appear in `Temporal.lean` and `Correctness.lean`
 - decide whether `phase_ordering_ok` remains mandatory as a public theorem or becomes a supporting theorem referenced by the stronger boundary package
-- decide whether the fixed-point layer will expose bounded wrapper results directly or expose them through explicit `toInt` observation functions
+- distinguish goal predicates from proof theorems in the reviewer-facing docs
 
 Exit criteria:
 
@@ -147,18 +146,17 @@ Exit criteria:
 
 - hardware-facing machine storage is bounded in its type definitions, not only by helper functions
 - no hardware-facing state field is a naked unrestricted `Int`
-- residual helper-surface `Int` leakage is tracked separately in Phase 2
+- no remaining blocker in the bounded storage layer prevents milestone cleanup
 
 ### Phase 2: Refactor The Contract-Domain Fixed-Point Layer
 
 Status:
 
-- pending
-- this is now the primary remaining implementation task
+- completed in the current codebase
 
 Purpose:
 
-- make `FixedPoint.lean` a real contract-domain model instead of an almost-math model over `Int`
+- record the contract-domain arithmetic refactor that is now part of the checked-in implementation
 
 Work items:
 
@@ -193,7 +191,7 @@ Exit criteria:
 Status:
 
 - completed for the current bounded-state model
-- small follow-up proof edits may still be needed after Phase 2 changes
+- no remaining proof refit is planned unless later theorem-surface cleanup uncovers a localized issue
 
 Purpose:
 
@@ -252,8 +250,9 @@ Exit criteria:
 
 Status:
 
-- completed for the current public theorem package
-- follow-up strengthening may still be needed if the fixed-point refactor changes theorem statements
+- partially completed in the current public theorem package
+- guard-cycle transition theorems and `biasOutput_registers_result` are already public
+- stronger no-duplicate/no-skip/no-out-of-range formulations remain optional follow-up unless they stay mandatory in the acceptance docs
 
 Purpose:
 
@@ -261,6 +260,7 @@ Purpose:
 
 Work items:
 
+- decide whether the stronger boundary obligations below remain milestone-critical or move to explicit follow-up scope
 - add explicit hidden-guard-cycle theorems:
   - after the fourth hidden MAC, `inputIdx = 4`
   - the next cycle is a guard cycle in `MAC_HIDDEN`
@@ -298,7 +298,7 @@ Exit criteria:
 
 Status:
 
-- deferred unless the fixed-point refactor exposes a proof gap that needs stronger reusable invariants
+- deferred unless Phase 5 strengthening stays in scope and needs stronger reusable invariants
 
 Purpose:
 
@@ -339,7 +339,7 @@ Work items:
 
 - align theorem names in code with `requirement.md` and `design.md`
 - make sure `TinyMLP.lean` imports all required modules
-- decide whether to make the repository root itself a Lean entrypoint or to narrow the reproducibility instructions to `cd formalize && lake build`
+- standardize the reproducibility instructions on `cd formalize && lake build`
 - align the documented pinned toolchain version with the checked-in `lean-toolchain`
 - verify that `Correctness.lean` shows:
   - top-level functional theorem
@@ -347,7 +347,7 @@ Work items:
   - explicit hardware-to-math bridge theorem
   - complete temporal theorem exports
 - run:
-  - `lake build`
+  - `cd formalize && lake build`
   - `rg -n "\\bsorry\\b|\\baxiom\\b" formalize/src`
 - update any stale comments or theorem-surface summaries in module headers
 
@@ -360,51 +360,42 @@ Exit criteria:
 ## 6. File Ownership By Remaining Work
 
 - `Spec.lean`
-  - bounded wrapper definitions
-  - mathematical interpretation helpers
-  - width and bridge lemmas
-  - typed hidden-cell update helpers
+  - no planned milestone-critical edits unless boundary-proof strengthening needs extra helper lemmas
 - `FixedPoint.lean`
-  - contract-domain arithmetic
-  - explicit hidden and output folds
-  - `Int24` output-product stage
-  - explicit hardware-to-math bridge theorem
+  - no planned milestone-critical refactor; current code is the landed contract-domain arithmetic layer
 - `Machine.lean`
-  - bounded machine storage updates that consume the typed fixed-point helpers directly
+  - no planned milestone-critical edits unless theorem-surface cleanup reveals a small supporting lemma gap
 - `Simulation.lean`
-  - symbolic execution and bridge lemmas updated for the true fixed-point layer
+  - supporting lemmas only if optional boundary-proof strengthening stays in scope
 - `Invariants.lean`
-  - stronger reusable invariants only if Phase 2 follow-up requires them
+  - stronger reusable invariants only if Phase 5/6 strengthening stays in scope
 - `Temporal.lean`
   - already-completed public temporal vocabulary and mandatory theorem set
-  - follow-up boundary statement adjustments only if the fixed-point refactor forces them
+  - follow-up boundary statement adjustments only if the stronger theorem package remains in scope
 - `Correctness.lean`
   - final public theorem export surface
   - final artifact-surface cleanup
+- `specs/formalize/*.md`
+  - align milestone language with the current codebase and documented entrypoint
 
 ## 7. Recommended Execution Order
 
 Use this order unless a proof dependency forces a local swap:
 
 1. Phase 0
-2. Phase 1
-3. Phase 2
-4. Phase 3
-5. Phase 5
-6. Phase 4
-7. Phase 7
+2. Phase 7
+3. Phase 5
+4. Phase 6
 
 Rationale:
 
-- bounded-type cleanup has already landed in the state layer
-- the fixed-point refactor is now the only remaining implementation change large enough to perturb proofs
-- public theorem export work is already complete for the current theorem package
-- reproducibility cleanup should happen after the code surface stops moving
+- the bounded-type and fixed-point refactors have already landed
+- the next required work is reviewer-facing cleanup, not reopening the arithmetic model
+- only after the docs are aligned should the project decide whether the stronger boundary package stays in scope
 
 ## 8. Immediate Next Steps
 
-1. Replace the current fixed-point shortcuts with explicit bounded hidden-layer and output-layer folds in `FixedPoint.lean`.
-2. Introduce the explicit `Int24` output-product stage and typed lifts into `Acc32`.
-3. Add the typed hidden-cell write path and remove the remaining machine-side `Int` round-trip for hidden activations.
-4. Refit any simulation lemmas that depended on the old shortcut definitions.
-5. After the fixed-point layer is stable, clean up the reproducibility docs and verify the final artifact surface again.
+1. Align `requirement.md`, `design.md`, and `plan.md` with the current public theorem names and exported artifact surface.
+2. Decide whether the stronger Phase 5 boundary theorems remain milestone-critical or move to explicit follow-up scope.
+3. If those stronger boundary theorems remain in scope, add and export them from `Temporal.lean` and `Correctness.lean`.
+4. Re-run `cd formalize && lake build` and `rg -n "\\bsorry\\b|\\baxiom\\b" formalize/src` after the final doc and theorem-surface cleanup.

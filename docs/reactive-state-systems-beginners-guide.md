@@ -15,9 +15,9 @@ It explains the basic ideas using this repository's tiny neural inference RTL as
 
 If you want the deeper theory and tool survey after this guide, read:
 
-- [reactive-state-systems-temporal-logic-ecosystem.md](/Users/dididi/workspaces/ann-rtl-lena/docs/research/reactive-state-systems-temporal-logic-ecosystem.md)
-- [specs/formalize/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/formalize/requirement.md)
-- [specs/formalize/design.md](/Users/dididi/workspaces/ann-rtl-lena/specs/formalize/design.md)
+- [reactive-state-systems-temporal-logic-ecosystem.md](research/reactive-state-systems-temporal-logic-ecosystem.md)
+- [specs/formalize/requirement.md](../specs/formalize/requirement.md)
+- [specs/formalize/design.md](../specs/formalize/design.md)
 
 ## 1. What Is a Reactive State System?
 
@@ -51,7 +51,7 @@ Examples:
 
 ## 2. The Running Example in This Repository
 
-The RTL controller in [controller.sv](/Users/dididi/workspaces/ann-rtl-lena/rtl/src/controller.sv) moves through these states:
+The RTL controller in [controller.sv](../rtl/src/controller.sv) moves through these states:
 
 - `IDLE`
 - `LOAD_INPUT`
@@ -90,7 +90,7 @@ Those are time-dependent questions. That is where logic and verification enter.
 
 State is all the information the system remembers between steps.
 
-In the Lean model at [Machine.lean](/Users/dididi/workspaces/ann-rtl-lena/formalize/src/TinyMLP/Machine.lean), the state includes:
+In the Lean model at [Machine.lean](../formalize/src/TinyMLP/Machine.lean), the state includes:
 
 - input registers
 - hidden registers
@@ -534,21 +534,23 @@ So the cleanest way to talk about a "stable reactive circuit" here is:
 
 ## 8. A Subtle But Important Repo Detail
 
-The real RTL controller in [controller.sv](/Users/dididi/workspaces/ann-rtl-lena/rtl/src/controller.sv) waits for `start`:
+The real RTL controller in [controller.sv](../rtl/src/controller.sv) waits for `start`:
 
 ```text
 IDLE: next_state = start ? LOAD_INPUT : IDLE;
 ```
 
-The current Lean machine model in [Machine.lean](/Users/dididi/workspaces/ann-rtl-lena/formalize/src/TinyMLP/Machine.lean) does not yet model that external handshake exactly.
+The core machine step function in [Machine.lean](../formalize/src/TinyMLP/Machine.lean) still abstracts away external control sampling.
 
 Its `idle` phase moves directly into `loadInput` on the next `step`.
 
+The repository now also has a timing-faithful trace layer in [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) that models sampled control inputs explicitly through `CtrlSample`, `timedStep`, `acceptedStart`, and `rtlTrace`.
+
 That means:
 
-- the Lean model is currently best understood as "an accepted transaction starts now"
-- it is already good for functional correctness and bounded execution reasoning
-- a more timing-faithful handshake proof layer would need explicit sampled inputs or an input trace
+- the raw machine model is still best understood as "internal computation after acceptance"
+- the temporal layer now handles sampled `start`, `done` hold behavior, and return-to-`idle` behavior
+- timing-faithful handshake proofs now live in the temporal layer instead of being missing from the repository
 
 This distinction matters. Good verification work is precise about what is modeled and what is abstracted away.
 
@@ -616,25 +618,25 @@ That is also the right mental model for this repository.
 
 ## 10. What Is Already Being Verified Here
 
-At [Correctness.lean](/Users/dididi/workspaces/ann-rtl-lena/formalize/src/TinyMLP/Correctness.lean), the main goals are:
+At [Correctness.lean](../formalize/src/TinyMLP/Correctness.lean), the main goals are:
 
 - final output matches the fixed-point model
 - the machine reaches `done` within the known total cycle count
 - index safety is preserved
+- accepted `start` reaches `done` at the required bounded time
+- `busy`, `done`, and output validity behave correctly across the active and completed phases
 
 The corresponding shapes are:
 
 ```lean
-def rtlCorrectnessGoal (input : Input) : Prop :=
+def rtlCorrectnessGoal (input : Input8) : Prop :=
   (run totalCycles (initialState input)).output = mlpFixed input
 
-def rtlTerminationGoal (input : Input) : Prop :=
+def rtlTerminationGoal (input : Input8) : Prop :=
   (run totalCycles (initialState input)).phase = .done
 ```
 
-This is already a strong start.
-
-The next temporal layer would naturally add claims like:
+The repository also already includes a temporal layer in [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) with claims like:
 
 - once execution starts, `done` appears within `N` cycles
 - while execution is active, `busy` is true
@@ -669,12 +671,13 @@ This is exactly why the repository splits the formalization into:
 
 If you want to learn this repository in a sensible order:
 
-1. Read [README.md](/Users/dididi/workspaces/ann-rtl-lena/README.md) for the project overview.
-2. Read [controller.sv](/Users/dididi/workspaces/ann-rtl-lena/rtl/src/controller.sv) and identify the FSM states.
-3. Read [Machine.lean](/Users/dididi/workspaces/ann-rtl-lena/formalize/src/TinyMLP/Machine.lean) and map each Lean `Phase` to the RTL state.
-4. Read [Correctness.lean](/Users/dididi/workspaces/ann-rtl-lena/formalize/src/TinyMLP/Correctness.lean) to see the top-level theorems.
-5. Read [specs/formalize/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/formalize/requirement.md) to see the intended verification scope.
-6. Read [reactive-state-systems-temporal-logic-ecosystem.md](/Users/dididi/workspaces/ann-rtl-lena/docs/research/reactive-state-systems-temporal-logic-ecosystem.md) if you want the broader theory and tool map.
+1. Read [README.md](../README.md) for the project overview.
+2. Read [controller.sv](../rtl/src/controller.sv) and identify the FSM states.
+3. Read [Machine.lean](../formalize/src/TinyMLP/Machine.lean) and map each Lean `Phase` to the RTL state.
+4. Read [Temporal.lean](../formalize/src/TinyMLP/Temporal.lean) to see how sampled `start` and bounded traces are modeled.
+5. Read [Correctness.lean](../formalize/src/TinyMLP/Correctness.lean) to see the top-level theorems.
+6. Read [specs/formalize/requirement.md](../specs/formalize/requirement.md) to see the intended verification scope.
+7. Read [reactive-state-systems-temporal-logic-ecosystem.md](research/reactive-state-systems-temporal-logic-ecosystem.md) if you want the broader theory and tool map.
 
 ## 13. Common Beginner Mistakes
 

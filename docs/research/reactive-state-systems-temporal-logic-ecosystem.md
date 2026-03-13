@@ -261,7 +261,7 @@ Weak point for this topic:
 
 - there is still no clearly mature community-standard Lean 4 temporal-logic library for RTL-style work
 
-That matches the existing repo note in [lean-temopral-logic.md](/Users/dididi/workspaces/ann-rtl-lena/specs/formalize/research/lean-temopral-logic.md).
+That matches the existing repo note in [lean-temopral-logic.md](../../specs/formalize/research/lean-temopral-logic.md).
 
 Practical implication:
 

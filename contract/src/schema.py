@@ -149,49 +149,52 @@ def build_analysis_payload(
         "overflow": "two_complement_wraparound",
         "sign_extension": "required_between_product_and_accumulator_stages",
     }
-    return validate_analysis_payload(
-        {
-            "schema_version": SCHEMA_VERSION,
-            "source": source,
-            "selected_run": selected_run,
-            "input_size": quantized["input_size"],
-            "hidden_size": quantized["hidden_size"],
-            "dataset_version": quantized["dataset_version"],
-            "training_seed": quantized["training_seed"],
-            "w1": quantized["w1"],
-            "b1": quantized["b1"],
-            "w2": quantized["w2"],
-            "b2": quantized["b2"],
-            "quantization": {
-                "rounding": "half_away_from_zero",
-                "clipping": "signed_saturating",
-                "weight_bits": 8,
-                "bias_bits": 32,
-            },
-            "arithmetic": arithmetic_contract,
-            "boundedness": build_boundedness_payload(
-                quantized,
-                input_bits=arithmetic_contract["input_bits"],
-                hidden_product_bits=arithmetic_contract["hidden_product_bits"],
-                hidden_activation_bits=arithmetic_contract["hidden_activation_bits"],
-                output_product_bits=arithmetic_contract["output_product_bits"],
-                accumulator_bits=arithmetic_contract["accumulator_bits"],
-            ),
+    payload: dict[str, object] = {
+        "schema_version": SCHEMA_VERSION,
+        "source": source,
+        "selected_run": selected_run,
+        "input_size": quantized["input_size"],
+        "hidden_size": quantized["hidden_size"],
+        "dataset_version": quantized["dataset_version"],
+        "training_seed": quantized["training_seed"],
+        "w1": quantized["w1"],
+        "b1": quantized["b1"],
+        "w2": quantized["w2"],
+        "b2": quantized["b2"],
+        "quantization": {
+            "rounding": "half_away_from_zero",
+            "clipping": "signed_saturating",
+            "weight_bits": 8,
+            "bias_bits": 32,
         },
-        label="frozen analysis contract",
-    )
+        "arithmetic": arithmetic_contract,
+        "boundedness": build_boundedness_payload(
+            quantized,
+            input_bits=arithmetic_contract["input_bits"],
+            hidden_product_bits=arithmetic_contract["hidden_product_bits"],
+            hidden_activation_bits=arithmetic_contract["hidden_activation_bits"],
+            output_product_bits=arithmetic_contract["output_product_bits"],
+            accumulator_bits=arithmetic_contract["accumulator_bits"],
+        ),
+    }
+    if "selected_epoch" in quantized:
+        payload["selected_epoch"] = quantized["selected_epoch"]
+    return validate_analysis_payload(payload, label="frozen analysis contract")
 
 
-def validate_selected_run_metadata(payload: dict[str, Any], *, label: str = "selected run metadata") -> dict[str, str]:
+def validate_selected_run_metadata(payload: dict[str, Any], *, label: str = "selected run metadata") -> dict[str, object]:
     raw = _require_mapping(payload, label)
     contract_weights = raw.get("contract_weights")
     if contract_weights is None:
         contract_weights = raw.get("analysis_weights")
-    return {
+    normalized: dict[str, object] = {
         "selected_run": _coerce_string(raw.get("selected_run"), "selected_run", label),
         "weights_quantized": _coerce_string(raw.get("weights_quantized"), "weights_quantized", label),
         "contract_weights": _coerce_string(contract_weights, "contract_weights", label),
     }
+    if "selected_epoch" in raw:
+        normalized["selected_epoch"] = _coerce_int(raw.get("selected_epoch"), "selected_epoch", label)
+    return normalized
 
 
 def _validate_quantization_contract(value: object, *, label: str) -> dict[str, object]:

@@ -170,17 +170,17 @@ Human-facing requirements and design documents for each domain.
 
 If you want the human documentation first, start here:
 
-- [docs/reactive-state-systems-beginners-guide.md](/Users/dididi/workspaces/ann-rtl-lena/docs/reactive-state-systems-beginners-guide.md)
-- [specs/README.md](/Users/dididi/workspaces/ann-rtl-lena/specs/README.md)
-- [specs/ann/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/ann/requirement.md)
-- [specs/contract/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/contract/requirement.md)
-- [specs/rtl/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/rtl/requirement.md)
-- [specs/formalize/requirement.md](/Users/dididi/workspaces/ann-rtl-lena/specs/formalize/requirement.md)
+- [docs/reactive-state-systems-beginners-guide.md](docs/reactive-state-systems-beginners-guide.md)
+- [specs/README.md](specs/README.md)
+- [specs/ann/requirement.md](specs/ann/requirement.md)
+- [specs/contract/requirement.md](specs/contract/requirement.md)
+- [specs/rtl/requirement.md](specs/rtl/requirement.md)
+- [specs/formalize/requirement.md](specs/formalize/requirement.md)
 
 If you want the current implemented training and freeze flow:
 
-- [ann/README.md](/Users/dididi/workspaces/ann-rtl-lena/ann/README.md)
-- [contract/readme.md](/Users/dididi/workspaces/ann-rtl-lena/contract/readme.md)
+- [ann/README.md](ann/README.md)
+- [contract/readme.md](contract/readme.md)
 
 ## Current Status
 
