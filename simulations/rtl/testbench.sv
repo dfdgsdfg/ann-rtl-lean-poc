@@ -31,7 +31,9 @@ module testbench;
   integer handshake_errors;
   integer boundary_errors;
   integer coverage_errors;
+  integer vectors_run;
   integer pass_count;
+  integer failed_vectors;
   integer positive_cases;
   integer zero_cases;
   integer negative_cases;
@@ -110,6 +112,7 @@ module testbench;
       expected_out = vectors[vector_idx][32];
       expected_score = $signed(vectors[vector_idx][64:33]);
       starting_errors = total_errors_count();
+      vectors_run = vectors_run + 1;
 
       if ((expected_score > 0 && expected_out !== 1'b1) ||
           (expected_score == 0 && expected_out !== 1'b0) ||
@@ -272,6 +275,10 @@ module testbench;
           $display("PASS idx=%0d inputs=%h score=%0d out=%0d latency=%0d", vector_idx, packed_inputs, expected_score, out_bit, latency);
         end
       end
+
+      if (total_errors_count() != starting_errors) begin
+        failed_vectors = failed_vectors + 1;
+      end
     end
   endtask
 
@@ -288,7 +295,9 @@ module testbench;
     handshake_errors = 0;
     boundary_errors = 0;
     coverage_errors = 0;
+    vectors_run = 0;
     pass_count = 0;
+    failed_vectors = 0;
     positive_cases = 0;
     zero_cases = 0;
     negative_cases = 0;
@@ -312,22 +321,27 @@ module testbench;
       end
     end
 
-    if (positive_cases == 0) begin
-      $display("FAIL suite: missing positive-score test vector");
-      coverage_errors = coverage_errors + 1;
-    end
-    if (zero_cases == 0) begin
-      $display("FAIL suite: missing zero-score test vector");
-      coverage_errors = coverage_errors + 1;
-    end
-    if (negative_cases == 0) begin
-      $display("FAIL suite: missing negative-score test vector");
-      coverage_errors = coverage_errors + 1;
+    if (!stop_run) begin
+      if (positive_cases == 0) begin
+        $display("FAIL suite: missing positive-score test vector");
+        coverage_errors = coverage_errors + 1;
+      end
+      if (zero_cases == 0) begin
+        $display("FAIL suite: missing zero-score test vector");
+        coverage_errors = coverage_errors + 1;
+      end
+      if (negative_cases == 0) begin
+        $display("FAIL suite: missing negative-score test vector");
+        coverage_errors = coverage_errors + 1;
+      end
+    end else begin
+      $display("INFO suite: skipped score-class coverage checks after early abort");
     end
 
     $display("---");
-    $display("vectors:    %0d", NUM_VECTORS);
+    $display("vectors:    %0d", vectors_run);
     $display("passes:     %0d", pass_count);
+    $display("failures:   %0d", failed_vectors);
     $display("output:     %0d", output_errors);
     $display("latency:    %0d", latency_errors);
     $display("handshake:  %0d", handshake_errors);
