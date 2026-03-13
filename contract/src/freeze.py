@@ -8,14 +8,32 @@ if __package__ in (None, ""):
     ROOT = Path(__file__).resolve().parents[2]
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
-    from contract.src.artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
-    from contract.src.downstream_sync import expected_downstream_artifacts, sync_downstream
-    from contract.src.gen_vectors import expected_vector_artifacts, generate_vectors
+    from contract.src.artifacts import (
+        CONTRACT_WEIGHTS_PATH,
+        LATEST_RESULTS_DIR,
+        SELECTED_RUN_PATH,
+        json_text,
+        read_json,
+        relative_to_root,
+        resolve_metadata_path,
+        write_text_files,
+    )
+    from contract.src.downstream_sync import expected_downstream_artifacts
+    from contract.src.gen_vectors import expected_vector_artifacts
     from contract.src.schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
 else:
-    from .artifacts import CONTRACT_WEIGHTS_PATH, LATEST_RESULTS_DIR, SELECTED_RUN_PATH, read_json, relative_to_root, resolve_metadata_path, write_json
-    from .downstream_sync import expected_downstream_artifacts, sync_downstream
-    from .gen_vectors import expected_vector_artifacts, generate_vectors
+    from .artifacts import (
+        CONTRACT_WEIGHTS_PATH,
+        LATEST_RESULTS_DIR,
+        SELECTED_RUN_PATH,
+        json_text,
+        read_json,
+        relative_to_root,
+        resolve_metadata_path,
+        write_text_files,
+    )
+    from .downstream_sync import expected_downstream_artifacts
+    from .gen_vectors import expected_vector_artifacts
     from .schema import build_analysis_payload, validate_analysis_payload, validate_selected_run_metadata
 
 
@@ -32,7 +50,7 @@ def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
     return LATEST_RESULTS_DIR
 
 
-def _write_selected_run_metadata(selected_dir: Path, quantized_path: Path, contract_payload: dict[str, object]) -> dict[str, object]:
+def _selected_run_metadata_payload(selected_dir: Path, quantized_path: Path, contract_payload: dict[str, object]) -> dict[str, object]:
     payload: dict[str, object] = {
         "selected_run": relative_to_root(selected_dir),
         "weights_quantized": relative_to_root(quantized_path),
@@ -40,7 +58,6 @@ def _write_selected_run_metadata(selected_dir: Path, quantized_path: Path, contr
     }
     if "selected_epoch" in contract_payload:
         payload["selected_epoch"] = contract_payload["selected_epoch"]
-    write_json(SELECTED_RUN_PATH, payload)
     return payload
 
 
@@ -55,10 +72,24 @@ def freeze_contract(run_dir: Path | None = None) -> Path:
         quantized_payload,
         selected_run=relative_to_root(selected_dir),
     )
-    write_json(CONTRACT_WEIGHTS_PATH, analysis_payload)
-    sync_downstream(analysis_payload)
-    generate_vectors()
-    _write_selected_run_metadata(selected_dir, quantized_path, analysis_payload)
+    selected_meta = _selected_run_metadata_payload(selected_dir, quantized_path, analysis_payload)
+    pending_files: dict[Path, tuple[str, str]] = {
+        CONTRACT_WEIGHTS_PATH: (json_text(analysis_payload), "utf-8"),
+        SELECTED_RUN_PATH: (json_text(selected_meta), "utf-8"),
+    }
+    pending_files.update(
+        {
+            generated_path: (text, "utf-8")
+            for generated_path, text in expected_downstream_artifacts(analysis_payload).items()
+        }
+    )
+    pending_files.update(
+        {
+            generated_path: (text, "ascii")
+            for generated_path, text in expected_vector_artifacts(analysis_payload).items()
+        }
+    )
+    write_text_files(pending_files)
     validate_contract()
     return CONTRACT_WEIGHTS_PATH
 
