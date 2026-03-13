@@ -27,13 +27,14 @@ After training finishes, testing should be runnable through a small command sequ
 A practical flow is:
 
 ```text
-python -m ann.cli train --seed 42
-python -m ann.cli export --run-dir ann/results/latest
-python -m contract.src.gen_vectors
+./scripts/ann.sh train
+python3 -m contract.src.freeze --check
 make sim
 ```
 
 The `train` command with default settings automatically freezes the contract and regenerates downstream artifacts (including `simulations/rtl/test_vectors.mem`). Use `--skip-export` to train without freezing.
+
+`make sim` is the canonical regression entry point. It runs the same SystemVerilog bench through both `Icarus Verilog` and `Verilator`, and the regression fails if either simulator fails.
 
 The user should not need to manually copy weights or hand-edit vectors after training.
 
@@ -44,12 +45,15 @@ The SystemVerilog testbench should:
 - Load embedded or generated vectors
 - Apply `start`
 - Wait until `done`
-- Compare `out` against the expected value
+- Compare `out` against the expected value on the `done` cycle
+- Enforce the exact `76`-cycle latency as a failing condition
+- Check the documented `DONE` hold and release semantics
 - Print enough debug context on failure
 
 Useful failure details include:
 
 - Input vector
+- Expected score
 - Expected output
 - Actual output
 - Cycle count to completion
@@ -73,6 +77,8 @@ Python model -> quantized constants -> RTL ROM/test vectors -> simulation result
 ```
 
 This avoids maintaining duplicate weight definitions by hand.
+
+The generated vector file should remain plain text, but it should carry enough information for the bench to distinguish positive, zero, and negative expected scores instead of only the final class bit.
 
 ## 7. Debugging Plan
 

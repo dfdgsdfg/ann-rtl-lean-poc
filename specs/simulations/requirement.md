@@ -28,6 +28,8 @@ The testbench must be able to:
 
 The simulation domain must provide a simple CLI or script entry point so that a finished training result can be tested end to end without manual stimulus editing.
 
+The shipped regression entry point should run the same bench under both `Icarus Verilog` and `Verilator`.
+
 ## 3. Reference Model Requirements
 
 Simulation outputs must be compared against a Python reference model using the same weights, biases, and input vectors.
@@ -37,8 +39,10 @@ The Python side must support:
 - Defining or training a toy model
 - Quantizing weights and biases into signed integers
 - Exporting constants for RTL consumption
-- Generating expected outputs for test vectors
+- Generating expected scores and expected outputs for test vectors
 - Running a reference check for a selected trained result
+
+Generated simulation vectors must preserve enough expected data to distinguish positive, zero, and negative output-score cases, not only the final classification bit.
 
 ## 4. Test Coverage Requirements
 

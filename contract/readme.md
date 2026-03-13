@@ -27,6 +27,8 @@ Related provenance lives in `ann/results/selected_run.json`. That file points to
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
 
+`simulations/rtl/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector.
+
 ## How To Use It
 
 ### 1. Train or choose an ANN result
@@ -77,7 +79,15 @@ Check that the frozen contract, provenance file, and generated downstream artifa
 python3 -m contract.src.freeze --check
 ```
 
-### 4. Read the outputs
+### 4. Regenerate only the simulation vectors
+
+If the contract is already frozen and you only need to refresh `simulations/rtl/test_vectors.mem`:
+
+```bash
+python3 -m contract.src.gen_vectors
+```
+
+### 5. Read the outputs
 
 For machine-readable data:
 

@@ -106,6 +106,12 @@ Validate that the frozen contract is still consistent:
 python3 -m contract.src.freeze --check
 ```
 
+Run the dual-simulator RTL regression:
+
+```bash
+make sim
+```
+
 ### Typical Human Workflow
 
 Use this when you want to understand or refresh the current repository baseline:
@@ -114,6 +120,7 @@ Use this when you want to understand or refresh the current repository baseline:
 ./scripts/ann.sh train
 ./scripts/ann.sh evaluate --artifact quantized
 python3 -m contract.src.freeze --check
+make sim
 ```
 
 If you want to train into a separate run directory first:
@@ -136,7 +143,7 @@ The main human-facing outputs are:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `simulations/rtl/test_vectors.mem`
+- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, and inputs)
 
 `contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 
@@ -196,7 +203,7 @@ What is still in progress:
 
 - the repository is not yet a one-command end-to-end flow across every domain
 - Lean package wiring still needs cleanup before `lake build` succeeds from the repository root
-- simulation and ASIC flows are present as source artifacts, but not fully wrapped in the same CLI style as the ANN flow
+- the ASIC flow is present as source artifacts, but not yet wrapped in the same CLI style as the ANN flow
 
 ## Current CLI Summary
 
@@ -223,6 +230,15 @@ Contract freeze tool:
 ```bash
 python3 -m contract.src.freeze
 python3 -m contract.src.freeze --check
+python3 -m contract.src.gen_vectors
+```
+
+Simulation commands:
+
+```bash
+make sim
+make sim-iverilog
+make sim-verilator
 ```
 
 ## Notes
