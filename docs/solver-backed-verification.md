@@ -203,7 +203,7 @@ The SMT and Lean layers prove overlapping but differently-shaped facts:
 
 | Concern | Lean proves | SMT proves |
 |---------|-----------|-----------|
-| Width safety | Per-neuron bounds theorems in `Spec.lean` | All 8 overflow checks via Z3 QF_BV |
+| Width safety | Per-neuron bounds theorems in `Defs/SpecCore.lean` | All 8 overflow checks via Z3 QF_BV |
 | No-wraparound | `mlpFixed_eq_mlpSpec` bridge theorem | Wide-sum checks confirm no actual wraparound |
 | Controller transitions | `phase_ordering_ok`, temporal theorems | `controller_interface` family against real Verilog |
 | Guard-cycle safety | `hiddenGuard_no_mac_work`, boundary theorems | `boundary_behavior` and `range_safety` against real Verilog |

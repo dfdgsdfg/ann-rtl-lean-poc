@@ -78,7 +78,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) writes three files from 
 ```mermaid
 graph TD
     W[contract/result/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
-    W --> SPEC["formalize/src/TinyMLP/Spec.lean<br/>Lean weight definitions"]
+    W --> SPEC["formalize/src/TinyMLP/Defs/SpecCore.lean<br/>Lean weight definitions"]
     W --> VEC["simulations/rtl/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
@@ -190,7 +190,7 @@ graph TB
         T["Temporal - Temporal.lean<br/>timedStep, rtlTrace, timing theorems"]
         M["Machine - Machine.lean<br/>FSM states, step, run"]
         F["Fixed-Point - FixedPoint.lean<br/>Int8, Int16Val, Acc32, wraparound"]
-        S["Spec - Spec.lean<br/>pure Int arithmetic, no width constraints"]
+        S["Spec - Defs/SpecCore.lean<br/>pure Int arithmetic, no width constraints"]
     end
     T --> M
     M --> F
@@ -205,7 +205,7 @@ This separation exists because the hardest parts of the proof are different in e
 
 ### How Weights Enter Lean
 
-The freeze pipeline generates a match-expression block in `Spec.lean`:
+The freeze pipeline generates a match-expression block in `Defs/SpecCore.lean`:
 
 ```lean
 def w1At : Nat → Nat → Int
@@ -552,7 +552,7 @@ The arithmetic in this project is small. The hard parts are:
 
 **Boundary transitions**: The controller has boundaries where counters wrap, phases change, and shared registers get reused. Each boundary is an opportunity for off-by-one errors, stale values, or out-of-range reads.
 
-**Width-accurate arithmetic**: Proving that fixed-point wraparound doesn't change the result requires bounding every intermediate value. The `hiddenSpecAt8_*_bounds` theorems in `Spec.lean` do this per-neuron for the current weights.
+**Width-accurate arithmetic**: Proving that fixed-point wraparound doesn't change the result requires bounding every intermediate value. The `hiddenSpecAt8_*_bounds` theorems in `Defs/SpecCore.lean` do this per-neuron for the current weights.
 
 **Handshake semantics**: `done` being a level (not a pulse), `busy` being low in both IDLE and DONE, the DONE-hold-while-start-high behavior -- these are the properties that determine whether downstream logic can safely sample the output. Getting them wrong is a hardware bug even if the arithmetic is perfect.
 

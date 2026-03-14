@@ -5,7 +5,7 @@ from pathlib import Path
 from .artifacts import ROOT
 
 WEIGHT_ROM_PATH = ROOT / "rtl" / "src" / "weight_rom.sv"
-LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "TinyMLP" / "Spec.lean"
+LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
 CONTRACT_MODEL_MD_PATH = ROOT / "contract" / "result" / "model.md"
 DEFAULT_MODEL_DOC_TEMPLATE = """# Tiny MLP ASIC Canonical Specification
 

@@ -1,6 +1,10 @@
 .PHONY: train evaluate quantize export freeze freeze-check \
        sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors \
+       sim-generated-controller sim-generated-controller-check-tools clean-sim-generated-controller \
        smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
+       rtl-synthsis rtl-synthsis-check-tools rtl-synthsis-sim rtl-synthsis-iverilog \
+       rtl-synthsis-verilator clean-rtl-synthsis \
+       rtl-formalize-synthsis-emit rtl-formalize-synthsis-build smt-generated-controller \
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
@@ -32,6 +36,10 @@ SIM_RTL := rtl/src/mac_unit.sv \
 	rtl/src/controller.sv \
 	rtl/src/weight_rom.sv \
 	rtl/src/mlp_core.sv
+SIM_RTL_NO_CONTROLLER := rtl/src/mac_unit.sv \
+	rtl/src/relu_unit.sv \
+	rtl/src/weight_rom.sv \
+	rtl/src/mlp_core.sv
 SIM_TB := simulations/rtl/testbench.sv
 SIM_VECTORS := simulations/rtl/test_vectors.mem
 SIM_VECTOR_META := simulations/rtl/test_vectors_meta.svh
@@ -42,6 +50,28 @@ SIM_INCLUDE_DIRS := -Isimulations/rtl
 IVERILOG_BIN := $(SIM_BUILD_DIR)/iverilog/testbench.out
 VERILATOR_DIR := $(SIM_BUILD_DIR)/verilator
 VERILATOR_BIN := $(VERILATOR_DIR)/Vtestbench
+GENERATED_CONTROLLER_DIR := experiments/generated-rtl/sparkle
+GENERATED_CONTROLLER_ARTIFACT := $(GENERATED_CONTROLLER_DIR)/sparkle_controller.sv
+GENERATED_CONTROLLER_WRAPPER := $(GENERATED_CONTROLLER_DIR)/sparkle_controller_wrapper.sv
+GENERATED_CONTROLLER_SIM_BUILD_DIR := build/sim-generated-controller
+GENERATED_CONTROLLER_TB := simulations/rtl/generated_controller_testbench.sv
+GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/generated_controller_tb.out
+SPARKLE_PKG_DIR := rtl-formalize-synthsis
+RTL_SYNTHSIS_BUILD_DIR := build/rtl-synthsis/spot
+RTL_SYNTHSIS_GENERATED_DIR := $(RTL_SYNTHSIS_BUILD_DIR)/generated
+RTL_SYNTHSIS_SUMMARY := $(RTL_SYNTHSIS_BUILD_DIR)/rtl_synthsis_summary.json
+RTL_SYNTHSIS_COMPAT := experiments/generated-rtl/rtl-synthsis/spot/controller_spot_compat.sv
+RTL_SYNTHSIS_CORE := $(RTL_SYNTHSIS_GENERATED_DIR)/controller_spot_core.sv
+RTL_SYNTHSIS_ALIAS := $(RTL_SYNTHSIS_GENERATED_DIR)/controller.sv
+RTL_SYNTHSIS_SIM_RTL := $(RTL_SYNTHSIS_ALIAS) $(RTL_SYNTHSIS_COMPAT) $(RTL_SYNTHSIS_CORE) $(SIM_RTL_NO_CONTROLLER)
+RTL_SYNTHSIS_IVERILOG_BIN := $(RTL_SYNTHSIS_BUILD_DIR)/sim/iverilog/testbench.out
+RTL_SYNTHSIS_VERILATOR_DIR := $(RTL_SYNTHSIS_BUILD_DIR)/sim/verilator
+RTL_SYNTHSIS_VERILATOR_BIN := $(RTL_SYNTHSIS_VERILATOR_DIR)/Vtestbench
+RTL_SYNTHSIS_LTLSYNT ?= ltlsynt
+RTL_SYNTHSIS_SYFCO ?= syfco
+RTL_SYNTHSIS_YOSYS ?= yosys
+RTL_SYNTHSIS_SMTBMC ?= yosys-smtbmc
+RTL_SYNTHSIS_Z3 ?= z3
 
 sim: sim-check-tools sim-iverilog sim-verilator
 
@@ -77,6 +107,57 @@ $(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
 clean-sim:
 	rm -rf $(SIM_BUILD_DIR)
 
+rtl-formalize-synthsis-build:
+	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
+	cd $(SPARKLE_PKG_DIR) && lake build
+
+rtl-formalize-synthsis-emit: rtl-formalize-synthsis-build
+	@mkdir -p $(GENERATED_CONTROLLER_DIR)
+	cd $(SPARKLE_PKG_DIR) && lake env lean TinyMLP/Emit.lean
+
+sim-generated-controller: rtl-formalize-synthsis-emit sim-generated-controller-check-tools $(GENERATED_CONTROLLER_IVERILOG_BIN)
+	vvp $(GENERATED_CONTROLLER_IVERILOG_BIN)
+
+sim-generated-controller-check-tools:
+	@command -v iverilog >/dev/null 2>&1 || { echo "missing required tool: iverilog"; exit 1; }
+	@command -v vvp >/dev/null 2>&1 || { echo "missing required tool: vvp"; exit 1; }
+
+$(GENERATED_CONTROLLER_IVERILOG_BIN): rtl/src/controller.sv $(GENERATED_CONTROLLER_WRAPPER) $(GENERATED_CONTROLLER_ARTIFACT) $(GENERATED_CONTROLLER_TB)
+	@mkdir -p $(dir $@)
+	iverilog -g2012 -s generated_controller_testbench -o $@ $(GENERATED_CONTROLLER_TB) rtl/src/controller.sv $(GENERATED_CONTROLLER_WRAPPER) $(GENERATED_CONTROLLER_ARTIFACT)
+
+clean-sim-generated-controller:
+	rm -rf $(GENERATED_CONTROLLER_SIM_BUILD_DIR)
+
+rtl-synthsis: rtl-synthsis-check-tools
+	python3 synthesis/controller/run_flow.py --ltlsynt $(RTL_SYNTHSIS_LTLSYNT) --syfco $(RTL_SYNTHSIS_SYFCO) --yosys $(RTL_SYNTHSIS_YOSYS) --smtbmc $(RTL_SYNTHSIS_SMTBMC) --solver $(RTL_SYNTHSIS_Z3) --summary $(RTL_SYNTHSIS_SUMMARY)
+
+rtl-synthsis-check-tools:
+	@command -v $(RTL_SYNTHSIS_LTLSYNT) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHSIS_LTLSYNT)"; exit 1; }
+	@command -v $(RTL_SYNTHSIS_SYFCO) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHSIS_SYFCO)"; exit 1; }
+	@command -v $(RTL_SYNTHSIS_YOSYS) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHSIS_YOSYS)"; exit 1; }
+	@command -v $(RTL_SYNTHSIS_SMTBMC) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHSIS_SMTBMC)"; exit 1; }
+	@command -v $(RTL_SYNTHSIS_Z3) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHSIS_Z3)"; exit 1; }
+
+rtl-synthsis-sim: rtl-synthsis sim-check-tools sim-vectors rtl-synthsis-iverilog rtl-synthsis-verilator
+
+rtl-synthsis-iverilog: sim-vectors $(RTL_SYNTHSIS_IVERILOG_BIN)
+	vvp $(RTL_SYNTHSIS_IVERILOG_BIN)
+
+$(RTL_SYNTHSIS_IVERILOG_BIN): $(RTL_SYNTHSIS_SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
+	@mkdir -p $(dir $@)
+	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(RTL_SYNTHSIS_SIM_RTL)
+
+rtl-synthsis-verilator: sim-vectors $(RTL_SYNTHSIS_VERILATOR_BIN)
+	$(RTL_SYNTHSIS_VERILATOR_BIN)
+
+$(RTL_SYNTHSIS_VERILATOR_BIN): $(RTL_SYNTHSIS_SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
+	@mkdir -p $(RTL_SYNTHSIS_VERILATOR_DIR)
+	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(RTL_SYNTHSIS_VERILATOR_DIR) $(SIM_TB) $(RTL_SYNTHSIS_SIM_RTL)
+
+clean-rtl-synthsis:
+	rm -rf build/rtl-synthsis
+
 # --- SMT targets ---
 
 SMT_BUILD_DIR := build/smt
@@ -100,6 +181,9 @@ smt-contract-assumptions:
 
 smt-rtl-control:
 	python3 smt/rtl/check_control.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --summary $(SMT_RTL_SUMMARY)
+
+smt-generated-controller: rtl-formalize-synthsis-emit smt-check-tools
+	python3 smt/rtl/check_generated_controller.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3)
 
 smt-contract-overflow:
 	python3 smt/contract/overflow/check_bounds.py --z3 $(SMT_Z3) --summary $(SMT_CONTRACT_OVERFLOW_SUMMARY)

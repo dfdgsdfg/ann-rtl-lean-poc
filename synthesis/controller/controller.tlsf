@@ -1,0 +1,112 @@
+INFO {
+  TITLE:       "TinyMLP Controller Reactive-Synthesis Contract"
+  DESCRIPTION: "Controller-only phase contract for rtl/src/controller.sv"
+  SEMANTICS:   Mealy
+  TARGET:      Mealy
+}
+
+MAIN {
+  INPUTS {
+    start;
+    reset;
+    hidden_mac_active;
+    hidden_mac_guard;
+    last_hidden;
+    output_mac_active;
+    output_mac_guard;
+  }
+
+  OUTPUTS {
+    phase_idle;
+    phase_load_input;
+    phase_mac_hidden;
+    phase_bias_hidden;
+    phase_act_hidden;
+    phase_next_hidden;
+    phase_mac_output;
+    phase_bias_output;
+    phase_done;
+  }
+
+  PRESET {
+    phase_idle;
+    !phase_load_input;
+    !phase_mac_hidden;
+    !phase_bias_hidden;
+    !phase_act_hidden;
+    !phase_next_hidden;
+    !phase_mac_output;
+    !phase_bias_output;
+    !phase_done;
+  }
+
+  REQUIRE {
+    G(!(hidden_mac_active && hidden_mac_guard));
+    G(!(output_mac_active && output_mac_guard));
+  }
+
+  ASSERT {
+    G(
+      (phase_idle || phase_load_input || phase_mac_hidden || phase_bias_hidden || phase_act_hidden ||
+       phase_next_hidden || phase_mac_output || phase_bias_output || phase_done) &&
+      !(phase_idle && phase_load_input) &&
+      !(phase_idle && phase_mac_hidden) &&
+      !(phase_idle && phase_bias_hidden) &&
+      !(phase_idle && phase_act_hidden) &&
+      !(phase_idle && phase_next_hidden) &&
+      !(phase_idle && phase_mac_output) &&
+      !(phase_idle && phase_bias_output) &&
+      !(phase_idle && phase_done) &&
+      !(phase_load_input && phase_mac_hidden) &&
+      !(phase_load_input && phase_bias_hidden) &&
+      !(phase_load_input && phase_act_hidden) &&
+      !(phase_load_input && phase_next_hidden) &&
+      !(phase_load_input && phase_mac_output) &&
+      !(phase_load_input && phase_bias_output) &&
+      !(phase_load_input && phase_done) &&
+      !(phase_mac_hidden && phase_bias_hidden) &&
+      !(phase_mac_hidden && phase_act_hidden) &&
+      !(phase_mac_hidden && phase_next_hidden) &&
+      !(phase_mac_hidden && phase_mac_output) &&
+      !(phase_mac_hidden && phase_bias_output) &&
+      !(phase_mac_hidden && phase_done) &&
+      !(phase_bias_hidden && phase_act_hidden) &&
+      !(phase_bias_hidden && phase_next_hidden) &&
+      !(phase_bias_hidden && phase_mac_output) &&
+      !(phase_bias_hidden && phase_bias_output) &&
+      !(phase_bias_hidden && phase_done) &&
+      !(phase_act_hidden && phase_next_hidden) &&
+      !(phase_act_hidden && phase_mac_output) &&
+      !(phase_act_hidden && phase_bias_output) &&
+      !(phase_act_hidden && phase_done) &&
+      !(phase_next_hidden && phase_mac_output) &&
+      !(phase_next_hidden && phase_bias_output) &&
+      !(phase_next_hidden && phase_done) &&
+      !(phase_mac_output && phase_bias_output) &&
+      !(phase_mac_output && phase_done) &&
+      !(phase_bias_output && phase_done)
+    );
+
+    G(reset -> phase_idle);
+    G(reset -> X phase_idle);
+
+    G(!reset && phase_idle && !start -> X phase_idle);
+    G(!reset && phase_idle && start -> X phase_load_input);
+    G(!reset && phase_load_input -> X phase_mac_hidden);
+    G(!reset && phase_mac_hidden && !hidden_mac_guard -> X phase_mac_hidden);
+    G(!reset && phase_mac_hidden && hidden_mac_guard -> X phase_bias_hidden);
+    G(!reset && phase_bias_hidden -> X phase_act_hidden);
+    G(!reset && phase_act_hidden -> X phase_next_hidden);
+    G(!reset && phase_next_hidden && !last_hidden -> X phase_mac_hidden);
+    G(!reset && phase_next_hidden && last_hidden -> X phase_mac_output);
+    G(!reset && phase_mac_output && !output_mac_guard -> X phase_mac_output);
+    G(!reset && phase_mac_output && output_mac_guard -> X phase_bias_output);
+    G(!reset && phase_bias_output -> X phase_done);
+    G(!reset && phase_done && start -> X phase_done);
+    G(!reset && phase_done && !start -> X phase_idle);
+  }
+
+  GUARANTEE {
+    true;
+  }
+}

@@ -13,42 +13,39 @@ module weight_rom (
 );
   // BEGIN AUTO-GENERATED ROM
   always_comb begin
-`ifdef FORMAL
-    formal_hidden_weight_case_hit = 1'b0;
-`endif
     unique case ({hidden_idx, input_idx})
-      8'h00: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h01: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h02: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h03: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h10: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h11: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h12: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h13: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h20: begin w1_data = 8'sd2; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h21: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h22: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h23: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h30: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h31: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h32: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h33: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h40: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h41: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h42: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h43: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h50: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h51: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h52: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h53: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h60: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h61: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h62: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h63: begin w1_data = -8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h70: begin w1_data = 8'sd1; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h71: begin w1_data = 8'sd2; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h72: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
-      8'h73: begin w1_data = 8'sd0; `ifdef FORMAL formal_hidden_weight_case_hit = 1'b1; `endif end
+      8'h00: w1_data = 8'sd0;
+      8'h01: w1_data = 8'sd0;
+      8'h02: w1_data = 8'sd0;
+      8'h03: w1_data = 8'sd0;
+      8'h10: w1_data = 8'sd0;
+      8'h11: w1_data = 8'sd0;
+      8'h12: w1_data = 8'sd0;
+      8'h13: w1_data = -8'sd1;
+      8'h20: w1_data = 8'sd2;
+      8'h21: w1_data = 8'sd1;
+      8'h22: w1_data = 8'sd1;
+      8'h23: w1_data = -8'sd1;
+      8'h30: w1_data = 8'sd0;
+      8'h31: w1_data = 8'sd0;
+      8'h32: w1_data = 8'sd0;
+      8'h33: w1_data = -8'sd1;
+      8'h40: w1_data = -8'sd1;
+      8'h41: w1_data = 8'sd0;
+      8'h42: w1_data = 8'sd0;
+      8'h43: w1_data = 8'sd0;
+      8'h50: w1_data = -8'sd1;
+      8'h51: w1_data = 8'sd1;
+      8'h52: w1_data = -8'sd1;
+      8'h53: w1_data = 8'sd1;
+      8'h60: w1_data = 8'sd0;
+      8'h61: w1_data = -8'sd1;
+      8'h62: w1_data = 8'sd1;
+      8'h63: w1_data = -8'sd1;
+      8'h70: w1_data = 8'sd1;
+      8'h71: w1_data = 8'sd2;
+      8'h72: w1_data = 8'sd0;
+      8'h73: w1_data = 8'sd0;
       default: w1_data = 8'sd0;
     endcase
   end
@@ -68,18 +65,15 @@ module weight_rom (
   end
 
   always_comb begin
-`ifdef FORMAL
-    formal_output_weight_case_hit = 1'b0;
-`endif
     unique case (input_idx)
-      4'd0: begin w2_data = 8'sd0; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd1: begin w2_data = 8'sd0; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd2: begin w2_data = 8'sd1; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd3: begin w2_data = 8'sd0; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd4: begin w2_data = -8'sd1; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd5: begin w2_data = -8'sd1; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd6: begin w2_data = 8'sd1; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
-      4'd7: begin w2_data = -8'sd1; `ifdef FORMAL formal_output_weight_case_hit = 1'b1; `endif end
+      4'd0: w2_data = 8'sd0;
+      4'd1: w2_data = 8'sd0;
+      4'd2: w2_data = 8'sd1;
+      4'd3: w2_data = 8'sd0;
+      4'd4: w2_data = -8'sd1;
+      4'd5: w2_data = -8'sd1;
+      4'd6: w2_data = 8'sd1;
+      4'd7: w2_data = -8'sd1;
       default: w2_data = 8'sd0;
     endcase
   end

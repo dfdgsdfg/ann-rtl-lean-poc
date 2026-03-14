@@ -14,3 +14,4 @@ Current guardrail: `rtl/` is still the canonical implementation. Any generated R
 See:
 
 - `generated-rtl-vs-rtl.md`
+- `generated-rtl/sparkle/README.md`

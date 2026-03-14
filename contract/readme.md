@@ -20,7 +20,7 @@ Running the freeze step refreshes these files from the same frozen payload:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `formalize/src/TinyMLP/Spec.lean`
+- `formalize/src/TinyMLP/Defs/SpecCore.lean`
 - `simulations/rtl/test_vectors.mem`
 
 Related provenance lives in `ann/results/selected_run.json`. That file points to the selected ANN run, its `weights_quantized.json`, and the canonical contract weights file.

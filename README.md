@@ -106,6 +106,9 @@ Relevant docs:
 
 - [experiments/README.md](experiments/README.md)
 - [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
+- [experiments/generated-rtl/sparkle/README.md](experiments/generated-rtl/sparkle/README.md)
+- [experiments/generated-rtl/rtl-synthsis/spot/README.md](experiments/generated-rtl/rtl-synthsis/spot/README.md)
+- [synthesis/controller/README.md](synthesis/controller/README.md)
 - [specs/rtl-synthsis/requirement.md](specs/rtl-synthsis/requirement.md)
 - [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
 
@@ -134,6 +137,12 @@ For the SMT flow specifically, `make smt` expects:
 - `z3` as the current backend solver
 
 On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
+
+For the `rtl-synthsis` experiment specifically, `make rtl-synthsis` expects:
+
+- `ltlsynt` from the Spot toolchain
+- `syfco` on `PATH` for TLSF loading
+- `yosys`, `yosys-smtbmc`, and `z3`
 
 Other tools used by the project (install separately if needed):
 
@@ -173,6 +182,13 @@ Run the full solver-backed SMT flow:
 
 ```bash
 make smt
+```
+
+Run the controller reactive-synthesis experiment:
+
+```bash
+make rtl-synthsis
+make rtl-synthsis-sim
 ```
 
 ### Typical Human Workflow
