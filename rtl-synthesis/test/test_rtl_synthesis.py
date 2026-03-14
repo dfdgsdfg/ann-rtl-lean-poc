@@ -576,6 +576,112 @@ else:
             f"RTL_SYNTHESIS_Z3={self.tools_dir / 'z3'}",
         ]
 
+    def _write_closed_loop_formal_sources(self, generated_dir: Path) -> tuple[Path, Path, Path, Path]:
+        baseline_controller_copy = generated_dir / "baseline_controller.sv"
+        generated_controller_copy = generated_dir / "generated_controller.sv"
+        baseline_mlp_core_copy = generated_dir / "baseline_mlp_core.sv"
+        generated_mlp_core_copy = generated_dir / "generated_mlp_core.sv"
+
+        baseline_controller_text = (self.temp_root / "rtl" / "src" / "controller.sv").read_text(encoding="utf-8")
+        baseline_controller_copy.write_text(
+            baseline_controller_text.replace("module controller #(", "module baseline_controller #(", 1),
+            encoding="utf-8",
+        )
+
+        generated_controller_copy.write_text(
+            textwrap.dedent(
+                """\
+                module generated_controller #(
+                  parameter int INPUT_NEURONS = 4,
+                  parameter int HIDDEN_NEURONS = 8
+                ) (
+                  input  logic       clk,
+                  input  logic       rst_n,
+                  input  logic       start,
+                  input  logic [3:0] hidden_idx,
+                  input  logic [3:0] input_idx,
+                  output logic [3:0] state,
+                  output logic       load_input,
+                  output logic       clear_acc,
+                  output logic       do_mac_hidden,
+                  output logic       do_bias_hidden,
+                  output logic       do_act_hidden,
+                  output logic       advance_hidden,
+                  output logic       do_mac_output,
+                  output logic       do_bias_output,
+                  output logic       done,
+                  output logic       busy
+                );
+                  controller_spot_compat #(
+                    .INPUT_NEURONS(INPUT_NEURONS),
+                    .HIDDEN_NEURONS(HIDDEN_NEURONS)
+                  ) u_controller_spot_compat (
+                    .clk(clk),
+                    .rst_n(rst_n),
+                    .start(start),
+                    .hidden_idx(hidden_idx),
+                    .input_idx(input_idx),
+                    .state(state),
+                    .load_input(load_input),
+                    .clear_acc(clear_acc),
+                    .do_mac_hidden(do_mac_hidden),
+                    .do_bias_hidden(do_bias_hidden),
+                    .do_act_hidden(do_act_hidden),
+                    .advance_hidden(advance_hidden),
+                    .do_mac_output(do_mac_output),
+                    .do_bias_output(do_bias_output),
+                    .done(done),
+                    .busy(busy)
+                  );
+                endmodule
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        mlp_core_text = (self.temp_root / "rtl" / "src" / "mlp_core.sv").read_text(encoding="utf-8")
+        baseline_mlp_core_copy.write_text(
+            mlp_core_text
+            .replace("module mlp_core (", "module baseline_mlp_core (", 1)
+            .replace("  controller u_controller (", "  baseline_controller u_controller (", 1),
+            encoding="utf-8",
+        )
+        generated_mlp_core_copy.write_text(
+            mlp_core_text
+            .replace("module mlp_core (", "module generated_mlp_core (", 1)
+            .replace("  controller u_controller (", "  generated_controller u_controller (", 1),
+            encoding="utf-8",
+        )
+        return (
+            baseline_controller_copy,
+            generated_controller_copy,
+            baseline_mlp_core_copy,
+            generated_mlp_core_copy,
+        )
+
+    def _run_smt2_smoke(self, script_path: Path, smt2_path: Path, depth: int) -> None:
+        yosys_result = subprocess.run(
+            ["yosys", "-q", "-s", str(script_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        yosys_output = yosys_result.stdout + yosys_result.stderr
+        self.assertEqual(yosys_result.returncode, 0, msg=yosys_output)
+
+        smtbmc_result = subprocess.run(
+            ["yosys-smtbmc", "-s", "z3", "--presat", "-t", str(depth), str(smt2_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        smtbmc_output = smtbmc_result.stdout + smtbmc_result.stderr
+        self.assertEqual(smtbmc_result.returncode, 0, msg=smtbmc_output)
+        self.assertIn("Status: PASSED", smtbmc_output)
+        self.assertNotIn("PREUNSAT", smtbmc_output)
+
     def test_controller_tlsf_records_exact_schedule_v1_assumptions(self) -> None:
         tlsf_path = ROOT / "rtl-synthesis" / "controller" / "controller.tlsf"
         tlsf_text = tlsf_path.read_text(encoding="utf-8")
@@ -625,7 +731,7 @@ else:
         ):
             self.assertIn(snippet, wrapper_text)
 
-    def test_formal_harness_records_sampled_interface_checks(self) -> None:
+    def test_formal_controller_interface_harness_records_sampled_interface_checks(self) -> None:
         harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_controller_spot_equivalence.sv"
         harness_text = harness_path.read_text(encoding="utf-8")
 
@@ -647,6 +753,24 @@ else:
             "if (prev_sampled_input_idx < INPUT_NEURONS_4B) begin",
             "assume (sampled_input_idx == prev_sampled_input_idx + 4'd1);",
             "if (prev_sampled_hidden_idx == LAST_HIDDEN_IDX) begin",
+        ):
+            self.assertIn(snippet, harness_text)
+
+    def test_formal_closed_loop_harness_records_full_core_equivalence_checks(self) -> None:
+        harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_closed_loop_mlp_core_equivalence.sv"
+        harness_text = harness_path.read_text(encoding="utf-8")
+
+        for snippet in (
+            "baseline_mlp_core baseline_dut",
+            "generated_mlp_core generated_dut",
+            "assume (rst_n == (step >= 7'd2));",
+            "assume (start);",
+            "assert (generated_done == baseline_done);",
+            "assert (generated_busy == baseline_busy);",
+            "assert (generated_out_bit == baseline_out_bit);",
+            "assert (generated_formal_state == baseline_formal_state);",
+            "assert (generated_formal_input_reg0 == baseline_formal_input_reg0);",
+            "assert (generated_formal_acc_reg == baseline_formal_acc_reg);",
         ):
             self.assertIn(snippet, harness_text)
 
@@ -738,7 +862,7 @@ else:
         self.assertEqual(run_result.returncode, 0, msg=run_output)
         self.assertIn("PASS short async reset pulse", run_output)
 
-    def test_formal_harness_passes_real_yosys_smoke(self) -> None:
+    def test_formal_controller_interface_harness_passes_real_yosys_smoke(self) -> None:
         for tool in ("yosys", "yosys-smtbmc", "z3"):
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
@@ -763,27 +887,40 @@ else:
             encoding="utf-8",
         )
 
-        yosys_result = subprocess.run(
-            ["yosys", "-q", "-s", str(script_path)],
-            cwd=self.temp_root,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        yosys_output = yosys_result.stdout + yosys_result.stderr
-        self.assertEqual(yosys_result.returncode, 0, msg=yosys_output)
+        self._run_smt2_smoke(script_path, smt2_path, 80)
 
-        smtbmc_result = subprocess.run(
-            ["yosys-smtbmc", "-s", "z3", "--presat", "-t", "80", str(smt2_path)],
-            cwd=self.temp_root,
-            text=True,
-            capture_output=True,
-            check=False,
+    def test_formal_closed_loop_harness_passes_real_yosys_smoke(self) -> None:
+        for tool in ("yosys", "yosys-smtbmc", "z3"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"missing required tool: {tool}")
+
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        fake_core_path = generated_dir / "controller_spot_core.sv"
+        fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
+        (
+            baseline_controller_copy,
+            generated_controller_copy,
+            baseline_mlp_core_copy,
+            generated_mlp_core_copy,
+        ) = self._write_closed_loop_formal_sources(generated_dir)
+
+        smt2_path = generated_dir / "formal_closed_loop_mlp_core_equivalence_smoke.smt2"
+        script_path = generated_dir / "formal_closed_loop_mlp_core_equivalence_smoke.ys"
+        script_path.write_text(
+            textwrap.dedent(
+                f"""\
+                read_verilog -DFORMAL -sv -formal rtl/src/mac_unit.sv rtl/src/relu_unit.sv rtl/src/weight_rom.sv {baseline_controller_copy} experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} {generated_controller_copy} {baseline_mlp_core_copy} {generated_mlp_core_copy} rtl-synthesis/controller/formal/formal_closed_loop_mlp_core_equivalence.sv
+                prep -top formal_closed_loop_mlp_core_equivalence
+                async2sync
+                dffunmap
+                write_smt2 -wires {smt2_path}
+                """
+            ),
+            encoding="utf-8",
         )
-        smtbmc_output = smtbmc_result.stdout + smtbmc_result.stderr
-        self.assertEqual(smtbmc_result.returncode, 0, msg=smtbmc_output)
-        self.assertIn("Status: PASSED", smtbmc_output)
-        self.assertNotIn("PREUNSAT", smtbmc_output)
+
+        self._run_smt2_smoke(script_path, smt2_path, 82)
 
     def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
@@ -799,20 +936,40 @@ else:
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("PASS realisability", output)
         self.assertIn("PASS aiger_generation", output)
-        self.assertIn("PASS controller_equivalence", output)
+        self.assertIn("PASS controller_interface_equivalence", output)
+        self.assertIn("PASS closed_loop_mlp_core_equivalence", output)
 
         summary_path = self.temp_root / "build" / "rtl-synthesis" / "spot" / "rtl_synthesis_summary.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["overall_result"], "pass")
         self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
         self.assertEqual(
-            summary["claim_scope"],
+            summary["primary_claim_scope"],
+            "bounded (82-cycle) closed-loop mlp_core mixed-path equivalence over a post-reset accepted transaction window, with the hand-written datapath and shared external inputs driving both baseline and synthesized-controller assemblies",
+        )
+        self.assertEqual(
+            summary["secondary_claim_scope"],
             "bounded (80-cycle) sampled controller-interface equivalence through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under exact_schedule_v1 assumptions",
+        )
+        self.assertEqual(summary["claim_scope"], summary["primary_claim_scope"])
+        self.assertEqual(
+            [item["name"] for item in summary["results"]],
+            [
+                "realisability",
+                "aiger_generation",
+                "yosys_translation",
+                "controller_interface_equivalence",
+                "closed_loop_mlp_core_equivalence",
+            ],
         )
 
         generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())
         self.assertTrue((generated_dir / "controller.sv").exists())
+        self.assertTrue((generated_dir / "generated_controller.sv").exists())
+        self.assertTrue((generated_dir / "baseline_controller.sv").exists())
+        self.assertTrue((generated_dir / "baseline_mlp_core.sv").exists())
+        self.assertTrue((generated_dir / "generated_mlp_core.sv").exists())
         self.assertTrue((generated_dir / "controller_spot.aag").exists())
 
     def test_run_flow_accepts_relative_build_dir_with_fake_tools(self) -> None:
@@ -862,6 +1019,19 @@ else:
         self.assertIn("python3 rtl-synthesis/controller/run_flow.py", output)
         self.assertIn("iverilog -g2012", output)
         self.assertIn("verilator --binary --timing", output)
+
+    def test_make_n_rtl_synthesis_smoke_runs_python_regression_file(self) -> None:
+        result = subprocess.run(
+            ["make", "-n", "rtl-synthesis-smoke"],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("python3 rtl-synthesis/test/test_rtl_synthesis.py", output)
 
     def test_make_rtl_synthesis_sim_runs_with_fake_tools(self) -> None:
         for tool in ("make", "iverilog", "vvp", "verilator"):

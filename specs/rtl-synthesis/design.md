@@ -10,6 +10,11 @@ The purpose of this domain is to restate the existing controller contract as a r
 
 The design target is narrow on purpose. We are not synthesizing the neural-network datapath. We are synthesizing only the controller.
 
+Validation is intentionally split:
+
+- primary: prove the synthesized controller behaves like the hand-written controller when both are embedded in the same `mlp_core` datapath context
+- secondary: keep the exact-schedule controller-only proof as a conditional artifact that documents the abstraction boundary
+
 ## 2. Why Controller-Only
 
 Reactive synthesis is a natural fit for discrete control logic and a poor fit for the arithmetic datapath in this repository.
@@ -171,6 +176,8 @@ The second claim is stronger and requires stronger assumptions:
 
 The design should separate these claims instead of smuggling the stronger one in implicitly.
 
+The implemented flow therefore treats the exact-schedule TLSF result as secondary and uses a closed-loop mixed-path `mlp_core` equivalence check as the primary soundness claim.
+
 ## 6. Reset Modeling
 
 The RTL controller uses an asynchronous active-low reset in Verilog.
@@ -207,6 +214,7 @@ rtl-synthesis/
     run_flow.py
     formal/
       formal_controller_spot_equivalence.sv
+      formal_closed_loop_mlp_core_equivalence.sv
 
 build/
   rtl-synthesis/
@@ -237,16 +245,17 @@ The synthesized controller should be validated in three layers:
 - the TLSF file parses
 - the realizability result is recorded
 
-2. **Controller-level**
+2. **Controller-level secondary**
 
 - the synthesized controller agrees with [`rtl/src/controller.sv`](../../rtl/src/controller.sv) on phase ordering
 - `busy` and `done` match
 - guard-cycle behavior matches
 - hold-in-`DONE` and release-to-`IDLE` match
 
-3. **Integrated RTL-level**
+3. **Integrated RTL-level primary**
 
-- the wrapped synthesized controller can replace the hand-written controller inside [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv) or an equivalent harness
+- the wrapped synthesized controller can replace the hand-written controller inside [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- the primary formal claim compares baseline and mixed-path `mlp_core` assemblies under the same post-reset external inputs
 - the existing simulation vectors still pass
 - Yosys synthesis can compare QoR against the hand-written baseline
 

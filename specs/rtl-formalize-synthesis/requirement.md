@@ -29,6 +29,8 @@ The preferred first milestone is one of:
 
 For controller-only scope, the repository may satisfy the exact `controller.sv` module boundary with a thin stable wrapper around the emitted Sparkle module, as long as that wrapper preserves the same parameters, ports, and controller behavior.
 
+For this controller-only milestone, code generation alone is not enough. The milestone must also include a Lean refinement result connecting the relevant pure controller semantics in `formalize/` to the Sparkle Signal DSL controller model used for emission.
+
 This smaller scope is deliberate:
 
 - it is more balanced with Sparkle's plausible near-term strengths as a Lean-hosted hardware DSL
@@ -54,7 +56,13 @@ The design assumptions for this repository are based on the public Sparkle proje
 - a Signal DSL for synthesizable hardware
 - Verilog/SystemVerilog emission through commands such as `#synthesizeVerilog` and `#writeVerilogDesign`
 
-This repository must treat Sparkle as an external dependency and a trusted code-generation boundary. Lean proofs about the high-level model do not automatically prove the emitted RTL unless an explicit refinement argument is added on this repository's side.
+This repository must treat Sparkle as an external dependency and a trusted code-generation boundary. Lean proofs about the high-level model do not automatically prove the emitted RTL.
+
+For the controller-only milestone, the required connection is:
+
+- pure Lean controller model in `formalize/`
+- proved refinement into the Sparkle Signal DSL controller model
+- emitted RTL validated separately by simulation and SMT comparison
 
 ## 4. Behavioral Requirements
 
@@ -176,6 +184,7 @@ If only controller-level equivalence is claimed, the validation obligation is sm
 - guard-cycle agreement
 - `busy` / `done` agreement
 - hold-in-`DONE` and release-to-`IDLE` agreement
+- emitted-RTL agreement checked at the stable wrapper boundary with simulation and SMT
 
 ## 9. Proof and Trust-Boundary Requirements
 
@@ -184,13 +193,18 @@ This domain must make the proof boundary explicit.
 The minimum required statements are:
 
 - which properties are proved in pure Lean over the mathematical or machine model
+- which controller-level properties are proved about the Sparkle Signal DSL model
 - which properties are assumed about Sparkle's code generator
 - whether any equivalence result is a theorem about the Signal DSL model, a simulation result about the emitted RTL, or both
 - whether the claim being made is controller-only, primitive-level, or full-core
 
+Required for the controller-only milestone:
+
+- a refinement theorem from the repository's pure Lean controller model to the Sparkle Signal DSL controller model
+- an explicit statement that this theorem stops at the Signal DSL semantics and does not, by itself, prove the emitted RTL
+
 Desired but not mandatory for the first milestone:
 
-- a refinement theorem from the repository's pure Lean machine model to the Sparkle Signal DSL model
 - a structured argument that the generated RTL preserves the Signal DSL semantics relied on by that theorem
 
 ## 10. Acceptance Criteria
@@ -202,6 +216,7 @@ The `rtl-formalize-synthesis` domain is complete when:
 3. The emitted RTL artifact is stored or reproducibly regenerated from committed sources.
 4. The generated path consumes the same frozen contract payload as the rest of the repository when the declared scope depends on contract data.
 5. The generated RTL is validated against the repository comparison flow for its declared scope.
-6. The repository explicitly states the trust boundary between pure Lean proofs, the Sparkle Signal DSL model, and the emitted RTL.
-7. Any stronger claim beyond controller-level equivalence states the additional validation burden it satisfies.
-8. If full replacement of `rtl/src/mlp_core.sv` is claimed, the generated RTL matches the current handshake contract and exact `76`-cycle latency.
+6. The controller-only milestone includes a refinement theorem from the repository's pure Lean controller model to the Sparkle Signal DSL controller model.
+7. The repository explicitly states that Sparkle-to-Verilog remains a trusted backend boundary and that emitted RTL is validated by simulation/SMT rather than proved in Lean.
+8. Any stronger claim beyond controller-level equivalence states the additional validation burden it satisfies.
+9. If full replacement of `rtl/src/mlp_core.sv` is claimed, the generated RTL matches the current handshake contract and exact `76`-cycle latency.

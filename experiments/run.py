@@ -82,9 +82,9 @@ SEMANTIC_BRIDGE_SCRIPT = ROOT / "formalize" / "scripts" / "ExportSemanticBridge.
 OPENLANE_TEMPLATE = ROOT / "asic" / "openlane" / "config.json"
 OPENLANE_FLOORPLAN = ROOT / "asic" / "openlane" / "floorplan.tcl"
 SPOT_CLAIM_SCOPE = (
-    "bounded (80-cycle) sampled controller-interface equivalence "
-    "through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under "
-    "exact_schedule_v1 assumptions"
+    "bounded (82-cycle) closed-loop mlp_core mixed-path equivalence over a post-reset "
+    "accepted transaction window, with the hand-written datapath and shared external "
+    "inputs driving both baseline and synthesized-controller assemblies"
 )
 
 

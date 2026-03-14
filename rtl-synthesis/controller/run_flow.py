@@ -17,8 +17,15 @@ DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthesis" / "spot"
 DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
 
 TLSF_SOURCE = DOMAIN_ROOT / "controller.tlsf"
-FORMAL_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
+FORMAL_INTERFACE_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
+FORMAL_CLOSED_LOOP_HARNESS = DOMAIN_ROOT / "formal" / "formal_closed_loop_mlp_core_equivalence.sv"
 BASELINE_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
+BASELINE_MLP_CORE = ROOT / "rtl" / "src" / "mlp_core.sv"
+SHARED_DATAPATH_SOURCES = [
+    ROOT / "rtl" / "src" / "mac_unit.sv",
+    ROOT / "rtl" / "src" / "relu_unit.sv",
+    ROOT / "rtl" / "src" / "weight_rom.sv",
+]
 COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
 
 SPEC_SOURCES = [
@@ -59,9 +66,15 @@ PHASE_OUTPUTS = [
     "phase_done",
 ]
 
-EQUIVALENCE_DEPTH = 80
-CLAIM_SCOPE = (
-    f"bounded ({EQUIVALENCE_DEPTH}-cycle) sampled controller-interface equivalence "
+PRIMARY_EQUIVALENCE_DEPTH = 82
+SECONDARY_EQUIVALENCE_DEPTH = 80
+PRIMARY_CLAIM_SCOPE = (
+    f"bounded ({PRIMARY_EQUIVALENCE_DEPTH}-cycle) closed-loop mlp_core mixed-path equivalence "
+    "over a post-reset accepted transaction window, with the hand-written datapath and "
+    "shared external inputs driving both baseline and synthesized-controller assemblies"
+)
+SECONDARY_CLAIM_SCOPE = (
+    f"bounded ({SECONDARY_EQUIVALENCE_DEPTH}-cycle) sampled controller-interface equivalence "
     "through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under "
     "exact_schedule_v1 assumptions"
 )
@@ -99,14 +112,14 @@ def first_output_line(proc: subprocess.CompletedProcess[str]) -> str:
 
 def tool_version(commands: list[list[str]], fallback: str = "unknown") -> str:
     for command in commands:
-      proc = subprocess.run(
-          command,
-          text=True,
-          capture_output=True,
-          check=False,
-      )
-      if proc.returncode == 0 and (proc.stdout or proc.stderr):
-          return first_output_line(proc)
+        proc = subprocess.run(
+            command,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 0 and (proc.stdout or proc.stderr):
+            return first_output_line(proc)
     return fallback
 
 
@@ -171,10 +184,10 @@ def declared_symbol_lines() -> list[str]:
     return lines
 
 
-def write_alias_module(path: Path) -> None:
+def write_alias_module(path: Path, module_name: str, compat_module_name: str) -> None:
     write_text(
         path,
-        """module controller #(
+        f"""module {module_name} #(
   parameter int INPUT_NEURONS = 4,
   parameter int HIDDEN_NEURONS = 8
 ) (
@@ -195,10 +208,10 @@ def write_alias_module(path: Path) -> None:
   output logic       done,
   output logic       busy
 );
-  controller_spot_compat #(
+  {compat_module_name} #(
     .INPUT_NEURONS(INPUT_NEURONS),
     .HIDDEN_NEURONS(HIDDEN_NEURONS)
-  ) u_controller_spot_compat (
+  ) u_{compat_module_name} (
     .clk(clk),
     .rst_n(rst_n),
     .start(start),
@@ -221,6 +234,31 @@ endmodule
     )
 
 
+def replace_once(text: str, pattern: str, replacement: str, description: str) -> str:
+    updated, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+    if count != 1:
+        raise ValueError(f"failed to rewrite {description}")
+    return updated
+
+
+def write_baseline_controller_copy(path: Path) -> None:
+    text = BASELINE_CONTROLLER.read_text(encoding="utf-8")
+    text = replace_once(text, r"^module\s+controller\b", "module baseline_controller", "baseline controller module name")
+    write_text(path, text)
+
+
+def write_mlp_core_copy(path: Path, module_name: str, controller_module_name: str) -> None:
+    text = BASELINE_MLP_CORE.read_text(encoding="utf-8")
+    text = replace_once(text, r"^module\s+mlp_core\b", f"module {module_name}", f"{module_name} module name")
+    text = replace_once(
+        text,
+        r"(^\s*)controller(\s+u_controller\s*\()",
+        rf"\1{controller_module_name}\2",
+        f"{module_name} controller instance",
+    )
+    write_text(path, text)
+
+
 def build_translate_script(aiger_path: Path, map_path: Path, output_path: Path) -> str:
     return "\n".join(
         [
@@ -233,12 +271,12 @@ def build_translate_script(aiger_path: Path, map_path: Path, output_path: Path) 
     ) + "\n"
 
 
-def build_equivalence_script(generated_core: Path, smt2_path: Path) -> str:
+def build_controller_interface_script(generated_core: Path, smt2_path: Path) -> str:
     verilog_sources = [
         BASELINE_CONTROLLER,
         COMPAT_WRAPPER,
         generated_core,
-        FORMAL_HARNESS,
+        FORMAL_INTERFACE_HARNESS,
     ]
     joined = " ".join(relative(path) for path in verilog_sources)
     return "\n".join(
@@ -250,6 +288,80 @@ def build_equivalence_script(generated_core: Path, smt2_path: Path) -> str:
             f"write_smt2 -wires {relative(smt2_path)}",
         ]
     ) + "\n"
+
+
+def build_closed_loop_script(
+    generated_core: Path,
+    baseline_controller_copy: Path,
+    generated_controller_copy: Path,
+    baseline_mlp_core_copy: Path,
+    generated_mlp_core_copy: Path,
+    smt2_path: Path,
+) -> str:
+    verilog_sources = [
+        *SHARED_DATAPATH_SOURCES,
+        baseline_controller_copy,
+        COMPAT_WRAPPER,
+        generated_core,
+        generated_controller_copy,
+        baseline_mlp_core_copy,
+        generated_mlp_core_copy,
+        FORMAL_CLOSED_LOOP_HARNESS,
+    ]
+    joined = " ".join(relative(path) for path in verilog_sources)
+    return "\n".join(
+        [
+            f"read_verilog -DFORMAL -sv -formal {joined}",
+            "prep -top formal_closed_loop_mlp_core_equivalence",
+            "async2sync",
+            "dffunmap",
+            f"write_smt2 -wires {relative(smt2_path)}",
+        ]
+    ) + "\n"
+
+
+def run_equivalence_job(
+    *,
+    name: str,
+    script_path: Path,
+    script_text: str,
+    yosys_log: Path,
+    smtbmc_log: Path,
+    smt2_path: Path,
+    depth: int,
+    yosys_bin: str,
+    smtbmc_bin: str,
+    solver_bin: str,
+    env: dict[str, str],
+) -> tuple[str, str, str]:
+    write_text(script_path, script_text)
+    yosys_proc = run_command([yosys_bin, "-q", "-s", str(script_path)], env=env)
+    yosys_output = (yosys_proc.stdout + yosys_proc.stderr).strip()
+    write_text(yosys_log, yosys_output + ("\n" if yosys_output else ""))
+    if yosys_proc.returncode != 0:
+        write_text(smtbmc_log, "")
+        return "error", relative(yosys_log), relative(smtbmc_log)
+
+    solver_name = Path(solver_bin).name
+    smtbmc_proc = run_command(
+        [
+            smtbmc_bin,
+            "-s",
+            solver_name,
+            "--presat",
+            "-t",
+            str(depth),
+            str(smt2_path),
+        ],
+        env=env,
+    )
+    smtbmc_output = (smtbmc_proc.stdout + smtbmc_proc.stderr).strip()
+    write_text(smtbmc_log, smtbmc_output + ("\n" if smtbmc_output else ""))
+    if "Status: PASSED" in smtbmc_output and smtbmc_proc.returncode == 0:
+        return "pass", relative(yosys_log), relative(smtbmc_log)
+    if "Status: FAILED" in smtbmc_output or smtbmc_proc.returncode != 0:
+        return "fail", relative(yosys_log), relative(smtbmc_log)
+    raise ValueError(f"{name} did not report PASSED or FAILED")
 
 
 def parse_args() -> argparse.Namespace:
@@ -313,15 +425,23 @@ def main() -> int:
     generate_log = logs_dir / "ltlsynt_generate.log"
     translate_script = generated_dir / "translate_controller_spot_core.ys"
     translate_log = logs_dir / "yosys_translate.log"
-    equivalence_script = generated_dir / "formal_controller_spot_equivalence.ys"
-    equivalence_yosys_log = logs_dir / "yosys_equivalence.log"
-    equivalence_smtbmc_log = logs_dir / "yosys_smtbmc_equivalence.log"
+    controller_equivalence_script = generated_dir / "formal_controller_spot_equivalence.ys"
+    controller_equivalence_yosys_log = logs_dir / "yosys_controller_equivalence.log"
+    controller_equivalence_smtbmc_log = logs_dir / "yosys_smtbmc_controller_equivalence.log"
+    closed_loop_equivalence_script = generated_dir / "formal_closed_loop_mlp_core_equivalence.ys"
+    closed_loop_equivalence_yosys_log = logs_dir / "yosys_closed_loop_equivalence.log"
+    closed_loop_equivalence_smtbmc_log = logs_dir / "yosys_smtbmc_closed_loop_equivalence.log"
 
     aiger_path = generated_dir / "controller_spot.aag"
     aiger_map_path = generated_dir / "controller_spot.map"
     generated_core_path = generated_dir / "controller_spot_core.sv"
-    alias_path = generated_dir / "controller.sv"
-    equivalence_smt2 = generated_dir / "formal_controller_spot_equivalence.smt2"
+    controller_alias_path = generated_dir / "controller.sv"
+    generated_controller_copy = generated_dir / "generated_controller.sv"
+    baseline_controller_copy = generated_dir / "baseline_controller.sv"
+    baseline_mlp_core_copy = generated_dir / "baseline_mlp_core.sv"
+    generated_mlp_core_copy = generated_dir / "generated_mlp_core.sv"
+    controller_equivalence_smt2 = generated_dir / "formal_controller_spot_equivalence.smt2"
+    closed_loop_equivalence_smt2 = generated_dir / "formal_closed_loop_mlp_core_equivalence.smt2"
 
     realisability_proc = run_command(
         [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--realizability"],
@@ -333,7 +453,8 @@ def main() -> int:
 
     synthesis_result = "fail"
     translation_result = "skip"
-    equivalence_result = "skip"
+    controller_equivalence_result = "skip"
+    closed_loop_equivalence_result = "skip"
 
     if realisability_proc.returncode == 0 and realisability == "REALIZABLE":
         generate_proc = run_command(
@@ -357,40 +478,59 @@ def main() -> int:
             write_text(translate_log, translate_output + ("\n" if translate_output else ""))
             if translate_proc.returncode == 0 and generated_core_path.exists():
                 translation_result = "pass"
-                write_alias_module(alias_path)
+                write_alias_module(controller_alias_path, "controller", "controller_spot_compat")
+                write_alias_module(generated_controller_copy, "generated_controller", "controller_spot_compat")
+                write_baseline_controller_copy(baseline_controller_copy)
+                write_mlp_core_copy(baseline_mlp_core_copy, "baseline_mlp_core", "baseline_controller")
+                write_mlp_core_copy(generated_mlp_core_copy, "generated_mlp_core", "generated_controller")
 
-                write_text(equivalence_script, build_equivalence_script(generated_core_path, equivalence_smt2))
-                eq_yosys_proc = run_command([args.yosys, "-q", "-s", str(equivalence_script)], env=shared_env)
-                eq_yosys_output = (eq_yosys_proc.stdout + eq_yosys_proc.stderr).strip()
-                write_text(equivalence_yosys_log, eq_yosys_output + ("\n" if eq_yosys_output else ""))
-                if eq_yosys_proc.returncode == 0:
-                    solver_name = Path(args.solver).name
-                    eq_smtbmc_proc = run_command(
-                        [
-                            args.smtbmc,
-                            "-s",
-                            solver_name,
-                            "--presat",
-                            "-t",
-                            str(EQUIVALENCE_DEPTH),
-                            str(equivalence_smt2),
-                        ],
-                        env=shared_env,
-                    )
-                    eq_smtbmc_output = (eq_smtbmc_proc.stdout + eq_smtbmc_proc.stderr).strip()
-                    write_text(equivalence_smtbmc_log, eq_smtbmc_output + ("\n" if eq_smtbmc_output else ""))
-                    if "Status: PASSED" in eq_smtbmc_output and eq_smtbmc_proc.returncode == 0:
-                        equivalence_result = "pass"
-                    elif "Status: FAILED" in eq_smtbmc_output or eq_smtbmc_proc.returncode != 0:
-                        equivalence_result = "fail"
-                    else:
-                        equivalence_result = "error"
-                else:
-                    equivalence_result = "error"
+                controller_equivalence_result, _, _ = run_equivalence_job(
+                    name="controller_interface_equivalence",
+                    script_path=controller_equivalence_script,
+                    script_text=build_controller_interface_script(generated_core_path, controller_equivalence_smt2),
+                    yosys_log=controller_equivalence_yosys_log,
+                    smtbmc_log=controller_equivalence_smtbmc_log,
+                    smt2_path=controller_equivalence_smt2,
+                    depth=SECONDARY_EQUIVALENCE_DEPTH,
+                    yosys_bin=args.yosys,
+                    smtbmc_bin=args.smtbmc,
+                    solver_bin=args.solver,
+                    env=shared_env,
+                )
+                closed_loop_equivalence_result, _, _ = run_equivalence_job(
+                    name="closed_loop_mlp_core_equivalence",
+                    script_path=closed_loop_equivalence_script,
+                    script_text=build_closed_loop_script(
+                        generated_core_path,
+                        baseline_controller_copy,
+                        generated_controller_copy,
+                        baseline_mlp_core_copy,
+                        generated_mlp_core_copy,
+                        closed_loop_equivalence_smt2,
+                    ),
+                    yosys_log=closed_loop_equivalence_yosys_log,
+                    smtbmc_log=closed_loop_equivalence_smtbmc_log,
+                    smt2_path=closed_loop_equivalence_smt2,
+                    depth=PRIMARY_EQUIVALENCE_DEPTH,
+                    yosys_bin=args.yosys,
+                    smtbmc_bin=args.smtbmc,
+                    solver_bin=args.solver,
+                    env=shared_env,
+                )
             else:
                 translation_result = "fail"
 
-    overall_result = "pass" if synthesis_result == "pass" and translation_result == "pass" and equivalence_result == "pass" else "fail"
+    overall_result = "pass"
+    for result in (
+        "pass" if realisability == "REALIZABLE" and realisability_proc.returncode == 0 else "fail",
+        synthesis_result,
+        translation_result,
+        controller_equivalence_result,
+        closed_loop_equivalence_result,
+    ):
+        if result != "pass":
+            overall_result = "fail"
+            break
 
     ltlsynt_version = tool_version([[args.ltlsynt, "--version"], [args.ltlsynt, "-h"]])
     syfco_version = tool_version([[args.syfco, "--version"], [args.syfco, "-h"]])
@@ -423,21 +563,41 @@ def main() -> int:
             log=relative(translate_log),
             artifacts={
                 "generated_core": relative(generated_core_path),
-                "controller_alias": relative(alias_path),
+                "controller_alias": relative(controller_alias_path),
+                "generated_controller_copy": relative(generated_controller_copy),
+                "baseline_controller_copy": relative(baseline_controller_copy),
+                "baseline_mlp_core_copy": relative(baseline_mlp_core_copy),
+                "generated_mlp_core_copy": relative(generated_mlp_core_copy),
             },
         ),
         CommandArtifact(
-            name="controller_equivalence",
-            result=equivalence_result,
+            name="controller_interface_equivalence",
+            result=controller_equivalence_result,
             command=(
-                f"{args.yosys} -q -s {relative(equivalence_script)} && "
-                f"{args.smtbmc} -s {Path(args.solver).name} --presat -t {EQUIVALENCE_DEPTH} {relative(equivalence_smt2)}"
+                f"{args.yosys} -q -s {relative(controller_equivalence_script)} && "
+                f"{args.smtbmc} -s {Path(args.solver).name} --presat -t {SECONDARY_EQUIVALENCE_DEPTH} "
+                f"{relative(controller_equivalence_smt2)}"
             ),
-            log=relative(equivalence_smtbmc_log),
+            log=relative(controller_equivalence_smtbmc_log),
             artifacts={
-                "yosys_log": relative(equivalence_yosys_log),
-                "smt2": relative(equivalence_smt2),
-                "harness": relative(FORMAL_HARNESS),
+                "yosys_log": relative(controller_equivalence_yosys_log),
+                "smt2": relative(controller_equivalence_smt2),
+                "harness": relative(FORMAL_INTERFACE_HARNESS),
+            },
+        ),
+        CommandArtifact(
+            name="closed_loop_mlp_core_equivalence",
+            result=closed_loop_equivalence_result,
+            command=(
+                f"{args.yosys} -q -s {relative(closed_loop_equivalence_script)} && "
+                f"{args.smtbmc} -s {Path(args.solver).name} --presat -t {PRIMARY_EQUIVALENCE_DEPTH} "
+                f"{relative(closed_loop_equivalence_smt2)}"
+            ),
+            log=relative(closed_loop_equivalence_smtbmc_log),
+            artifacts={
+                "yosys_log": relative(closed_loop_equivalence_yosys_log),
+                "smt2": relative(closed_loop_equivalence_smt2),
+                "harness": relative(FORMAL_CLOSED_LOOP_HARNESS),
             },
         ),
     ]
@@ -446,6 +606,9 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "overall_result": overall_result,
         "assumption_profile": "exact_schedule_v1",
+        "primary_claim_scope": PRIMARY_CLAIM_SCOPE,
+        "secondary_claim_scope": SECONDARY_CLAIM_SCOPE,
+        "claim_scope": PRIMARY_CLAIM_SCOPE,
         "tool": {
             "driver": "python3 rtl-synthesis/controller/run_flow.py",
             "ltlsynt": str(args.ltlsynt),
@@ -463,12 +626,13 @@ def main() -> int:
                 f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --summary {relative(summary_path)}"
             ),
         },
-        "claim_scope": CLAIM_SCOPE,
         "sources": {
             "tlsf": relative(TLSF_SOURCE),
             "baseline_controller": relative(BASELINE_CONTROLLER),
+            "baseline_mlp_core": relative(BASELINE_MLP_CORE),
             "compat_wrapper": relative(COMPAT_WRAPPER),
-            "formal_harness": relative(FORMAL_HARNESS),
+            "formal_controller_interface_harness": relative(FORMAL_INTERFACE_HARNESS),
+            "formal_closed_loop_harness": relative(FORMAL_CLOSED_LOOP_HARNESS),
             "specs": SPEC_SOURCES,
         },
         "results": [asdict(item) for item in results],

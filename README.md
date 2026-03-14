@@ -100,6 +100,8 @@ That means:
 
 - reactive synthesis is an experiment track, not the source of truth for the shipped RTL
 - Lean/Sparkle-generated RTL is also an experiment track until it proves out against the same regression and QoR checks
+- the controller-only Sparkle milestone now includes a Lean refinement bridge from the `formalize/` pure controller model into the Sparkle Signal DSL model
+- Sparkle-to-Verilog remains a trusted backend boundary and is validated by the generated-controller simulation and SMT comparison flow, not by Lean proof alone
 - hand-written `rtl/` remains the canonical implementation baseline
 
 Relevant docs:
@@ -188,6 +190,7 @@ make smt
 Run the controller reactive-synthesis experiment:
 
 ```bash
+make rtl-synthesis-smoke
 make rtl-synthesis
 make rtl-synthesis-sim
 ```
@@ -243,7 +246,7 @@ SystemVerilog source for the tiny inference core.
 Reactive-synthesis source inputs, formal harnesses, and driver scripts for the controller experiment.
 
 - `rtl-formalize-synthesis/`
-Lean/Sparkle source for the generated-controller experiment branch.
+Lean/Sparkle source for the generated-controller experiment branch and the controller-only refinement bridge into the Signal DSL model.
 
 - `formalize/`
 Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.

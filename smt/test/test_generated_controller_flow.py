@@ -83,20 +83,20 @@ class GeneratedControllerFlowTests(unittest.TestCase):
             "leanprover/lean4:nightly\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP").mkdir(parents=True, exist_ok=True)
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP.lean").write_text(
-            "import TinyMLP.Types\\nimport TinyMLP.ControllerSignal\\n",
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle.lean").write_text(
+            "import TinyMLPSparkle.Types\\nimport TinyMLPSparkle.ControllerSignal\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "Types.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "Types.lean").write_text(
             "-- fake types module\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "ControllerSignal.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ControllerSignal.lean").write_text(
             "-- fake controller module\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "Emit.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "Emit.lean").write_text(
             "-- fake emit entrypoint\n",
             encoding="utf-8",
         )
@@ -117,23 +117,23 @@ import sys
 
 cwd = pathlib.Path.cwd()
 pkg_src = cwd / "src"
-root_module = pkg_src / "TinyMLP.lean"
-emit_module = pkg_src / "TinyMLP" / "Emit.lean"
+root_module = pkg_src / "TinyMLPSparkle.lean"
+emit_module = pkg_src / "TinyMLPSparkle" / "Emit.lean"
 artifact = cwd.parent / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
 
 if not root_module.exists():
-    raise SystemExit("missing src/TinyMLP.lean")
+    raise SystemExit("missing src/TinyMLPSparkle.lean")
 if not emit_module.exists():
-    raise SystemExit("missing src/TinyMLP/Emit.lean")
+    raise SystemExit("missing src/TinyMLPSparkle/Emit.lean")
 
 if len(sys.argv) >= 2 and sys.argv[1] == "build":
     root_text = root_module.read_text(encoding="utf-8")
-    if "import TinyMLP.Emit" in root_text:
-        raise SystemExit("build should not import TinyMLP.Emit")
+    if "import TinyMLPSparkle.Emit" in root_text:
+        raise SystemExit("build should not import TinyMLPSparkle.Emit")
     raise SystemExit(0)
 
 if len(sys.argv) >= 4 and sys.argv[1] == "env" and sys.argv[2] == "lean":
-    if pathlib.Path(sys.argv[3]) != pathlib.Path("src/TinyMLP/Emit.lean"):
+    if pathlib.Path(sys.argv[3]) != pathlib.Path("src/TinyMLPSparkle/Emit.lean"):
         raise SystemExit(f"unexpected emit entrypoint: {{sys.argv[3]}}")
     artifact.parent.mkdir(parents=True, exist_ok=True)
     artifact.write_text({FAKE_GENERATED_CONTROLLER!r}, encoding="utf-8")
@@ -222,7 +222,7 @@ else:
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("cd rtl-formalize-synthesis && lake build", output)
-        self.assertIn("cd rtl-formalize-synthesis && lake env lean src/TinyMLP/Emit.lean", output)
+        self.assertIn("cd rtl-formalize-synthesis && lake env lean src/TinyMLPSparkle/Emit.lean", output)
         self.assertIn("iverilog -g2012 -s generated_controller_testbench", output)
 
     def test_make_smt_generated_controller_writes_multi_job_summary(self) -> None:

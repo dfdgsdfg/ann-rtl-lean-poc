@@ -4,7 +4,7 @@
        smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
        experiments experiments-artifact-consistency experiments-semantic-closure \
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
-       rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-sim rtl-synthesis-iverilog \
+       rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-smoke rtl-synthesis-sim rtl-synthesis-iverilog \
        rtl-synthesis-verilator clean-rtl-synthesis \
        rtl-formalize-synthesis-emit rtl-formalize-synthesis-build smt-generated-controller \
        show show-check-tools clean-show
@@ -59,8 +59,8 @@ GENERATED_CONTROLLER_SIM_BUILD_DIR := build/sim-generated-controller
 GENERATED_CONTROLLER_TB := simulations/rtl-formalize-synthesis/generated_controller_testbench.sv
 GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/generated_controller_tb.out
 SPARKLE_PKG_DIR := rtl-formalize-synthesis
-SPARKLE_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLP.lean \
-	$(wildcard $(SPARKLE_PKG_DIR)/src/TinyMLP/*.lean) \
+SPARKLE_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle.lean \
+	$(wildcard $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/*.lean) \
 	$(SPARKLE_PKG_DIR)/lakefile.lean \
 	$(SPARKLE_PKG_DIR)/lean-toolchain \
 	$(SPARKLE_PKG_DIR)/lake-manifest.json
@@ -129,7 +129,7 @@ rtl-formalize-synthesis-build:
 
 $(GENERATED_CONTROLLER_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
 	@mkdir -p $(GENERATED_CONTROLLER_DIR)
-	cd $(SPARKLE_PKG_DIR) && lake env lean src/TinyMLP/Emit.lean
+	cd $(SPARKLE_PKG_DIR) && lake env lean src/TinyMLPSparkle/Emit.lean
 
 rtl-formalize-synthesis-emit: $(GENERATED_CONTROLLER_ARTIFACT)
 
@@ -158,6 +158,9 @@ $(RTL_SYNTHESIS_SUMMARY): $(RTL_SYNTHESIS_FLOW_DEPS) | rtl-synthesis-check-tools
 	python3 rtl-synthesis/controller/run_flow.py --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --yosys $(RTL_SYNTHESIS_YOSYS) --smtbmc $(RTL_SYNTHESIS_SMTBMC) --solver $(RTL_SYNTHESIS_Z3) --summary $(RTL_SYNTHESIS_SUMMARY)
 
 rtl-synthesis: $(RTL_SYNTHESIS_SUMMARY)
+
+rtl-synthesis-smoke:
+	python3 rtl-synthesis/test/test_rtl_synthesis.py
 
 rtl-synthesis-sim: sim-check-tools sim-vectors rtl-synthesis-iverilog rtl-synthesis-verilator
 

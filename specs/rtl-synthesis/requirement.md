@@ -30,6 +30,11 @@ It does not cover:
 - datapath synthesis for MAC, ReLU, or hidden-register storage
 - replacement of the hand-written `rtl/` baseline as the canonical implementation
 
+The validation priority is:
+
+- primary: closed-loop mixed-path equivalence at the `mlp_core` boundary
+- secondary: controller-only equivalence under documented counter-abstraction assumptions
+
 ## 3. Behavioral Target
 
 The synthesized controller must be trace-equivalent to the current hand-written controller for all traces satisfying the stated environment assumptions.
@@ -171,17 +176,19 @@ The synthesis flow must produce or record:
 - the realizability result
 - the synthesized controller artifact, such as AIGER, HOA, Mealy/Moore machine, or generated Verilog wrapper input
 - the translation step from the synthesis-tool artifact into an RTL-consumable form
-- a comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
+- a controller-only comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
+- a mixed-path full-core comparison report against [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
 
 ## 9. Validation Requirements
 
 Validation must cover at least:
 
-- trace-level equivalence or refinement against the hand-written controller under the documented assumptions
+- bounded closed-loop equivalence between the baseline `mlp_core` assembly and the synthesized-controller mixed-path `mlp_core` assembly under common external inputs
+- trace-level controller equivalence or refinement against the hand-written controller under the documented assumptions
 - handshake agreement for `start`, `busy`, `done`
 - agreement on guard-cycle behavior in `MAC_HIDDEN` and `MAC_OUTPUT`
 - agreement on hold-in-`DONE` and release-to-`IDLE` behavior
-- integration with the existing datapath in [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv) or a wrapper-equivalent harness
+- integration with the existing datapath in [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv), including the shared full-core simulation bench reused by `rtl-synthesis-sim`
 
 ## 10. Acceptance Criteria
 
@@ -192,5 +199,6 @@ The `rtl-synthesis` domain is complete when:
 3. The specification documents the required environment assumptions induced by the datapath-owned counters.
 4. A synthesis tool can report realizability for the specification.
 5. A synthesized controller artifact can be translated or wrapped into an RTL-consumable form.
-6. The synthesized artifact is compared against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) on the documented handshake and phase-ordering properties.
-7. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.
+6. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
+7. The repository also records the secondary controller-only comparison against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and keeps its assumption profile explicit.
+8. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.
