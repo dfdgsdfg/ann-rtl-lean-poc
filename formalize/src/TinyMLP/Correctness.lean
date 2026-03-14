@@ -2,6 +2,8 @@ import TinyMLP.Temporal
 
 namespace TinyMLP
 
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+
 def rtlCorrectnessGoal (input : Input8) : Prop :=
   (run totalCycles (initialState input)).output = mlpFixed input
 

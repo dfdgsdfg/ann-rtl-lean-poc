@@ -3,6 +3,8 @@ import TinyMLP.ProofsVanilla.FixedPoint
 
 namespace TinyMLP
 
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+
 -- ============================================================
 -- Phase 1: run composition lemmas
 -- ============================================================

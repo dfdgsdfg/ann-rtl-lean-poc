@@ -52,7 +52,7 @@ Define the mathematical, fixed-point, and machine models in Lean and prove the i
 Generate vectors and compare RTL behavior against the frozen contract.
 
 6. `smt`
-Run solver-backed verification for RTL control properties and export the frozen arithmetic assumptions that any future SMT datapath encoding must use.
+Run solver-backed verification for RTL control properties, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
 
 7. `experiments`
 Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
@@ -123,7 +123,17 @@ Install the npm visualization tool:
 npm install -g netlistsvg
 ```
 
-The Brewfile installs: `icarus-verilog`, `verilator`, `yosys`.
+The Brewfile installs the baseline local toolchain used by this repository:
+`python@3`, `icarus-verilog`, `verilator`, `yosys`, and `z3`.
+
+For the SMT flow specifically, `make smt` expects:
+
+- `python3` for the SMT driver scripts
+- `yosys` for RTL elaboration
+- `yosys-smtbmc` for bounded SMT model checking
+- `z3` as the current backend solver
+
+On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 
 Other tools used by the project (install separately if needed):
 
@@ -159,7 +169,7 @@ Run the dual-simulator RTL regression:
 make sim
 ```
 
-Run the solver-backed RTL control checks:
+Run the full solver-backed SMT flow:
 
 ```bash
 make smt

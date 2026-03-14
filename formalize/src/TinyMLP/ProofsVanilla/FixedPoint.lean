@@ -3,6 +3,8 @@ import TinyMLP.ProofsVanilla.SpecArithmetic
 
 namespace TinyMLP
 
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+
 @[simp] theorem w1Int8At_toInt (hiddenIdx inputIdx : Nat) (hinput : inputIdx < inputCount) :
     (w1Int8At hiddenIdx inputIdx).toInt = w1At hiddenIdx inputIdx := by
   have hi :

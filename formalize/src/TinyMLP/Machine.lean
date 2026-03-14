@@ -3,6 +3,8 @@ import TinyMLP.ProofsVanilla.SpecArithmetic
 
 namespace TinyMLP
 
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+
 inductive Phase
   | idle
   | loadInput

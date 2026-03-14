@@ -1,0 +1,364 @@
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SUMMARY = ROOT / "build" / "smt" / "rtl_control_summary.json"
+FORMAL_BUILD_DIR = ROOT / "build" / "smt" / "rtl_formal"
+
+RTL_SOURCES = [
+    ROOT / "rtl" / "src" / "controller.sv",
+    ROOT / "rtl" / "src" / "mac_unit.sv",
+    ROOT / "rtl" / "src" / "mlp_core.sv",
+    ROOT / "rtl" / "src" / "relu_unit.sv",
+    ROOT / "rtl" / "src" / "weight_rom.sv",
+]
+
+SPEC_SOURCES = [
+    "specs/smt/requirement.md",
+    "specs/smt/design.md",
+]
+
+
+@dataclass(frozen=True)
+class FormalJob:
+    name: str
+    family: str
+    description: str
+    top: str
+    harness: Path
+    depth: int
+    assumptions: list[str]
+    properties: list[str]
+    rtl_sources: list[Path]
+
+
+@dataclass
+class FormalResult:
+    name: str
+    family: str
+    description: str
+    top: str
+    assumptions: list[str]
+    properties: list[str]
+    depth: int
+    result: str
+    yosys_log: str
+    smtbmc_log: str
+    artifacts: dict[str, str]
+    commands: dict[str, str]
+
+
+def relative(path: Path) -> str:
+    return str(path.relative_to(ROOT))
+
+
+def tool_exists(tool: str) -> bool:
+    return Path(tool).exists() or shutil.which(tool) is not None
+
+
+def first_output_line(proc: subprocess.CompletedProcess[str]) -> str:
+    text = (proc.stdout + proc.stderr).strip()
+    return text.splitlines()[0].strip() if text else "unknown"
+
+
+def tool_version(command: list[str], fallback: str = "unknown") -> str:
+    proc = subprocess.run(
+        command,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return first_output_line(proc) or fallback
+
+
+def formal_jobs() -> list[FormalJob]:
+    rtl_dir = ROOT / "smt" / "rtl"
+    return [
+        FormalJob(
+            name="controller_interface",
+            family="controller_interface",
+            description="RTL-backed controller transition and output-definition checks over controller.sv.",
+            top="formal_controller_interface",
+            harness=rtl_dir / "controller" / "formal_controller_interface.sv",
+            depth=12,
+            assumptions=[
+                "The controller starts from reset with state forced to IDLE.",
+                "start, hidden_idx, and input_idx remain unconstrained after reset release.",
+                "Proof source of truth is rtl/src/controller.sv, not a duplicated Python transition model.",
+            ],
+            properties=[
+                "accepted start leaves IDLE for LOAD_INPUT on the next cycle",
+                "done matches state == DONE",
+                "busy matches state != IDLE && state != DONE",
+                "load_input, clear_acc, MAC, bias, and advance outputs match the RTL state encoding",
+                "DONE self-holds while start remains high and releases to IDLE when start is low",
+            ],
+            rtl_sources=[ROOT / "rtl" / "src" / "controller.sv"],
+        ),
+        FormalJob(
+            name="mlp_core_boundary_behavior",
+            family="boundary_behavior",
+            description="RTL-backed mlp_core boundary proofs for hidden/output guard cycles and no-duplicate/no-skip transitions.",
+            top="formal_mlp_core_boundaries",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_boundaries.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The proof follows one bounded mlp_core transaction through DONE and release.",
+            ],
+            properties=[
+                "hidden MAC boundary takes exactly one guard cycle at input_idx == 4 with no duplicate MAC work",
+                "last hidden neuron handoff enters MAC_OUTPUT at hidden_idx == 0 and input_idx == 0",
+                "output MAC boundary takes exactly one guard cycle at input_idx == 8 with no duplicate MAC work",
+                "BIAS_OUTPUT applies the output bias once and enters DONE with the documented completion indices",
+            ],
+            rtl_sources=RTL_SOURCES,
+        ),
+        FormalJob(
+            name="mlp_core_range_safety",
+            family="range_safety",
+            description="RTL-backed mlp_core range-safety proofs around MAC enables, selector validity, and boundary guard reads.",
+            top="formal_mlp_core_range_safety",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_range_safety.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The proof is bounded to one transaction so hidden and output boundaries are both exercised.",
+            ],
+            properties=[
+                "do_mac_hidden implies input_idx < 4 and hits real input/weight selector cases",
+                "do_mac_output implies input_idx < 8 and hits real hidden/weight selector cases",
+                "hidden guard cycle at input_idx == 4 misses the hidden selector/ROM cases and drives mac_a to zero",
+                "output guard cycle at input_idx == 8 misses the output selector/ROM cases and drives mac_a to zero",
+                "MAC_OUTPUT operates with hidden_idx == 0 throughout the output phase",
+            ],
+            rtl_sources=RTL_SOURCES,
+        ),
+        FormalJob(
+            name="mlp_core_transaction_capture",
+            family="transaction_capture",
+            description="RTL-backed proof that an accepted start captures in0..in3 into the transaction state and keeps them stable.",
+            top="formal_mlp_core_transaction_capture",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_transaction_capture.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The environment may change in0..in3 after acceptance, so stability must come from the captured input_regs.",
+            ],
+            properties=[
+                "LOAD_INPUT is reached after the accepted start and asserts the top-level load pulse",
+                "LOAD_INPUT samples in0..in3 into input_regs on the transaction boundary",
+                "The captured input_regs remain stable for the rest of the bounded transaction",
+                "The load step clears acc_reg, resets the visible indices, and clears out_bit",
+            ],
+            rtl_sources=RTL_SOURCES,
+        ),
+        FormalJob(
+            name="mlp_core_bounded_latency",
+            family="bounded_latency",
+            description="RTL-backed exact-latency proof for the single-transaction mlp_core trace.",
+            top="formal_mlp_core_latency",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_latency.sv",
+            depth=82,
+            assumptions=[
+                "Initial visible state is IDLE with hidden_idx = 0 and input_idx = 0 because reset is asserted.",
+                "start is sampled high only on the accept cycle immediately after reset release.",
+                "start stays low afterward so DONE can release back to IDLE.",
+                "No reset is applied during the bounded transaction window after acceptance.",
+            ],
+            properties=[
+                "the accepted transaction is not done early",
+                "busy stays high throughout the active window",
+                "done becomes visible exactly 76 cycles after the accept cycle",
+                "the design returns to IDLE one cycle after DONE when start is low",
+            ],
+            rtl_sources=RTL_SOURCES,
+        ),
+    ]
+
+
+def build_yosys_script(job: FormalJob, smt2_path: Path) -> str:
+    verilog_sources = " ".join(relative(path) for path in job.rtl_sources + [job.harness])
+    return "\n".join(
+        [
+            f"read_verilog -DFORMAL -sv -formal {verilog_sources}",
+            f"prep -top {job.top}",
+            "async2sync",
+            "dffunmap",
+            f"write_smt2 -wires {relative(smt2_path)}",
+        ]
+    ) + "\n"
+
+
+def run_job(job: FormalJob, yosys_bin: str, smtbmc_bin: str, solver_bin: str) -> FormalResult:
+    job_dir = FORMAL_BUILD_DIR / job.name
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    yosys_script = job_dir / "run.ys"
+    smt2_path = job_dir / f"{job.top}.smt2"
+    yosys_log = job_dir / "yosys.log"
+    smtbmc_log = job_dir / "yosys_smtbmc.log"
+
+    yosys_script.write_text(build_yosys_script(job, smt2_path), encoding="utf-8")
+
+    solver_name = Path(solver_bin).name
+    yosys_proc = subprocess.run(
+        [yosys_bin, "-q", "-s", str(yosys_script)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    yosys_output = (yosys_proc.stdout + yosys_proc.stderr).strip()
+    yosys_log.write_text(yosys_output + ("\n" if yosys_output else ""), encoding="utf-8")
+
+    smtbmc_output = ""
+    if yosys_proc.returncode == 0:
+        smtbmc_proc = subprocess.run(
+            [
+                smtbmc_bin,
+                "-s",
+                solver_name,
+                "--presat",
+                "-t",
+                str(job.depth),
+                str(smt2_path),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        smtbmc_output = (smtbmc_proc.stdout + smtbmc_proc.stderr).strip()
+        smtbmc_log.write_text(smtbmc_output + ("\n" if smtbmc_output else ""), encoding="utf-8")
+        if "Status: PASSED" in smtbmc_output and smtbmc_proc.returncode == 0:
+            result = "pass"
+        elif "Status: FAILED" in smtbmc_output or smtbmc_proc.returncode != 0:
+            result = "fail"
+        else:
+            result = "error"
+    else:
+        smtbmc_log.write_text("yosys step failed; SMTBMC was not run\n", encoding="utf-8")
+        result = "error"
+
+    return FormalResult(
+        name=job.name,
+        family=job.family,
+        description=job.description,
+        top=job.top,
+        assumptions=job.assumptions,
+        properties=job.properties,
+        depth=job.depth,
+        result=result,
+        yosys_log=relative(yosys_log),
+        smtbmc_log=relative(smtbmc_log),
+        artifacts={
+            "harness": relative(job.harness),
+            "yosys_script": relative(yosys_script),
+            "smt2": relative(smt2_path),
+        },
+        commands={
+            "yosys": f"{yosys_bin} -q -s {relative(yosys_script)}",
+            "yosys_smtbmc": f"{smtbmc_bin} -s {Path(solver_bin).name} --presat -t {job.depth} {relative(smt2_path)}",
+        },
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run RTL-backed SMT control checks with Yosys and yosys-smtbmc.")
+    parser.add_argument(
+        "--yosys",
+        default=shutil.which("yosys") or "yosys",
+        help="Path to the yosys binary.",
+    )
+    parser.add_argument(
+        "--smtbmc",
+        default=shutil.which("yosys-smtbmc") or "yosys-smtbmc",
+        help="Path to the yosys-smtbmc binary.",
+    )
+    parser.add_argument(
+        "--solver",
+        default=shutil.which("z3") or "z3",
+        help="Path to the backend SMT solver binary.",
+    )
+    parser.add_argument(
+        "--z3",
+        dest="solver_alias",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--summary",
+        type=Path,
+        default=DEFAULT_SUMMARY,
+        help="JSON path for the pass/fail summary.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    if args.solver_alias:
+        args.solver = args.solver_alias
+
+    for tool in (args.yosys, args.smtbmc, args.solver):
+        if not tool_exists(tool):
+            raise SystemExit(f"missing required tool: {tool}")
+
+    FORMAL_BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    results = [run_job(job, args.yosys, args.smtbmc, args.solver) for job in formal_jobs()]
+    overall_result = "pass" if all(item.result == "pass" for item in results) else "fail"
+
+    yosys_version = tool_version([args.yosys, "-V"])
+    solver_version = tool_version([args.solver, "-version"])
+    smtbmc_version = tool_version([args.smtbmc, "-h"], fallback=f"bundled with {yosys_version}")
+
+    summary = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "overall_result": overall_result,
+        "tool": {
+            "driver": "python3 smt/rtl/check_control.py",
+            "yosys": str(args.yosys),
+            "yosys_version": yosys_version,
+            "yosys_smtbmc": str(args.smtbmc),
+            "yosys_smtbmc_version": smtbmc_version,
+            "solver": str(args.solver),
+            "solver_version": solver_version,
+            "command": (
+                f"python3 smt/rtl/check_control.py --yosys {args.yosys} "
+                f"--smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
+            ),
+        },
+        "sources": {
+            "rtl": [relative(path) for path in RTL_SOURCES],
+            "specs": SPEC_SOURCES,
+            "harnesses": [relative(job.harness) for job in formal_jobs()],
+        },
+        "results": [asdict(item) for item in results],
+    }
+
+    args.summary.parent.mkdir(parents=True, exist_ok=True)
+    args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    for item in results:
+        print(f"{item.result.upper():4} {item.family} {item.name}")
+    print(f"wrote {args.summary}")
+    return 0 if overall_result == "pass" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

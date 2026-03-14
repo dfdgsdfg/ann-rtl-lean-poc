@@ -1,5 +1,6 @@
 .PHONY: train evaluate quantize export freeze freeze-check \
        sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors \
+       smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
@@ -75,6 +76,39 @@ $(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
 
 clean-sim:
 	rm -rf $(SIM_BUILD_DIR)
+
+# --- SMT targets ---
+
+SMT_BUILD_DIR := build/smt
+SMT_Z3 ?= z3
+SMT_YOSYS ?= yosys
+SMT_SMTBMC ?= yosys-smtbmc
+SMT_RTL_SUMMARY := $(SMT_BUILD_DIR)/rtl_control_summary.json
+SMT_CONTRACT_SUMMARY := $(SMT_BUILD_DIR)/contract_assumptions.json
+SMT_CONTRACT_OVERFLOW_SUMMARY := $(SMT_BUILD_DIR)/contract_overflow_summary.json
+SMT_CONTRACT_EQUIV_SUMMARY := $(SMT_BUILD_DIR)/contract_equivalence_summary.json
+
+smt: smt-check-tools smt-contract-assumptions smt-rtl-control smt-contract-overflow smt-contract-equivalence
+
+smt-check-tools:
+	@command -v $(SMT_Z3) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_Z3)"; exit 1; }
+	@command -v $(SMT_YOSYS) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_YOSYS)"; exit 1; }
+	@command -v $(SMT_SMTBMC) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_SMTBMC)"; exit 1; }
+
+smt-contract-assumptions:
+	python3 smt/contract/export_assumptions.py --output $(SMT_CONTRACT_SUMMARY)
+
+smt-rtl-control:
+	python3 smt/rtl/check_control.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --summary $(SMT_RTL_SUMMARY)
+
+smt-contract-overflow:
+	python3 smt/contract/overflow/check_bounds.py --z3 $(SMT_Z3) --summary $(SMT_CONTRACT_OVERFLOW_SUMMARY)
+
+smt-contract-equivalence:
+	python3 smt/contract/equivalence/check_equivalence.py --z3 $(SMT_Z3) --summary $(SMT_CONTRACT_EQUIV_SUMMARY)
+
+clean-smt:
+	rm -rf $(SMT_BUILD_DIR)
 
 # --- Visualization targets ---
 

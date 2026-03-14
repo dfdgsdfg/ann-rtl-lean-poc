@@ -9,6 +9,31 @@ module mlp_core (
   output logic              done,
   output logic              busy,
   output logic              out_bit
+`ifdef FORMAL
+  ,
+  output logic [3:0]        formal_state,
+  output logic [3:0]        formal_hidden_idx,
+  output logic [3:0]        formal_input_idx,
+  output logic              formal_load_input,
+  output logic              formal_do_mac_hidden,
+  output logic              formal_do_bias_hidden,
+  output logic              formal_do_act_hidden,
+  output logic              formal_advance_hidden,
+  output logic              formal_do_mac_output,
+  output logic              formal_do_bias_output,
+  output logic signed [7:0] formal_input_reg0,
+  output logic signed [7:0] formal_input_reg1,
+  output logic signed [7:0] formal_input_reg2,
+  output logic signed [7:0] formal_input_reg3,
+  output logic              formal_hidden_input_case_hit,
+  output logic              formal_output_hidden_case_hit,
+  output logic              formal_hidden_weight_case_hit,
+  output logic              formal_output_weight_case_hit,
+  output logic signed [31:0] formal_acc_reg,
+  output logic signed [31:0] formal_mac_acc_out,
+  output logic signed [15:0] formal_mac_a,
+  output logic signed [31:0] formal_b2_data
+`endif
 );
   localparam logic [3:0] IDLE       = 4'd0;
   localparam logic [3:0] MAC_OUTPUT = 4'd6;
@@ -41,6 +66,13 @@ module mlp_core (
 
   integer i;
 
+`ifdef FORMAL
+  logic hidden_input_case_hit;
+  logic output_hidden_case_hit;
+  logic hidden_weight_case_hit;
+  logic output_weight_case_hit;
+`endif
+
   controller u_controller (
     .clk(clk),
     .rst_n(rst_n),
@@ -67,6 +99,11 @@ module mlp_core (
     .b1_data(b1_data),
     .w2_data(w2_data),
     .b2_data(b2_data)
+`ifdef FORMAL
+    ,
+    .formal_hidden_weight_case_hit(hidden_weight_case_hit),
+    .formal_output_weight_case_hit(output_weight_case_hit)
+`endif
   );
 
   mac_unit #(
@@ -91,26 +128,30 @@ module mlp_core (
   always_comb begin
     mac_a = 16'sd0;
     mac_b = 8'sd0;
+`ifdef FORMAL
+    hidden_input_case_hit = 1'b0;
+    output_hidden_case_hit = 1'b0;
+`endif
 
     if (state == MAC_OUTPUT) begin
       unique case (input_idx)
-        4'd0: mac_a = hidden_regs[0];
-        4'd1: mac_a = hidden_regs[1];
-        4'd2: mac_a = hidden_regs[2];
-        4'd3: mac_a = hidden_regs[3];
-        4'd4: mac_a = hidden_regs[4];
-        4'd5: mac_a = hidden_regs[5];
-        4'd6: mac_a = hidden_regs[6];
-        4'd7: mac_a = hidden_regs[7];
+        4'd0: begin mac_a = hidden_regs[0]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd1: begin mac_a = hidden_regs[1]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd2: begin mac_a = hidden_regs[2]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd3: begin mac_a = hidden_regs[3]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd4: begin mac_a = hidden_regs[4]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd5: begin mac_a = hidden_regs[5]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd6: begin mac_a = hidden_regs[6]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
+        4'd7: begin mac_a = hidden_regs[7]; `ifdef FORMAL output_hidden_case_hit = 1'b1; `endif end
         default: mac_a = 16'sd0;
       endcase
       mac_b = w2_data;
     end else begin
       unique case (input_idx)
-        4'd0: mac_a = {{8{input_regs[0][7]}}, input_regs[0]};
-        4'd1: mac_a = {{8{input_regs[1][7]}}, input_regs[1]};
-        4'd2: mac_a = {{8{input_regs[2][7]}}, input_regs[2]};
-        4'd3: mac_a = {{8{input_regs[3][7]}}, input_regs[3]};
+        4'd0: begin mac_a = {{8{input_regs[0][7]}}, input_regs[0]}; `ifdef FORMAL hidden_input_case_hit = 1'b1; `endif end
+        4'd1: begin mac_a = {{8{input_regs[1][7]}}, input_regs[1]}; `ifdef FORMAL hidden_input_case_hit = 1'b1; `endif end
+        4'd2: begin mac_a = {{8{input_regs[2][7]}}, input_regs[2]}; `ifdef FORMAL hidden_input_case_hit = 1'b1; `endif end
+        4'd3: begin mac_a = {{8{input_regs[3][7]}}, input_regs[3]}; `ifdef FORMAL hidden_input_case_hit = 1'b1; `endif end
         default: mac_a = 16'sd0;
       endcase
       mac_b = w1_data;
@@ -185,4 +226,29 @@ module mlp_core (
       end
     end
   end
+
+`ifdef FORMAL
+  assign formal_state = state;
+  assign formal_hidden_idx = hidden_idx;
+  assign formal_input_idx = input_idx;
+  assign formal_load_input = load_input;
+  assign formal_do_mac_hidden = do_mac_hidden;
+  assign formal_do_bias_hidden = do_bias_hidden;
+  assign formal_do_act_hidden = do_act_hidden;
+  assign formal_advance_hidden = advance_hidden;
+  assign formal_do_mac_output = do_mac_output;
+  assign formal_do_bias_output = do_bias_output;
+  assign formal_input_reg0 = input_regs[0];
+  assign formal_input_reg1 = input_regs[1];
+  assign formal_input_reg2 = input_regs[2];
+  assign formal_input_reg3 = input_regs[3];
+  assign formal_hidden_input_case_hit = hidden_input_case_hit;
+  assign formal_output_hidden_case_hit = output_hidden_case_hit;
+  assign formal_hidden_weight_case_hit = hidden_weight_case_hit;
+  assign formal_output_weight_case_hit = output_weight_case_hit;
+  assign formal_acc_reg = acc_reg;
+  assign formal_mac_acc_out = mac_acc_out;
+  assign formal_mac_a = mac_a;
+  assign formal_b2_data = b2_data;
+`endif
 endmodule

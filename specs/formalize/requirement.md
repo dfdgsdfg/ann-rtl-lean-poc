@@ -190,7 +190,7 @@ formalize/
       Interfaces/ArithmeticProofProvider.lean
                                           -- proof interface for arithmetic helper families required by shared fixed-point defs
       Defs/FixedPointCore.lean           -- hardware-domain executable arithmetic and shared fixed-point definitions
-      ProofsVanilla/SpecArithmetic.lean  -- baseline arithmetic lemmas and default provider instance
+      ProofsVanilla/SpecArithmetic.lean  -- baseline arithmetic lemmas and baseline provider value
       ProofsVanilla/FixedPoint.lean      -- baseline proofs for fixed-point executable definitions and the hardware→math bridge
       Machine.lean                       -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
       Temporal.lean                      -- temporal/trace layer and mandatory timing theorems
@@ -207,14 +207,14 @@ formalize/
     TinyMLP/
       Defs/               -- shared definitions, constants, and executable functions
       Interfaces/         -- proof interfaces consumed by shared defs
-      ProofsVanilla/      -- current baseline proofs and default provider instances
+      ProofsVanilla/      -- current baseline proofs and provider values selected locally by consuming files
 ```
 
 In this first pass, the split is intentionally limited to the arithmetic and fixed-point executable layer. `Machine`, `Invariants`, `Simulation`, `Temporal`, and `Correctness` remain the vanilla lane and consume the default arithmetic provider.
 
 ## 7. Reproducibility Requirements
 
-The formal flow must be reproducible by running `cd formalize && lake build` using the pinned Lean toolchain (currently v4.28.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
+The formal flow must be reproducible by running `cd formalize && lake build` using the pinned Lean toolchain (currently v4.27.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
 
 The baseline `formalize` build should remain understandable as a solver-independent Lean path. Any optional SMT-assisted theorem automation must be documented separately rather than silently becoming part of the baseline contract.
 

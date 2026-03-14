@@ -71,7 +71,7 @@ theorem int16_mul_int8_bounds (lhs : Int16Val) (rhs : Int8) :
         Int.mul_le_mul_of_nonpos_left (by omega) hylo
       omega
 
-instance vanillaArithmeticProofProvider : ArithmeticProofProvider where
+def vanillaArithmeticProofProvider : ArithmeticProofProvider where
   int8MulInt8Bounds := int8_mul_int8_bounds
   int16MulInt8Bounds := int16_mul_int8_bounds
 

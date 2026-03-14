@@ -2,6 +2,8 @@ import TinyMLP.Simulation
 
 namespace TinyMLP
 
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+
 /-!
 The public temporal theorem surface for this milestone is:
 

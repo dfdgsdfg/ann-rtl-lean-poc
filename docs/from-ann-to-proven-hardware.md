@@ -11,7 +11,9 @@ graph LR
     C --> D[RTL Hardware]
     C --> E[Lean Formalization]
     C --> F[Simulation Vectors]
+    C --> I[SMT / Formal Checks]
     D --> G[Yosys Synthesis]
+    D --> I
     G --> H[Circuit Schematics]
 ```
 
@@ -496,15 +498,17 @@ The schematics show what Yosys _thinks_ the design means after synthesis. Compar
 
 These are the same questions the Lean formalization answers mathematically. The schematic answers them visually.
 
-## 7. The Three-Way Agreement
+## 7. The Four-Way Agreement
 
-The core claim of this repository is three-way agreement:
+The core claim of this repository is four-way agreement:
 
 ```mermaid
 graph LR
     PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
     LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
     RTL ---|"simulation<br/>test vectors"| PY
+    RTL ---|"bounded proofs<br/>over real Verilog"| SMT["SMT / Formal<br/>Yosys + Z3"]
+    SMT ---|"contract-tied<br/>QF_BV proofs"| PY
 ```
 
 Each pair is connected differently:
@@ -515,12 +519,17 @@ Each pair is connected differently:
 
 - **Python <-> RTL**: simulation. The testbench feeds the same inputs and expected outputs (generated from the Python model) to the RTL DUT and checks agreement.
 
+- **RTL <-> SMT**: bounded model checking. Yosys elaborates the real SystemVerilog into an SMT model, and yosys-smtbmc proves control, boundary, range-safety, transaction-capture, and exact-latency properties over all inputs within a bounded trace window. Unlike Lean, this reasons about the actual Verilog, not a hand-written model of it.
+
+- **Python <-> SMT**: contract arithmetic proofs. The frozen contract's weights and arithmetic rules are encoded as QF_BV queries, and Z3 proves that no intermediate value overflows its declared width and that two different bitvector encodings of the network produce identical results.
+
 No single method covers everything alone:
 - Simulation can't check all 2^32 inputs
 - Lean proofs don't run on actual Verilog
 - The Python model doesn't prove timing properties
+- SMT bounded proofs can't see beyond their trace depth
 
-Together, they provide confidence from three independent directions that the frozen contract is correctly implemented in hardware.
+Together, they provide confidence from four independent directions that the frozen contract is correctly implemented in hardware. For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
 
 ## 8. What Makes This Hard
 
@@ -534,4 +543,4 @@ The arithmetic in this project is small. The hard parts are:
 
 **Handshake semantics**: `done` being a level (not a pulse), `busy` being low in both IDLE and DONE, the DONE-hold-while-start-high behavior -- these are the properties that determine whether downstream logic can safely sample the output. Getting them wrong is a hardware bug even if the arithmetic is perfect.
 
-The Lean formalization addresses all four. The simulation validates the first two against actual Verilog. The combination is what makes the end-to-end claim credible.
+The Lean formalization addresses all four. The simulation validates the first two against actual Verilog. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The combination is what makes the end-to-end claim credible.

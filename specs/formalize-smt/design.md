@@ -86,7 +86,7 @@ Concretely:
 - `Defs/SpecCore.lean` exposes shared semantic definitions and frozen constants
 - `Interfaces/ArithmeticProofProvider.lean` exposes the proof-provider interface used by shared fixed-point executable defs
 - `Defs/FixedPointCore.lean` exposes provider-parameterized fixed-point executable definitions
-- `ProofsVanilla/SpecArithmetic.lean` and `ProofsVanilla/FixedPoint.lean` keep the baseline proofs and default provider instance
+- `ProofsVanilla/SpecArithmetic.lean` and `ProofsVanilla/FixedPoint.lean` keep the baseline proofs and the baseline provider value
 
 This is enough to support an SMT-assisted overlay on the arithmetic layer without importing the finished vanilla proofs it wants to replace. The upper machine and temporal stack still require further exposure work if they are ever targeted.
 
@@ -168,3 +168,44 @@ A practical implementation order is:
 7. Expand only if the gain is clear.
 
 This avoids paying solver-integration complexity before the repository has a concrete proof-maintenance problem worth solving.
+
+## 11. First Implementation Decisions
+
+The first concrete implementation should use a separate sibling package:
+
+- `formalize/` remains the canonical vanilla package
+- `formalize-smt/` is a second Lake package that depends on `../formalize`
+- both packages share the same Lean toolchain pin so the overlay is reproducible
+
+For the first implementation milestone, the package layout should be:
+
+- `formalize-smt/lean-toolchain`
+- `formalize-smt/lakefile.lean`
+- `formalize-smt/src/TinyMLPSmt.lean`
+- `formalize-smt/src/TinyMLPSmt/Arithmetic.lean`
+
+The dependency stack should be narrow and explicit:
+
+- `lean-smt` as the tactic layer
+- its transitive `lean-cvc5` dependency for solver interaction
+- a pinned upstream commit rather than a floating branch in the committed package manifest
+
+The first migrated theorem family should stay minimal:
+
+- reprove only the `ArithmeticProofProvider` obligations
+- define an alternate provider value from those SMT-assisted proofs
+- include one small smoke theorem that instantiates the shared fixed-point executable layer with the SMT provider
+
+Coexistence between the vanilla and SMT lanes should be explicit:
+
+- neither lane should export a global `ArithmeticProofProvider` instance
+- provider selection should happen through local bindings in the files that elaborate provider-parameterized definitions
+- importing both lanes together should leave instance synthesis unresolved until a file chooses the intended lane explicitly
+
+The first milestone should not migrate:
+
+- `hiddenSpecAt8_*_bounds`
+- wraparound helper theorems
+- machine, invariant, simulation, temporal, or correctness theorems
+
+That scope keeps the comparison clean and makes it easy to tell whether the SMT lane is providing real value before expanding it further.
