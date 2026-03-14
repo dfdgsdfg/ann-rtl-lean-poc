@@ -4,6 +4,7 @@ namespace TinyMLP.Sparkle
 
 abbrev stateWidth : Nat := 4
 abbrev controllerPackedWidth : Nat := 14
+abbrev mlpCorePackedWidth : Nat := 299
 
 abbrev stIdle : BitVec stateWidth := 0#4
 abbrev stLoadInput : BitVec stateWidth := 1#4

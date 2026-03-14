@@ -7,7 +7,8 @@
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
        rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-smoke rtl-synthesis-sim rtl-synthesis-iverilog \
        rtl-synthesis-verilator clean-rtl-synthesis \
-       rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-build smt-generated-controller \
+       rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-emit-full-core \
+       rtl-formalize-synthesis-build rtl-formalize-synthesis-sim clean-rtl-formalize-synthesis smt-generated-controller \
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
@@ -56,9 +57,13 @@ VERILATOR_BIN := $(VERILATOR_DIR)/Vtestbench
 GENERATED_CONTROLLER_DIR := experiments/rtl-formalize-synthesis/sparkle
 GENERATED_CONTROLLER_ARTIFACT := $(GENERATED_CONTROLLER_DIR)/sparkle_controller.sv
 GENERATED_CONTROLLER_WRAPPER := $(GENERATED_CONTROLLER_DIR)/sparkle_controller_wrapper.sv
+GENERATED_MLP_CORE_ARTIFACT := $(GENERATED_CONTROLLER_DIR)/sparkle_mlp_core.sv
+GENERATED_MLP_CORE_WRAPPER := $(GENERATED_CONTROLLER_DIR)/sparkle_mlp_core_wrapper.sv
 GENERATED_CONTROLLER_SIM_BUILD_DIR := build/sim-generated-controller
 GENERATED_CONTROLLER_TB := simulations/rtl-formalize-synthesis/generated_controller_testbench.sv
 GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/generated_controller_tb.out
+GENERATED_MLP_CORE_SIM_BUILD_DIR := build/rtl-formalize-synthesis
+GENERATED_MLP_CORE_IVERILOG_BIN := $(GENERATED_MLP_CORE_SIM_BUILD_DIR)/iverilog/testbench.out
 SPARKLE_PKG_DIR := rtl-formalize-synthesis
 SPARKLE_VENDOR_DIR := $(SPARKLE_PKG_DIR)/vendor/Sparkle
 SPARKLE_PREPARE_SCRIPT := $(SPARKLE_PKG_DIR)/scripts/prepare_sparkle.sh
@@ -156,15 +161,22 @@ rtl-formalize-synthesis-prepare:
 	@command -v git >/dev/null 2>&1 || { echo "missing required tool: git"; exit 1; }
 	$(SPARKLE_PREPARE_SCRIPT)
 
-rtl-formalize-synthesis-build: rtl-formalize-synthesis-prepare
+rtl-formalize-synthesis-build:
 	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
+	@if [ ! -d "$(SPARKLE_VENDOR_DIR)" ]; then $(MAKE) rtl-formalize-synthesis-prepare; fi
 	cd $(SPARKLE_PKG_DIR) && lake build
 
 $(GENERATED_CONTROLLER_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
 	@mkdir -p $(GENERATED_CONTROLLER_DIR)
 	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
 
-rtl-formalize-synthesis-emit: $(GENERATED_CONTROLLER_ARTIFACT)
+$(GENERATED_MLP_CORE_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
+	@mkdir -p $(GENERATED_CONTROLLER_DIR)
+	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
+
+rtl-formalize-synthesis-emit: $(GENERATED_CONTROLLER_ARTIFACT) $(GENERATED_MLP_CORE_ARTIFACT)
+
+rtl-formalize-synthesis-emit-full-core: $(GENERATED_MLP_CORE_ARTIFACT)
 
 sim-generated-controller: sim-generated-controller-check-tools $(GENERATED_CONTROLLER_IVERILOG_BIN)
 	vvp $(GENERATED_CONTROLLER_IVERILOG_BIN)
@@ -179,6 +191,16 @@ $(GENERATED_CONTROLLER_IVERILOG_BIN): rtl/src/controller.sv $(GENERATED_CONTROLL
 
 clean-sim-generated-controller:
 	rm -rf $(GENERATED_CONTROLLER_SIM_BUILD_DIR)
+
+rtl-formalize-synthesis-sim: sim-generated-controller-check-tools sim-vectors $(GENERATED_MLP_CORE_IVERILOG_BIN)
+	vvp $(GENERATED_MLP_CORE_IVERILOG_BIN)
+
+$(GENERATED_MLP_CORE_IVERILOG_BIN): $(GENERATED_MLP_CORE_WRAPPER) $(GENERATED_MLP_CORE_ARTIFACT) $(SIM_TB) $(SIM_VECTOR_STAMP)
+	@mkdir -p $(dir $@)
+	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(GENERATED_MLP_CORE_WRAPPER) $(GENERATED_MLP_CORE_ARTIFACT)
+
+clean-rtl-formalize-synthesis:
+	rm -rf $(GENERATED_MLP_CORE_SIM_BUILD_DIR)
 
 rtl-synthesis-check-tools:
 	@if ! command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || ! command -v $(RTL_SYNTHESIS_SYFCO) >/dev/null 2>&1; then $(MAKE) vendor-synthesis-tools-prepare; fi

@@ -3,6 +3,7 @@ import Sparkle.Backend.Verilog
 import Sparkle.Compiler.Elab
 import Sparkle.Core.Domain
 import TinyMLPSparkle.ControllerSignal
+import TinyMLPSparkle.MlpCoreSignal
 
 set_option maxRecDepth 65536
 set_option maxHeartbeats 64000000
@@ -38,6 +39,15 @@ abbrev sparkleControllerPacked {dom : DomainConfig}
   _root_.TinyMLP.Sparkle.sparkleControllerPackedFlat
     start hidden_idx input_idx inputNeurons4b hiddenNeurons4b lastHiddenIdx
 
+abbrev sparkleMlpCorePacked {dom : DomainConfig}
+    (start : Sparkle.Core.Signal.Signal dom Bool)
+    (in0 : Sparkle.Core.Signal.Signal dom (BitVec 8))
+    (in1 : Sparkle.Core.Signal.Signal dom (BitVec 8))
+    (in2 : Sparkle.Core.Signal.Signal dom (BitVec 8))
+    (in3 : Sparkle.Core.Signal.Signal dom (BitVec 8)) :=
+  _root_.TinyMLP.Sparkle.sparkleMlpCorePacked start in0 in1 in2 in3
+
 #writeVerilogDesignNoDRC sparkleControllerPacked "../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv"
+#writeVerilogDesignNoDRC sparkleMlpCorePacked "../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv"
 
 end TinyMLP

@@ -1,0 +1,143 @@
+module mlp_core (
+  input  logic              clk,
+  input  logic              rst_n,
+  input  logic              start,
+  input  logic signed [7:0] in0,
+  input  logic signed [7:0] in1,
+  input  logic signed [7:0] in2,
+  input  logic signed [7:0] in3,
+  output logic              done,
+  output logic              busy,
+  output logic              out_bit
+`ifdef FORMAL
+  ,
+  output logic [3:0]        formal_state,
+  output logic [3:0]        formal_hidden_idx,
+  output logic [3:0]        formal_input_idx,
+  output logic              formal_load_input,
+  output logic              formal_do_mac_hidden,
+  output logic              formal_do_bias_hidden,
+  output logic              formal_do_act_hidden,
+  output logic              formal_advance_hidden,
+  output logic              formal_do_mac_output,
+  output logic              formal_do_bias_output,
+  output logic signed [7:0] formal_input_reg0,
+  output logic signed [7:0] formal_input_reg1,
+  output logic signed [7:0] formal_input_reg2,
+  output logic signed [7:0] formal_input_reg3,
+  output logic              formal_hidden_input_case_hit,
+  output logic              formal_output_hidden_case_hit,
+  output logic              formal_hidden_weight_case_hit,
+  output logic              formal_output_weight_case_hit,
+  output logic signed [31:0] formal_acc_reg,
+  output logic signed [31:0] formal_mac_acc_out,
+  output logic signed [15:0] formal_mac_a,
+  output logic signed [31:0] formal_b2_data
+`endif
+);
+  logic        rst;
+  logic [298:0] packed_out;
+
+  logic [3:0] state;
+  logic       load_input;
+  logic       clear_acc;
+  logic       do_mac_hidden;
+  logic       do_bias_hidden;
+  logic       do_act_hidden;
+  logic       advance_hidden;
+  logic       do_mac_output;
+  logic       do_bias_output;
+  logic [3:0] hidden_idx;
+  logic [3:0] input_idx;
+  logic signed [7:0] input_regs [0:3];
+  logic signed [15:0] hidden_regs [0:7];
+  logic signed [31:0] acc_reg;
+  logic signed [31:0] mac_acc_out;
+  logic signed [15:0] mac_a;
+  logic signed [31:0] b2_data;
+  logic hidden_input_case_hit;
+  logic output_hidden_case_hit;
+  logic hidden_weight_case_hit;
+  logic output_weight_case_hit;
+
+  assign rst = ~rst_n;
+
+  TinyMLP_sparkleMlpCorePacked u_sparkle_mlp_core (
+    ._gen_start(start),
+    ._gen_in0(in0),
+    ._gen_in1(in1),
+    ._gen_in2(in2),
+    ._gen_in3(in3),
+    .clk(clk),
+    .rst(rst),
+    .out(packed_out)
+  );
+
+  // Packed as:
+  // {state, load_input, clear_acc, do_mac_hidden, do_bias_hidden, do_act_hidden,
+  //  advance_hidden, do_mac_output, do_bias_output, done, busy, out_bit,
+  //  hidden_idx, input_idx, acc_reg, mac_acc_out, mac_a, b2_data,
+  //  input_reg0, input_reg1, input_reg2, input_reg3,
+  //  hidden_reg0..hidden_reg7,
+  //  hidden_input_case_hit, output_hidden_case_hit,
+  //  hidden_weight_case_hit, output_weight_case_hit}
+  assign state                   = packed_out[298:295];
+  assign load_input              = packed_out[294];
+  assign clear_acc               = packed_out[293];
+  assign do_mac_hidden           = packed_out[292];
+  assign do_bias_hidden          = packed_out[291];
+  assign do_act_hidden           = packed_out[290];
+  assign advance_hidden          = packed_out[289];
+  assign do_mac_output           = packed_out[288];
+  assign do_bias_output          = packed_out[287];
+  assign done                    = packed_out[286];
+  assign busy                    = packed_out[285];
+  assign out_bit                 = packed_out[284];
+  assign hidden_idx              = packed_out[283:280];
+  assign input_idx               = packed_out[279:276];
+  assign acc_reg                 = packed_out[275:244];
+  assign mac_acc_out             = packed_out[243:212];
+  assign mac_a                   = packed_out[211:196];
+  assign b2_data                 = packed_out[195:164];
+  assign input_regs[0]           = packed_out[163:156];
+  assign input_regs[1]           = packed_out[155:148];
+  assign input_regs[2]           = packed_out[147:140];
+  assign input_regs[3]           = packed_out[139:132];
+  assign hidden_regs[0]          = packed_out[131:116];
+  assign hidden_regs[1]          = packed_out[115:100];
+  assign hidden_regs[2]          = packed_out[99:84];
+  assign hidden_regs[3]          = packed_out[83:68];
+  assign hidden_regs[4]          = packed_out[67:52];
+  assign hidden_regs[5]          = packed_out[51:36];
+  assign hidden_regs[6]          = packed_out[35:20];
+  assign hidden_regs[7]          = packed_out[19:4];
+  assign hidden_input_case_hit   = packed_out[3];
+  assign output_hidden_case_hit  = packed_out[2];
+  assign hidden_weight_case_hit  = packed_out[1];
+  assign output_weight_case_hit  = packed_out[0];
+
+`ifdef FORMAL
+  assign formal_state                    = state;
+  assign formal_hidden_idx               = hidden_idx;
+  assign formal_input_idx                = input_idx;
+  assign formal_load_input               = load_input;
+  assign formal_do_mac_hidden            = do_mac_hidden;
+  assign formal_do_bias_hidden           = do_bias_hidden;
+  assign formal_do_act_hidden            = do_act_hidden;
+  assign formal_advance_hidden           = advance_hidden;
+  assign formal_do_mac_output            = do_mac_output;
+  assign formal_do_bias_output           = do_bias_output;
+  assign formal_input_reg0               = input_regs[0];
+  assign formal_input_reg1               = input_regs[1];
+  assign formal_input_reg2               = input_regs[2];
+  assign formal_input_reg3               = input_regs[3];
+  assign formal_hidden_input_case_hit    = hidden_input_case_hit;
+  assign formal_output_hidden_case_hit   = output_hidden_case_hit;
+  assign formal_hidden_weight_case_hit   = hidden_weight_case_hit;
+  assign formal_output_weight_case_hit   = output_weight_case_hit;
+  assign formal_acc_reg                  = acc_reg;
+  assign formal_mac_acc_out              = mac_acc_out;
+  assign formal_mac_a                    = mac_a;
+  assign formal_b2_data                  = b2_data;
+`endif
+endmodule

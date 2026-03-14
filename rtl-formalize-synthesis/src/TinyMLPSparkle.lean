@@ -1,3 +1,6 @@
 import TinyMLPSparkle.Types
+import TinyMLPSparkle.ContractData
 import TinyMLPSparkle.ControllerSignal
+import TinyMLPSparkle.DatapathSignal
+import TinyMLPSparkle.MlpCoreSignal
 import TinyMLPSparkle.Refinement
