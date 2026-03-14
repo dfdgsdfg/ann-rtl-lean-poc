@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -30,8 +31,36 @@ SMOKE_VECTORS = (
     (19, -21, 11, 4),
     (-7, 4, -12, 13),
 )
-WITNESS_VALUES = (-32, -16, -8, -4, -2, -1, 0, 1, 2, 4, 8, 16, 32)
+ARITHMETIC_BOUNDARY_VALUES = (-128, -127, 127)
+SEARCH_VALUES = (-128, -127, -64, -32, -16, -8, -4, -2, -1, 0, 1, 2, 4, 8, 16, 32, 64, 127)
+EXTREME_COMBINATION_VECTORS = (
+    (-128, -128, -128, -128),
+    (-127, -127, -127, -127),
+    (127, 127, 127, 127),
+    (-128, 127, -128, 127),
+    (127, -128, 127, -128),
+    (-128, -128, 127, 127),
+    (127, 127, -128, -128),
+)
 WITNESS_CLASSES = ("positive", "zero", "negative")
+
+
+@dataclass(frozen=True)
+class ScoreTrace:
+    score: int
+    hidden_pre_activations: tuple[int, ...]
+    output_mac_partials: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class CandidatePoolAnalysis:
+    score_witnesses: dict[str, tuple[int, int, int, int]]
+    max_score_vector: tuple[int, int, int, int]
+    min_score_vector: tuple[int, int, int, int]
+    hidden_pre_max_vectors: tuple[tuple[int, int, int, int], ...]
+    hidden_pre_min_vectors: tuple[tuple[int, int, int, int], ...]
+    output_partial_max_vectors: tuple[tuple[int, int, int, int], ...]
+    output_partial_min_vectors: tuple[tuple[int, int, int, int], ...]
 
 
 def _normalize_input(values: Iterable[int]) -> tuple[int, int, int, int]:
@@ -42,25 +71,37 @@ def _normalize_input(values: Iterable[int]) -> tuple[int, int, int, int]:
 
 
 def _score(values: Sequence[int], weights: dict[str, object]) -> int:
+    return _score_trace(values, weights=weights).score
+
+
+def _score_trace(values: Sequence[int], weights: dict[str, object]) -> ScoreTrace:
     xs = _normalize_input(values)
     w1 = weights["w1"]
     b1 = weights["b1"]
     hidden: list[int] = []
+    hidden_pre_activations: list[int] = []
     for i in range(HIDDEN_SIZE):
         acc = 0
         for j in range(INPUT_SIZE):
             product = wrap_signed(xs[j] * w1[i][j], 16)
             acc = wrap_signed(acc + product, 32)
         acc = wrap_signed(acc + b1[i], 32)
+        hidden_pre_activations.append(acc)
         hidden.append(wrap_signed(relu(acc), 16))
 
     w2 = weights["w2"]
     b2 = weights["b2"]
     acc = 0
+    output_mac_partials: list[int] = []
     for i in range(HIDDEN_SIZE):
         product = wrap_signed(hidden[i] * w2[i], 24)
         acc = wrap_signed(acc + product, 32)
-    return wrap_signed(acc + b2, 32)
+        output_mac_partials.append(acc)
+    return ScoreTrace(
+        score=wrap_signed(acc + b2, 32),
+        hidden_pre_activations=tuple(hidden_pre_activations),
+        output_mac_partials=tuple(output_mac_partials),
+    )
 
 
 def _pack_vector(values: Sequence[int], score: int) -> int:
@@ -81,30 +122,94 @@ def _score_class(score: int) -> str:
     return "negative"
 
 
-def _synthesize_witness_vectors(weights: dict[str, object]) -> dict[str, tuple[int, int, int, int]]:
-    used = set(SMOKE_VECTORS)
+def _update_extremum(
+    current: tuple[int, tuple[int, int, int, int]] | None,
+    candidate_value: int,
+    candidate_vector: tuple[int, int, int, int],
+    *,
+    prefer_max: bool,
+) -> tuple[int, tuple[int, int, int, int]]:
+    if current is None:
+        return (candidate_value, candidate_vector)
+    current_value, _ = current
+    if prefer_max:
+        if candidate_value > current_value:
+            return (candidate_value, candidate_vector)
+    elif candidate_value < current_value:
+        return (candidate_value, candidate_vector)
+    return current
+
+
+def _analyze_candidate_pool(weights: dict[str, object]) -> CandidatePoolAnalysis:
     witnesses: dict[str, tuple[int, int, int, int]] = {}
+    max_score: tuple[int, tuple[int, int, int, int]] | None = None
+    min_score: tuple[int, tuple[int, int, int, int]] | None = None
+    hidden_pre_max: list[tuple[int, tuple[int, int, int, int]] | None] = [None] * HIDDEN_SIZE
+    hidden_pre_min: list[tuple[int, tuple[int, int, int, int]] | None] = [None] * HIDDEN_SIZE
+    output_partial_max: list[tuple[int, tuple[int, int, int, int]] | None] = [None] * HIDDEN_SIZE
+    output_partial_min: list[tuple[int, tuple[int, int, int, int]] | None] = [None] * HIDDEN_SIZE
+
+    for candidate in product(SEARCH_VALUES, repeat=INPUT_SIZE):
+        vector = _normalize_input(candidate)
+        trace = _score_trace(vector, weights=weights)
+        score_class = _score_class(trace.score)
+        witnesses.setdefault(score_class, vector)
+        max_score = _update_extremum(max_score, trace.score, vector, prefer_max=True)
+        min_score = _update_extremum(min_score, trace.score, vector, prefer_max=False)
+
+        for idx, value in enumerate(trace.hidden_pre_activations):
+            hidden_pre_max[idx] = _update_extremum(hidden_pre_max[idx], value, vector, prefer_max=True)
+            hidden_pre_min[idx] = _update_extremum(hidden_pre_min[idx], value, vector, prefer_max=False)
+        for idx, value in enumerate(trace.output_mac_partials):
+            output_partial_max[idx] = _update_extremum(output_partial_max[idx], value, vector, prefer_max=True)
+            output_partial_min[idx] = _update_extremum(output_partial_min[idx], value, vector, prefer_max=False)
+
     for target_class in WITNESS_CLASSES:
-        witness: tuple[int, int, int, int] | None = None
-        for candidate in product(WITNESS_VALUES, repeat=INPUT_SIZE):
-            vector = tuple(candidate)
-            if vector in used:
-                continue
-            if _score_class(_score(vector, weights=weights)) == target_class:
-                witness = vector
-                break
-        if witness is None:
+        if target_class not in witnesses:
             raise ValueError(
                 "unable to synthesize required score-class witnesses "
                 f"for {target_class} from the deterministic candidate pool"
             )
-        witnesses[target_class] = witness
-        used.add(witness)
-    return witnesses
+
+    if max_score is None or min_score is None:
+        raise ValueError("deterministic candidate pool produced no vectors")
+
+    return CandidatePoolAnalysis(
+        score_witnesses=witnesses,
+        max_score_vector=max_score[1],
+        min_score_vector=min_score[1],
+        hidden_pre_max_vectors=tuple(entry[1] for entry in hidden_pre_max if entry is not None),
+        hidden_pre_min_vectors=tuple(entry[1] for entry in hidden_pre_min if entry is not None),
+        output_partial_max_vectors=tuple(entry[1] for entry in output_partial_max if entry is not None),
+        output_partial_min_vectors=tuple(entry[1] for entry in output_partial_min if entry is not None),
+    )
+
+
+def _build_boundary_vectors() -> tuple[tuple[int, int, int, int], ...]:
+    vectors: list[tuple[int, int, int, int]] = [(0, 0, 0, 0)]
+    vectors.extend(EXTREME_COMBINATION_VECTORS)
+    for lane in range(INPUT_SIZE):
+        for value in ARITHMETIC_BOUNDARY_VALUES:
+            sample = [0] * INPUT_SIZE
+            sample[lane] = value
+            vectors.append(tuple(sample))
+    return tuple(vectors)
+
+
+def _append_unique(
+    vectors: list[tuple[int, int, int, int]],
+    seen: set[tuple[int, int, int, int]],
+    vector: Sequence[int],
+) -> None:
+    normalized = _normalize_input(vector)
+    if normalized in seen:
+        return
+    seen.add(normalized)
+    vectors.append(normalized)
 
 
 def validate_witness_coverage(weights: dict[str, object]) -> None:
-    _synthesize_witness_vectors(weights)
+    _analyze_candidate_pool(weights)
 
 
 def _load_contract_weights() -> dict[str, object]:
@@ -117,12 +222,26 @@ def _load_contract_weights() -> dict[str, object]:
 
 
 def _build_scored_vectors(weights: dict[str, object]) -> tuple[tuple[tuple[int, int, int, int], int], ...]:
-    scored_vectors = [(vector, _score(vector, weights=weights)) for vector in SMOKE_VECTORS]
-    witness_vectors = _synthesize_witness_vectors(weights)
+    analysis = _analyze_candidate_pool(weights)
+    ordered_vectors: list[tuple[int, int, int, int]] = []
+    seen: set[tuple[int, int, int, int]] = set()
+
+    for vector in SMOKE_VECTORS:
+        _append_unique(ordered_vectors, seen, vector)
+    for vector in _build_boundary_vectors():
+        _append_unique(ordered_vectors, seen, vector)
+    for vector in (
+        analysis.max_score_vector,
+        analysis.min_score_vector,
+        *analysis.hidden_pre_max_vectors,
+        *analysis.hidden_pre_min_vectors,
+        *analysis.output_partial_max_vectors,
+        *analysis.output_partial_min_vectors,
+    ):
+        _append_unique(ordered_vectors, seen, vector)
     for witness_class in WITNESS_CLASSES:
-        witness = witness_vectors[witness_class]
-        scored_vectors.append((witness, _score(witness, weights=weights)))
-    return tuple(scored_vectors)
+        _append_unique(ordered_vectors, seen, analysis.score_witnesses[witness_class])
+    return tuple((vector, _score(vector, weights=weights)) for vector in ordered_vectors)
 
 
 def render_vectors(weights: dict[str, object]) -> str:

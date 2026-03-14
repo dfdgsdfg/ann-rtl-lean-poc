@@ -165,6 +165,34 @@ class FreezeContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unable to synthesize required score-class witnesses for zero"):
                 gen_vectors.check_witness_coverage()
 
+    def test_generated_vector_suite_covers_boundary_values_and_stress_vectors(self) -> None:
+        weights = gen_vectors._load_contract_weights()
+        scored_vectors = gen_vectors._build_scored_vectors(weights)
+        suite_vectors = {vector for vector, _ in scored_vectors}
+        analysis = gen_vectors._analyze_candidate_pool(weights)
+
+        self.assertGreaterEqual(len(scored_vectors), 32)
+
+        for lane in range(4):
+            for boundary_value in gen_vectors.ARITHMETIC_BOUNDARY_VALUES:
+                expected = [0] * 4
+                expected[lane] = boundary_value
+                self.assertIn(tuple(expected), suite_vectors)
+
+        for vector in gen_vectors.EXTREME_COMBINATION_VECTORS:
+            self.assertIn(vector, suite_vectors)
+
+        for vector in (
+            analysis.max_score_vector,
+            analysis.min_score_vector,
+            *analysis.hidden_pre_max_vectors,
+            *analysis.hidden_pre_min_vectors,
+            *analysis.output_partial_max_vectors,
+            *analysis.output_partial_min_vectors,
+            *(analysis.score_witnesses[score_class] for score_class in gen_vectors.WITNESS_CLASSES),
+        ):
+            self.assertIn(vector, suite_vectors)
+
     def test_write_text_files_preserves_existing_file_mode(self) -> None:
         target = self.temp_root / "contract" / "result" / "preserved.txt"
         target.parent.mkdir(parents=True, exist_ok=True)

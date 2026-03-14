@@ -102,6 +102,8 @@ class GeneratedControllerFlowTests(unittest.TestCase):
         )
         (self.temp_root / "rtl-formalize-synthesis" / "scripts").mkdir(parents=True, exist_ok=True)
         (self.temp_root / "rtl-formalize-synthesis" / "patches").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthesis" / "vendor" / "Sparkle").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "formalize").mkdir(parents=True, exist_ok=True)
         _write_executable(
             self.temp_root / "rtl-formalize-synthesis" / "scripts" / "prepare_sparkle.sh",
             """#!/usr/bin/env sh
@@ -137,6 +139,9 @@ if not root_module.exists():
     raise SystemExit("missing src/TinyMLPSparkle.lean")
 if not emit_module.exists():
     raise SystemExit("missing src/TinyMLPSparkle/Emit.lean")
+
+if len(sys.argv) >= 2 and sys.argv[1] == "clean":
+    raise SystemExit(0)
 
 if len(sys.argv) >= 2 and sys.argv[1] == "build":
     root_text = root_module.read_text(encoding="utf-8")
@@ -229,6 +234,7 @@ else:
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("rtl-formalize-synthesis/scripts/prepare_sparkle.sh", output)
         self.assertIn("cd rtl-formalize-synthesis && lake build", output)
         self.assertIn("cd rtl-formalize-synthesis && lake build TinyMLPSparkle.Emit", output)
         self.assertIn("iverilog -g2012 -s generated_controller_testbench", output)
@@ -262,13 +268,23 @@ else:
         self.assertEqual(summary["overall_result"], "pass")
         self.assertEqual(
             summary["claim_scope"],
-            "bounded equivalence through the parameterized sparkle_controller_wrapper boundary",
+            "bounded (82-cycle) equivalence through the parameterized sparkle_controller_wrapper boundary",
         )
         self.assertEqual(len(summary["results"]), 4)
         self.assertEqual(
             {result["family"] for result in summary["results"]},
             {"parameter_equivalence", "illegal_state_recovery"},
         )
+        self.assertEqual(
+            {result["name"]: result["depth"] for result in summary["results"]},
+            {
+                "generated_controller_equivalence_default": 82,
+                "generated_controller_equivalence_3x5": 82,
+                "generated_controller_equivalence_1x1": 82,
+                "generated_controller_illegal_state_recovery": 82,
+            },
+        )
+        self.assertTrue(all(" -t 82 " in result["commands"]["yosys_smtbmc"] for result in summary["results"]))
         self.assertTrue(
             (self.temp_root / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv").exists()
         )

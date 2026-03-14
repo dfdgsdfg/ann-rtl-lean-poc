@@ -227,7 +227,7 @@ The main human-facing outputs are:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke-vector set plus dedicated positive/zero/negative witnesses)
+- `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke suite, per-lane arithmetic-boundary sweep, and synthesized score/accumulator stress vectors)
 
 `contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 
@@ -317,7 +317,7 @@ make freeze-check
 make sim-vectors
 ```
 
-The freeze/vector-generation path now fails early if it cannot synthesize at least one positive, zero, and negative score witness from its deterministic candidate pool.
+The freeze/vector-generation path now fails early if it cannot synthesize positive, zero, and negative score witnesses from its deterministic candidate pool, and it emits a broader deterministic suite that exercises per-lane `-128/-127/+127` boundaries plus score/accumulator stress cases.
 
 Simulation commands:
 

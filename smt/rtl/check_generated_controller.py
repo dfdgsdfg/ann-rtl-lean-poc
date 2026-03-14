@@ -14,6 +14,8 @@ DEFAULT_SUMMARY = ROOT / "build" / "smt" / "generated_controller_summary.json"
 FORMAL_BUILD_DIR = ROOT / "build" / "smt" / "generated_controller"
 GENERATED_CONTROLLER_RTL = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
 GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller_wrapper.sv"
+FULL_TRANSACTION_DEPTH = 82
+ACCEPT_TO_DONE_LATENCY = 76
 
 
 @dataclass(frozen=True)
@@ -74,7 +76,7 @@ def formal_jobs() -> list[FormalJob]:
     illegal_state_harness = ROOT / "smt" / "rtl" / "controller" / "formal_generated_controller_illegal_state.sv"
     common_assumptions = [
         "Reset is held low for the first two cycles and then released permanently.",
-        "start, hidden_idx, and input_idx remain unconstrained after reset release.",
+        f"start, hidden_idx, and input_idx remain unconstrained after reset release across the {FULL_TRANSACTION_DEPTH}-cycle bounded window.",
         "The Sparkle wrapper maps active-low rst_n to the generated module's active-high rst input.",
     ]
     common_properties = [
@@ -86,54 +88,92 @@ def formal_jobs() -> list[FormalJob]:
         FormalJob(
             name="generated_controller_equivalence_default",
             family="parameter_equivalence",
-            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=4, HIDDEN_NEURONS=8.",
+            description=(
+                "Bounded equivalence between the hand-written controller and the Sparkle wrapper for "
+                "INPUT_NEURONS=4, HIDDEN_NEURONS=8 over a full post-reset transaction-sized window."
+            ),
             top="formal_generated_controller_equivalence",
             harness=equivalence_harness,
-            depth=12,
+            depth=FULL_TRANSACTION_DEPTH,
             assumptions=common_assumptions,
-            properties=common_properties,
+            properties=[
+                *common_properties,
+                (
+                    f"the checked window is long enough to include a full {ACCEPT_TO_DONE_LATENCY}-cycle "
+                    "controller transaction trace plus DONE hold/release slack"
+                ),
+            ],
             rtl_sources=common_sources,
             defines=["INPUT_NEURONS_VALUE=4", "HIDDEN_NEURONS_VALUE=8"],
         ),
         FormalJob(
             name="generated_controller_equivalence_3x5",
             family="parameter_equivalence",
-            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=3, HIDDEN_NEURONS=5.",
+            description=(
+                "Bounded equivalence between the hand-written controller and the Sparkle wrapper for "
+                "INPUT_NEURONS=3, HIDDEN_NEURONS=5 over a full post-reset transaction-sized window."
+            ),
             top="formal_generated_controller_equivalence",
             harness=equivalence_harness,
-            depth=12,
+            depth=FULL_TRANSACTION_DEPTH,
             assumptions=common_assumptions,
-            properties=common_properties,
+            properties=[
+                *common_properties,
+                (
+                    f"the checked window is long enough to include a full {ACCEPT_TO_DONE_LATENCY}-cycle "
+                    "controller transaction trace plus DONE hold/release slack"
+                ),
+            ],
             rtl_sources=common_sources,
             defines=["INPUT_NEURONS_VALUE=3", "HIDDEN_NEURONS_VALUE=5"],
         ),
         FormalJob(
             name="generated_controller_equivalence_1x1",
             family="parameter_equivalence",
-            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=1, HIDDEN_NEURONS=1.",
+            description=(
+                "Bounded equivalence between the hand-written controller and the Sparkle wrapper for "
+                "INPUT_NEURONS=1, HIDDEN_NEURONS=1 over a full post-reset transaction-sized window."
+            ),
             top="formal_generated_controller_equivalence",
             harness=equivalence_harness,
-            depth=12,
+            depth=FULL_TRANSACTION_DEPTH,
             assumptions=common_assumptions,
-            properties=common_properties,
+            properties=[
+                *common_properties,
+                (
+                    f"the checked window is long enough to include a full {ACCEPT_TO_DONE_LATENCY}-cycle "
+                    "controller transaction trace plus DONE hold/release slack"
+                ),
+            ],
             rtl_sources=common_sources,
             defines=["INPUT_NEURONS_VALUE=1", "HIDDEN_NEURONS_VALUE=1"],
         ),
         FormalJob(
             name="generated_controller_illegal_state_recovery",
             family="illegal_state_recovery",
-            description="Parity with the baseline controller when both designs begin from the same invalid 4-bit state encoding.",
+            description=(
+                "Parity with the baseline controller when both designs begin from the same invalid 4-bit "
+                "state encoding, recover in one cycle, and remain checked through the rest of the "
+                "full bounded window."
+            ),
             top="formal_generated_controller_illegal_state",
             harness=illegal_state_harness,
-            depth=2,
+            depth=FULL_TRANSACTION_DEPTH,
             assumptions=[
                 "rst_n is released from the initial step so the controller state is unconstrained before the first clock edge.",
                 "Both controllers are constrained to the same invalid state encoding in the first checked cycle.",
-                "start, hidden_idx, and input_idx remain unconstrained while invalid-state outputs and one-cycle recovery are checked.",
+                (
+                    "start, hidden_idx, and input_idx remain unconstrained while invalid-state outputs, "
+                    "one-cycle recovery, and the remaining post-recovery parity window are checked."
+                ),
             ],
             properties=[
                 "invalid-state outputs match the baseline busy/done/control semantics in the seeded cycle",
                 "the generated wrapper recovers to IDLE in one cycle exactly like the baseline controller",
+                (
+                    f"after the shared recovery step, controller parity continues to be checked through the "
+                    f"rest of the {FULL_TRANSACTION_DEPTH}-cycle bounded window"
+                ),
             ],
             rtl_sources=common_sources,
             defines=["INPUT_NEURONS_VALUE=4", "HIDDEN_NEURONS_VALUE=8"],
@@ -247,7 +287,10 @@ def main() -> int:
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "overall_result": overall_result,
-        "claim_scope": "bounded equivalence through the parameterized sparkle_controller_wrapper boundary",
+        "claim_scope": (
+            f"bounded ({FULL_TRANSACTION_DEPTH}-cycle) equivalence through the parameterized "
+            "sparkle_controller_wrapper boundary"
+        ),
         "tool": {
             "driver": "python3 smt/rtl/check_generated_controller.py",
             "yosys": str(args.yosys),

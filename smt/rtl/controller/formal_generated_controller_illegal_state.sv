@@ -42,7 +42,7 @@ module formal_generated_controller_illegal_state;
   logic       generated_busy;
 
   reg       past_valid;
-  reg [1:0] step;
+  reg [6:0] step;
 
   controller #(
     .INPUT_NEURONS(INPUT_NEURONS),
@@ -90,7 +90,7 @@ module formal_generated_controller_illegal_state;
 
   initial begin
     past_valid = 1'b0;
-    step = 2'd0;
+    step = 7'd0;
   end
 
   always @* begin
@@ -100,8 +100,8 @@ module formal_generated_controller_illegal_state;
 
   always @(posedge clk) begin
     past_valid <= 1'b1;
-    if (step < 2'd2) begin
-      step <= step + 2'd1;
+    if (step < 7'd82) begin
+      step <= step + 7'd1;
     end
 
     if (!past_valid) begin
@@ -111,7 +111,7 @@ module formal_generated_controller_illegal_state;
       assert (generated_busy);
       assert (!baseline_done);
       assert (!generated_done);
-    end else if (step == 2'd1) begin
+    end else if (step == 7'd1) begin
       assert (baseline_state == 4'd0);
       assert (generated_state == 4'd0);
       assert (!baseline_busy);

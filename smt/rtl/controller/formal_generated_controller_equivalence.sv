@@ -41,7 +41,7 @@ module formal_generated_controller_equivalence;
   logic       generated_busy;
 
   reg       past_valid;
-  reg [3:0] step;
+  reg [6:0] step;
 
   controller #(
     .INPUT_NEURONS(INPUT_NEURONS),
@@ -89,11 +89,11 @@ module formal_generated_controller_equivalence;
 
   initial begin
     past_valid = 1'b0;
-    step = 4'd0;
+    step = 7'd0;
   end
 
   always @* begin
-    if (step < 4'd2) begin
+    if (step < 7'd2) begin
       assume (!rst_n);
     end else begin
       assume (rst_n);
@@ -102,8 +102,8 @@ module formal_generated_controller_equivalence;
 
   always @(posedge clk) begin
     past_valid <= 1'b1;
-    if (step < 4'd12) begin
-      step <= step + 4'd1;
+    if (step < 7'd82) begin
+      step <= step + 7'd1;
     end
 
     assert (baseline_state == generated_state);
@@ -118,7 +118,7 @@ module formal_generated_controller_equivalence;
     assert (baseline_done == generated_done);
     assert (baseline_busy == generated_busy);
 
-    if (past_valid && (step < 4'd3)) begin
+    if (past_valid && (step < 7'd3)) begin
       assert (baseline_state == 4'd0);
       assert (generated_state == 4'd0);
     end

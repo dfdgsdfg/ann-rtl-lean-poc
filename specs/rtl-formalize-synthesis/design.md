@@ -288,6 +288,7 @@ This keeps the trust boundary honest:
 - proofs cover the pure spec and the Signal DSL implementation model
 - Sparkle-to-Verilog generation is trusted software
 - emitted RTL is still checked by simulation, SMT, and synthesis
+- the controller wrapper's unpacking of the generated packed bus is currently a documented manual contract checked by wrapper-boundary regressions, not by a separate Lean theorem
 
 ## 9. Main Risks
 
@@ -318,6 +319,9 @@ Correctness still depends on:
 - matching the frozen contract
 - matching the intended cycle schedule
 - validating the emitted design
+- preserving any documented wrapper packing contract at the generated-module boundary
+
+For the current controller-only artifact, the bit-layout contract between Sparkle `bundleAll!` packing order and the downstream SystemVerilog slices is intentionally accepted as a regression-checked risk unless a dedicated structural proof or packing-specific formal harness is added later.
 
 ## 10. Resolved Design Decisions
 

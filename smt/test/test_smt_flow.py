@@ -64,6 +64,10 @@ class SmtFlowTests(unittest.TestCase):
 
         self.assertEqual(rtl_summary["overall_result"], "pass")
         self.assertEqual(generated_summary["overall_result"], "pass")
+        self.assertEqual(
+            generated_summary["claim_scope"],
+            "bounded (82-cycle) equivalence through the parameterized sparkle_controller_wrapper boundary",
+        )
         self.assertEqual(contract_summary["arithmetic"]["accumulator_bits"], 32)
         self.assertEqual(overflow_summary["overall_result"], "pass")
         self.assertEqual(equivalence_summary["overall_result"], "pass")
@@ -72,6 +76,15 @@ class SmtFlowTests(unittest.TestCase):
             {"parameter_equivalence", "illegal_state_recovery"},
         )
         self.assertGreaterEqual(len(generated_summary["results"]), 4)
+        self.assertEqual(
+            {result["name"]: result["depth"] for result in generated_summary["results"]},
+            {
+                "generated_controller_equivalence_default": 82,
+                "generated_controller_equivalence_3x5": 82,
+                "generated_controller_equivalence_1x1": 82,
+                "generated_controller_illegal_state_recovery": 82,
+            },
+        )
         self.assertEqual(
             {result["family"] for result in rtl_summary["results"]},
             {"controller_interface", "boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},

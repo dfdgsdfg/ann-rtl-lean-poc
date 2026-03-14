@@ -406,6 +406,29 @@ def IndexInvariant (s : State) : Prop :=
 
 This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that ROM reads and hidden-register accesses never use out-of-range indices.
 
+### From Pure Lean to Generated RTL
+
+The proofs above close the gap between math, fixed-point arithmetic, and the repository's pure machine/temporal model. They do not, by themselves, prove that a Lean-hosted hardware DSL emits matching RTL.
+
+The controller-only `rtl-formalize-synthesis/` branch adds that missing middle layer:
+
+```mermaid
+graph LR
+    PURE["formalize/<br/>timedControlTrace"] --> REFINE["TinyMLPSparkle/Refinement.lean<br/>controller refinement theorem"]
+    REFINE --> DSL["TinyMLPSparkle/ControllerSignal.lean<br/>Sparkle Signal DSL controller"]
+    DSL --> EMIT["TinyMLPSparkle/Emit.lean<br/>generated Verilog"]
+    EMIT --> WRAP["sparkle_controller_wrapper.sv<br/>stable downstream boundary"]
+    WRAP --> CHECK["simulation + SMT<br/>wrapper-boundary checks"]
+```
+
+- [`rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean) expresses the controller as a Sparkle Signal DSL design.
+- [`rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) proves that this Signal DSL controller refines the pure controller trace from `formalize/`.
+- [`rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean) emits the generated controller RTL to [`experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv).
+
+At the single-step level, `controllerPhaseNextComb_refines_timedControlStep` shows that the Sparkle controller's next-phase logic agrees with the repository's timed controller step. At the sampled interface level, `canonicalControllerView_refines_timedControlTrace` shows that the externally visible controller outputs match `timedControlTrace` cycle by cycle.
+
+So the repository now closes the pure Lean -> Signal DSL gap for the controller milestone. The remaining trusted boundary is Sparkle's Verilog backend and the thin compatibility wrapper [`experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv). Those are validated by generated-controller simulation and SMT equivalence checks, not by Lean proof alone.
+
 ## 5. Simulation
 
 ### How Test Vectors Are Generated
@@ -416,10 +439,13 @@ The freeze pipeline generates `simulations/shared/test_vectors.mem` from the fro
 [32-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]
 ```
 
-The generator synthesizes vectors that cover:
+The generator synthesizes a deterministic suite that covers:
 - positive score (out = 1)
 - zero score (out = 0)
 - negative score (out = 0)
+- per-lane arithmetic boundaries at `-128`, `-127`, and `+127`
+- extreme sign-pattern combinations such as all-min, all-max, and alternating min/max lanes
+- score and accumulator stress vectors chosen from a deterministic candidate pool
 
 If any class cannot be synthesized, generation fails. This is a contract-level requirement: the frozen weights must be able to produce all three score classes.
 
@@ -445,7 +471,7 @@ The SystemVerilog testbench (`simulations/rtl/testbench.sv`) drives the DUT and 
 - Output guard cycle: MAC_OUTPUT with `do_mac_output=0` and `input_idx=8`
 - BIAS_OUTPUT to DONE visibility transition
 
-**Score coverage**: the suite must include at least one positive, one zero, and one negative score case.
+**Suite coverage**: the suite must include at least one positive, one zero, and one negative score case, must hit the per-lane `-128/-127/+127` input boundaries, and must traverse every hidden/output ROM and bias path during simulation.
 
 The testbench samples on `negedge clk` to observe post-update register values, avoiding races with the `posedge` update.
 
@@ -515,7 +541,7 @@ Each pair is connected differently:
 
 - **Python <-> Lean**: same arithmetic rules, same weights, same wraparound behavior. The Lean `mlpFixed` is a direct Lean transliteration of the Python reference. The bridge theorem `mlpFixed_eq_mlpSpec` then connects fixed-point to math.
 
-- **Lean <-> RTL**: the Lean `step` function mirrors RTL state transitions. The machine proof (`rtl_correct`) shows that `run 76` produces the same output as `mlpFixed`. The temporal proofs show that the cycle-level timing matches the RTL handshake contract.
+- **Lean <-> RTL**: for the hand-written baseline, the Lean `step` function mirrors RTL state transitions. The machine proof (`rtl_correct`) shows that `run 76` produces the same output as `mlpFixed`, and the temporal proofs show that the cycle-level timing matches the RTL handshake contract. For the generated-controller Sparkle branch, the repository also proves a pure-model -> Signal-DSL refinement and then checks the emitted RTL separately at the wrapper boundary with simulation and SMT.
 
 - **Python <-> RTL**: simulation. The testbench feeds the same inputs and expected outputs (generated from the Python model) to the RTL DUT and checks agreement.
 

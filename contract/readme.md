@@ -27,7 +27,7 @@ Related provenance lives in `ann/results/selected_run.json`. That file points to
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
 
-`simulations/shared/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a fixed deterministic smoke-vector set plus one synthesized positive, zero, and negative witness. A separate strict witness check can still verify that the deterministic candidate pool can synthesize those required score classes for the current frozen model.
+`simulations/shared/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a deterministic suite that combines the fixed smoke vectors, per-lane `-128/-127/+127` arithmetic-boundary sweeps, extreme sign-pattern combinations, and search-pool synthesized score/accumulator stress vectors. A separate strict witness check still verifies that the deterministic candidate pool can synthesize the required positive, zero, and negative score classes for the current frozen model.
 
 ## How To Use It
 

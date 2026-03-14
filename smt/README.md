@@ -5,7 +5,7 @@ This directory implements the current SMT scope described in [`specs/smt/require
 Current scope:
 
 - RTL-backed control proofs for [`rtl/src/controller.sv`](../rtl/src/controller.sv) and [`rtl/src/mlp_core.sv`](../rtl/src/mlp_core.sv)
-- bounded wrapper-equivalence and invalid-state recovery proofs for the Sparkle-generated controller experiment
+- bounded wrapper-equivalence and invalid-state recovery proofs for the Sparkle-generated controller experiment over an 82-cycle post-reset window
 - solver-backed overflow and width checks over the frozen contract in [`contract/result/weights.json`](../contract/result/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs

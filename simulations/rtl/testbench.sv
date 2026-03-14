@@ -7,6 +7,7 @@ module testbench;
   localparam logic [3:0] IDLE        = 4'd0;
   localparam logic [3:0] LOAD_INPUT  = 4'd1;
   localparam logic [3:0] MAC_HIDDEN  = 4'd2;
+  localparam logic [3:0] BIAS_HIDDEN = 4'd3;
   localparam logic [3:0] NEXT_HIDDEN = 4'd5;
   localparam logic [3:0] MAC_OUTPUT  = 4'd6;
   localparam logic [3:0] BIAS_OUTPUT = 4'd7;
@@ -38,7 +39,17 @@ module testbench;
   integer zero_cases;
   integer negative_cases;
   integer start_pulse_cases;
+  integer lane_idx;
+  integer hidden_cov_idx;
+  integer input_cov_idx;
   bit stop_run;
+  bit boundary_neg128_seen [0:3];
+  bit boundary_neg127_seen [0:3];
+  bit boundary_pos127_seen [0:3];
+  bit hidden_weight_seen [0:7][0:3];
+  bit hidden_bias_seen [0:7];
+  bit output_weight_seen [0:7];
+  bit output_bias_seen;
 
   mlp_core dut (
     .clk(clk),
@@ -65,6 +76,35 @@ module testbench;
       in1 = packed_word[23:16];
       in2 = packed_word[15:8];
       in3 = packed_word[7:0];
+    end
+  endtask
+
+  task automatic record_suite_input_boundaries(input logic [31:0] packed_word);
+    logic signed [7:0] lane0_value;
+    logic signed [7:0] lane1_value;
+    logic signed [7:0] lane2_value;
+    logic signed [7:0] lane3_value;
+    begin
+      lane0_value = packed_word[31:24];
+      lane1_value = packed_word[23:16];
+      lane2_value = packed_word[15:8];
+      lane3_value = packed_word[7:0];
+
+      if (lane0_value == 8'sh80) boundary_neg128_seen[0] = 1'b1;
+      if (lane0_value == -8'sd127) boundary_neg127_seen[0] = 1'b1;
+      if (lane0_value == 8'sd127) boundary_pos127_seen[0] = 1'b1;
+
+      if (lane1_value == 8'sh80) boundary_neg128_seen[1] = 1'b1;
+      if (lane1_value == -8'sd127) boundary_neg127_seen[1] = 1'b1;
+      if (lane1_value == 8'sd127) boundary_pos127_seen[1] = 1'b1;
+
+      if (lane2_value == 8'sh80) boundary_neg128_seen[2] = 1'b1;
+      if (lane2_value == -8'sd127) boundary_neg127_seen[2] = 1'b1;
+      if (lane2_value == 8'sd127) boundary_pos127_seen[2] = 1'b1;
+
+      if (lane3_value == 8'sh80) boundary_neg128_seen[3] = 1'b1;
+      if (lane3_value == -8'sd127) boundary_neg127_seen[3] = 1'b1;
+      if (lane3_value == 8'sd127) boundary_pos127_seen[3] = 1'b1;
     end
   endtask
 
@@ -218,6 +258,7 @@ module testbench;
       end
 
       drive_inputs(packed_inputs);
+      record_suite_input_boundaries(packed_inputs);
       start_transaction(hold_done);
 
       prev_state = dut.state;
@@ -261,6 +302,27 @@ module testbench;
         if (busy !== 1'b1 && done !== 1'b1) begin
           $display("FAIL idx=%0d latency=%0d: busy deasserted during active computation", vector_idx, latency);
           handshake_errors = handshake_errors + 1;
+        end
+
+        if (prev_state == MAC_HIDDEN &&
+            prev_do_mac_hidden === 1'b1 &&
+            prev_hidden_idx < 4'd8 &&
+            prev_input_idx < 4'd4) begin
+          hidden_weight_seen[prev_hidden_idx[2:0]][prev_input_idx[1:0]] = 1'b1;
+        end
+
+        if (prev_state == BIAS_HIDDEN && prev_hidden_idx < 4'd8) begin
+          hidden_bias_seen[prev_hidden_idx[2:0]] = 1'b1;
+        end
+
+        if (prev_state == MAC_OUTPUT &&
+            prev_do_mac_output === 1'b1 &&
+            prev_input_idx < 4'd8) begin
+          output_weight_seen[prev_input_idx[2:0]] = 1'b1;
+        end
+
+        if (prev_state == BIAS_OUTPUT) begin
+          output_bias_seen = 1'b1;
         end
 
         if (check_boundaries) begin
@@ -325,6 +387,18 @@ module testbench;
         if (latency != EXPECTED_CYCLES) begin
           $display("FAIL idx=%0d inputs=%h: expected latency=%0d got=%0d", vector_idx, packed_inputs, EXPECTED_CYCLES, latency);
           latency_errors = latency_errors + 1;
+        end
+
+        if (dut.acc_reg !== expected_score) begin
+          $display(
+            "FAIL idx=%0d inputs=%h: expected final acc_reg=%0d got=%0d latency=%0d",
+            vector_idx,
+            packed_inputs,
+            expected_score,
+            dut.acc_reg,
+            latency
+          );
+          output_errors = output_errors + 1;
         end
 
         if (out_bit !== expected_out) begin
@@ -444,6 +518,21 @@ module testbench;
     negative_cases = 0;
     start_pulse_cases = 0;
     stop_run = 1'b0;
+    output_bias_seen = 1'b0;
+
+    for (lane_idx = 0; lane_idx < 4; lane_idx = lane_idx + 1) begin
+      boundary_neg128_seen[lane_idx] = 1'b0;
+      boundary_neg127_seen[lane_idx] = 1'b0;
+      boundary_pos127_seen[lane_idx] = 1'b0;
+    end
+
+    for (hidden_cov_idx = 0; hidden_cov_idx < 8; hidden_cov_idx = hidden_cov_idx + 1) begin
+      hidden_bias_seen[hidden_cov_idx] = 1'b0;
+      output_weight_seen[hidden_cov_idx] = 1'b0;
+      for (input_cov_idx = 0; input_cov_idx < 4; input_cov_idx = input_cov_idx + 1) begin
+        hidden_weight_seen[hidden_cov_idx][input_cov_idx] = 1'b0;
+      end
+    end
 
     $readmemh("simulations/shared/test_vectors.mem", vectors);
 
@@ -482,6 +571,44 @@ module testbench;
       end
       if (start_pulse_cases == 0) begin
         $display("FAIL suite: missing active-window start pulse regression");
+        coverage_errors = coverage_errors + 1;
+      end
+      for (lane_idx = 0; lane_idx < 4; lane_idx = lane_idx + 1) begin
+        if (!boundary_neg128_seen[lane_idx]) begin
+          $display("FAIL suite: missing -128 boundary coverage on input lane %0d", lane_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+        if (!boundary_neg127_seen[lane_idx]) begin
+          $display("FAIL suite: missing -127 boundary coverage on input lane %0d", lane_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+        if (!boundary_pos127_seen[lane_idx]) begin
+          $display("FAIL suite: missing +127 boundary coverage on input lane %0d", lane_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+      end
+      for (hidden_cov_idx = 0; hidden_cov_idx < 8; hidden_cov_idx = hidden_cov_idx + 1) begin
+        for (input_cov_idx = 0; input_cov_idx < 4; input_cov_idx = input_cov_idx + 1) begin
+          if (!hidden_weight_seen[hidden_cov_idx][input_cov_idx]) begin
+            $display(
+              "FAIL suite: missing hidden weight ROM traversal hidden_idx=%0d input_idx=%0d",
+              hidden_cov_idx,
+              input_cov_idx
+            );
+            coverage_errors = coverage_errors + 1;
+          end
+        end
+        if (!hidden_bias_seen[hidden_cov_idx]) begin
+          $display("FAIL suite: missing hidden bias traversal hidden_idx=%0d", hidden_cov_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+        if (!output_weight_seen[hidden_cov_idx]) begin
+          $display("FAIL suite: missing output weight ROM traversal input_idx=%0d", hidden_cov_idx);
+          coverage_errors = coverage_errors + 1;
+        end
+      end
+      if (!output_bias_seen) begin
+        $display("FAIL suite: missing output bias traversal");
         coverage_errors = coverage_errors + 1;
       end
     end else begin

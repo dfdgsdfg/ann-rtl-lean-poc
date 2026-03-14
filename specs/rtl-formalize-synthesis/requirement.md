@@ -196,6 +196,7 @@ The minimum required statements are:
 - which controller-level properties are proved about the Sparkle Signal DSL model
 - which properties are assumed about Sparkle's code generator
 - whether any equivalence result is a theorem about the Signal DSL model, a simulation result about the emitted RTL, or both
+- whether any wrapper-level bit-packing contract is proved directly or only regression-checked at the wrapper boundary
 - whether the claim being made is controller-only, primitive-level, or full-core
 
 Required for the controller-only milestone:
@@ -206,6 +207,7 @@ Required for the controller-only milestone:
 Desired but not mandatory for the first milestone:
 
 - a structured argument that the generated RTL preserves the Signal DSL semantics relied on by that theorem
+- a direct structural check for any manual wrapper unpacking of generated packed buses, if the emitted module boundary is not already field-named
 
 ## 10. Acceptance Criteria
 
