@@ -18,7 +18,7 @@ CONTRACT_RESULT_DIR = ROOT / "contract" / "result"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 RTL_SRC_DIR = ROOT / "rtl" / "src"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
-SYNTHESIS_CONTROLLER_DIR = ROOT / "synthesis" / "controller"
+RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
 RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "generated-rtl-vs-rtl.md"
@@ -167,6 +167,151 @@ module controller_spot_core (
 endmodule
 """
 
+ASYNC_RESET_BRIDGE_TB = """\
+`timescale 1ns/1ps
+
+module async_reset_bridge_tb;
+  logic clk;
+  logic rst_n;
+  logic start;
+  logic [3:0] hidden_idx;
+  logic [3:0] input_idx;
+
+  logic [3:0] baseline_state;
+  logic       baseline_load_input;
+  logic       baseline_clear_acc;
+  logic       baseline_do_mac_hidden;
+  logic       baseline_do_bias_hidden;
+  logic       baseline_do_act_hidden;
+  logic       baseline_advance_hidden;
+  logic       baseline_do_mac_output;
+  logic       baseline_do_bias_output;
+  logic       baseline_done;
+  logic       baseline_busy;
+
+  logic [3:0] generated_state;
+  logic       generated_load_input;
+  logic       generated_clear_acc;
+  logic       generated_do_mac_hidden;
+  logic       generated_do_bias_hidden;
+  logic       generated_do_act_hidden;
+  logic       generated_advance_hidden;
+  logic       generated_do_mac_output;
+  logic       generated_do_bias_output;
+  logic       generated_done;
+  logic       generated_busy;
+
+  controller baseline_controller (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start),
+    .hidden_idx(hidden_idx),
+    .input_idx(input_idx),
+    .state(baseline_state),
+    .load_input(baseline_load_input),
+    .clear_acc(baseline_clear_acc),
+    .do_mac_hidden(baseline_do_mac_hidden),
+    .do_bias_hidden(baseline_do_bias_hidden),
+    .do_act_hidden(baseline_do_act_hidden),
+    .advance_hidden(baseline_advance_hidden),
+    .do_mac_output(baseline_do_mac_output),
+    .do_bias_output(baseline_do_bias_output),
+    .done(baseline_done),
+    .busy(baseline_busy)
+  );
+
+  controller_spot_compat generated_controller (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start),
+    .hidden_idx(hidden_idx),
+    .input_idx(input_idx),
+    .state(generated_state),
+    .load_input(generated_load_input),
+    .clear_acc(generated_clear_acc),
+    .do_mac_hidden(generated_do_mac_hidden),
+    .do_bias_hidden(generated_do_bias_hidden),
+    .do_act_hidden(generated_do_act_hidden),
+    .advance_hidden(generated_advance_hidden),
+    .do_mac_output(generated_do_mac_output),
+    .do_bias_output(generated_do_bias_output),
+    .done(generated_done),
+    .busy(generated_busy)
+  );
+
+  always #5 clk = ~clk;
+
+  task automatic check_equal(input string label);
+    begin
+      if (baseline_state !== generated_state ||
+          baseline_load_input !== generated_load_input ||
+          baseline_clear_acc !== generated_clear_acc ||
+          baseline_do_mac_hidden !== generated_do_mac_hidden ||
+          baseline_do_bias_hidden !== generated_do_bias_hidden ||
+          baseline_do_act_hidden !== generated_do_act_hidden ||
+          baseline_advance_hidden !== generated_advance_hidden ||
+          baseline_do_mac_output !== generated_do_mac_output ||
+          baseline_do_bias_output !== generated_do_bias_output ||
+          baseline_done !== generated_done ||
+          baseline_busy !== generated_busy) begin
+        $display(
+          "FAIL %s state=%0d/%0d load=%0d/%0d clear=%0d/%0d mac_h=%0d/%0d bias_h=%0d/%0d act_h=%0d/%0d next_h=%0d/%0d mac_o=%0d/%0d bias_o=%0d/%0d done=%0d/%0d busy=%0d/%0d",
+          label,
+          baseline_state, generated_state,
+          baseline_load_input, generated_load_input,
+          baseline_clear_acc, generated_clear_acc,
+          baseline_do_mac_hidden, generated_do_mac_hidden,
+          baseline_do_bias_hidden, generated_do_bias_hidden,
+          baseline_do_act_hidden, generated_do_act_hidden,
+          baseline_advance_hidden, generated_advance_hidden,
+          baseline_do_mac_output, generated_do_mac_output,
+          baseline_do_bias_output, generated_do_bias_output,
+          baseline_done, generated_done,
+          baseline_busy, generated_busy
+        );
+        $finish_and_return(1);
+      end
+    end
+  endtask
+
+  initial begin
+    clk = 1'b0;
+    rst_n = 1'b0;
+    start = 1'b0;
+    hidden_idx = 4'd0;
+    input_idx = 4'd0;
+
+    repeat (2) @(negedge clk);
+    rst_n = 1'b1;
+    @(negedge clk);
+    check_equal("post_reset_idle");
+
+    start = 1'b1;
+    @(negedge clk);
+    check_equal("accepted_start");
+
+    start = 1'b0;
+    input_idx = 4'd0;
+    @(negedge clk);
+    check_equal("mac_hidden_before_async_pulse");
+
+    #1 rst_n = 1'b0;
+    #1 check_equal("during_async_reset_pulse");
+    #1 rst_n = 1'b1;
+    #1 check_equal("after_async_reset_pulse_before_clock");
+
+    @(negedge clk);
+    check_equal("after_sampled_async_reset");
+
+    @(negedge clk);
+    check_equal("steady_idle_after_async_reset");
+
+    $display("PASS async reset bridge");
+    $finish;
+  end
+endmodule
+"""
+
 
 def _write_executable(path: Path, text: str) -> None:
     path.write_text(textwrap.dedent(text), encoding="utf-8")
@@ -186,7 +331,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
         shutil.copytree(RTL_SRC_DIR, self.temp_root / "rtl" / "src", dirs_exist_ok=True)
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
-        shutil.copytree(SYNTHESIS_CONTROLLER_DIR, self.temp_root / "synthesis" / "controller", dirs_exist_ok=True)
+        shutil.copytree(RTL_SYNTHESIS_CONTROLLER_DIR, self.temp_root / "rtl-synthesis" / "controller", dirs_exist_ok=True)
         shutil.copytree(
             RTL_SYNTHESIS_EXPERIMENT_DIR,
             self.temp_root / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot",
@@ -298,7 +443,7 @@ else:
         ]
 
     def test_controller_tlsf_records_exact_schedule_v1_assumptions(self) -> None:
-        tlsf_path = ROOT / "synthesis" / "controller" / "controller.tlsf"
+        tlsf_path = ROOT / "rtl-synthesis" / "controller" / "controller.tlsf"
         tlsf_text = tlsf_path.read_text(encoding="utf-8")
 
         for signal in (
@@ -332,6 +477,79 @@ else:
         ):
             self.assertIn(snippet, tlsf_text)
 
+    def test_wrapper_source_records_async_reset_bridge(self) -> None:
+        wrapper_path = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+        wrapper_text = wrapper_path.read_text(encoding="utf-8")
+
+        for snippet in (
+            "logic core_reset;",
+            "logic reset_pending;",
+            "always_ff @(posedge clk or negedge rst_n) begin",
+            "assign core_reset = !rst_n || reset_pending;",
+            "if (core_reset) begin",
+        ):
+            self.assertIn(snippet, wrapper_text)
+
+    def test_formal_harness_records_exact_schedule_v1_counter_assumptions(self) -> None:
+        harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_controller_spot_equivalence.sv"
+        harness_text = harness_path.read_text(encoding="utf-8")
+
+        for snippet in (
+            "logic history_valid;",
+            "logic [3:0] prev_baseline_state;",
+            "assume (input_idx <= INPUT_NEURONS_4B);",
+            "assume (input_idx <= HIDDEN_NEURONS_4B);",
+            "if (history_valid && prev_rst_n && prev_baseline_state == DONE && !prev_start) begin",
+            "if (prev_input_idx < INPUT_NEURONS_4B) begin",
+            "assume (input_idx == prev_input_idx + 4'd1);",
+            "if (prev_hidden_idx == LAST_HIDDEN_IDX) begin",
+        ):
+            self.assertIn(snippet, harness_text)
+
+    def test_wrapper_matches_baseline_on_short_async_reset_pulse(self) -> None:
+        for tool in ("iverilog", "vvp"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"missing required tool: {tool}")
+
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        fake_core_path = generated_dir / "controller_spot_core.sv"
+        fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
+
+        tb_path = self.temp_root / "build" / "async_reset_bridge_tb.sv"
+        tb_path.write_text(textwrap.dedent(ASYNC_RESET_BRIDGE_TB), encoding="utf-8")
+        out_path = self.temp_root / "build" / "async_reset_bridge_tb.out"
+
+        compile_result = subprocess.run(
+            [
+                "iverilog",
+                "-g2012",
+                "-o",
+                str(out_path),
+                str(tb_path),
+                str(self.temp_root / "rtl" / "src" / "controller.sv"),
+                str(self.temp_root / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
+                str(fake_core_path),
+            ],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        compile_output = compile_result.stdout + compile_result.stderr
+        self.assertEqual(compile_result.returncode, 0, msg=compile_output)
+
+        run_result = subprocess.run(
+            ["vvp", str(out_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        run_output = run_result.stdout + run_result.stderr
+        self.assertEqual(run_result.returncode, 0, msg=run_output)
+        self.assertIn("PASS async reset bridge", run_output)
+
     def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
             ["make", "rtl-synthesis", *self._tool_args()],
@@ -352,7 +570,10 @@ else:
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["overall_result"], "pass")
         self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
-        self.assertEqual(summary["claim_scope"], "controller-only equivalence through the raw controller module boundary")
+        self.assertEqual(
+            summary["claim_scope"],
+            "bounded (12-cycle) raw controller-interface equivalence under exact_schedule_v1 assumptions",
+        )
 
         generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())

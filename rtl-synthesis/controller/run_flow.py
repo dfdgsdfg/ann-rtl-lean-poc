@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DOMAIN_ROOT = ROOT / "synthesis" / "controller"
+DOMAIN_ROOT = ROOT / "rtl-synthesis" / "controller"
 DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthesis" / "spot"
 DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
 
@@ -60,6 +60,10 @@ PHASE_OUTPUTS = [
 ]
 
 EQUIVALENCE_DEPTH = 12
+CLAIM_SCOPE = (
+    f"bounded ({EQUIVALENCE_DEPTH}-cycle) raw controller-interface equivalence "
+    "under exact_schedule_v1 assumptions"
+)
 
 
 @dataclass
@@ -433,7 +437,7 @@ def main() -> int:
         "overall_result": overall_result,
         "assumption_profile": "exact_schedule_v1",
         "tool": {
-            "driver": "python3 synthesis/controller/run_flow.py",
+            "driver": "python3 rtl-synthesis/controller/run_flow.py",
             "ltlsynt": str(args.ltlsynt),
             "ltlsynt_version": ltlsynt_version,
             "syfco": str(args.syfco),
@@ -445,11 +449,11 @@ def main() -> int:
             "solver": str(args.solver),
             "solver_version": solver_version,
             "command": (
-                f"python3 synthesis/controller/run_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
+                f"python3 rtl-synthesis/controller/run_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
                 f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
             ),
         },
-        "claim_scope": "controller-only equivalence through the raw controller module boundary",
+        "claim_scope": CLAIM_SCOPE,
         "sources": {
             "tlsf": relative(TLSF_SOURCE),
             "baseline_controller": relative(BASELINE_CONTROLLER),

@@ -64,8 +64,19 @@ class GeneratedControllerFlowTests(unittest.TestCase):
             self.temp_root / "smt" / "rtl" / "controller",
             dirs_exist_ok=True,
         )
-        (self.temp_root / "rtl-formalize-synthsis" / "TinyMLP").mkdir(parents=True, exist_ok=True)
         (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP.lean").write_text(
+            "import TinyMLP.Types\\nimport TinyMLP.ControllerSignal\\n",
+            encoding="utf-8",
+        )
+        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "Types.lean").write_text(
+            "-- fake types module\\n",
+            encoding="utf-8",
+        )
+        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "ControllerSignal.lean").write_text(
+            "-- fake controller module\\n",
+            encoding="utf-8",
+        )
         (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "Emit.lean").write_text(
             "-- fake emit entrypoint\n",
             encoding="utf-8",
@@ -86,14 +97,27 @@ import pathlib
 import sys
 
 cwd = pathlib.Path.cwd()
+pkg_src = cwd / "src"
+root_module = pkg_src / "TinyMLP.lean"
+emit_module = pkg_src / "TinyMLP" / "Emit.lean"
+artifact = cwd.parent / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
+
+if not root_module.exists():
+    raise SystemExit("missing src/TinyMLP.lean")
+if not emit_module.exists():
+    raise SystemExit("missing src/TinyMLP/Emit.lean")
 
 if len(sys.argv) >= 2 and sys.argv[1] == "build":
+    root_text = root_module.read_text(encoding="utf-8")
+    if "import TinyMLP.Emit" in root_text:
+        raise SystemExit("build should not import TinyMLP.Emit")
     raise SystemExit(0)
 
 if len(sys.argv) >= 4 and sys.argv[1] == "env" and sys.argv[2] == "lean":
-    out_path = cwd.parent / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text({FAKE_GENERATED_CONTROLLER!r}, encoding="utf-8")
+    if pathlib.Path(sys.argv[3]) != pathlib.Path("src/TinyMLP/Emit.lean"):
+        raise SystemExit(f"unexpected emit entrypoint: {{sys.argv[3]}}")
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text({FAKE_GENERATED_CONTROLLER!r}, encoding="utf-8")
     raise SystemExit(0)
 
 raise SystemExit(f"unexpected lake invocation: {{sys.argv}}")
@@ -149,6 +173,23 @@ else:
         env = dict(**os.environ)
         env["PATH"] = f"{self.tools_dir}{os.pathsep}{env.get('PATH', '')}"
         return env
+
+    def test_make_rtl_formalize_build_does_not_emit_artifact(self) -> None:
+        artifact_path = self.temp_root / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
+        self.assertFalse(artifact_path.exists())
+
+        result = subprocess.run(
+            ["make", "rtl-formalize-synthsis-build"],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            env=self._make_env(),
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertFalse(artifact_path.exists(), msg=output)
 
     def test_make_smt_generated_controller_writes_multi_job_summary(self) -> None:
         result = subprocess.run(

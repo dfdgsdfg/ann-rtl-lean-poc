@@ -108,7 +108,7 @@ Relevant docs:
 - [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
 - [experiments/generated-rtl/sparkle/README.md](experiments/generated-rtl/sparkle/README.md)
 - [experiments/generated-rtl/rtl-synthesis/spot/README.md](experiments/generated-rtl/rtl-synthesis/spot/README.md)
-- [synthesis/controller/README.md](synthesis/controller/README.md)
+- [rtl-synthesis/controller/README.md](rtl-synthesis/controller/README.md)
 - [specs/rtl-synthesis/requirement.md](specs/rtl-synthesis/requirement.md)
 - [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
 

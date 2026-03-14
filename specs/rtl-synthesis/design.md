@@ -200,7 +200,7 @@ controller contract
 Recommended repository shape for a future implementation:
 
 ```text
-synthesis/
+rtl-synthesis/
   controller/
     controller.tlsf
     README.md

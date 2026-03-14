@@ -5,8 +5,8 @@ This directory contains the committed source inputs for the `rtl-synthesis` cont
 Stable source assets:
 
 - `controller.tlsf`: TLSF contract for the controller phase machine
-- `formal/formal_controller_spot_equivalence.sv`: raw-port equivalence harness against `rtl/src/controller.sv`
-- `run_flow.py`: driver that runs `ltlsynt`, translates AIGER with Yosys, and checks formal equivalence
+- `formal/formal_controller_spot_equivalence.sv`: bounded exact-schedule raw-port equivalence harness against `rtl/src/controller.sv`
+- `run_flow.py`: driver that runs `ltlsynt`, translates AIGER with Yosys, and checks bounded formal equivalence
 
 The committed TLSF uses the `exact_schedule_v1` assumption profile:
 
@@ -15,6 +15,8 @@ The committed TLSF uses the `exact_schedule_v1` assumption profile:
 - explicit hidden-neuron ordinal bits for the concrete `0 -> 1 -> ... -> 7` schedule
 - explicit output MAC position bits for the concrete `0 -> 1 -> ... -> 7 -> 8` schedule
 - restart assumptions for `LOAD_INPUT`, hidden-neuron rollover, output entry, and `DONE` hold/release behavior
+
+The current formal result recorded by `run_flow.py` is a bounded `12`-cycle raw controller-interface equivalence check under those `exact_schedule_v1` assumptions.
 
 Generated outputs are written under `build/rtl-synthesis/spot/`.
 

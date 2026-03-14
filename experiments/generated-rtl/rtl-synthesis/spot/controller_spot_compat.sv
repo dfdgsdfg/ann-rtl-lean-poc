@@ -32,7 +32,9 @@ module controller_spot_compat #(
   localparam logic [3:0] HIDDEN_NEURONS_4B = HIDDEN_NEURONS[3:0];
   localparam logic [3:0] LAST_HIDDEN_IDX = HIDDEN_NEURONS_4B - 4'd1;
 
-  logic reset;
+  // Latch any async reset pulse until the synthesized core samples it on clk.
+  logic core_reset;
+  logic reset_pending;
   logic hidden_mac_active;
   logic hidden_mac_guard;
   logic last_hidden;
@@ -62,7 +64,15 @@ module controller_spot_compat #(
   logic phase_bias_output;
   logic phase_done;
 
-  assign reset = !rst_n;
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      reset_pending <= 1'b1;
+    end else begin
+      reset_pending <= 1'b0;
+    end
+  end
+
+  assign core_reset = !rst_n || reset_pending;
   assign hidden_mac_active = (input_idx < INPUT_NEURONS_4B);
   assign hidden_mac_guard = (input_idx == INPUT_NEURONS_4B);
   assign last_hidden = (hidden_idx == LAST_HIDDEN_IDX);
@@ -75,7 +85,7 @@ module controller_spot_compat #(
   controller_spot_core u_controller_spot_core (
     .clk(clk),
     .start(start),
-    .reset(reset),
+    .reset(core_reset),
     .hidden_mac_active(hidden_mac_active),
     .hidden_mac_guard(hidden_mac_guard),
     .last_hidden(last_hidden),
@@ -103,7 +113,7 @@ module controller_spot_compat #(
   );
 
   always_comb begin
-    if (!rst_n) begin
+    if (core_reset) begin
       phase_idle = 1'b1;
       phase_load_input = 1'b0;
       phase_mac_hidden = 1'b0;

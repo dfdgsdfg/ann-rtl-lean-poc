@@ -130,7 +130,7 @@ clean-sim-generated-controller:
 	rm -rf $(GENERATED_CONTROLLER_SIM_BUILD_DIR)
 
 rtl-synthesis: rtl-synthesis-check-tools
-	python3 synthesis/controller/run_flow.py --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --yosys $(RTL_SYNTHESIS_YOSYS) --smtbmc $(RTL_SYNTHESIS_SMTBMC) --solver $(RTL_SYNTHESIS_Z3) --summary $(RTL_SYNTHESIS_SUMMARY)
+	python3 rtl-synthesis/controller/run_flow.py --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --yosys $(RTL_SYNTHESIS_YOSYS) --smtbmc $(RTL_SYNTHESIS_SMTBMC) --solver $(RTL_SYNTHESIS_Z3) --summary $(RTL_SYNTHESIS_SUMMARY)
 
 rtl-synthesis-check-tools:
 	@command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_LTLSYNT)"; exit 1; }
