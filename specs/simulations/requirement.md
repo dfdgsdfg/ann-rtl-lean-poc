@@ -39,12 +39,12 @@ The simulation domain must define support for these RTL implementation branches:
 
 - `rtl/`: canonical full-core simulation support against the shared vector-driven `mlp_core` bench
 - `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath and vector format while replacing the controller implementation
-- `rtl-formalize-synthesis`: at minimum, controller-only simulation support against the `rtl/src/controller.sv` boundary; any claim of primitive-path or full-core support must be declared separately and validated with the matching bench
+- `rtl-formalize-synthesis`: full-core simulation support against the shared `mlp_core` bench once the emitted Sparkle wrapper preserves that top-level boundary
 
 Each simulation entry point, summary, or experiment note must state:
 
 - which branch is under test
-- whether the scope is full-core, mixed-path, or controller-only
+- the generation scope, integration scope, and validation scope
 - whether the bench is shared with the baseline or branch-local
 
 ## 4. Reference Model Requirements
@@ -85,7 +85,7 @@ Boundary-focused regression cases must include:
 - the final output MAC step before result finalization
 - output stability while `done` remains asserted
 
-Controller-only branch-local benches must also include:
+Any controller-scoped branch-local benches that still exist elsewhere in the repository must also include:
 
 - reset behavior at the declared wrapper boundary
 - phase-ordering agreement against the baseline controller
@@ -123,7 +123,7 @@ If branch-local simulation support exists, the directory structure must make the
 - shared vector assets must not be duplicated per branch unless the vector format itself differs
 - `rtl/` must keep a baseline full-core bench
 - `rtl-synthesis` may reuse the baseline bench when it preserves the `mlp_core` boundary
-- `rtl-formalize-synthesis` may use a branch-local controller bench while it remains controller-only
+- `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
 
 ## 7. Acceptance Criteria
 
@@ -134,4 +134,4 @@ The `simulations` domain is complete when:
 3. Directed tests pass.
 4. Generated regression vectors pass or produce actionable mismatch logs.
 5. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
-6. Any branch that is not yet full-core support is clearly labeled as mixed-path or controller-only rather than described as baseline-equivalent simulation support.
+6. Any branch that is not yet full-core end-to-end support is clearly labeled with its generation, integration, and validation scopes rather than described as baseline-equivalent simulation support.

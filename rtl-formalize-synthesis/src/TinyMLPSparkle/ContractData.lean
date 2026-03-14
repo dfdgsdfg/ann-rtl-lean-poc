@@ -15,6 +15,7 @@ private def bv8 (value : Int) : BitVec 8 :=
 private def bv32 (value : Int) : BitVec 32 :=
   BitVec.ofInt 32 value
 
+/- BEGIN AUTO-GENERATED CONTRACT DATA -/
 def w1Data {dom : DomainConfig}
     (hidden_idx input_idx : Signal dom (BitVec 4)) : Signal dom (BitVec 8) :=
   hw_cond (Signal.pure (bv8 0))
@@ -77,5 +78,6 @@ def w2Data {dom : DomainConfig}
 
 def b2Data {dom : DomainConfig} : Signal dom (BitVec 32) :=
   Signal.pure (bv32 (-1))
+/- END AUTO-GENERATED CONTRACT DATA -/
 
 end TinyMLP.Sparkle

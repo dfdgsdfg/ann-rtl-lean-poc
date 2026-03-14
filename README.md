@@ -52,7 +52,7 @@ Define the mathematical, fixed-point, and machine models in Lean and prove the i
 Generate vectors and compare RTL behavior against the frozen contract.
 
 6. `smt`
-Run solver-backed verification for RTL control properties, Sparkle generated-controller wrapper parity, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
+Run solver-backed verification for RTL control properties, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
 
 7. `experiments`
 Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
@@ -99,9 +99,10 @@ The intended use is experimental:
 That means:
 
 - reactive synthesis is an experiment track, not the source of truth for the shipped RTL
-- Lean/Sparkle-generated RTL is also an experiment track until it proves out against the same regression and QoR checks
-- the controller-only Sparkle milestone now includes a Lean refinement bridge from the `formalize/` pure controller model into the Sparkle Signal DSL model
-- Sparkle-to-Verilog remains a trusted backend boundary and is validated by the generated-controller simulation and SMT comparison flow, not by Lean proof alone
+- experiment summaries should distinguish `generation_scope`, `integration_scope`, and `validation_scope` instead of collapsing branch status into a single "support level"
+- Lean/Sparkle-generated RTL is a full-core experiment branch validated by the shared `mlp_core` regression bench and downstream QoR flows
+- the current Lean refinement milestone in `rtl-formalize-synthesis/` still covers controller semantics only; there is not yet a full-core theorem for the emitted Sparkle design
+- Sparkle-to-Verilog remains a trusted backend boundary and is validated by shared full-core simulation and downstream synthesis comparison, not by Lean proof alone
 - hand-written `rtl/` remains the canonical implementation baseline
 
 Relevant docs:
@@ -135,11 +136,14 @@ Install `python3`, `node`, and `elan` separately if your system does not already
 For the SMT flow specifically, `make smt` expects:
 
 - `python3` for the SMT driver scripts
-- `git` for the Sparkle prepare step
-- `lake` to rebuild and emit the Sparkle generated-controller artifact
 - `yosys` for RTL elaboration
 - `yosys-smtbmc` for bounded SMT model checking
 - `z3` as the current backend solver
+
+For the Sparkle full-core generation path, `make rtl-formalize-synthesis-build` expects:
+
+- `git` for the Sparkle prepare step
+- `lake` to build and emit the checked-in Sparkle full-core artifact
 
 On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 
@@ -254,7 +258,7 @@ SystemVerilog source for the tiny inference core.
 Reactive-synthesis source inputs, formal harnesses, and driver scripts for the controller experiment.
 
 - `rtl-formalize-synthesis/`
-Lean/Sparkle source for the generated-controller experiment branch and the controller-only refinement bridge into the Signal DSL model.
+Lean/Sparkle source for the generated full-core experiment branch, plus the current controller-level refinement bridge into the Signal DSL model.
 
 - `formalize/`
 Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.

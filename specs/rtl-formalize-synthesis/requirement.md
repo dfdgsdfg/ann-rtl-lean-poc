@@ -142,7 +142,7 @@ If Sparkle emits multiple intermediate artifacts, the repository must document w
 
 The generated RTL must be validated against the repository baseline.
 
-Required validation levels:
+Required validation methods:
 
 1. **Build validation**
 

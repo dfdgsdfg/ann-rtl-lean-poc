@@ -14,7 +14,13 @@ It does **not** mean ASIC logic synthesis. That remains the responsibility of `s
 
 ## 2. Scope
 
-The `rtl-synthesis` domain is controller-only.
+The `rtl-synthesis` domain has:
+
+- `generation_scope = controller`
+- `integration_scope = mixed-path mlp_core`
+- `validation_scope = mixed-path mlp_core` for the primary claim, with controller-scoped comparison as secondary evidence
+
+This split is intentional. The repository is explicitly saying that synthesis is limited to the controller, while the primary evidence must still be collected at the mixed-path `mlp_core` boundary.
 
 It covers:
 
@@ -30,10 +36,12 @@ It does not cover:
 - datapath synthesis for MAC, ReLU, or hidden-register storage
 - replacement of the hand-written `rtl/` baseline as the canonical implementation
 
+The reason is methodological, not temporary. GR(1)/TLSF-style synthesis is a good fit for finite control but not for this MLP datapath. The controller can be expressed through phase bits and guard predicates. The datapath cannot be lowered cleanly to the same style of game because it includes signed arithmetic, ROM contents, accumulated state, and observations derived from counters the controller does not own. Even the controller-scoped specification already requires an abstraction layer for datapath-owned counters. Extending the generation scope to MAC, ReLU, ROM, and accumulator behavior would materially increase the abstraction burden and would likely produce an artifact that is not useful as a practical implementation candidate.
+
 The validation priority is:
 
 - primary: closed-loop mixed-path equivalence at the `mlp_core` boundary
-- secondary: controller-only equivalence under documented counter-abstraction assumptions
+- secondary: controller-scoped equivalence under documented counter-abstraction assumptions
 
 ## 3. Behavioral Target
 
@@ -76,6 +84,8 @@ The current RTL module boundary is not directly ideal for GR(1) synthesis, becau
 - `input_idx`
 
 The synthesis specification must therefore introduce an explicit abstraction layer.
+
+That abstraction layer is a limitation of the generation method, not just a notation choice. The requirement is to keep the abstraction boundary narrow enough that the generated controller still integrates into the real datapath and can be validated at the mixed-path `mlp_core` boundary without pretending the datapath itself was synthesized from TLSF.
 
 ### Required Environment Inputs
 
@@ -176,7 +186,7 @@ The synthesis flow must produce or record:
 - the realizability result
 - the synthesized controller artifact, such as AIGER, HOA, Mealy/Moore machine, or generated Verilog wrapper input
 - the translation step from the synthesis-tool artifact into an RTL-consumable form
-- a controller-only comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
+- a controller-scoped comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
 - a mixed-path full-core comparison report against [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
 
 ## 9. Validation Requirements
@@ -194,11 +204,11 @@ Validation must cover at least:
 
 The `rtl-synthesis` domain is complete when:
 
-1. A controller-only reactive-synthesis specification exists and is checked into the repository.
+1. A controller-scoped reactive-synthesis specification exists and is checked into the repository.
 2. The specification documents the abstraction from raw counters to synthesis-friendly predicates.
 3. The specification documents the required environment assumptions induced by the datapath-owned counters.
 4. A synthesis tool can report realizability for the specification.
 5. A synthesized controller artifact can be translated or wrapped into an RTL-consumable form.
 6. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
-7. The repository also records the secondary controller-only comparison against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and keeps its assumption profile explicit.
+7. The repository also records the secondary controller-scoped comparison against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and keeps its assumption profile explicit.
 8. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.

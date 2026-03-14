@@ -73,12 +73,12 @@ BASELINE_RTL_NO_CONTROLLER = [
     ROOT / "rtl" / "src" / "weight_rom.sv",
     ROOT / "rtl" / "src" / "mlp_core.sv",
 ]
-SPARKLE_GENERATED_CONTROLLER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
-SPARKLE_GENERATED_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller_wrapper.sv"
 SPOT_COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
 SPOT_FORMAL_HARNESS = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_controller_spot_equivalence.sv"
 SPOT_AIGER_SNAPSHOT = ROOT / "rel-build" / "generated" / "controller_spot.aag"
 SPOT_AIGER_MAP = ROOT / "rel-build" / "generated" / "controller_spot.map"
+SPARKLE_FULL_CORE_RTL = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv"
+SPARKLE_FULL_CORE_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv"
 SEMANTIC_BRIDGE_SCRIPT = ROOT / "formalize" / "scripts" / "ExportSemanticBridge.lean"
 OPENLANE_TEMPLATE = ROOT / "asic" / "openlane" / "config.json"
 OPENLANE_FLOORPLAN = ROOT / "asic" / "openlane" / "floorplan.tcl"
@@ -96,9 +96,10 @@ SPOT_CLAIM_SCOPE = (
 @dataclass(frozen=True)
 class BranchManifest:
     branch: str
-    support_level: str
-    implementation_scope: str
-    validation_level: str
+    generation_scope: str
+    integration_scope: str
+    validation_scope: str
+    validation_method: str
     claim_scope: str
     source_paths: list[Path]
     artifacts: dict[str, Path]
@@ -107,9 +108,10 @@ class BranchManifest:
     def summary(self) -> dict[str, object]:
         return {
             "branch": self.branch,
-            "support_level": self.support_level,
-            "implementation_scope": self.implementation_scope,
-            "validation_level": self.validation_level,
+            "generation_scope": self.generation_scope,
+            "integration_scope": self.integration_scope,
+            "validation_scope": self.validation_scope,
+            "validation_method": self.validation_method,
             "claim_scope": self.claim_scope,
             "source_files": [relative(path) for path in self.source_paths],
             "artifacts": {name: relative(path) for name, path in self.artifacts.items()},
@@ -191,9 +193,10 @@ def render_family_report(summary: dict[str, object]) -> str:
             lines.append(f"### {branch['branch']}")
             lines.append("")
             lines.append(f"- result: `{branch['overall_result']}`")
-            lines.append(f"- support level: `{branch['support_level']}`")
-            lines.append(f"- scope: `{branch['implementation_scope']}`")
-            lines.append(f"- validation level: `{branch['validation_level']}`")
+            lines.append(f"- generation scope: `{branch['generation_scope']}`")
+            lines.append(f"- integration scope: `{branch['integration_scope']}`")
+            lines.append(f"- validation scope: `{branch['validation_scope']}`")
+            lines.append(f"- validation method: `{branch['validation_method']}`")
             for step in branch.get("steps", []):
                 lines.append(f"- {step['name']}: `{step['result']}`")
             lines.append("")
@@ -203,8 +206,21 @@ def render_family_report(summary: dict[str, object]) -> str:
         for item in summary["results"]:
             label = item.get("name") or item.get("branch") or "result"
             result = item.get("result", item.get("overall_result", "unknown"))
-            lines.append(f"- {label}: `{result}`")
-        lines.append("")
+            if "generation_scope" in item:
+                lines.append(f"### {label}")
+                lines.append("")
+                lines.append(f"- result: `{result}`")
+                lines.append(f"- generation scope: `{item['generation_scope']}`")
+                lines.append(f"- integration scope: `{item['integration_scope']}`")
+                lines.append(f"- validation scope: `{item['validation_scope']}`")
+                lines.append(f"- validation method: `{item['validation_method']}`")
+                if "claim_scope" in item:
+                    lines.append(f"- claim scope: {item['claim_scope']}")
+                lines.append("")
+            else:
+                lines.append(f"- {label}: `{result}`")
+        if not summary["results"] or "generation_scope" not in summary["results"][0]:
+            lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -326,9 +342,10 @@ def spot_core_usable(path: Path) -> bool:
 def prepare_baseline_branch(branch_root: Path) -> BranchManifest:
     manifest = BranchManifest(
         branch="rtl",
-        support_level="full-core baseline",
-        implementation_scope="full-core",
-        validation_level="full-core simulation",
+        generation_scope="full-core",
+        integration_scope="full-core mlp_core",
+        validation_scope="full-core mlp_core",
+        validation_method="shared full-core simulation",
         claim_scope="committed hand-written baseline RTL",
         source_paths=list(BASELINE_RTL),
         artifacts={},
@@ -444,9 +461,10 @@ def prepare_rtl_synthesis_branch(branch_root: Path, args: argparse.Namespace) ->
 
     manifest = BranchManifest(
         branch="rtl-synthesis",
-        support_level="mixed-path controller replacement",
-        implementation_scope="mixed-path controller replacement",
-        validation_level="bounded formal controller parity plus full-core simulation" if usable else "branch unavailable in current environment",
+        generation_scope="controller",
+        integration_scope="mixed-path mlp_core",
+        validation_scope="mixed-path mlp_core",
+        validation_method="bounded controller-formal parity plus shared full-core simulation",
         claim_scope=SPOT_CLAIM_SCOPE if usable else "rtl-synthesis branch skipped because no usable generated controller core is available",
         source_paths=[alias_path, SPOT_COMPAT_WRAPPER, generated_core, *BASELINE_RTL_NO_CONTROLLER] if usable else [],
         artifacts={
@@ -462,30 +480,27 @@ def prepare_rtl_synthesis_branch(branch_root: Path, args: argparse.Namespace) ->
 
 def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
     ensure_dir(branch_root)
-    generated_dir = branch_root / "generated"
-    ensure_dir(generated_dir)
-    alias_path = generated_dir / "controller.sv"
+    if not SPARKLE_FULL_CORE_RTL.exists():
+        raise RuntimeError("missing committed Sparkle full-core generated artifact")
+    if not SPARKLE_FULL_CORE_WRAPPER.exists():
+        raise RuntimeError("missing committed Sparkle full-core wrapper artifact")
 
-    if not SPARKLE_GENERATED_CONTROLLER.exists():
-        raise RuntimeError("missing committed Sparkle generated controller artifact")
-
-    write_controller_alias_module(alias_path, "sparkle_controller_wrapper")
     manifest = BranchManifest(
         branch="rtl-formalize-synthesis",
-        support_level="mixed-path controller replacement",
-        implementation_scope="mixed-path controller replacement",
-        validation_level="bounded wrapper parity plus full-core simulation",
-        claim_scope="controller-only generated Sparkle wrapper used as a mixed-path full-core assembly",
-        source_paths=[alias_path, SPARKLE_GENERATED_WRAPPER, SPARKLE_GENERATED_CONTROLLER, *BASELINE_RTL_NO_CONTROLLER],
+        generation_scope="full-core",
+        integration_scope="full-core mlp_core",
+        validation_scope="full-core mlp_core",
+        validation_method="shared full-core simulation",
+        claim_scope="shared mlp_core full-core comparison between baseline RTL and Sparkle-generated full-core RTL",
+        source_paths=[SPARKLE_FULL_CORE_WRAPPER, SPARKLE_FULL_CORE_RTL],
         artifacts={
-            "controller_alias": alias_path,
-            "generated_wrapper": SPARKLE_GENERATED_WRAPPER,
-            "generated_controller": SPARKLE_GENERATED_CONTROLLER,
+            "generated_wrapper": SPARKLE_FULL_CORE_WRAPPER,
+            "generated_core": SPARKLE_FULL_CORE_RTL,
         },
         provenance={
-            "source_kind": "checked_in_generated_controller",
-            "generated_controller": relative(SPARKLE_GENERATED_CONTROLLER),
-            "wrapper": relative(SPARKLE_GENERATED_WRAPPER),
+            "source_kind": "checked_in_generated_full_core",
+            "generated_core": relative(SPARKLE_FULL_CORE_RTL),
+            "wrapper": relative(SPARKLE_FULL_CORE_WRAPPER),
         },
     )
     write_json(branch_root / "manifest.json", manifest.summary())
@@ -885,29 +900,6 @@ def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dic
     else:
         write_command_log(baseline_formal_log, "missing yosys/yosys-smtbmc/z3; skipped baseline control proof\n")
 
-    sparkle_formal_summary = family_root / "sparkle_generated_controller_summary.json"
-    sparkle_formal_log = family_root / "logs" / "sparkle_generated_controller.log"
-    sparkle_formal_result = "skip"
-    if all(tool_exists(tool) for tool in (args.yosys, args.smtbmc, args.z3)):
-        command = [
-            "python3",
-            str(ROOT / "smt" / "rtl" / "check_generated_controller.py"),
-            "--yosys",
-            args.yosys,
-            "--smtbmc",
-            args.smtbmc,
-            "--solver",
-            args.z3,
-            "--summary",
-            str(sparkle_formal_summary),
-        ]
-        proc = run_command(command, cwd=ROOT)
-        output = (proc.stdout or "") + (proc.stderr or "")
-        write_command_log(sparkle_formal_log, output or "(no output)\n")
-        sparkle_formal_result = "pass" if proc.returncode == 0 else "fail"
-    else:
-        write_command_log(sparkle_formal_log, "missing yosys/yosys-smtbmc/z3; skipped Sparkle wrapper proof\n")
-
     for branch_name, manifest in manifests.items():
         branch_root = family_root / branch_name
         simulation = run_branch_simulation(args, manifest, branch_root / "sim")
@@ -923,18 +915,8 @@ def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dic
                     artifacts={"summary": baseline_formal_summary} if baseline_formal_summary.exists() else {},
                 )
             )
-            validation_level = "bounded formal plus full-core simulation"
-        elif branch_name == "rtl-formalize-synthesis":
-            steps.append(
-                make_step(
-                    name="sparkle_wrapper_formal",
-                    result=sparkle_formal_result,
-                    command="python3 smt/rtl/check_generated_controller.py ...",
-                    log_path=sparkle_formal_log,
-                    artifacts={"summary": sparkle_formal_summary} if sparkle_formal_summary.exists() else {},
-                )
-            )
-            validation_level = manifest.validation_level
+            validation_scope = "full-core mlp_core"
+            validation_method = "bounded control formal plus shared full-core simulation"
         else:
             formal_provenance = manifest.provenance.get("formal_equivalence")
             if isinstance(formal_provenance, dict):
@@ -955,13 +937,15 @@ def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dic
                         "details": {},
                     }
                 )
-            validation_level = manifest.validation_level
+            validation_scope = manifest.validation_scope
+            validation_method = manifest.validation_method
 
         branch_result = {
             "branch": branch_name,
-            "support_level": manifest.support_level,
-            "implementation_scope": manifest.implementation_scope,
-            "validation_level": validation_level,
+            "generation_scope": manifest.generation_scope,
+            "integration_scope": manifest.integration_scope,
+            "validation_scope": validation_scope,
+            "validation_method": validation_method,
             "claim_scope": manifest.claim_scope,
             "overall_result": simulation["overall_result"],
             "evidence_result": combine_results([step["result"] for step in steps]),
@@ -1068,9 +1052,10 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
             results.append(
                 {
                     "branch": branch_name,
-                    "support_level": manifest.support_level,
-                    "implementation_scope": manifest.implementation_scope,
-                    "validation_level": "qor_characterization",
+                    "generation_scope": manifest.generation_scope,
+                    "integration_scope": manifest.integration_scope,
+                    "validation_scope": "full-core mlp_core",
+                    "validation_method": "qor characterization",
                     "claim_scope": manifest.claim_scope,
                     "result": "skip",
                     "command": "",
@@ -1101,10 +1086,11 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
         results.append(
             {
                 "branch": branch_name,
-                "support_level": manifest.support_level,
-                "implementation_scope": manifest.implementation_scope,
-                "validation_level": "qor_characterization",
-                "claim_scope": "same-top mlp_core Yosys characterization across baseline and generated-controller mixed paths",
+                "generation_scope": manifest.generation_scope,
+                "integration_scope": manifest.integration_scope,
+                "validation_scope": "full-core mlp_core",
+                "validation_method": "qor characterization",
+                "claim_scope": "same-top mlp_core Yosys characterization across baseline RTL, Sparkle full-core RTL, and generated-controller mixed-path RTL",
                 "result": result,
                 "command": command_text(command),
                 "log": relative(log_path),
@@ -1122,7 +1108,7 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
         "generated_at_utc": timestamp_utc(),
         "family": "qor",
         "overall_result": combine_results([item["result"] for item in results]),
-        "claim_scope": "branch-tagged QoR data over the same full-core mlp_core top, preserving mixed-path support boundaries",
+        "claim_scope": "branch-tagged QoR data over the same full-core mlp_core top across baseline, Sparkle full-core, and mixed-path generated-controller branches",
         "tool_versions": {
             "yosys": tool_version([[args.yosys, "-V"]]) if tool_exists(args.yosys) else "missing",
         },
@@ -1239,9 +1225,10 @@ def run_post_synth_family(args: argparse.Namespace, build_root: Path) -> dict[st
         config_path = create_openlane_design_config(branch_root, manifest)
         branch_result: dict[str, object] = {
             "branch": branch_name,
-            "support_level": manifest.support_level,
-            "implementation_scope": manifest.implementation_scope,
-            "validation_level": "post_synthesis_validation",
+            "generation_scope": manifest.generation_scope,
+            "integration_scope": manifest.integration_scope,
+            "validation_scope": "full-core mlp_core",
+            "validation_method": "post-synthesis validation",
             "claim_scope": "OpenLane-oriented post-synthesis setup plus gate-level replay when flow artifacts and library models are available",
             "result": "skip",
             "artifacts": {"openlane_config": relative(config_path)},

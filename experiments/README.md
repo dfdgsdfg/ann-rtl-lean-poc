@@ -25,6 +25,13 @@ make experiments-post-synth
 
 Each command writes JSON summaries and Markdown reports under `build/experiments/`.
 
+Branch-oriented reports should record:
+
+- `generation_scope`: what the branch actually produces
+- `integration_scope`: where that generated or hand-written artifact plugs into the larger design
+- `validation_scope`: the system boundary where evidence is collected
+- `validation_method`: how that evidence was obtained
+
 See:
 
 - `implementation-branch-comparison.md`

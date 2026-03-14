@@ -2,7 +2,6 @@ import Lean
 import Sparkle.Backend.Verilog
 import Sparkle.Compiler.Elab
 import Sparkle.Core.Domain
-import TinyMLPSparkle.ControllerSignal
 import TinyMLPSparkle.MlpCoreSignal
 
 set_option maxRecDepth 65536
@@ -14,11 +13,6 @@ open Lean.Elab.Command
 
 namespace TinyMLP
 
-/--
-  The controller-only experiment intentionally exposes combinational handshake
-  outputs to match the baseline `rtl/src/controller.sv` boundary. Sparkle's
-  registered-output DRC is therefore bypassed only for this emit entrypoint.
--/
 elab "#writeVerilogDesignNoDRC" id:ident str:str : command => do
   let declName ← liftCoreM do
     resolveGlobalConstNoOverload id
@@ -29,16 +23,6 @@ elab "#writeVerilogDesignNoDRC" id:ident str:str : command => do
     IO.FS.writeFile path verilog
     IO.println s!"Written {design.modules.length} modules to {path}"
 
-abbrev sparkleControllerPacked {dom : DomainConfig}
-    (start : Sparkle.Core.Signal.Signal dom Bool)
-    (hidden_idx : Sparkle.Core.Signal.Signal dom (BitVec 4))
-    (input_idx : Sparkle.Core.Signal.Signal dom (BitVec 4))
-    (inputNeurons4b : Sparkle.Core.Signal.Signal dom (BitVec 4))
-    (hiddenNeurons4b : Sparkle.Core.Signal.Signal dom (BitVec 4))
-    (lastHiddenIdx : Sparkle.Core.Signal.Signal dom (BitVec 4)) :=
-  _root_.TinyMLP.Sparkle.sparkleControllerPackedFlat
-    start hidden_idx input_idx inputNeurons4b hiddenNeurons4b lastHiddenIdx
-
 abbrev sparkleMlpCorePacked {dom : DomainConfig}
     (start : Sparkle.Core.Signal.Signal dom Bool)
     (in0 : Sparkle.Core.Signal.Signal dom (BitVec 8))
@@ -47,7 +31,6 @@ abbrev sparkleMlpCorePacked {dom : DomainConfig}
     (in3 : Sparkle.Core.Signal.Signal dom (BitVec 8)) :=
   _root_.TinyMLP.Sparkle.sparkleMlpCorePacked start in0 in1 in2 in3
 
-#writeVerilogDesignNoDRC sparkleControllerPacked "../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv"
 #writeVerilogDesignNoDRC sparkleMlpCorePacked "../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv"
 
 end TinyMLP

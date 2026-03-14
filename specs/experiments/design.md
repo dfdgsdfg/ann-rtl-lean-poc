@@ -12,7 +12,7 @@ The design should favor:
 - Traceability back to committed inputs
 - Clear separation between canonical implementation artifacts and experimental generated variants
 - Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, and `rtl-synthesis`
-- Explicit declaration of support level for each branch under comparison
+- Explicit declaration of generation, integration, and validation scopes for each branch under comparison
 
 ## 2. Experiment Families
 
@@ -68,14 +68,14 @@ These experiments should keep the comparison honest:
 - `rtl/` stays the baseline implementation
 - generated artifacts live outside `rtl/`
 - the frozen contract remains the semantic anchor
-- `rtl-formalize-synthesis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
-- `rtl-synthesis` is scoped first to the controller, not the ANN datapath
+- `rtl-formalize-synthesis` may target controller, primitive-only, or full-core generation, but the declared generation and validation scopes must be explicit
+- `rtl-synthesis` is generation-scoped first to the controller, not the ANN datapath
 
-Current support levels should be recorded as part of the experiment design:
+Current branch conventions should be recorded as part of the experiment design:
 
-- `rtl/`: baseline full-core implementation
-- `rtl-synthesis`: mixed-path implementation support by swapping only the controller and reusing the baseline datapath
-- `rtl-formalize-synthesis`: controller-only support unless a wider generated path is explicitly materialized and validated
+- `rtl/`: full-core generation, full-core integration, full-core validation
+- `rtl-synthesis`: controller generation, mixed-path integration, mixed-path-primary validation by swapping only the controller and reusing the baseline datapath
+- `rtl-formalize-synthesis`: full-core generation, full-core integration, full-core validation once the emitted `mlp_core` path is materialized and validated
 
 ### RTL-Formalize-Synthsis Studies
 
@@ -85,7 +85,7 @@ Typical questions:
 
 - does the Sparkle implementation preserve the current handshake and timing contract?
 - does the generated RTL preserve fixed-point arithmetic and ROM semantics?
-- how much of the baseline can be replaced: controller-only, primitive path, or full core?
+- how much of the baseline can be replaced: controller, primitive path, or full core?
 - what trust boundary remains between the pure Lean proof layer and the emitted RTL?
 
 ### RTL-Synthesis Studies
@@ -109,9 +109,10 @@ Each experiment should keep a stable mapping between:
 - Output artifact
 - Result summary
 - Source spec or generator revision when the artifact is generated rather than hand-written
-- Implementation branch and declared scope, such as baseline RTL, Sparkle controller-only RTL, or GR(1)-synthesized controller
-- Validation level, such as theorem-level model comparison, RTL simulation agreement, or QoR-only comparison
-- Support level, such as full-core, mixed-path, or controller-only
+- Implementation branch and declared generation scope, such as baseline full-core RTL, Sparkle full-core RTL, or GR(1)-synthesized controller
+- Declared integration scope, such as full-core `mlp_core` or mixed-path `mlp_core`
+- Declared validation scope, such as full-core `mlp_core`, mixed-path `mlp_core`, or controller trace parity
+- Validation method, such as theorem-level model comparison, RTL simulation agreement, or QoR characterization
 
 This can be implemented with scripts plus short markdown reports.
 
@@ -149,7 +150,7 @@ Layout rules:
 1. Select the experiment family: semantic closure, artifact consistency, implementation characterization, flow-stage validation, or generated implementation comparison
 2. Export a fixed parameter set
 3. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or a mixed path
-4. Declare the support level for that branch: full-core, mixed-path, or controller-only
+4. Declare the generation, integration, and validation scopes for that branch
 5. Generate vectors or consistency inputs
 6. Materialize the candidate implementation variant
 7. Run simulation, comparison, or synthesis
@@ -163,8 +164,9 @@ For implementation-branch comparisons, the summary should include:
 - synthesis report deltas
 - whether the experiment is a semantic-closure check, a boundary-robustness study, a QoR characterization, or a post-synthesis validation run
 - exact generator, synthesis-spec, or wrapper provenance
-- declared implementation scope, such as controller-only or full core
-- declared support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity
+- declared generation scope, such as controller or full core
+- declared integration scope, such as mixed-path `mlp_core` or full-core `mlp_core`
+- declared validation scope and method, such as mixed-path `mlp_core` simulation, controller trace parity, or QoR characterization
 - explicit trust-boundary statement when the artifact comes from `rtl-formalize-synthesis`
 
 ## 6. Success Signal

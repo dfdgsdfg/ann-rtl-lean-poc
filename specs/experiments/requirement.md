@@ -53,15 +53,15 @@ This family becomes required once the ASIC flow produces synthesized netlists or
 This family compares the baseline against alternative implementation paths without collapsing branch-support boundaries.
 
 - Generated RTL from `rtl-formalize-synthesis` versus hand-written `rtl/`
-- Controller-only reactive synthesis from `rtl-synthesis` versus `rtl/src/controller.sv`
+- Controller-generated reactive synthesis from `rtl-synthesis` versus `rtl/src/controller.sv`
 - Mixed-path experiments, such as a synthesized controller paired with the hand-written datapath
 - Scope-staged `rtl-formalize-synthesis` experiments: controller-only, primitive path, or full core
 
-The experiment domain must treat the three RTL implementation branches as distinct support classes:
+The experiment domain must treat the three RTL implementation branches as distinct generation/integration/validation profiles:
 
-- `rtl/`: baseline full-core branch
-- `rtl-synthesis`: mixed-path branch unless it explicitly replaces more than the controller
-- `rtl-formalize-synthesis`: controller-only or other declared generated scope, but never implicitly baseline-equivalent
+- `rtl/`: full-core generation, full-core integration, full-core validation
+- `rtl-synthesis`: controller generation with mixed-path integration unless it explicitly replaces more than the controller
+- `rtl-formalize-synthesis`: full-core generated branch or other declared generated scope, but never implicitly baseline-equivalent
 
 ## 3. Reproducibility Requirements
 
@@ -72,10 +72,12 @@ Experiment outputs must be reproducible from:
 - Documented commands
 - Captured report locations
 - Generator version or specification revision when artifacts are synthesized or generated
-- Declared implementation branch and scope
+- Declared implementation branch
+- Declared generation scope
+- Declared integration scope
+- Declared validation scope and method
 - Tool versions for Sparkle or the selected reactive-synthesis tool when applicable
 - Wrapper or translation revision when the generated artifact is not directly simulator-ready
-- Declared support level such as full-core, mixed-path, or controller-only
 
 Ad hoc manual experiments are not sufficient.
 
@@ -92,7 +94,7 @@ Experiment results should produce at least one of the following:
 - Implementation-comparison reports with baseline and candidate artifact paths
 - Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthesis`, or `rtl-synthesis`
 - Post-synthesis simulation logs when the compared artifact is synthesized
-- Support-boundary notes that identify whether the evidence is full-core simulation, mixed-path simulation, controller-only simulation, formal parity, or QoR-only analysis
+- Scope notes that identify the generation scope, integration scope, validation scope, and validation method for the recorded evidence
 
 The experiment directory structure should default to branch-first organization:
 
@@ -112,7 +114,7 @@ The `experiments` domain is complete when:
 4. The command path from source inputs to recorded outputs is documented.
 5. Post-synthesis simulation is documented and reproducible once synthesized netlists are part of the active flow.
 6. Any `rtl-formalize-synthesis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
-7. Any generated implementation experiment states its declared scope, such as controller-only, primitive path, or full core.
-8. Any generated implementation experiment states whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
-9. Cross-branch experiment records also state the branch support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity.
+7. Any generated implementation experiment states its declared generation scope, such as controller, primitive path, or full core.
+8. Any generated implementation experiment states its integration scope, validation scope, and whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
+9. Cross-branch experiment records also state the branch generation, integration, and validation scopes rather than collapsing them into a single support label.
 10. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.

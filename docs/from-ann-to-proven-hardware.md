@@ -514,66 +514,51 @@ SMT bounded proofs cannot see beyond their trace depth. The current RTL control 
 
 For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
 
-## 9. Closing the Gap: Generated Controller
+## 9. Closing the Gap: Generated RTL
 
-Simulation checks the actual Verilog empirically. SMT checks it formally within a bounded window. The third approach narrows the gap structurally: generate RTL from a Lean model that has been proved correct.
+Simulation checks the actual Verilog empirically. SMT checks key bounded properties over the committed RTL. The third approach narrows the gap structurally: generate RTL from a Lean-hosted hardware model.
 
-The `rtl-formalize-synthesis/` domain implements this for the controller. The [Sparkle](https://github.com/opencompl/sparkle) HDL library provides a Signal DSL hosted in Lean 4 and a Verilog backend. The controller is re-expressed in this DSL, proved to refine the pure machine model, and then emitted as SystemVerilog.
+The `rtl-formalize-synthesis/` domain now emits a full-core `mlp_core` implementation through [Sparkle](https://github.com/opencompl/sparkle), a Signal DSL hosted in Lean 4 with a Verilog backend. The stable downstream boundary is [`sparkle_mlp_core_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv), which preserves the repository's `mlp_core` top-level interface while unpacking the raw Sparkle module output bus.
 
 ### The Trust Chain
 
 ```mermaid
 graph LR
-    PURE["formalize/<br/>timedControlTrace"] --> REFINE["Refinement.lean<br/>refinement theorem"]
-    REFINE --> DSL["ControllerSignal.lean<br/>Sparkle Signal DSL"]
+    PURE["formalize/<br/>machine + temporal semantics"] --> CTRL["Refinement.lean<br/>controller refinement"]
+    CTRL --> DSL["MlpCoreSignal.lean<br/>Sparkle Signal DSL"]
     DSL --> EMIT["Emit.lean<br/>code generation"]
-    EMIT --> WRAP["sparkle_controller_wrapper.sv<br/>stable boundary"]
-    WRAP --> CHECK["simulation + SMT<br/>equivalence checks"]
+    EMIT --> WRAP["sparkle_mlp_core_wrapper.sv<br/>stable mlp_core boundary"]
+    WRAP --> CHECK["shared simulation +<br/>QoR / downstream flow"]
 ```
 
 ### What Is Proved
 
-[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) proves two kernel-checked theorems:
+[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) still proves controller-level theorems only:
 
-- `controllerPhaseNextComb_refines_timedControlStep` — the Sparkle controller's combinational next-phase logic agrees with the pure machine's `timedControlStep` for every legal control state.
-- `canonicalControllerView_refines_timedControlTrace` — the externally visible controller outputs (state, load_input, clear_acc, do_mac_hidden, ..., busy) match `timedControlTrace` from `formalize/` cycle by cycle.
+- `controllerPhaseNextComb_refines_timedControlStep`
+- `canonicalControllerView_refines_timedControlTrace`
 
-These close the gap between the pure machine model in §5 and the Signal DSL implementation used for emission. The proofs require the `ControlInvariant` (index bounds per phase) and include arithmetic lemmas connecting BitVec comparisons to the Nat arithmetic used in the pure model.
+Those theorems connect the pure controller semantics in `formalize/` to the Sparkle Signal DSL controller view used inside the generated design. They do not yet constitute a full-core theorem for the emitted `mlp_core`.
 
 ### What Is Trusted
 
-The Sparkle-to-Verilog backend is trusted code generation. The theorems prove that the Signal DSL model is correct; the code generator is assumed to emit Verilog that faithfully implements that model.
-
-A thin wrapper ([`sparkle_controller_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv)) unpacks the generated module's 14-bit packed output bus into named control signals matching the baseline controller interface:
-
-```systemverilog
-assign state          = packed_out[13:10];
-assign load_input     = packed_out[9];
-assign clear_acc      = packed_out[8];
-assign do_mac_hidden  = packed_out[7];
-// ...
-assign busy           = packed_out[0];
-```
-
-This bit-slice mapping follows the `bundleAll!` packing order in [`ControllerSignal.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean). If Sparkle changes the internal packing order, the mapping breaks. The protection is regression testing, not structural proof.
+The Sparkle-to-Verilog backend remains trusted code generation. The repository also trusts the manual wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus.
 
 ### What Is Validated
 
-The emitted RTL + wrapper is checked against the hand-written baseline controller by:
+The emitted full-core Sparkle RTL is validated by:
 
-- **82-cycle bounded SMT equivalence** for three parameter configurations (4/8, 3/5, 1/1), checking all 11 control signals every cycle after a two-cycle reset sequence
-- **Invalid-state recovery proof**: both designs recover identically from seeded corrupted state via `anyconst`
-- **Directed simulation traces** comparing cycle-by-cycle outputs for the default and alternate parameter sets
+- the shared `mlp_core` simulation bench over the committed vector suite
+- branch-comparison runs against the hand-written baseline
+- QoR and downstream synthesis characterization over the same top-level boundary
 
-The 82-cycle window covers a full 76-cycle transaction plus DONE hold/release slack.
+This is stronger than the retired controller-only wrapper experiment at the interface boundary, but it is still validation, not a theorem about the emitted full-core RTL.
 
 ### Current Scope and Limitations
 
-The generated controller covers the FSM only. The datapath (MAC, ReLU, accumulator, weight ROM) remains hand-written. The scope is controller-only by design: it is the smallest artifact that is meaningful inside this repository, structurally close to Sparkle's strengths, and easy to compare against the existing baseline.
+The generated artifact now covers the full `mlp_core` boundary, including controller and datapath state. The repository no longer maintains a separate controller-only Sparkle flow.
 
-The emission uses `#writeVerilogDesignNoDRC` (bypassing Sparkle's registered-output design rule check). The wrapper's reset polarity inversion (`rst_n` → `rst`) and parameter computation (`LAST_HIDDEN_IDX = HIDDEN_NEURONS - 1`) are manual SystemVerilog, not generated from Lean.
-
-Extending to datapath primitives and eventually the full core is planned but not yet implemented. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for the milestone roadmap.
+The proof boundary is still below the emitted full-core RTL: the current Lean refinement stops at controller semantics, and the wrapper bus mapping plus Sparkle backend remain trusted. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for the intended full-core proof direction.
 
 ## 10. The Verification Surface
 
@@ -583,7 +568,7 @@ The previous sections described four independent approaches to the same question
 graph LR
     PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
     LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
-    LEAN ---|"Sparkle refinement<br/>+ code generation"| GEN["Generated Controller<br/>sparkle_controller_wrapper"]
+    LEAN ---|"Sparkle controller refinement<br/>+ full-core code generation"| GEN["Generated Full Core<br/>sparkle_mlp_core_wrapper"]
     RTL ---|"simulation<br/>test vectors"| PY
     RTL ---|"bounded proofs<br/>over real Verilog"| SMT["SMT / Formal<br/>Yosys + Z3"]
     SMT ---|"contract-tied<br/>QF_BV proofs"| PY
@@ -596,7 +581,7 @@ Each pair is connected by a different method:
 
 - **Lean ↔ RTL (hand-written)**: the Lean `step` and `timedStep` functions are manual mirrors of the RTL state transitions, not a formal equivalence proof against the SystemVerilog source. The machine proof (`rtl_correct`) and temporal proofs establish the behavior of the Lean model; simulation (§7) and SMT (§8) then check key functional, timing, and control properties against the actual RTL.
 
-- **Lean → RTL (generated)**: the Sparkle refinement theorems (§9) prove Signal DSL correctness, and the emitted controller is validated against the baseline by SMT equivalence and simulation.
+- **Lean → RTL (generated)**: the current Sparkle refinement theorems (§9) cover controller semantics inside the generated design, and the emitted full-core RTL is validated against the baseline by shared simulation and downstream comparison.
 
 - **Python ↔ RTL**: simulation (§7). The testbench feeds the same inputs and expected outputs to the RTL DUT and checks agreement.
 

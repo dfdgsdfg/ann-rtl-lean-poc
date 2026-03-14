@@ -65,10 +65,7 @@ The Python encoder reads the frozen weights and arithmetic rules from `contract/
 
 ## 3. What the RTL Track Proves
 
-The RTL track currently has two subflows:
-
-- baseline property families over the hand-written `rtl/src/controller.sv` and `rtl/src/mlp_core.sv`
-- generated-controller wrapper checks for the Sparkle experiment branch
+The RTL track proves baseline property families over the hand-written `rtl/src/controller.sv` and `rtl/src/mlp_core.sv`.
 
 ### Controller Properties
 
@@ -138,16 +135,9 @@ Every formal job records its assumptions explicitly. The bounded-latency proof, 
 
 These assumptions are written into the harness as `assume` statements and recorded in the JSON summary. A property that passes under hidden assumptions would be misleading — the assumption discipline prevents that.
 
-### Generated-Controller Wrapper Checks
+### Sparkle Full-Core Branch
 
-The SMT flow also runs four bounded jobs against the Sparkle-generated controller experiment:
-
-- three wrapper-equivalence jobs (`4/8`, `3/5`, and `1/1`) that compare the hand-written controller against `sparkle_controller_wrapper`
-- one invalid-state recovery/parity job that starts both designs from the same invalid encoded state and checks that parity is re-established after recovery
-
-These checks run over an 82-cycle post-reset window, long enough to include a full controller transaction trace plus DONE hold/release slack.
-
-This generated-controller subflow is intentionally narrower than the baseline `mlp_core` jobs. It checks the stable wrapper boundary for the experiment branch; it is not a full sequential arithmetic equivalence proof for replacing the entire `mlp_core`.
+The Sparkle full-core branch is not part of the SMT domain's dedicated runner set. Its maintained validation path is the shared `mlp_core` simulation/QoR flow under `experiments/`, not a separate wrapper-equivalence harness.
 
 ## 4. What the Contract Track Proves
 
@@ -270,15 +260,14 @@ All solver checks run through `make smt`:
 make smt
 ```
 
-This runs five steps in sequence:
+This runs four steps in sequence:
 
 1. **Assumption export** — writes `build/smt/contract_assumptions.json`
 2. **RTL control checks** — 5 formal jobs via Yosys + yosys-smtbmc + Z3
-3. **Generated-controller checks** — 4 bounded formal jobs over the Sparkle wrapper boundary via Yosys + yosys-smtbmc + Z3
-4. **Contract overflow checks** — 8 QF_BV queries via Z3
-5. **Contract equivalence checks** — 6 QF_BV queries via Z3
+3. **Contract overflow checks** — 8 QF_BV queries via Z3
+4. **Contract equivalence checks** — 6 QF_BV queries via Z3
 
-At the repository level, `make smt` also rebuilds the Sparkle generated-controller artifact when needed before step 3. In practice, the top-level command expects `python3`, `git`, `lake`, `yosys`, `yosys-smtbmc`, and `z3`.
+In practice, the top-level command expects `python3`, `yosys`, `yosys-smtbmc`, and `z3`.
 
 Individual steps can be run separately:
 
@@ -286,20 +275,11 @@ Individual steps can be run separately:
 # RTL control only
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
 
-# Generated controller only, assuming the emitted RTL already exists
-python3 smt/rtl/check_generated_controller.py --summary build/smt/generated_controller_summary.json
-
 # Contract overflow only
 python3 smt/contract/overflow/check_bounds.py --summary build/smt/contract_overflow_summary.json
 
 # Contract equivalence only
 python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contract_equivalence_summary.json
-```
-
-If you want the repository-managed generated-controller path, including rebuild of the emitted RTL when sources changed, run:
-
-```bash
-make smt-generated-controller
 ```
 
 Every check produces a JSON summary recording the tool versions, assumptions, properties, and pass/fail result. A non-zero exit code on any failure makes `make smt` fail the same way a test failure would.

@@ -8,12 +8,19 @@ The purpose of this domain is to restate the existing controller contract as a r
 - integration context: [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
 - target form: a synthesized controller artifact equivalent to the hand-written FSM under explicit assumptions
 
-The design target is narrow on purpose. We are not synthesizing the neural-network datapath. We are synthesizing only the controller.
+The design target is narrow on purpose. We are not synthesizing the neural-network datapath. The generation scope is the controller only.
 
 Validation is intentionally split:
 
-- primary: prove the synthesized controller behaves like the hand-written controller when both are embedded in the same `mlp_core` datapath context
-- secondary: keep the exact-schedule controller-only proof as a conditional artifact that documents the abstraction boundary
+- primary: validate the synthesized controller at the mixed-path `mlp_core` boundary when both designs share the same datapath context
+- secondary: keep the exact-schedule controller-scoped proof as a conditional artifact that documents the abstraction boundary
+
+This asymmetry is intentional:
+
+- `generation_scope = controller`
+- `validation_scope = mixed-path mlp_core`
+
+The repository is not treating those as mismatched scopes by accident. It is stating that controller generation is the only defensible synthesis target here, while mixed-path `mlp_core` validation is the only defensible primary soundness claim.
 
 ## 2. Why Controller-Only
 
@@ -32,11 +39,28 @@ The datapath does not:
 - it depends on ROM contents and signed arithmetic rather than only temporal control laws
 - it is already straightforward to keep hand-written and validate by simulation
 
+More concretely, GR(1)/TLSF-style synthesis is a good fit for finite control but a bad fit for this MLP datapath.
+
+The controller can be abstracted into:
+
+- phase bits
+- guard predicates
+- restart and hold conditions
+
+The datapath cannot be abstracted as cleanly:
+
+- it carries signed arithmetic rather than only reactive control choices
+- it depends on concrete ROM contents and weight lookups
+- it carries accumulated state across many cycles
+- it depends on counters that are partly owned outside the synthesized controller
+
+Even the controller-scoped specification already needs abstraction around datapath-owned counters. Extending the synthesis surface to MAC, ReLU, ROM, and accumulator behavior would sharply increase the abstraction burden and likely produce an artifact that is either unrealizable, too assumption-heavy, or not useful as a replacement candidate.
+
 So the clean split is:
 
 - synthesize the controller
 - keep the datapath hand-written
-- compare the result against the baseline FSM
+- integrate the result at the `mlp_core` boundary and compare it against the baseline FSM
 
 ## 3. Abstraction Strategy
 

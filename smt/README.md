@@ -5,7 +5,6 @@ This directory implements the current SMT scope described in [`specs/smt/require
 Current scope:
 
 - RTL-backed control proofs for [`rtl/src/controller.sv`](../rtl/src/controller.sv) and [`rtl/src/mlp_core.sv`](../rtl/src/mlp_core.sv)
-- bounded wrapper-equivalence and invalid-state recovery proofs for the Sparkle-generated controller experiment over an 82-cycle post-reset window
 - solver-backed overflow and width checks over the frozen contract in [`contract/result/weights.json`](../contract/result/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs
@@ -32,24 +31,12 @@ Run the complete SMT flow:
 make smt
 ```
 
-This top-level target also rebuilds the Sparkle generated-controller artifact when needed, so in practice it expects `python3`, `git`, `lake`, `yosys`, `yosys-smtbmc`, and `z3`.
+In practice it expects `python3`, `yosys`, `yosys-smtbmc`, and `z3`.
 
 Run only the RTL control checks:
 
 ```bash
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
-```
-
-Run the repository-managed generated-controller checks, including rebuild of the emitted RTL when needed:
-
-```bash
-make smt-generated-controller
-```
-
-If the generated RTL artifact already exists and you only want to rerun the bounded wrapper checks:
-
-```bash
-python3 smt/rtl/check_generated_controller.py --summary build/smt/generated_controller_summary.json
 ```
 
 Export the frozen arithmetic assumptions:
@@ -73,9 +60,10 @@ python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contra
 Generated artifacts:
 
 - `build/smt/rtl_control_summary.json`
-- `build/smt/generated_controller_summary.json`
 - `build/smt/contract_assumptions.json`
 - `build/smt/contract_overflow_summary.json`
 - `build/smt/contract_equivalence_summary.json`
 
 These summaries record the solver/tool version, the assumptions used for each property family, and a concise pass/fail result suitable for CI or local review.
+
+The Sparkle full-core branch is validated through the shared simulation and experiment flows under [`experiments/`](../experiments/README.md), not through a dedicated SMT wrapper-equivalence runner.

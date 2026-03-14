@@ -94,6 +94,24 @@ class ExperimentFlowTests(unittest.TestCase):
             self.assertEqual(branch_results["rtl"], "pass")
             self.assertEqual(branch_results["rtl-formalize-synthesis"], "pass")
             self.assertIn(branch_results["rtl-synthesis"], {"pass", "skip"})
+            rtl_synthesis_branch = next(item for item in summary["branches"] if item["branch"] == "rtl-synthesis")
+            self.assertEqual(rtl_synthesis_branch["generation_scope"], "controller")
+            self.assertEqual(rtl_synthesis_branch["integration_scope"], "mixed-path mlp_core")
+            self.assertEqual(rtl_synthesis_branch["validation_scope"], "mixed-path mlp_core")
+            sparkle_branch = next(item for item in summary["branches"] if item["branch"] == "rtl-formalize-synthesis")
+            self.assertEqual(sparkle_branch["generation_scope"], "full-core")
+            self.assertEqual(sparkle_branch["integration_scope"], "full-core mlp_core")
+            self.assertEqual(sparkle_branch["validation_scope"], "full-core mlp_core")
+            self.assertEqual(sparkle_branch["validation_method"], "shared full-core simulation")
+            self.assertEqual(
+                sparkle_branch["manifest"]["artifacts"]["generated_wrapper"],
+                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv",
+            )
+            self.assertEqual(
+                sparkle_branch["manifest"]["artifacts"]["generated_core"],
+                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv",
+            )
+            self.assertNotIn("controller_alias", sparkle_branch["manifest"]["artifacts"])
 
     def test_qor_family_records_branch_metrics(self) -> None:
         if shutil.which("yosys") is None:
@@ -111,6 +129,13 @@ class ExperimentFlowTests(unittest.TestCase):
             self.assertEqual(results["rtl"]["result"], "pass")
             self.assertEqual(results["rtl"]["metrics"]["cell_count"], 1343)
             self.assertEqual(results["rtl-formalize-synthesis"]["result"], "pass")
+            self.assertEqual(results["rtl-synthesis"]["generation_scope"], "controller")
+            self.assertEqual(results["rtl-synthesis"]["integration_scope"], "mixed-path mlp_core")
+            self.assertEqual(results["rtl-synthesis"]["validation_scope"], "full-core mlp_core")
+            self.assertEqual(results["rtl-formalize-synthesis"]["generation_scope"], "full-core")
+            self.assertEqual(results["rtl-formalize-synthesis"]["integration_scope"], "full-core mlp_core")
+            self.assertEqual(results["rtl-formalize-synthesis"]["validation_scope"], "full-core mlp_core")
+            self.assertEqual(results["rtl-formalize-synthesis"]["validation_method"], "qor characterization")
             self.assertIn(results["rtl-synthesis"]["result"], {"pass", "skip"})
 
     def test_post_synth_family_skips_when_openlane_flow_missing(self) -> None:

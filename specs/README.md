@@ -39,11 +39,11 @@ Cross-cutting verification complement:
 Optional proof-automation complement:
 `formalize -> formalize-smt`
 
-The `simulations` and `experiments` specs should state the support level for each RTL branch:
+The `simulations` and `experiments` specs should state the generation, integration, and validation scopes for each RTL branch:
 
-- `rtl/`: full-core baseline
-- `rtl-synthesis`: mixed-path support unless a wider generated replacement is declared
-- `rtl-formalize-synthesis`: controller-only or other explicitly declared generated scope
+- `rtl/`: full-core generation, full-core integration, and full-core validation at `mlp_core`
+- `rtl-synthesis`: controller generation with mixed-path `mlp_core` integration and mixed-path-primary validation unless a wider generated replacement is declared
+- `rtl-formalize-synthesis`: full-core generation with full-core `mlp_core` integration and validation, or another explicitly declared generated scope
 
 They should also prefer a branch-first layout:
 

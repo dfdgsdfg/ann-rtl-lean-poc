@@ -38,12 +38,15 @@ The arithmetic datapath should stay anchored to the frozen contract. Reactive sy
 - Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthesis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
 - Treat `contract/result/weights.json` as the shared semantic anchor for all implementation variants.
 - Treat `formalize/` as the semantic/proof anchor until a trustworthy generator exists.
-- Treat reactive synthesis as controller-only unless there is a precise story for arithmetic and ROM integration.
+- Treat reactive synthesis as controller-generated unless there is a precise story for arithmetic and ROM integration.
 
 ## Comparison Matrix
 
 Any implementation-branch comparison should report at least:
 
+- **Generation scope**: what the branch actually generates, such as controller or full-core RTL
+- **Integration scope**: whether that branch is plugged in as a controller replacement or as a full-core `mlp_core` implementation
+- **Validation scope**: the boundary where evidence is collected, such as controller trace parity or closed-loop `mlp_core` behavior
 - **Functional agreement**: does the candidate match the frozen Python/contract behavior on the generated vector set?
 - **Cycle agreement**: does it preserve the `76`-cycle transaction timing and the `start` / `busy` / `done` contract?
 - **Trace agreement**: does its phase ordering match the expected machine schedule, especially guard cycles and `DONE` behavior?
@@ -53,6 +56,12 @@ Any implementation-branch comparison should report at least:
 ## Reactive-Synthesis Track
 
 The clean experiment is to synthesize a controller equivalent to `rtl/src/controller.sv`, not to synthesize the entire neural-network circuit.
+
+In the current repository terminology this means:
+
+- `generation_scope = controller`
+- `integration_scope = mixed-path mlp_core`
+- `validation_scope = mixed-path mlp_core` for the primary claim, with controller-scoped comparison as secondary evidence
 
 Recommended flow:
 

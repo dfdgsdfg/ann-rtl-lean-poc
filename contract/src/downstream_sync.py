@@ -6,6 +6,7 @@ from .artifacts import ROOT
 
 WEIGHT_ROM_PATH = ROOT / "rtl" / "src" / "weight_rom.sv"
 LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
+SPARKLE_CONTRACT_DATA_PATH = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
 CONTRACT_MODEL_MD_PATH = ROOT / "contract" / "result" / "model.md"
 DEFAULT_MODEL_DOC_TEMPLATE = """# Tiny MLP ASIC Canonical Specification
 
@@ -79,6 +80,10 @@ def _sv_literal(value: int, bits: int) -> str:
     return f"-{bits}'sd{abs(value)}" if value < 0 else f"{bits}'sd{value}"
 
 
+def _lean_call_literal(value: int) -> str:
+    return f"({value})" if value < 0 else str(value)
+
+
 def _lean_w1_block(weights: dict[str, object]) -> str:
     lines = ["def w1At : Nat → Nat → Int"]
     for i, row in enumerate(weights["w1"]):
@@ -144,6 +149,49 @@ def _weight_rom_block(weights: dict[str, object]) -> str:
             "  assign formal_hidden_weight_case_hit = (hidden_idx < 4'd8) && (input_idx < 4'd4);",
             "  assign formal_output_weight_case_hit = (input_idx < 4'd8);",
             "`endif",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _sparkle_contract_data_block(weights: dict[str, object]) -> str:
+    lines = [
+        "def w1Data {dom : DomainConfig}",
+        "    (hidden_idx input_idx : Signal dom (BitVec 4)) : Signal dom (BitVec 8) :=",
+        "  hw_cond (Signal.pure (bv8 0))",
+    ]
+    for i, row in enumerate(weights["w1"]):
+        for j, value in enumerate(row):
+            lines.append(
+                "    | "
+                f"(hidden_idx === Signal.pure (bv4 {i})) &&& (input_idx === Signal.pure (bv4 {j})) => "
+                f"Signal.pure (bv8 {_lean_call_literal(value)})"
+            )
+    lines.extend(
+        [
+            "",
+            "def b1Data {dom : DomainConfig}",
+            "    (hidden_idx : Signal dom (BitVec 4)) : Signal dom (BitVec 32) :=",
+            "  hw_cond (Signal.pure (bv32 0))",
+        ]
+    )
+    for i, value in enumerate(weights["b1"]):
+        lines.append(f"    | hidden_idx === Signal.pure (bv4 {i}) => Signal.pure (bv32 {_lean_call_literal(value)})")
+    lines.extend(
+        [
+            "",
+            "def w2Data {dom : DomainConfig}",
+            "    (input_idx : Signal dom (BitVec 4)) : Signal dom (BitVec 8) :=",
+            "  hw_cond (Signal.pure (bv8 0))",
+        ]
+    )
+    for i, value in enumerate(weights["w2"]):
+        lines.append(f"    | input_idx === Signal.pure (bv4 {i}) => Signal.pure (bv8 {_lean_call_literal(value)})")
+    lines.extend(
+        [
+            "",
+            "def b2Data {dom : DomainConfig} : Signal dom (BitVec 32) :=",
+            f"  Signal.pure (bv32 {_lean_call_literal(weights['b2'])})",
         ]
     )
     return "\n".join(lines)
@@ -226,6 +274,16 @@ def render_lean_spec_text(weights: dict[str, object]) -> str:
     )
 
 
+def render_sparkle_contract_data_text(weights: dict[str, object]) -> str:
+    sparkle_contract_text = SPARKLE_CONTRACT_DATA_PATH.read_text(encoding="utf-8")
+    return _replace_block(
+        sparkle_contract_text,
+        "/- BEGIN AUTO-GENERATED CONTRACT DATA -/",
+        "/- END AUTO-GENERATED CONTRACT DATA -/",
+        _sparkle_contract_data_block(weights),
+    )
+
+
 def render_model_doc_text(weights: dict[str, object]) -> str:
     model_md_text = _replace_block(
         DEFAULT_MODEL_DOC_TEMPLATE,
@@ -246,6 +304,7 @@ def expected_downstream_artifacts(weights: dict[str, object]) -> dict[Path, str]
     return {
         WEIGHT_ROM_PATH: render_weight_rom_text(weights),
         LEAN_SPEC_PATH: render_lean_spec_text(weights),
+        SPARKLE_CONTRACT_DATA_PATH: render_sparkle_contract_data_text(weights),
         CONTRACT_MODEL_MD_PATH: model_doc_text,
     }
 
@@ -253,4 +312,5 @@ def expected_downstream_artifacts(weights: dict[str, object]) -> dict[Path, str]
 def sync_downstream(weights: dict[str, object]) -> None:
     WEIGHT_ROM_PATH.write_text(render_weight_rom_text(weights), encoding="utf-8")
     LEAN_SPEC_PATH.write_text(render_lean_spec_text(weights), encoding="utf-8")
+    SPARKLE_CONTRACT_DATA_PATH.write_text(render_sparkle_contract_data_text(weights), encoding="utf-8")
     CONTRACT_MODEL_MD_PATH.write_text(render_model_doc_text(weights), encoding="utf-8")

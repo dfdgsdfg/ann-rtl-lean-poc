@@ -1,14 +1,13 @@
 .PHONY: train evaluate quantize export freeze freeze-check \
        vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
        sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors \
-       sim-generated-controller sim-generated-controller-check-tools clean-sim-generated-controller \
        smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
        experiments experiments-artifact-consistency experiments-semantic-closure \
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
        rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-smoke rtl-synthesis-sim rtl-synthesis-iverilog \
        rtl-synthesis-verilator clean-rtl-synthesis \
        rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-emit-full-core \
-       rtl-formalize-synthesis-build rtl-formalize-synthesis-sim clean-rtl-formalize-synthesis smt-generated-controller \
+       rtl-formalize-synthesis-build rtl-formalize-synthesis-sim rtl-formalize-synthesis-sim-check-tools clean-rtl-formalize-synthesis \
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
@@ -54,16 +53,11 @@ SIM_INCLUDE_DIRS := -Isimulations/shared
 IVERILOG_BIN := $(SIM_BUILD_DIR)/iverilog/testbench.out
 VERILATOR_DIR := $(SIM_BUILD_DIR)/verilator
 VERILATOR_BIN := $(VERILATOR_DIR)/Vtestbench
-GENERATED_CONTROLLER_DIR := experiments/rtl-formalize-synthesis/sparkle
-GENERATED_CONTROLLER_ARTIFACT := $(GENERATED_CONTROLLER_DIR)/sparkle_controller.sv
-GENERATED_CONTROLLER_WRAPPER := $(GENERATED_CONTROLLER_DIR)/sparkle_controller_wrapper.sv
-GENERATED_MLP_CORE_ARTIFACT := $(GENERATED_CONTROLLER_DIR)/sparkle_mlp_core.sv
-GENERATED_MLP_CORE_WRAPPER := $(GENERATED_CONTROLLER_DIR)/sparkle_mlp_core_wrapper.sv
-GENERATED_CONTROLLER_SIM_BUILD_DIR := build/sim-generated-controller
-GENERATED_CONTROLLER_TB := simulations/rtl-formalize-synthesis/generated_controller_testbench.sv
-GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/generated_controller_tb.out
-GENERATED_MLP_CORE_SIM_BUILD_DIR := build/rtl-formalize-synthesis
-GENERATED_MLP_CORE_IVERILOG_BIN := $(GENERATED_MLP_CORE_SIM_BUILD_DIR)/iverilog/testbench.out
+SPARKLE_GENERATED_DIR := experiments/rtl-formalize-synthesis/sparkle
+SPARKLE_FULL_CORE_ARTIFACT := $(SPARKLE_GENERATED_DIR)/sparkle_mlp_core.sv
+SPARKLE_FULL_CORE_WRAPPER := $(SPARKLE_GENERATED_DIR)/sparkle_mlp_core_wrapper.sv
+SPARKLE_FULL_CORE_SIM_BUILD_DIR := build/rtl-formalize-synthesis
+SPARKLE_FULL_CORE_IVERILOG_BIN := $(SPARKLE_FULL_CORE_SIM_BUILD_DIR)/iverilog/testbench.out
 SPARKLE_PKG_DIR := rtl-formalize-synthesis
 SPARKLE_VENDOR_DIR := $(SPARKLE_PKG_DIR)/vendor/Sparkle
 SPARKLE_PREPARE_SCRIPT := $(SPARKLE_PKG_DIR)/scripts/prepare_sparkle.sh
@@ -166,41 +160,27 @@ rtl-formalize-synthesis-build:
 	@if [ ! -d "$(SPARKLE_VENDOR_DIR)" ]; then $(MAKE) rtl-formalize-synthesis-prepare; fi
 	cd $(SPARKLE_PKG_DIR) && lake build
 
-$(GENERATED_CONTROLLER_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
-	@mkdir -p $(GENERATED_CONTROLLER_DIR)
+$(SPARKLE_FULL_CORE_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
+	@mkdir -p $(SPARKLE_GENERATED_DIR)
 	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
 
-$(GENERATED_MLP_CORE_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
-	@mkdir -p $(GENERATED_CONTROLLER_DIR)
-	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
+rtl-formalize-synthesis-emit: $(SPARKLE_FULL_CORE_ARTIFACT)
 
-rtl-formalize-synthesis-emit: $(GENERATED_CONTROLLER_ARTIFACT) $(GENERATED_MLP_CORE_ARTIFACT)
+rtl-formalize-synthesis-emit-full-core: $(SPARKLE_FULL_CORE_ARTIFACT)
 
-rtl-formalize-synthesis-emit-full-core: $(GENERATED_MLP_CORE_ARTIFACT)
-
-sim-generated-controller: sim-generated-controller-check-tools $(GENERATED_CONTROLLER_IVERILOG_BIN)
-	vvp $(GENERATED_CONTROLLER_IVERILOG_BIN)
-
-sim-generated-controller-check-tools:
+rtl-formalize-synthesis-sim-check-tools:
 	@command -v iverilog >/dev/null 2>&1 || { echo "missing required tool: iverilog"; exit 1; }
 	@command -v vvp >/dev/null 2>&1 || { echo "missing required tool: vvp"; exit 1; }
 
-$(GENERATED_CONTROLLER_IVERILOG_BIN): rtl/src/controller.sv $(GENERATED_CONTROLLER_WRAPPER) $(GENERATED_CONTROLLER_ARTIFACT) $(GENERATED_CONTROLLER_TB)
+rtl-formalize-synthesis-sim: rtl-formalize-synthesis-sim-check-tools sim-vectors $(SPARKLE_FULL_CORE_IVERILOG_BIN)
+	vvp $(SPARKLE_FULL_CORE_IVERILOG_BIN)
+
+$(SPARKLE_FULL_CORE_IVERILOG_BIN): $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT) $(SIM_TB) $(SIM_VECTOR_STAMP)
 	@mkdir -p $(dir $@)
-	iverilog -g2012 -s generated_controller_testbench -o $@ $(GENERATED_CONTROLLER_TB) rtl/src/controller.sv $(GENERATED_CONTROLLER_WRAPPER) $(GENERATED_CONTROLLER_ARTIFACT)
-
-clean-sim-generated-controller:
-	rm -rf $(GENERATED_CONTROLLER_SIM_BUILD_DIR)
-
-rtl-formalize-synthesis-sim: sim-generated-controller-check-tools sim-vectors $(GENERATED_MLP_CORE_IVERILOG_BIN)
-	vvp $(GENERATED_MLP_CORE_IVERILOG_BIN)
-
-$(GENERATED_MLP_CORE_IVERILOG_BIN): $(GENERATED_MLP_CORE_WRAPPER) $(GENERATED_MLP_CORE_ARTIFACT) $(SIM_TB) $(SIM_VECTOR_STAMP)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(GENERATED_MLP_CORE_WRAPPER) $(GENERATED_MLP_CORE_ARTIFACT)
+	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
 
 clean-rtl-formalize-synthesis:
-	rm -rf $(GENERATED_MLP_CORE_SIM_BUILD_DIR)
+	rm -rf $(SPARKLE_FULL_CORE_SIM_BUILD_DIR)
 
 rtl-synthesis-check-tools:
 	@if ! command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || ! command -v $(RTL_SYNTHESIS_SYFCO) >/dev/null 2>&1; then $(MAKE) vendor-synthesis-tools-prepare; fi
@@ -244,14 +224,13 @@ SMT_Z3 ?= z3
 SMT_YOSYS ?= yosys
 SMT_SMTBMC ?= yosys-smtbmc
 SMT_RTL_SUMMARY := $(SMT_BUILD_DIR)/rtl_control_summary.json
-SMT_GENERATED_CONTROLLER_SUMMARY := $(SMT_BUILD_DIR)/generated_controller_summary.json
 SMT_CONTRACT_SUMMARY := $(SMT_BUILD_DIR)/contract_assumptions.json
 SMT_CONTRACT_OVERFLOW_SUMMARY := $(SMT_BUILD_DIR)/contract_overflow_summary.json
 SMT_CONTRACT_EQUIV_SUMMARY := $(SMT_BUILD_DIR)/contract_equivalence_summary.json
 EXPERIMENTS_BUILD_DIR := build/experiments
 EXPERIMENTS_RUNNER := python3 experiments/run.py
 
-smt: smt-check-tools smt-contract-assumptions smt-rtl-control smt-generated-controller smt-contract-overflow smt-contract-equivalence
+smt: smt-check-tools smt-contract-assumptions smt-rtl-control smt-contract-overflow smt-contract-equivalence
 
 smt-check-tools:
 	@command -v $(SMT_Z3) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_Z3)"; exit 1; }
@@ -263,9 +242,6 @@ smt-contract-assumptions:
 
 smt-rtl-control:
 	python3 smt/rtl/check_control.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --summary $(SMT_RTL_SUMMARY)
-
-smt-generated-controller: $(GENERATED_CONTROLLER_ARTIFACT) smt-check-tools
-	python3 smt/rtl/check_generated_controller.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --summary $(SMT_GENERATED_CONTROLLER_SUMMARY)
 
 smt-contract-overflow:
 	python3 smt/contract/overflow/check_bounds.py --z3 $(SMT_Z3) --summary $(SMT_CONTRACT_OVERFLOW_SUMMARY)
