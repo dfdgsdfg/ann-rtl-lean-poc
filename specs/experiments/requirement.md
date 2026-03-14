@@ -7,7 +7,7 @@ This document defines optional but recommended experiment requirements for the T
 The `experiments` domain covers:
 
 - Semantic-closure experiments between Lean fixed-point semantics, frozen contract artifacts, and committed RTL
-- Quantization sensitivity and artifact-consistency checks around the `ann -> contract -> rtl` boundary
+- Artifact-consistency checks around the frozen contract boundary
 - Cycle, latency, area, and timing measurements
 - Post-synthesis validation once synthesized netlists exist
 - Generated-implementation comparisons
@@ -28,12 +28,11 @@ This family exists to close the main proof-to-implementation gap in the reposito
 - Functional agreement sweeps over generated vectors
 - Lean fixed-point <-> RTL datapath equivalence
 
-### Artifact Consistency and Boundary Robustness
+### Artifact Consistency
 
-This family keeps the frozen artifacts aligned and improves confidence at the `ann -> contract` boundary.
+This family keeps the frozen artifacts aligned across the frozen contract and its downstream consumers.
 
 - Contract -> ROM automatic consistency check
-- Sensitivity to different quantized weights and biases
 
 ### Implementation Characterization
 
@@ -109,12 +108,11 @@ The `experiments` domain is complete when:
 
 1. At least one semantic-closure experiment is automated.
 2. An automated contract -> ROM consistency check exists.
-3. At least one quantization sensitivity study is recorded with its perturbation scope.
-4. At least one implementation metric is measured, such as cycles, area, or timing.
-5. The command path from source inputs to recorded outputs is documented.
-6. Post-synthesis simulation is documented and reproducible once synthesized netlists are part of the active flow.
-7. Any `rtl-formalize-synthesis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
-8. Any generated implementation experiment states its declared scope, such as controller-only, primitive path, or full core.
-9. Any generated implementation experiment states whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
-10. Cross-branch experiment records also state the branch support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity.
-11. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.
+3. At least one implementation metric is measured, such as cycles, area, or timing.
+4. The command path from source inputs to recorded outputs is documented.
+5. Post-synthesis simulation is documented and reproducible once synthesized netlists are part of the active flow.
+6. Any `rtl-formalize-synthesis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
+7. Any generated implementation experiment states its declared scope, such as controller-only, primitive path, or full core.
+8. Any generated implementation experiment states whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
+9. Cross-branch experiment records also state the branch support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity.
+10. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.

@@ -324,6 +324,19 @@ make sim-iverilog
 make sim-verilator
 ```
 
+Experiment commands:
+
+```bash
+make experiments
+make experiments-artifact-consistency
+make experiments-semantic-closure
+make experiments-branch-compare
+make experiments-qor
+make experiments-post-synth
+```
+
+The experiment runner writes family summaries and reports under `build/experiments/`.
+
 Visualization (generates SVG schematics in `docs/assets/`):
 
 ```bash

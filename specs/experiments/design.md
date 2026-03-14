@@ -30,19 +30,13 @@ The goal is to show end-to-end agreement at scale, not just with a few directed 
 
 This family should also include an explicit Lean fixed-point <-> RTL datapath equivalence study. That comparison closes the main unverified gap between the formal model and the committed datapath implementation.
 
-### Artifact Consistency and Boundary Robustness
+### Artifact Consistency
 
 First, check artifact consistency automatically:
 
 - Contract -> ROM automatic consistency check
 
-Compare behavior under:
-
-- Different toy-trained parameter sets
-- Alternative quantization choices
-- Boundary-case weights and biases
-
-This family is about confidence at the `ann -> contract` boundary and about keeping frozen downstream artifacts aligned with that contract.
+This family is about keeping frozen downstream artifacts aligned with the contract that feeds RTL, Lean, and simulation assets.
 
 ### Implementation Characterization
 

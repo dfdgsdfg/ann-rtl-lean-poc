@@ -2,6 +2,8 @@
        sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors \
        sim-generated-controller sim-generated-controller-check-tools clean-sim-generated-controller \
        smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
+       experiments experiments-artifact-consistency experiments-semantic-closure \
+       experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
        rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-sim rtl-synthesis-iverilog \
        rtl-synthesis-verilator clean-rtl-synthesis \
        rtl-formalize-synthesis-emit rtl-formalize-synthesis-build smt-generated-controller \
@@ -187,6 +189,8 @@ SMT_GENERATED_CONTROLLER_SUMMARY := $(SMT_BUILD_DIR)/generated_controller_summar
 SMT_CONTRACT_SUMMARY := $(SMT_BUILD_DIR)/contract_assumptions.json
 SMT_CONTRACT_OVERFLOW_SUMMARY := $(SMT_BUILD_DIR)/contract_overflow_summary.json
 SMT_CONTRACT_EQUIV_SUMMARY := $(SMT_BUILD_DIR)/contract_equivalence_summary.json
+EXPERIMENTS_BUILD_DIR := build/experiments
+EXPERIMENTS_RUNNER := python3 experiments/run.py
 
 smt: smt-check-tools smt-contract-assumptions smt-rtl-control smt-generated-controller smt-contract-overflow smt-contract-equivalence
 
@@ -212,6 +216,29 @@ smt-contract-equivalence:
 
 clean-smt:
 	rm -rf $(SMT_BUILD_DIR)
+
+# --- Experiment targets ---
+
+experiments:
+	$(EXPERIMENTS_RUNNER) --family all --build-root $(EXPERIMENTS_BUILD_DIR)
+
+experiments-artifact-consistency:
+	$(EXPERIMENTS_RUNNER) --family artifact-consistency --build-root $(EXPERIMENTS_BUILD_DIR)
+
+experiments-semantic-closure:
+	$(EXPERIMENTS_RUNNER) --family semantic-closure --build-root $(EXPERIMENTS_BUILD_DIR)
+
+experiments-branch-compare:
+	$(EXPERIMENTS_RUNNER) --family branch-compare --build-root $(EXPERIMENTS_BUILD_DIR)
+
+experiments-qor:
+	$(EXPERIMENTS_RUNNER) --family qor --build-root $(EXPERIMENTS_BUILD_DIR)
+
+experiments-post-synth:
+	$(EXPERIMENTS_RUNNER) --family post-synth --build-root $(EXPERIMENTS_BUILD_DIR)
+
+clean-experiments:
+	rm -rf $(EXPERIMENTS_BUILD_DIR)
 
 # --- Visualization targets ---
 
