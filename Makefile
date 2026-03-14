@@ -1,4 +1,5 @@
 .PHONY: train evaluate quantize export freeze freeze-check \
+       vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
        sim sim-check-tools sim-iverilog sim-verilator clean-sim sim-vectors \
        sim-generated-controller sim-generated-controller-check-tools clean-sim-generated-controller \
        smt smt-check-tools smt-rtl-control smt-contract-assumptions clean-smt \
@@ -61,6 +62,14 @@ GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/gener
 SPARKLE_PKG_DIR := rtl-formalize-synthesis
 SPARKLE_VENDOR_DIR := $(SPARKLE_PKG_DIR)/vendor/Sparkle
 SPARKLE_PREPARE_SCRIPT := $(SPARKLE_PKG_DIR)/scripts/prepare_sparkle.sh
+VENDOR_PREPARE_SCRIPT := scripts/prepare_vendor_tools.sh
+VENDOR_DIR := vendor
+VENDOR_SPOT_INSTALL_DIR := $(abspath $(VENDOR_DIR)/spot-install)
+VENDOR_SYFCO_INSTALL_DIR := $(abspath $(VENDOR_DIR)/syfco-install)
+VENDOR_OPENLANE_DIR := $(abspath $(VENDOR_DIR)/OpenLane)
+VENDOR_LTLSYNT_BIN := $(VENDOR_SPOT_INSTALL_DIR)/bin/ltlsynt
+VENDOR_SYFCO_BIN := $(VENDOR_SYFCO_INSTALL_DIR)/bin/syfco
+VENDOR_OPENLANE_FLOW := $(VENDOR_OPENLANE_DIR)/flow.tcl
 SPARKLE_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle.lean \
 	$(wildcard $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/*.lean) \
 	$(SPARKLE_PREPARE_SCRIPT) \
@@ -87,11 +96,27 @@ RTL_SYNTHESIS_FLOW_DEPS := rtl/src/controller.sv \
 RTL_SYNTHESIS_IVERILOG_BIN := $(RTL_SYNTHESIS_BUILD_DIR)/sim/iverilog/testbench.out
 RTL_SYNTHESIS_VERILATOR_DIR := $(RTL_SYNTHESIS_BUILD_DIR)/sim/verilator
 RTL_SYNTHESIS_VERILATOR_BIN := $(RTL_SYNTHESIS_VERILATOR_DIR)/Vtestbench
-RTL_SYNTHESIS_LTLSYNT ?= ltlsynt
-RTL_SYNTHESIS_SYFCO ?= syfco
+RTL_SYNTHESIS_LTLSYNT ?= $(if $(wildcard $(VENDOR_LTLSYNT_BIN)),$(VENDOR_LTLSYNT_BIN),ltlsynt)
+RTL_SYNTHESIS_SYFCO ?= $(if $(wildcard $(VENDOR_SYFCO_BIN)),$(VENDOR_SYFCO_BIN),syfco)
 RTL_SYNTHESIS_YOSYS ?= yosys
 RTL_SYNTHESIS_SMTBMC ?= yosys-smtbmc
 RTL_SYNTHESIS_Z3 ?= z3
+EXPERIMENTS_OPENLANE_FLOW ?= $(if $(wildcard $(VENDOR_OPENLANE_FLOW)),$(VENDOR_OPENLANE_FLOW),flow.tcl)
+
+vendor-tools-prepare:
+	@command -v bash >/dev/null 2>&1 || { echo "missing required tool: bash"; exit 1; }
+	@command -v curl >/dev/null 2>&1 || { echo "missing required tool: curl"; exit 1; }
+	$(VENDOR_PREPARE_SCRIPT)
+
+vendor-synthesis-tools-prepare:
+	@command -v bash >/dev/null 2>&1 || { echo "missing required tool: bash"; exit 1; }
+	@command -v curl >/dev/null 2>&1 || { echo "missing required tool: curl"; exit 1; }
+	$(VENDOR_PREPARE_SCRIPT) --tool ltlsynt --tool syfco
+
+vendor-openlane-prepare:
+	@command -v bash >/dev/null 2>&1 || { echo "missing required tool: bash"; exit 1; }
+	@command -v curl >/dev/null 2>&1 || { echo "missing required tool: curl"; exit 1; }
+	$(VENDOR_PREPARE_SCRIPT) --tool openlane
 
 sim: sim-check-tools sim-iverilog sim-verilator
 
@@ -156,6 +181,7 @@ clean-sim-generated-controller:
 	rm -rf $(GENERATED_CONTROLLER_SIM_BUILD_DIR)
 
 rtl-synthesis-check-tools:
+	@if ! command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || ! command -v $(RTL_SYNTHESIS_SYFCO) >/dev/null 2>&1; then $(MAKE) vendor-synthesis-tools-prepare; fi
 	@command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_LTLSYNT)"; exit 1; }
 	@command -v $(RTL_SYNTHESIS_SYFCO) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_SYFCO)"; exit 1; }
 	@command -v $(RTL_SYNTHESIS_YOSYS) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_YOSYS)"; exit 1; }
@@ -231,22 +257,23 @@ clean-smt:
 # --- Experiment targets ---
 
 experiments:
-	$(EXPERIMENTS_RUNNER) --family all --build-root $(EXPERIMENTS_BUILD_DIR)
+	$(EXPERIMENTS_RUNNER) --family all --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 experiments-artifact-consistency:
-	$(EXPERIMENTS_RUNNER) --family artifact-consistency --build-root $(EXPERIMENTS_BUILD_DIR)
+	$(EXPERIMENTS_RUNNER) --family artifact-consistency --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 experiments-semantic-closure:
-	$(EXPERIMENTS_RUNNER) --family semantic-closure --build-root $(EXPERIMENTS_BUILD_DIR)
+	$(EXPERIMENTS_RUNNER) --family semantic-closure --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 experiments-branch-compare:
-	$(EXPERIMENTS_RUNNER) --family branch-compare --build-root $(EXPERIMENTS_BUILD_DIR)
+	$(EXPERIMENTS_RUNNER) --family branch-compare --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 experiments-qor:
-	$(EXPERIMENTS_RUNNER) --family qor --build-root $(EXPERIMENTS_BUILD_DIR)
+	$(EXPERIMENTS_RUNNER) --family qor --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 experiments-post-synth:
-	$(EXPERIMENTS_RUNNER) --family post-synth --build-root $(EXPERIMENTS_BUILD_DIR)
+	@if ! command -v $(EXPERIMENTS_OPENLANE_FLOW) >/dev/null 2>&1; then $(MAKE) vendor-openlane-prepare; fi
+	$(EXPERIMENTS_RUNNER) --family post-synth --build-root $(EXPERIMENTS_BUILD_DIR) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --openlane-flow $(EXPERIMENTS_OPENLANE_FLOW)
 
 clean-experiments:
 	rm -rf $(EXPERIMENTS_BUILD_DIR)

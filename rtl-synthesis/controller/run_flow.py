@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[2]
 DOMAIN_ROOT = ROOT / "rtl-synthesis" / "controller"
 DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthesis" / "spot"
 DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
+VENDOR_DIR = ROOT / "vendor"
+VENDORED_LTLSYNT = VENDOR_DIR / "spot-install" / "bin" / "ltlsynt"
+VENDORED_SYFCO = VENDOR_DIR / "syfco-install" / "bin" / "syfco"
 
 TLSF_SOURCE = DOMAIN_ROOT / "controller.tlsf"
 FORMAL_INTERFACE_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
@@ -78,6 +81,12 @@ SECONDARY_CLAIM_SCOPE = (
     "through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under "
     "exact_schedule_v1 assumptions"
 )
+
+
+def preferred_tool_path(vendored_path: Path, executable_name: str) -> str:
+    if vendored_path.exists():
+        return str(vendored_path)
+    return shutil.which(executable_name) or executable_name
 
 
 @dataclass
@@ -368,12 +377,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the rtl-synthesis Spot/ltlsynt flow.")
     parser.add_argument(
         "--ltlsynt",
-        default=shutil.which("ltlsynt") or "ltlsynt",
+        default=preferred_tool_path(VENDORED_LTLSYNT, "ltlsynt"),
         help="Path to the ltlsynt binary.",
     )
     parser.add_argument(
         "--syfco",
-        default=shutil.which("syfco") or "syfco",
+        default=preferred_tool_path(VENDORED_SYFCO, "syfco"),
         help="Path to the syfco binary used by ltlsynt --tlsf.",
     )
     parser.add_argument(

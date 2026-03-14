@@ -128,12 +128,14 @@ Install the npm visualization tool:
 npm install -g netlistsvg
 ```
 
-The Brewfile installs the baseline local toolchain used by this repository:
-`python@3`, `icarus-verilog`, `verilator`, `yosys`, and `z3`.
+The committed Brewfile currently installs most of the baseline local toolchain used by this repository:
+`icarus-verilog`, `verilator`, `yosys`, and `z3`.
+Install `python3`, `node`, and `elan` separately if your system does not already provide them.
 
 For the SMT flow specifically, `make smt` expects:
 
 - `python3` for the SMT driver scripts
+- `git` for the Sparkle prepare step
 - `lake` to rebuild and emit the Sparkle generated-controller artifact
 - `yosys` for RTL elaboration
 - `yosys-smtbmc` for bounded SMT model checking
@@ -146,6 +148,12 @@ For the `rtl-synthesis` experiment specifically, `make rtl-synthesis` expects:
 - `ltlsynt` from the Spot toolchain
 - `syfco` on `PATH` for TLSF loading
 - `yosys`, `yosys-smtbmc`, and `z3`
+
+For `make rtl-synthesis-sim`, you also need:
+
+- `iverilog`
+- `vvp`
+- `verilator`
 
 Other tools used by the project (install separately if needed):
 

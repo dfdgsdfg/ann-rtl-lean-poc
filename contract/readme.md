@@ -15,15 +15,17 @@ In practical terms, this domain answers:
 
 ## What Gets Generated
 
-Running the freeze step refreshes these files from the same frozen payload:
+Running the freeze step refreshes these files and metadata from the same frozen payload:
 
 - `contract/result/weights.json`
+- `ann/results/selected_run.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
 - `formalize/src/TinyMLP/Defs/SpecCore.lean`
 - `simulations/shared/test_vectors.mem`
+- `simulations/shared/test_vectors_meta.svh`
 
-Related provenance lives in `ann/results/selected_run.json`. That file points to the selected ANN run, its `weights_quantized.json`, and the canonical contract weights file.
+`ann/results/selected_run.json` records the selected ANN run, its `weights_quantized.json`, and the canonical contract weights file.
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
 
@@ -47,7 +49,7 @@ If you run the lower-level training module directly:
 python3 ann/src/train.py
 ```
 
-it only writes ANN artifacts under `ann/results/` and does not refresh `contract/result/weights.json` or downstream generated files. Run `python3 -m contract.src.freeze` afterward if you use that lower-level entrypoint.
+it only writes ANN artifacts under `ann/results/` and does not refresh `contract/result/weights.json`, `ann/results/selected_run.json`, or the downstream generated files. Run `python3 -m contract.src.freeze` afterward if you use that lower-level entrypoint.
 
 If you already have a run directory with `weights_quantized.json`, you can freeze that run directly.
 
@@ -75,7 +77,7 @@ python3 -m contract.src.freeze --check
 
 ### 4. Regenerate only the simulation vectors
 
-If the contract is already frozen and you only need to refresh `simulations/shared/test_vectors.mem`:
+If the contract is already frozen and you only need to refresh `simulations/shared/test_vectors.mem` and `simulations/shared/test_vectors_meta.svh`:
 
 ```bash
 python3 -m contract.src.gen_vectors
@@ -106,7 +108,7 @@ For provenance:
 Use the `contract` CLI when you want to:
 
 - promote one ANN result to the implementation baseline
-- refresh RTL, Lean, and simulation artifacts from that baseline
+- refresh RTL, Lean, simulation, and provenance artifacts from that baseline
 - verify that the repo still matches the currently frozen contract
 
 Do not edit `contract/result/weights.json` by hand. Re-freeze from an ANN result instead.

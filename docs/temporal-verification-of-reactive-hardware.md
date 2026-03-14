@@ -510,7 +510,7 @@ The key difference from model checking is that these properties are proved over 
 
 This repository also contains two reactive synthesis experiments (`rtl-synthesis` and `rtl-formalize-synthesis`) that generate controller implementations from temporal specifications. The connection to this temporal verification layer is direct but distinct:
 
-**Reactive synthesis** asks: "Given a temporal specification, _construct_ a controller that satisfies it." The TLSF specification in `rtl-synthesis/controller/controller.tlsf` encodes the same phase-ordering and handshake properties as GR(1) guarantees, and ltlsynt produces a controller satisfying them.
+**Reactive synthesis** asks: "Given a temporal specification, _construct_ a controller that satisfies it." In this repository, the committed TLSF specification in `rtl-synthesis/controller/controller.tlsf` is the `exact_schedule_v1` controller abstraction used for a secondary controller-only proof artifact under strong environment assumptions. The current primary `rtl-synthesis` claim is instead a bounded 82-cycle closed-loop `mlp_core` equivalence check between baseline and synthesized-controller mixed-path assemblies. Within that setup, ltlsynt produces a controller satisfying the TLSF guarantees under the declared assumptions.
 
 **Temporal verification** asks: "Given a specific controller, _prove_ that it satisfies temporal properties." The Lean formalization proves these properties about the hand-written `step`/`timedStep` model.
 

@@ -1,8 +1,13 @@
 # RTL Formal Checks
 
-`check_control.py` is the RTL-backed formal runner for the SMT domain.
+This subtree contains the RTL-backed formal runners for the SMT domain.
 
-It proves against the real RTL:
+Current entrypoints:
+
+- `check_control.py` for the hand-written baseline RTL property families
+- `check_generated_controller.py` for the Sparkle generated-controller wrapper checks
+
+The baseline `check_control.py` flow proves against the real RTL:
 
 - [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
 - [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
@@ -32,3 +37,5 @@ The exact-latency proof uses these assumptions:
 - `start` is high for the accept cycle only
 - `start` is low for all later cycles, so `DONE` can release
 - no reset occurs during the bounded trace
+
+The generated-controller runner checks the stable wrapper boundary for the emitted Sparkle controller over an 82-cycle post-reset window. Use `make smt-generated-controller` if you want the repository-managed flow that rebuilds the emitted RTL as needed before running the bounded checks.

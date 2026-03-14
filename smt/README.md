@@ -22,7 +22,7 @@ Current non-goals:
 - full cycle-by-cycle arithmetic equivalence for the sequential `mlp_core`
 - SMT-assisted theorem proving inside Lean
 
-The implementation uses Yosys + `yosys-smtbmc` with `z3` for RTL properties, and direct `z3` QF_BV batches for the contract-side arithmetic checks.
+The implementation uses Yosys + `yosys-smtbmc` with `z3` for RTL properties, direct `z3` QF_BV batches for the contract-side arithmetic checks, and a pure JSON export step for the frozen contract assumptions.
 
 ## Commands
 
@@ -32,13 +32,21 @@ Run the complete SMT flow:
 make smt
 ```
 
+This top-level target also rebuilds the Sparkle generated-controller artifact when needed, so in practice it expects `python3`, `git`, `lake`, `yosys`, `yosys-smtbmc`, and `z3`.
+
 Run only the RTL control checks:
 
 ```bash
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
 ```
 
-Run only the generated-controller checks:
+Run the repository-managed generated-controller checks, including rebuild of the emitted RTL when needed:
+
+```bash
+make smt-generated-controller
+```
+
+If the generated RTL artifact already exists and you only want to rerun the bounded wrapper checks:
 
 ```bash
 python3 smt/rtl/check_generated_controller.py --summary build/smt/generated_controller_summary.json

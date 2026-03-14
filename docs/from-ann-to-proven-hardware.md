@@ -1,6 +1,6 @@
-# From ANN to Proven Hardware
+# From ANN to Hardware with Formal Evidence
 
-This document describes the actual process used in this repository to turn a trained neural network into a formally verified hardware circuit.
+This document describes the actual process used in this repository to turn a trained neural network into a hardware implementation backed by formal proofs, bounded RTL checks, and simulation.
 
 The path is:
 
@@ -12,12 +12,13 @@ graph LR
     C --> E[Lean Formalization]
     C --> F[Simulation Vectors]
     C --> I[SMT / Formal Checks]
+    E -->|Sparkle| D
     D --> G[Yosys Synthesis]
     D --> I
     G --> H[Circuit Schematics]
 ```
 
-Each step narrows the abstraction. By the end, the same set of frozen integers appears in three places: a SystemVerilog ROM, a Lean match expression, and a simulation test vector file. The formal proofs and simulation runs independently confirm that the hardware computes the same function as the math.
+Each step narrows the abstraction gap. By the end, the same set of frozen integers appears in a SystemVerilog ROM, a Lean match expression, and a simulation test vector file. The repository then checks consistency across those views with Lean proofs over models, bounded SMT checks over RTL, and simulation over selected vectors. That combination provides strong evidence, but not a single end-to-end theorem from mathematics to Verilog. The sections that follow trace both the construction path and the _verification argument_ that connects each stage to the next.
 
 ## 1. The ANN Result
 
@@ -73,7 +74,9 @@ The contract (`contract/result/weights.json`) freezes one quantized result as th
 
 The contract is not just data. It is a decision: these specific numbers, under these specific arithmetic rules, are what the hardware must compute. Once frozen, you do not re-derive values. You regenerate downstream artifacts from the same payload.
 
-The freeze pipeline (`contract/src/downstream_sync.py`) writes three files from the frozen weights:
+## 3. Three Representations from One Contract
+
+The freeze pipeline (`contract/src/downstream_sync.py`) generates three artifacts from the frozen weights. Each expresses the same integers in a different form for a different verification domain.
 
 ```mermaid
 graph TD
@@ -82,13 +85,70 @@ graph TD
     W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
-This guarantees that the RTL ROM, the Lean spec, and the simulation expectations all use the same numbers. There is no manual copying.
+There is no manual copying between domains. A contract change propagates automatically to all three artifacts.
 
-## 3. From Contract to RTL
+### The RTL ROM
 
-### The Design Problem
+The freeze pipeline generates `weight_rom.sv` with case-statement ROM:
+
+```systemverilog
+always_comb begin
+  unique case ({hidden_idx, input_idx})
+    8'h00: w1_data = 8'sd0;
+    8'h01: w1_data = 8'sd0;
+    // ...
+  endcase
+end
+```
+
+The same integers from `contract/result/weights.json` appear here as SystemVerilog signed literals. The RTL controller reads these values one per cycle during MAC operations.
+
+### The Lean Spec
+
+The freeze pipeline generates a match-expression block in `Defs/SpecCore.lean`:
+
+```lean
+def w1At : Nat → Nat → Int
+  | 0, 0 => 0
+  | 0, 1 => 0
+  | 2, 0 => 2
+  | 2, 1 => 1
+  -- ...
+  | _, _ => 0
+
+def b1At : Nat → Int
+  | 0 => 0
+  | 2 => 1
+  -- ...
+
+def b2 : Int := -1
+```
+
+These are the same numbers as the ROM. The Lean formalization builds its mathematical spec and fixed-point model on top of these definitions.
+
+### The Simulation Vectors
+
+The freeze pipeline generates `simulations/shared/test_vectors.mem` from the frozen weights. Each vector is a packed hex record:
+
+```text
+[32-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]
+```
+
+The generator synthesizes a deterministic suite that covers:
+- positive score (out = 1)
+- zero score (out = 0)
+- negative score (out = 0)
+- per-lane arithmetic boundaries at `-128`, `-127`, and `+127`
+- extreme sign-pattern combinations such as all-min, all-max, and alternating min/max lanes
+- score and accumulator stress vectors chosen from a deterministic candidate pool
+
+If any class cannot be synthesized, generation fails. This is a contract-level requirement: the frozen weights must be able to produce all three score classes.
+
+## 4. The RTL Machine
 
 The contract says _what_ to compute. The RTL says _how_ to compute it in hardware, cycle by cycle.
+
+### The Design Problem
 
 The fundamental constraint is that hardware is a reactive state system. Unlike the Python reference (which runs a loop and returns), the RTL controller must:
 
@@ -149,7 +209,7 @@ The timing semantics are part of the RTL contract, not implementation details:
 - while `done ∧ start`: machine stays in DONE
 - `done ∧ ¬start`: machine returns to IDLE
 
-These are the properties that temporal proofs must capture.
+These are the properties that the temporal proofs and SMT checks must capture.
 
 ### Guard Cycles
 
@@ -160,29 +220,11 @@ This matters because:
 - a missing or extra MAC operation changes the accumulated result
 - an out-of-range read could access garbage weight or activation data
 
-The guard cycle is where most controller bugs hide. That is why both the formalization and the testbench treat boundary transitions as first-class verification targets.
+The guard cycle is where most controller bugs hide. That is why the formalization, the testbench, and the SMT checks all treat boundary transitions as first-class verification targets.
 
-### How Weights Enter the RTL
+## 5. The Proof Layers
 
-The freeze pipeline generates `weight_rom.sv` with case-statement ROM:
-
-```systemverilog
-always_comb begin
-  unique case ({hidden_idx, input_idx})
-    8'h00: w1_data = 8'sd0;
-    8'h01: w1_data = 8'sd0;
-    // ...
-  endcase
-end
-```
-
-The same integers from `contract/result/weights.json` appear here as SystemVerilog signed literals.
-
-## 4. From Contract to Lean Formalization
-
-### The Layered Strategy
-
-The formalization splits the problem into four layers:
+The Lean formalization proves that the FSM described in §4 computes the correct output with correct timing. The formalization splits the problem into four layers, each addressing a different difficulty.
 
 ```mermaid
 graph TB
@@ -197,34 +239,10 @@ graph TB
     F -->|mlpFixed_eq_mlpSpec| S
 ```
 
-This separation exists because the hardest parts of the proof are different in each layer:
 - The spec layer is about arithmetic identities
 - The fixed-point layer is about width-safe wraparound
 - The machine layer is about FSM sequencing
 - The temporal layer is about handshake timing
-
-### How Weights Enter Lean
-
-The freeze pipeline generates a match-expression block in `Defs/SpecCore.lean`:
-
-```lean
-def w1At : Nat → Nat → Int
-  | 0, 0 => 0
-  | 0, 1 => 0
-  | 2, 0 => 2
-  | 2, 1 => 1
-  -- ...
-  | _, _ => 0
-
-def b1At : Nat → Int
-  | 0 => 0
-  | 2 => 1
-  -- ...
-
-def b2 : Int := -1
-```
-
-These are the same numbers as the ROM. The auto-generation guarantees it.
 
 ### The Mathematical Spec
 
@@ -242,7 +260,7 @@ def mlpSpec (input : MathInput) : Bool :=
   outputScoreSpec input > 0
 ```
 
-This is the "what should happen" definition. No widths, no wrapping.
+This is the "what should happen" definition. No widths, no wrapping. The weight definitions from §3 feed directly into these functions.
 
 ### The Fixed-Point Model
 
@@ -280,7 +298,7 @@ This works because the contract's verified bounds show that no intermediate valu
 
 ### The Machine Model
 
-The machine state layout mirrors the RTL FSM and datapath registers, but the operational `step`/`run` view intentionally starts from a preloaded input-register state:
+The machine state layout mirrors the RTL FSM and datapath registers from §4, but the operational `step`/`run` view intentionally starts from a preloaded input-register state:
 
 ```lean
 inductive Phase
@@ -311,7 +329,7 @@ def step (s : State) : State :=
   -- ...
 ```
 
-The guard cycle appears naturally: when `inputIdx = 4`, the condition `inputIdx < inputCount` is false, so the step just changes the phase. No MAC happens. This matches the RTL exactly once the input register has already been loaded.
+The guard cycle appears naturally: when `inputIdx = 4`, the condition `inputIdx < inputCount` is false, so the step just changes the phase. No MAC happens. This matches the RTL behavior described in §4 exactly once the input register has already been loaded.
 
 ### The Correctness Proof
 
@@ -340,6 +358,8 @@ This is proved by symbolic simulation: unfolding `run` in chunks and equating in
 
 ### The Temporal Layer
 
+The correctness proof shows _what_ the machine computes. The temporal layer shows _when_ and _how_ it interacts with the outside world.
+
 The operational `step`/`run` model assumes a preloaded transaction input. It does not model external `start` sampling, `LOAD_INPUT` data capture, or DONE hold behavior. The temporal layer adds those interface semantics.
 
 ```lean
@@ -358,7 +378,7 @@ def timedStep (sample : CtrlSample) (s : State) : State :=
   | _     => step s
 ```
 
-This models the RTL exactly:
+This models the RTL's handshake contract from §4:
 - In IDLE with start low, stay idle and clean `hiddenIdx`/`inputIdx` back to zero
 - In IDLE with start high, accept the transaction and move to `LOAD_INPUT`
 - In LOAD_INPUT, capture the external input bus into `regs`
@@ -391,6 +411,8 @@ The boundary theorems prove that guard cycles are safe:
 | `outputBoundary_no_duplicate_or_skip_work` | Same for output layer |
 | `biasOutput_registers_result` | BIAS_OUTPUT computes the final output; DONE is first valid cycle |
 
+For the full temporal verification story — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md).
+
 ### Index Safety
 
 The `IndexInvariant` defines legal index ranges per phase:
@@ -404,50 +426,31 @@ def IndexInvariant (s : State) : Prop :=
   -- ...
 ```
 
-This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that ROM reads and hidden-register accesses never use out-of-range indices.
+This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that the ROM reads and hidden-register accesses in §4's architecture never use out-of-range indices, regardless of the environment's behavior.
 
-### From Pure Lean to Generated RTL
+## 6. The Gap: Models vs. Reality
 
-The proofs above close the gap between math, fixed-point arithmetic, and the repository's pure machine/temporal model. They do not, by themselves, prove that a Lean-hosted hardware DSL emits matching RTL.
+The Lean formalization in §5 proves that a hand-written model of the FSM computes the correct output with correct timing. These proofs are kernel-checked and hold over all possible inputs and environment behaviors.
 
-The controller-only `rtl-formalize-synthesis/` branch adds that missing middle layer:
+But Lean proofs don't run on actual Verilog.
 
-```mermaid
-graph LR
-    PURE["formalize/<br/>timedControlTrace"] --> REFINE["TinyMLPSparkle/Refinement.lean<br/>controller refinement theorem"]
-    REFINE --> DSL["TinyMLPSparkle/ControllerSignal.lean<br/>Sparkle Signal DSL controller"]
-    DSL --> EMIT["TinyMLPSparkle/Emit.lean<br/>generated Verilog"]
-    EMIT --> WRAP["sparkle_controller_wrapper.sv<br/>stable downstream boundary"]
-    WRAP --> CHECK["simulation + SMT<br/>wrapper-boundary checks"]
-```
+The Lean `step` and `timedStep` functions are manual mirrors of the RTL behavior, not a formal equivalence proof against the SystemVerilog source. Every `match` branch in the Lean `step` function corresponds to a case in `controller.sv`, and every width annotation corresponds to a wire declaration. The correspondence is maintained by design, but it is not itself a theorem. A transcription bug — a missing edge case, a swapped index — would not be caught by the Lean proofs.
 
-- [`rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean) expresses the controller as a Sparkle Signal DSL design.
-- [`rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) proves that this Signal DSL controller refines the pure controller trace from `formalize/`.
-- [`rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean) emits the generated controller RTL to [`experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller.sv).
+This gap is fundamental to all hardware formalization that uses a proof assistant to reason about an independent hardware description. The Lean model and the SystemVerilog source are separate artifacts written in separate languages.
 
-At the single-step level, `controllerPhaseNextComb_refines_timedControlStep` shows that the Sparkle controller's next-phase logic agrees with the repository's timed controller step. At the sampled interface level, `canonicalControllerView_refines_timedControlTrace` shows that the externally visible controller outputs match `timedControlTrace` cycle by cycle.
+Three complementary approaches address this gap:
 
-So the repository now closes the pure Lean -> Signal DSL gap for the controller milestone. The remaining trusted boundary is Sparkle's Verilog backend and the thin compatibility wrapper [`experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv). Those are validated by generated-controller simulation and SMT equivalence checks, not by Lean proof alone.
+1. **Simulation** (§7) exercises the actual Verilog with deterministic test vectors and checks functional agreement. It catches disagreements for the tested inputs but cannot cover all 2^32 input combinations.
 
-## 5. Simulation
+2. **SMT on real Verilog** (§8) uses Yosys to elaborate the SystemVerilog into an SMT model and proves properties directly over the elaborated design. This covers all inputs within a bounded trace window but cannot see beyond the trace depth.
 
-### How Test Vectors Are Generated
+3. **Generated controller** (§9) narrows the gap structurally by generating RTL from a proved Lean model via Sparkle. This replaces the manual transcription with code generation for the controller — though the code generator itself becomes a new trust boundary.
 
-The freeze pipeline generates `simulations/shared/test_vectors.mem` from the frozen weights. Each vector is a packed hex record:
+No single approach eliminates the gap. Together, they reduce it from different directions.
 
-```text
-[32-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]
-```
+## 7. Closing the Gap: Simulation
 
-The generator synthesizes a deterministic suite that covers:
-- positive score (out = 1)
-- zero score (out = 0)
-- negative score (out = 0)
-- per-lane arithmetic boundaries at `-128`, `-127`, and `+127`
-- extreme sign-pattern combinations such as all-min, all-max, and alternating min/max lanes
-- score and accumulator stress vectors chosen from a deterministic candidate pool
-
-If any class cannot be synthesized, generation fails. This is a contract-level requirement: the frozen weights must be able to produce all three score classes.
+The simulation flow exercises the actual Verilog with the test vectors from §3.
 
 ### What the Testbench Checks
 
@@ -479,7 +482,164 @@ The testbench samples on `negedge clk` to observe post-update register values, a
 
 `make sim` runs the same testbench through both Icarus Verilog and Verilator. The regression passes only if both simulators pass. This catches simulator-specific interpretation differences in the SystemVerilog.
 
-## 6. Visualizing the RTL
+### What Simulation Does Not Cover
+
+Simulation checks the actual Verilog — not a model of it. But the test suite is finite. It cannot check all 2^32 input combinations, so it cannot prove the absence of corner-case failures. The handshake and timing checks are thorough but only exercise the specific test vectors.
+
+## 8. Closing the Gap: SMT on Real Verilog
+
+Where simulation checks specific inputs, SMT checks prove properties over _all_ inputs within a bounded trace window.
+
+Yosys elaborates the real SystemVerilog into an SMT model, and `yosys-smtbmc` with Z3 proves properties over the elaborated design. Unlike the Lean formalization, this operates on the Verilog that a simulator or synthesis tool would see.
+
+### RTL Control Properties
+
+The SMT flow proves control, boundary, range-safety, transaction-capture, and exact-latency properties directly over the hand-written `controller.sv` and `mlp_core.sv`. These include:
+
+- no out-of-range selector/ROM-hit checks at the hidden and output boundaries
+- accepted-start transaction capture checks for `LOAD_INPUT` and `input_regs`
+
+### Contract Arithmetic Properties
+
+The frozen contract's weights and arithmetic rules are encoded as QF_BV queries. Z3 proves that:
+
+- no intermediate value overflows its declared width for any `int8` input
+- two different bitvector encodings of the network produce identical results
+
+The explicit assumptions used by these proofs are exported to `build/smt/contract_assumptions.json` for inspection.
+
+### What SMT Does Not Cover
+
+SMT bounded proofs cannot see beyond their trace depth. The current RTL control checks use a bounded window sufficient for a full 76-cycle transaction plus slack, but this is not an unbounded induction proof. The Python model's role as the single source of truth for arithmetic behavior is not challenged by the SMT checks; they confirm that the contract's frozen arithmetic rules are self-consistent and that the RTL's control behavior matches the intended protocol.
+
+For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
+
+## 9. Closing the Gap: Generated Controller
+
+Simulation checks the actual Verilog empirically. SMT checks it formally within a bounded window. The third approach narrows the gap structurally: generate RTL from a Lean model that has been proved correct.
+
+The `rtl-formalize-synthesis/` domain implements this for the controller. The [Sparkle](https://github.com/opencompl/sparkle) HDL library provides a Signal DSL hosted in Lean 4 and a Verilog backend. The controller is re-expressed in this DSL, proved to refine the pure machine model, and then emitted as SystemVerilog.
+
+### The Trust Chain
+
+```mermaid
+graph LR
+    PURE["formalize/<br/>timedControlTrace"] --> REFINE["Refinement.lean<br/>refinement theorem"]
+    REFINE --> DSL["ControllerSignal.lean<br/>Sparkle Signal DSL"]
+    DSL --> EMIT["Emit.lean<br/>code generation"]
+    EMIT --> WRAP["sparkle_controller_wrapper.sv<br/>stable boundary"]
+    WRAP --> CHECK["simulation + SMT<br/>equivalence checks"]
+```
+
+### What Is Proved
+
+[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) proves two kernel-checked theorems:
+
+- `controllerPhaseNextComb_refines_timedControlStep` — the Sparkle controller's combinational next-phase logic agrees with the pure machine's `timedControlStep` for every legal control state.
+- `canonicalControllerView_refines_timedControlTrace` — the externally visible controller outputs (state, load_input, clear_acc, do_mac_hidden, ..., busy) match `timedControlTrace` from `formalize/` cycle by cycle.
+
+These close the gap between the pure machine model in §5 and the Signal DSL implementation used for emission. The proofs require the `ControlInvariant` (index bounds per phase) and include arithmetic lemmas connecting BitVec comparisons to the Nat arithmetic used in the pure model.
+
+### What Is Trusted
+
+The Sparkle-to-Verilog backend is trusted code generation. The theorems prove that the Signal DSL model is correct; the code generator is assumed to emit Verilog that faithfully implements that model.
+
+A thin wrapper ([`sparkle_controller_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_controller_wrapper.sv)) unpacks the generated module's 14-bit packed output bus into named control signals matching the baseline controller interface:
+
+```systemverilog
+assign state          = packed_out[13:10];
+assign load_input     = packed_out[9];
+assign clear_acc      = packed_out[8];
+assign do_mac_hidden  = packed_out[7];
+// ...
+assign busy           = packed_out[0];
+```
+
+This bit-slice mapping follows the `bundleAll!` packing order in [`ControllerSignal.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/ControllerSignal.lean). If Sparkle changes the internal packing order, the mapping breaks. The protection is regression testing, not structural proof.
+
+### What Is Validated
+
+The emitted RTL + wrapper is checked against the hand-written baseline controller by:
+
+- **82-cycle bounded SMT equivalence** for three parameter configurations (4/8, 3/5, 1/1), checking all 11 control signals every cycle after a two-cycle reset sequence
+- **Invalid-state recovery proof**: both designs recover identically from seeded corrupted state via `anyconst`
+- **Directed simulation traces** comparing cycle-by-cycle outputs for the default and alternate parameter sets
+
+The 82-cycle window covers a full 76-cycle transaction plus DONE hold/release slack.
+
+### Current Scope and Limitations
+
+The generated controller covers the FSM only. The datapath (MAC, ReLU, accumulator, weight ROM) remains hand-written. The scope is controller-only by design: it is the smallest artifact that is meaningful inside this repository, structurally close to Sparkle's strengths, and easy to compare against the existing baseline.
+
+The emission uses `#writeVerilogDesignNoDRC` (bypassing Sparkle's registered-output design rule check). The wrapper's reset polarity inversion (`rst_n` → `rst`) and parameter computation (`LAST_HIDDEN_IDX = HIDDEN_NEURONS - 1`) are manual SystemVerilog, not generated from Lean.
+
+Extending to datapath primitives and eventually the full core is planned but not yet implemented. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for the milestone roadmap.
+
+## 10. The Verification Surface
+
+The previous sections described four independent approaches to the same question: does the hardware compute the right function? Each covers a different slice of the correctness space. Together, they form a verification surface.
+
+```mermaid
+graph LR
+    PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
+    LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
+    LEAN ---|"Sparkle refinement<br/>+ code generation"| GEN["Generated Controller<br/>sparkle_controller_wrapper"]
+    RTL ---|"simulation<br/>test vectors"| PY
+    RTL ---|"bounded proofs<br/>over real Verilog"| SMT["SMT / Formal<br/>Yosys + Z3"]
+    SMT ---|"contract-tied<br/>QF_BV proofs"| PY
+    GEN ---|"SMT equivalence<br/>+ simulation"| RTL
+```
+
+Each pair is connected by a different method:
+
+- **Python ↔ Lean**: same arithmetic rules, same weights, same wraparound behavior. The Lean `mlpFixed` is a direct transliteration of the Python reference. The bridge theorem `mlpFixed_eq_mlpSpec` then connects fixed-point to math.
+
+- **Lean ↔ RTL (hand-written)**: the Lean `step` and `timedStep` functions are manual mirrors of the RTL state transitions, not a formal equivalence proof against the SystemVerilog source. The machine proof (`rtl_correct`) and temporal proofs establish the behavior of the Lean model; simulation (§7) and SMT (§8) then check key functional, timing, and control properties against the actual RTL.
+
+- **Lean → RTL (generated)**: the Sparkle refinement theorems (§9) prove Signal DSL correctness, and the emitted controller is validated against the baseline by SMT equivalence and simulation.
+
+- **Python ↔ RTL**: simulation (§7). The testbench feeds the same inputs and expected outputs to the RTL DUT and checks agreement.
+
+- **RTL ↔ SMT**: bounded model checking (§8). Yosys elaborates the real SystemVerilog and `yosys-smtbmc` proves control, boundary, range-safety, transaction-capture, and exact-latency properties over all inputs within a bounded trace window.
+
+- **Python ↔ SMT**: contract arithmetic proofs. Z3 proves that no intermediate value overflows its declared width and that two different bitvector encodings produce identical results.
+
+### What No Single Method Covers
+
+- Simulation can't check all 2^32 inputs
+- Lean proofs don't run on actual Verilog
+- The Python model doesn't prove timing properties
+- SMT bounded proofs can't see beyond their trace depth
+- Generated controller covers the FSM only, not the datapath
+
+### What Makes This Hard
+
+The arithmetic in this project is small. The hard parts are:
+
+**Reactive timing**: The RTL is not a function. It is a state machine that produces results over time. Proving that `out_bit` is valid at cycle 76 (and not 75 or 77) requires reasoning about every intermediate state.
+
+**Boundary transitions**: The controller has boundaries where counters wrap, phases change, and shared registers get reused. Each boundary is an opportunity for off-by-one errors, stale values, or out-of-range reads.
+
+**Width-accurate arithmetic**: Proving that fixed-point wraparound doesn't change the result requires bounding every intermediate value. The `hiddenSpecAt8_*_bounds` theorems in `Defs/SpecCore.lean` do this per-neuron for the current weights.
+
+**Handshake semantics**: `done` being a level (not a pulse), `busy` being low in both IDLE and DONE, the DONE-hold-while-start-high behavior — these are the properties that determine whether downstream logic can safely sample the output. Getting them wrong is a hardware bug even if the arithmetic is perfect.
+
+The Lean formalization addresses all four at the model level. The simulation validates the first two against actual Verilog on selected vectors. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The generated controller tightens the Lean ↔ RTL correspondence for the FSM. The combination is what makes the end-to-end case credible, even though the repository still has explicit trust boundaries between the Lean models and the Verilog implementations.
+
+### formalize-smt as a Lean Overlay
+
+`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side overlay that changes how some helper lemmas are proved inside Lean.
+
+The repository already includes a narrow implementation of that idea in `formalize-smt/`: it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package is separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
+
+So the architectural rule is:
+
+- if SMT is used only to help construct Lean theorems that are still kernel-checked, it stays inside the Lean leg of the four-way story
+- if the project ever accepted solver answers as an oracle, that would weaken the Lean leg rather than create a new independent one
+
+The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as a proof-automation experiment.
+
+## 11. Seeing the Hardware
 
 The RTL source files describe the circuit in text. To see the actual hardware structure — gates, registers, muxes, and their connections — we synthesize the design with Yosys and render it as a schematic via netlistsvg.
 
@@ -522,64 +682,4 @@ The schematics show what Yosys _thinks_ the design means after synthesis. Compar
 - Are the weight ROM outputs signed?
 - Is the controller generating the right number of control signals?
 
-These are the same questions the Lean formalization answers mathematically. The schematic answers them visually.
-
-## 7. The Four-Way Agreement
-
-The core claim of this repository is four-way agreement:
-
-```mermaid
-graph LR
-    PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
-    LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
-    RTL ---|"simulation<br/>test vectors"| PY
-    RTL ---|"bounded proofs<br/>over real Verilog"| SMT["SMT / Formal<br/>Yosys + Z3"]
-    SMT ---|"contract-tied<br/>QF_BV proofs"| PY
-```
-
-Each pair is connected differently:
-
-- **Python <-> Lean**: same arithmetic rules, same weights, same wraparound behavior. The Lean `mlpFixed` is a direct Lean transliteration of the Python reference. The bridge theorem `mlpFixed_eq_mlpSpec` then connects fixed-point to math.
-
-- **Lean <-> RTL**: for the hand-written baseline, the Lean `step` function mirrors RTL state transitions. The machine proof (`rtl_correct`) shows that `run 76` produces the same output as `mlpFixed`, and the temporal proofs show that the cycle-level timing matches the RTL handshake contract. For the generated-controller Sparkle branch, the repository also proves a pure-model -> Signal-DSL refinement and then checks the emitted RTL separately at the wrapper boundary with simulation and SMT.
-
-- **Python <-> RTL**: simulation. The testbench feeds the same inputs and expected outputs (generated from the Python model) to the RTL DUT and checks agreement.
-
-- **RTL <-> SMT**: bounded model checking. Yosys elaborates the real SystemVerilog into an SMT model, and yosys-smtbmc proves control, boundary, range-safety, transaction-capture, and exact-latency properties over all inputs within a bounded trace window. Unlike Lean, this reasons about the actual Verilog, not a hand-written model of it.
-
-- **Python <-> SMT**: contract arithmetic proofs. The frozen contract's weights and arithmetic rules are encoded as QF_BV queries, and Z3 proves that no intermediate value overflows its declared width and that two different bitvector encodings of the network produce identical results.
-
-No single method covers everything alone:
-- Simulation can't check all 2^32 inputs
-- Lean proofs don't run on actual Verilog
-- The Python model doesn't prove timing properties
-- SMT bounded proofs can't see beyond their trace depth
-
-Together, they provide confidence from four independent directions that the frozen contract is correctly implemented in hardware. For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
-
-### formalize-smt as a Lean Overlay
-
-`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side overlay that changes how some helper lemmas are proved inside Lean.
-
-The repository already includes a narrow implementation of that idea in `formalize-smt/`: it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package is separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
-
-So the architectural rule is:
-
-- if SMT is used only to help construct Lean theorems that are still kernel-checked, it stays inside the Lean leg of the four-way story
-- if the project ever accepted solver answers as an oracle, that would weaken the Lean leg rather than create a new independent one
-
-The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as a proof-automation experiment.
-
-## 8. What Makes This Hard
-
-The arithmetic in this project is small. The hard parts are:
-
-**Reactive timing**: The RTL is not a function. It is a state machine that produces results over time. Proving that `out_bit` is valid at cycle 76 (and not 75 or 77) requires reasoning about every intermediate state.
-
-**Boundary transitions**: The controller has boundaries where counters wrap, phases change, and shared registers get reused. Each boundary is an opportunity for off-by-one errors, stale values, or out-of-range reads.
-
-**Width-accurate arithmetic**: Proving that fixed-point wraparound doesn't change the result requires bounding every intermediate value. The `hiddenSpecAt8_*_bounds` theorems in `Defs/SpecCore.lean` do this per-neuron for the current weights.
-
-**Handshake semantics**: `done` being a level (not a pulse), `busy` being low in both IDLE and DONE, the DONE-hold-while-start-high behavior -- these are the properties that determine whether downstream logic can safely sample the output. Getting them wrong is a hardware bug even if the arithmetic is perfect.
-
-The Lean formalization addresses all four. The simulation validates the first two against actual Verilog. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The combination is what makes the end-to-end claim credible.
+These are the same questions the Lean formalization answers mathematically and the SMT checks answer formally. The schematic answers them visually.

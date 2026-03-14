@@ -1,4 +1,4 @@
-# RTL-Formalize-Synthsis Design
+# RTL-Formalize-Synthesis Design
 
 ## 1. Design Goal
 
@@ -8,23 +8,21 @@ The intended flow is:
 
 ```text
 frozen contract
-  -> pure Lean spec / machine model
-  -> controller-only refinement theorem
-  -> Sparkle Signal DSL implementation
+  -> pure Lean spec / machine / temporal semantics
+  -> Sparkle Signal DSL full-core model
+  -> full-core refinement theorem
   -> emitted Verilog/SystemVerilog (trusted backend)
   -> existing simulation and SMT/ASIC comparison flow
 ```
 
-This is not "compile arbitrary Lean to hardware." It is "re-express the hardware in a synthesizable Lean DSL and emit RTL from that DSL."
-
-The first milestone should also be smaller than the full repository baseline. Unlike the `rtl-synthesis` domain, it does not have to be controller-only forever, but it should start from a narrow scope that is realistic for Sparkle and still meaningful for this repository.
+This is not "compile arbitrary Lean to hardware." It is "re-express the full `mlp_core` hardware in a synthesizable Lean DSL and emit RTL from that DSL."
 
 ## 2. Domain Boundary
 
-The repository now has three adjacent but different formal-generation stories:
+The repository has three adjacent but different formal-generation stories:
 
 - `formalize`: prove the intended behavior in Lean
-- `rtl-formalize-synthesis`: implement hardware in Lean using Sparkle and emit RTL
+- `rtl-formalize-synthesis`: implement the full hardware in Lean using Sparkle and emit RTL
 - `rtl-synthesis`: synthesize a controller from temporal logic such as GR(1)/TLSF
 
 This separation matters because the implementation styles and trust boundaries are different.
@@ -38,15 +36,17 @@ This separation matters because the implementation styles and trust boundaries a
 
 ### `rtl-formalize-synthesis`
 
-- synthesizable Signal DSL implementation
-- hardware state declarations
+- synthesizable Sparkle Signal DSL implementation of the full core
+- bounded hardware state declarations
 - Sparkle-backed Verilog/SystemVerilog emission
-- staged scope, beginning with a small generated RTL artifact rather than full-core replacement
+- full-core semantic alignment with the `mlp_core` contract
 
 ### `rtl-synthesis`
 
 - temporal specification of controller behavior
 - automatic controller generation from that specification
+
+The semantic center of this domain is the generated top-level `mlp_core`, not an intermediate wrapper boundary.
 
 ## 3. Recommended Architecture
 
@@ -56,36 +56,20 @@ The clean architecture is:
 
 1. **Pure spec layer**
 
-- the existing Lean mathematical and machine models remain the semantic anchor
+- the existing Lean mathematical, machine, and temporal models remain the semantic anchor
 
 2. **Sparkle implementation layer**
 
-- a Sparkle Signal DSL implementation expresses the same controller or datapath in synthesizable form
-- for the controller-only milestone, this layer is connected back to `formalize/` by a Lean refinement theorem over the controller trace semantics
+- a Sparkle Signal DSL implementation expresses the full controller and datapath in synthesizable form
+- this layer is connected back to `formalize/` by a full-core refinement theorem over the cycle-visible `mlp_core` semantics
 
 3. **Emission layer**
 
-- dedicated synthesis commands emit Verilog/SystemVerilog artifacts
+- dedicated synthesis commands emit the full-core Verilog/SystemVerilog artifact
 
-This avoids overloading the current `formalize/` files with backend-specific concerns while still closing the pure-spec-to-Signal-DSL gap for the controller milestone.
+This avoids overloading the `formalize/` files with backend-specific concerns while still closing the pure-spec-to-Signal-DSL gap at the full-core boundary.
 
-### 3.2 Scope Philosophy
-
-The right scope for `rtl-formalize-synthesis` is:
-
-- smaller than full `mlp_core` at first
-- larger than a toy disconnected from this repository
-- aligned with what Sparkle is likely to handle cleanly today
-
-That balance suggests:
-
-1. first milestone: controller-only
-2. second milestone: controller plus one or two small datapath pieces
-3. later milestone: full core if the earlier stages prove stable
-
-This is different from the `rtl-synthesis` domain in motivation, but similar in discipline: start with a small, defensible target before claiming full replacement of the baseline RTL.
-
-### 3.3 Practical Repository Shape
+### 3.2 Practical Repository Shape
 
 The exact directory layout can evolve, but the design should aim for something close to:
 
@@ -99,9 +83,9 @@ rtl-formalize-synthesis/
       Types.lean
       ContractData.lean
       ControllerSignal.lean
-      Refinement.lean
       DatapathSignal.lean
       MlpCoreSignal.lean
+      Refinement.lean
       Emit.lean
 ```
 
@@ -109,11 +93,11 @@ Where:
 
 - `Types.lean` defines bounded hardware-facing types
 - `ContractData.lean` holds generated weights or ROM content derived from the frozen contract
-- `ControllerSignal.lean` implements the FSM in Sparkle
-- `Refinement.lean` proves the controller-only bridge from the pure `formalize/` model into the `TinyMLP.Sparkle` Signal DSL semantics
-- `DatapathSignal.lean` implements MAC, ReLU, ROM, and register-transfer behavior
-- `MlpCoreSignal.lean` integrates the full design
-- `Emit.lean` contains the `#writeVerilogDesign` or equivalent emission entrypoints
+- `ControllerSignal.lean` implements the FSM and handshake control
+- `DatapathSignal.lean` implements MAC, ReLU, ROM access, register updates, and output finalization
+- `MlpCoreSignal.lean` integrates the full design at the `mlp_core` boundary
+- `Refinement.lean` proves the full-core bridge from the pure `formalize/` model into the Sparkle Signal DSL semantics
+- `Emit.lean` contains the `#writeVerilogDesign` or equivalent full-core emission entrypoint
 
 The final directory names are less important than preserving this separation of concerns.
 
@@ -127,7 +111,7 @@ The controller and sequential datapath should be modeled with explicit state, li
 
 For maintainability, prefer named state declarations such as Sparkle's `declare_signal_state` style over anonymous tuple indexing.
 
-This matters especially for the current RTL, which carries:
+The generated design must make explicit the state needed to realize full-core semantics:
 
 - FSM phase
 - `hidden_idx`
@@ -137,7 +121,7 @@ This matters especially for the current RTL, which carries:
 - output register
 - input registers
 
-For the first milestone, only the subset needed by the declared scope should be modeled. If the scope is controller-only, do not force hidden registers and arithmetic state into the first generated artifact.
+If these elements are decomposed across multiple Sparkle modules, the integrated semantics must still be cycle-exact at the `mlp_core` boundary.
 
 ### 4.2 Keep Bounded Arithmetic Explicit
 
@@ -152,20 +136,14 @@ The Sparkle implementation should therefore:
 
 ### 4.3 Emit RTL From Deliberate Entry Points
 
-The repository should have stable Lean entry points for emission rather than ad hoc REPL commands.
-
-That means a file or executable dedicated to:
-
-- emit controller-only RTL
-- emit datapath primitive RTL
-- emit full-core RTL
+The repository should have a stable Lean entry point for full-core emission rather than ad hoc REPL commands.
 
 Each emitted artifact should state:
 
 - source Lean entry point
 - contract revision used
 - emission date or reproducible generation command
-- declared scope, such as controller-only or controller-plus-ReLU
+- stable top-level module boundary
 
 ## 5. Integration With Existing Contract Flow
 
@@ -188,55 +166,40 @@ Possible outputs:
 - Lean constants in a Sparkle-friendly module
 - generated initialization code for memories or mux-tree ROMs
 
-## 6. Implementation Milestones
+## 6. Full-Core Design Strategy
 
-The domain should be staged.
+The generated design should preserve the current top-level semantics while allowing internal decomposition.
 
-### Milestone 1: Controller-Only
+### 6.1 Semantic Alignment
 
-Implement the current FSM in Sparkle and emit controller RTL.
+The intended semantic correspondence is:
 
-Success signal:
+- pure Lean `State`, `timedStep`, and `rtlTrace` define the repository's cycle-visible baseline
+- the Sparkle full-core model reproduces those same state transitions and outputs
+- emitted RTL is validated against that same baseline at the top-level module boundary
 
-- the emitted controller matches [`rtl/src/controller.sv`](../../rtl/src/controller.sv) on phase ordering and handshake behavior
-- a Lean theorem connects the pure controller trace in `formalize/` to the `TinyMLP.Sparkle` Signal DSL controller model used for emission
+The design should therefore preserve:
 
-The comparison boundary may be a thin stable wrapper around the raw Sparkle-emitted module when that wrapper is what preserves the exact `controller.sv` parameter and port interface for downstream RTL, simulation, and SMT flows.
+- exact phase ordering
+- exact guard-cycle behavior
+- exact hidden-index and input-index progression
+- exact `LOAD_INPUT` capture and `BIAS_OUTPUT` finalization timing
+- exact accepted-start to `done` latency
 
-The raw emitted Verilog module name is backend-derived from the Lean declaration path and may change when the Lean namespace moves under `TinyMLP.Sparkle`. The wrapper is therefore the stable downstream interface.
+### 6.2 Structural Decomposition
 
-This is the preferred first milestone because it is:
+A practical Sparkle structure is:
 
-- meaningful inside this repository
-- small enough to inspect
-- structurally close to Sparkle's likely strengths
-- easy to compare against an existing hand-written baseline
+- controller logic that computes phase and control enables
+- datapath logic that computes MAC, bias, activation, and output updates
+- contract-derived read-only weight and bias access
+- top-level integration that exposes the existing `mlp_core` boundary
 
-### Milestone 2: Shared Primitive Path
-
-Implement Sparkle versions of one or two small building blocks:
-
-- ReLU
-- MAC primitive
-- ROM access abstraction
-
-Success signal:
-
-- primitive-level outputs match the current RTL semantics on directed tests
-- the added scope is still simple enough that generated RTL remains inspectable
-
-### Milestone 3: Full Core
-
-Implement the full `mlp_core` in Sparkle and emit a top-level design compatible with the existing simulation flow.
-
-Success signal:
-
-- the generated top-level can run the current vector regression
-- the `76`-cycle contract remains intact
+This keeps the generated design inspectable without changing the semantic contract.
 
 ## 7. Validation Strategy
 
-Validation should happen in four layers.
+Validation should happen in five layers.
 
 ### 7.1 Elaboration Validation
 
@@ -246,38 +209,39 @@ Validation should happen in four layers.
 
 ### 7.2 Structural Validation
 
-- generated ports match the intended interface
-- emitted state and control signals are inspectable
+- generated ports match the intended `mlp_core` interface
+- emitted state and control signals are inspectable enough to debug schedule drift
 - reset and sequential logic are emitted in a form acceptable to the downstream simulators
 
 ### 7.3 Behavioral Validation
 
-- existing simulation vectors pass for the implemented scope
+- the repository's full-core shared simulation vectors pass
 - guard-cycle behavior is preserved
 - handshake timing is preserved
+- the exact `76`-cycle contract is preserved
 
-The intended burden scales with scope:
+### 7.4 Comparison Validation
 
-- controller-only: prove refinement into the Signal DSL model, then compare emitted RTL against `controller.sv` and controller-level harness behavior with simulation and SMT
-- primitive path: directed equivalence checks for the implemented primitive boundary
-- full core: run the repository's full vector regression
+- the generated top-level is compared against the hand-written baseline at the `mlp_core` boundary
+- comparison checks are strong enough to catch arithmetic, timing, and scheduling divergence
+- branch summaries document structural differences without weakening the equivalence claim
 
-### 7.4 QoR Validation
+### 7.5 QoR Validation
 
 - Yosys can synthesize the generated RTL
-- area/timing/cell-count comparison against the hand-written baseline is recorded
+- area, timing, or cell-count comparison against the hand-written baseline is recorded when relevant
 
 ## 8. Proof Strategy
 
-The recommended proof story is incremental rather than pretending Sparkle generation is proof-producing by itself.
+The proof story should be incremental without pretending Sparkle generation is proof-producing by itself.
 
 ### Phase A
 
-Prove pure properties of the current machine and arithmetic model in `formalize/`.
+Prove pure properties of the current machine, arithmetic, and temporal model in `formalize/`.
 
 ### Phase B
 
-For the controller-only milestone, prove that the Sparkle Signal DSL controller implementation refines the relevant pure controller model in `formalize/` at the Lean level.
+Prove that the Sparkle Signal DSL full-core implementation refines the relevant pure full-core model in `formalize/` at the Lean level.
 
 ### Phase C
 
@@ -285,10 +249,9 @@ Treat the emitted RTL as a generated artifact behind a trusted Sparkle backend, 
 
 This keeps the trust boundary honest:
 
-- proofs cover the pure spec and the Signal DSL implementation model
+- proofs cover the pure spec and the Signal DSL full-core implementation model
 - Sparkle-to-Verilog generation is trusted software
 - emitted RTL is still checked by simulation, SMT, and synthesis
-- the controller wrapper's unpacking of the generated packed bus is currently a documented manual contract checked by wrapper-boundary regressions, not by a separate Lean theorem
 
 ## 9. Main Risks
 
@@ -300,15 +263,13 @@ So the Sparkle path should be a deliberate re-implementation of the hardware, no
 
 ### 9.2 State Explosion in a Monolithic Design
 
-The current core is small, but even here a monolithic one-function implementation may become hard to inspect.
+The current core is small, but a monolithic one-function implementation may still become hard to inspect and hard to relate back to the baseline schedule.
 
 Prefer decomposing the design into:
 
-- controller
-- datapath primitives
+- controller logic
+- datapath logic
 - top-level integration
-
-This is also why the first milestone should stay narrow. A small successful Sparkle artifact is more useful than an ambitious full-core attempt that produces unreadable or unvalidated RTL.
 
 ### 9.3 False Confidence From Generation
 
@@ -319,9 +280,7 @@ Correctness still depends on:
 - matching the frozen contract
 - matching the intended cycle schedule
 - validating the emitted design
-- preserving any documented wrapper packing contract at the generated-module boundary
-
-For the current controller-only artifact, the bit-layout contract between Sparkle `bundleAll!` packing order and the downstream SystemVerilog slices is intentionally accepted as a regression-checked risk unless a dedicated structural proof or packing-specific formal harness is added later.
+- keeping the top-level module interface stable across backend output changes
 
 ## 10. Resolved Design Decisions
 
@@ -329,7 +288,7 @@ For the current controller-only artifact, the bit-layout contract between Sparkl
 | --- | --- | --- |
 | Role of Sparkle | Lean-hosted hardware DSL and emitter, not a free compiler from arbitrary Lean | Matches Sparkle's public model and avoids overclaiming |
 | Repository baseline | Hand-written `rtl/` remains canonical until the generated path proves out | Keeps comparisons honest |
-| First milestone scope | Prefer controller-only, then small primitive extensions | Balanced with Sparkle's likely strengths and easier to validate |
+| Domain scope | Full generated `mlp_core` semantics at the top-level boundary | Makes the domain target explicit and removes ambiguous partial-scope claims |
 | Weight source | Reuse the frozen contract pipeline | Prevents semantic drift |
-| Implementation strategy | Re-implement the hardware in Sparkle Signal DSL | The current proof files are not automatically synthesizable |
-| Proof boundary | Controller milestone requires pure-model to Signal-DSL refinement; emitted RTL still sits behind a trusted backend and is validated separately | Makes the trust boundary explicit without overstating what Lean proves |
+| Implementation strategy | Re-implement the hardware in Sparkle Signal DSL with explicit controller/datapath state | The current proof files are not automatically synthesizable |
+| Proof boundary | Full-core pure-model to Signal-DSL refinement is required; emitted RTL still sits behind a trusted backend and is validated separately | Makes the trust boundary explicit without overstating what Lean proves |

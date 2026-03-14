@@ -32,13 +32,19 @@ That wrapper is paired with the build-generated `controller_spot_core.sv` and bu
 
 The sampled controller-interface harness models reset at sampled clock boundaries. Sub-cycle async reset parity remains covered by the wrapper-focused tests and the mixed-path simulation regressions, not by the secondary controller-only claim.
 
-Required external tools:
+Required external tools for `make rtl-synthesis`:
 
 - `ltlsynt`
 - `syfco`
 - `yosys`
 - `yosys-smtbmc`
 - `z3`
+
+Additional tools for `make rtl-synthesis-sim`:
+
+- `iverilog`
+- `vvp`
+- `verilator`
 
 Typical entry points:
 

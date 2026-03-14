@@ -2,7 +2,7 @@
 
 This subtree holds the contract-tied SMT entrypoints for the frozen network in [`contract/result/weights.json`](../../contract/result/weights.json).
 
-The scripts use the `z3` CLI directly and keep the arithmetic source of truth in the frozen contract:
+The proof scripts use the `z3` CLI directly, while the assumption exporter is a pure JSON export. Together they keep the arithmetic source of truth in the frozen contract:
 
 - `python3 smt/contract/export_assumptions.py --output build/smt/contract_assumptions.json`
   - exports the frozen widths, quantization rules, and boundedness facts used by the other checks

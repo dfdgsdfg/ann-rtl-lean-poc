@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -23,6 +25,12 @@ RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
 RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "rtl-synthesis" / "spot"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "implementation-branch-comparison.md"
+RUN_FLOW_PATH = RTL_SYNTHESIS_CONTROLLER_DIR / "run_flow.py"
+RUN_FLOW_SPEC = importlib.util.spec_from_file_location("rtl_synthesis_run_flow", RUN_FLOW_PATH)
+assert RUN_FLOW_SPEC is not None and RUN_FLOW_SPEC.loader is not None
+RUN_FLOW = importlib.util.module_from_spec(RUN_FLOW_SPEC)
+sys.modules[RUN_FLOW_SPEC.name] = RUN_FLOW
+RUN_FLOW_SPEC.loader.exec_module(RUN_FLOW)
 
 
 FAKE_AIGER = """\
@@ -449,6 +457,21 @@ endmodule
 def _write_executable(path: Path, text: str) -> None:
     path.write_text(textwrap.dedent(text), encoding="utf-8")
     path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+class ToolPathResolutionTests(unittest.TestCase):
+    def test_preferred_tool_path_prefers_vendored_binary(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            vendored = Path(tmpdir) / "ltlsynt"
+            vendored.write_text("#!/bin/sh\n", encoding="utf-8")
+            self.assertEqual(RUN_FLOW.preferred_tool_path(vendored, "__missing_ltlsynt__"), str(vendored))
+
+    def test_preferred_tool_path_falls_back_to_command_name_when_vendor_missing(self) -> None:
+        missing_vendor = ROOT / "build" / "missing-vendored-ltlsynt"
+        self.assertEqual(
+            RUN_FLOW.preferred_tool_path(missing_vendor, "__missing_ltlsynt__"),
+            "__missing_ltlsynt__",
+        )
 
 
 class RtlSynthesisFlowTests(unittest.TestCase):

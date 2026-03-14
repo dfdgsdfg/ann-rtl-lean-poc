@@ -9,4 +9,6 @@ rel-build/
 ann/results/scratch/
 ann/results/tmp/
 *.log
+vendor/*
+!vendor/.gitkeep
 rtl-formalize-synthesis/vendor/

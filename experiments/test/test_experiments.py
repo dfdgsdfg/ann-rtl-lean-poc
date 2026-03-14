@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from experiments import run as experiments_run
+
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -22,6 +24,22 @@ def run_experiments(*args: str) -> subprocess.CompletedProcess[str]:
 
 
 class ExperimentFlowTests(unittest.TestCase):
+    def test_preferred_tool_path_prefers_vendored_checkout(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            vendored = Path(tmpdir) / "flow.tcl"
+            vendored.write_text("#!/usr/bin/env tclsh\n", encoding="utf-8")
+            self.assertEqual(
+                experiments_run.preferred_tool_path(vendored, "__missing_flow__"),
+                str(vendored),
+            )
+
+    def test_preferred_tool_path_falls_back_to_command_name_when_vendor_missing(self) -> None:
+        missing_vendor = ROOT / "build" / "missing-vendor-flow.tcl"
+        self.assertEqual(
+            experiments_run.preferred_tool_path(missing_vendor, "__missing_flow__"),
+            "__missing_flow__",
+        )
+
     def test_artifact_consistency_family_writes_pass_summary(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             build_root = Path(tmpdir)

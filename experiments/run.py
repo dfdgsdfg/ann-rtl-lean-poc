@@ -53,6 +53,7 @@ else:
         write_json,
         write_text,
     )
+    ROOT = REPO_ROOT
 
 
 assert ROOT == REPO_ROOT
@@ -81,6 +82,10 @@ SPOT_AIGER_MAP = ROOT / "rel-build" / "generated" / "controller_spot.map"
 SEMANTIC_BRIDGE_SCRIPT = ROOT / "formalize" / "scripts" / "ExportSemanticBridge.lean"
 OPENLANE_TEMPLATE = ROOT / "asic" / "openlane" / "config.json"
 OPENLANE_FLOORPLAN = ROOT / "asic" / "openlane" / "floorplan.tcl"
+VENDOR_DIR = ROOT / "vendor"
+VENDORED_LTLSYNT = VENDOR_DIR / "spot-install" / "bin" / "ltlsynt"
+VENDORED_SYFCO = VENDOR_DIR / "syfco-install" / "bin" / "syfco"
+VENDORED_OPENLANE_FLOW = VENDOR_DIR / "OpenLane" / "flow.tcl"
 SPOT_CLAIM_SCOPE = (
     "bounded (82-cycle) closed-loop mlp_core mixed-path equivalence over a post-reset "
     "accepted transaction window, with the hand-written datapath and shared external "
@@ -112,6 +117,12 @@ class BranchManifest:
         }
 
 
+def preferred_tool_path(vendored_path: Path, executable_name: str) -> str:
+    if vendored_path.exists():
+        return str(vendored_path)
+    return shutil.which(executable_name) or executable_name
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run repository experiment families.")
     parser.add_argument(
@@ -128,9 +139,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--smtbmc", default=shutil.which("yosys-smtbmc") or "yosys-smtbmc")
     parser.add_argument("--z3", default=shutil.which("z3") or "z3")
     parser.add_argument("--lake", default=shutil.which("lake") or "lake")
-    parser.add_argument("--ltlsynt", default=shutil.which("ltlsynt") or "ltlsynt")
-    parser.add_argument("--syfco", default=shutil.which("syfco") or "syfco")
-    parser.add_argument("--openlane-flow", default=shutil.which("flow.tcl") or "flow.tcl")
+    parser.add_argument("--ltlsynt", default=preferred_tool_path(VENDORED_LTLSYNT, "ltlsynt"))
+    parser.add_argument("--syfco", default=preferred_tool_path(VENDORED_SYFCO, "syfco"))
+    parser.add_argument("--openlane-flow", default=preferred_tool_path(VENDORED_OPENLANE_FLOW, "flow.tcl"))
     return parser.parse_args()
 
 
