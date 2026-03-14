@@ -531,6 +531,19 @@ No single method covers everything alone:
 
 Together, they provide confidence from four independent directions that the frozen contract is correctly implemented in hardware. For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
 
+### formalize-smt as a Lean Overlay
+
+`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side overlay that changes how some helper lemmas are proved inside Lean.
+
+The repository already includes a narrow implementation of that idea in `formalize-smt/`: it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package is separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
+
+So the architectural rule is:
+
+- if SMT is used only to help construct Lean theorems that are still kernel-checked, it stays inside the Lean leg of the four-way story
+- if the project ever accepted solver answers as an oracle, that would weaken the Lean leg rather than create a new independent one
+
+The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as a proof-automation experiment.
+
 ## 8. What Makes This Hard
 
 The arithmetic in this project is small. The hard parts are:

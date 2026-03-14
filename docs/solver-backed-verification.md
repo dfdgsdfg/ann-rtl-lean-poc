@@ -217,6 +217,37 @@ The critical difference: Lean proves facts about a Lean model of the hardware, w
 
 Together, they provide both semantic depth (Lean) and implementation fidelity (SMT).
 
+### The formalize-smt Bridge
+
+There is also a separate optional Lean-side path, `formalize-smt/`, specified in `specs/formalize-smt/`. It uses SMT solvers as proof-automation tactics inside Lean rather than as standalone external checkers. The current implementation is narrow: it reproves the arithmetic `ArithmeticProofProvider` theorem family for the shared fixed-point layer.
+
+This is not part of the `smt/` domain described in this document. The distinction:
+
+| | `smt/` (this domain) | `formalize-smt/` (separate Lean overlay) |
+|---|---|---|
+| Where it runs | Outside Lean — Python scripts, Yosys, Z3 CLI | Inside Lean — as tactics within `.lean` files |
+| What it reasons about | Real Verilog RTL, QF_BV contract encodings | Lean proof obligations |
+| Trust boundary | Solver result (PASSED / unsat) | Depends on mode (see below) |
+| Independence from Lean | Fully independent | Coupled to the Lean proof build |
+
+The trust question is the key architectural concern:
+
+- **Kernel-checked reconstruction / witness checking**: the solver accelerates proof search, but the Lean kernel remains the trust root. This stays inside the Lean leg of the repository's four-way story.
+
+- **Oracle / axiom trust**: the Lean proofs become only as trustworthy as the solver. This weakens the Lean leg rather than creating a new independent verification direction.
+
+The current package still has a weaker trust story than the vanilla baseline because the pinned upstream `lean-smt` dependency emits a `sorry` warning during build. That is why `formalize-smt/` remains explicitly optional and separate from both `formalize/` and `smt/`.
+
+Possible expansion targets beyond the current arithmetic provider slice:
+
+| Current Lean technique | Potential additional `formalize-smt` target |
+|---|---|
+| `native_decide` case-splits in `w1Int8At_toInt` (56 cases) | `querySMT` over QF_BV with proof reconstruction |
+| Manual `Int.mul_le_mul_*` proofs in `int8_mul_int8_bounds` | Solver-backed arithmetic decision procedure |
+| `omega` for linear arithmetic in bound proofs | `lean-smt` for mixed linear/bitvector goals |
+
+Whether to expand this path further is an explicit architectural decision recorded in `specs/formalize-smt/`, not an implicit consequence of having SMT tools available.
+
 ## 6. Running the Checks
 
 All solver checks run through `make smt`:
