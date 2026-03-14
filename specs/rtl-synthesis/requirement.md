@@ -1,10 +1,10 @@
-# RTL-Synthsis Requirements
+# RTL-Synthesis Requirements
 
 ## 1. Purpose
 
 This document defines the requirements for synthesizing the controller contract from [`rtl/src/controller.sv`](../../rtl/src/controller.sv) using a reactive-synthesis workflow.
 
-In this repository, the `rtl-synthsis` domain means:
+In this repository, the `rtl-synthesis` domain means:
 
 - temporal-specification encoding of the controller contract
 - controller synthesis from that specification
@@ -14,7 +14,7 @@ It does **not** mean ASIC logic synthesis. That remains the responsibility of `s
 
 ## 2. Scope
 
-The `rtl-synthsis` domain is controller-only.
+The `rtl-synthesis` domain is controller-only.
 
 It covers:
 
@@ -185,7 +185,7 @@ Validation must cover at least:
 
 ## 10. Acceptance Criteria
 
-The `rtl-synthsis` domain is complete when:
+The `rtl-synthesis` domain is complete when:
 
 1. A controller-only reactive-synthesis specification exists and is checked into the repository.
 2. The specification documents the abstraction from raw counters to synthesis-friendly predicates.

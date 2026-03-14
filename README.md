@@ -52,7 +52,7 @@ Define the mathematical, fixed-point, and machine models in Lean and prove the i
 Generate vectors and compare RTL behavior against the frozen contract.
 
 6. `smt`
-Run solver-backed verification for RTL control properties, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
+Run solver-backed verification for RTL control properties, Sparkle generated-controller wrapper parity, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
 
 7. `experiments`
 Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
@@ -107,9 +107,9 @@ Relevant docs:
 - [experiments/README.md](experiments/README.md)
 - [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
 - [experiments/generated-rtl/sparkle/README.md](experiments/generated-rtl/sparkle/README.md)
-- [experiments/generated-rtl/rtl-synthsis/spot/README.md](experiments/generated-rtl/rtl-synthsis/spot/README.md)
+- [experiments/generated-rtl/rtl-synthesis/spot/README.md](experiments/generated-rtl/rtl-synthesis/spot/README.md)
 - [synthesis/controller/README.md](synthesis/controller/README.md)
-- [specs/rtl-synthsis/requirement.md](specs/rtl-synthsis/requirement.md)
+- [specs/rtl-synthesis/requirement.md](specs/rtl-synthesis/requirement.md)
 - [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
 
 ## Dependencies
@@ -132,13 +132,14 @@ The Brewfile installs the baseline local toolchain used by this repository:
 For the SMT flow specifically, `make smt` expects:
 
 - `python3` for the SMT driver scripts
+- `lake` to rebuild and emit the Sparkle generated-controller artifact
 - `yosys` for RTL elaboration
 - `yosys-smtbmc` for bounded SMT model checking
 - `z3` as the current backend solver
 
 On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 
-For the `rtl-synthsis` experiment specifically, `make rtl-synthsis` expects:
+For the `rtl-synthesis` experiment specifically, `make rtl-synthesis` expects:
 
 - `ltlsynt` from the Spot toolchain
 - `syfco` on `PATH` for TLSF loading
@@ -187,8 +188,8 @@ make smt
 Run the controller reactive-synthesis experiment:
 
 ```bash
-make rtl-synthsis
-make rtl-synthsis-sim
+make rtl-synthesis
+make rtl-synthesis-sim
 ```
 
 ### Typical Human Workflow

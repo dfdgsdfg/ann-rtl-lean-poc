@@ -9,4 +9,4 @@ require Sparkle from git
 
 @[default_target]
 lean_lib TinyMLP where
-  srcDir := "."
+  srcDir := "src"

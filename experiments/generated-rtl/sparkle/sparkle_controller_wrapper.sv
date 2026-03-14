@@ -1,4 +1,7 @@
-module sparkle_controller_wrapper (
+module sparkle_controller_wrapper #(
+  parameter int INPUT_NEURONS = 4,
+  parameter int HIDDEN_NEURONS = 8
+) (
   input  logic       clk,
   input  logic       rst_n,
   input  logic       start,
@@ -18,6 +21,9 @@ module sparkle_controller_wrapper (
 );
   logic        rst;
   logic [13:0] packed_out;
+  localparam logic [3:0] INPUT_NEURONS_4B = INPUT_NEURONS[3:0];
+  localparam logic [3:0] HIDDEN_NEURONS_4B = HIDDEN_NEURONS[3:0];
+  localparam logic [3:0] LAST_HIDDEN_IDX = HIDDEN_NEURONS_4B - 4'd1;
 
   assign rst = ~rst_n;
 
@@ -25,6 +31,9 @@ module sparkle_controller_wrapper (
     ._gen_start(start),
     ._gen_hidden_idx(hidden_idx),
     ._gen_input_idx(input_idx),
+    ._gen_inputNeurons4b(INPUT_NEURONS_4B),
+    ._gen_hiddenNeurons4b(HIDDEN_NEURONS_4B),
+    ._gen_lastHiddenIdx(LAST_HIDDEN_IDX),
     .clk(clk),
     .rst(rst),
     .out(packed_out)

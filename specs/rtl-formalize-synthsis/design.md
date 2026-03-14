@@ -16,7 +16,7 @@ frozen contract
 
 This is not "compile arbitrary Lean to hardware." It is "re-express the hardware in a synthesizable Lean DSL and emit RTL from that DSL."
 
-The first milestone should also be smaller than the full repository baseline. Unlike the `rtl-synthsis` domain, it does not have to be controller-only forever, but it should start from a narrow scope that is realistic for Sparkle and still meaningful for this repository.
+The first milestone should also be smaller than the full repository baseline. Unlike the `rtl-synthesis` domain, it does not have to be controller-only forever, but it should start from a narrow scope that is realistic for Sparkle and still meaningful for this repository.
 
 ## 2. Domain Boundary
 
@@ -24,7 +24,7 @@ The repository now has three adjacent but different formal-generation stories:
 
 - `formalize`: prove the intended behavior in Lean
 - `rtl-formalize-synthsis`: implement hardware in Lean using Sparkle and emit RTL
-- `rtl-synthsis`: synthesize a controller from temporal logic such as GR(1)/TLSF
+- `rtl-synthesis`: synthesize a controller from temporal logic such as GR(1)/TLSF
 
 This separation matters because the implementation styles and trust boundaries are different.
 
@@ -42,7 +42,7 @@ This separation matters because the implementation styles and trust boundaries a
 - Sparkle-backed Verilog/SystemVerilog emission
 - staged scope, beginning with a small generated RTL artifact rather than full-core replacement
 
-### `rtl-synthsis`
+### `rtl-synthesis`
 
 - temporal specification of controller behavior
 - automatic controller generation from that specification
@@ -81,7 +81,7 @@ That balance suggests:
 2. second milestone: controller plus one or two small datapath pieces
 3. later milestone: full core if the earlier stages prove stable
 
-This is different from the `rtl-synthsis` domain in motivation, but similar in discipline: start with a small, defensible target before claiming full replacement of the baseline RTL.
+This is different from the `rtl-synthesis` domain in motivation, but similar in discipline: start with a small, defensible target before claiming full replacement of the baseline RTL.
 
 ### 3.3 Practical Repository Shape
 
@@ -91,14 +91,15 @@ The exact directory layout can evolve, but the design should aim for something c
 rtl-formalize-synthsis/
   lakefile.lean
   lean-toolchain
-  FormalizeSynthesis.lean
-  TinyMLP/
-    Types.lean
-    ContractData.lean
-    ControllerSignal.lean
-    DatapathSignal.lean
-    MlpCoreSignal.lean
-    Emit.lean
+  src/
+    TinyMLP.lean
+    TinyMLP/
+      Types.lean
+      ContractData.lean
+      ControllerSignal.lean
+      DatapathSignal.lean
+      MlpCoreSignal.lean
+      Emit.lean
 ```
 
 Where:
@@ -194,6 +195,8 @@ Implement the current FSM in Sparkle and emit controller RTL.
 Success signal:
 
 - the emitted controller matches [`rtl/src/controller.sv`](../../rtl/src/controller.sv) on phase ordering and handshake behavior
+
+The comparison boundary may be a thin stable wrapper around the raw Sparkle-emitted module when that wrapper is what preserves the exact `controller.sv` parameter and port interface for downstream RTL, simulation, and SMT flows.
 
 This is the preferred first milestone because it is:
 

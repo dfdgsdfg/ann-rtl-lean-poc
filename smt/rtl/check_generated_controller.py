@@ -19,6 +19,7 @@ GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "generated-rtl" / "sparkle
 @dataclass(frozen=True)
 class FormalJob:
     name: str
+    family: str
     description: str
     top: str
     harness: Path
@@ -26,11 +27,13 @@ class FormalJob:
     assumptions: list[str]
     properties: list[str]
     rtl_sources: list[Path]
+    defines: list[str]
 
 
 @dataclass
 class FormalResult:
     name: str
+    family: str
     description: str
     top: str
     depth: int
@@ -61,36 +64,89 @@ def tool_version(command: list[str], fallback: str = "unknown") -> str:
     return first_output_line(proc) or fallback
 
 
-def formal_job() -> FormalJob:
-    return FormalJob(
-        name="generated_controller_equivalence",
-        description="Equivalence between the hand-written controller and the Sparkle-generated controller wrapper.",
-        top="formal_generated_controller_equivalence",
-        harness=ROOT / "smt" / "rtl" / "controller" / "formal_generated_controller_equivalence.sv",
-        depth=12,
-        assumptions=[
-            "Reset is held low for the first two cycles and then released permanently.",
-            "start, hidden_idx, and input_idx remain unconstrained after reset release.",
-            "The Sparkle wrapper maps active-low rst_n to the generated module's active-high rst input.",
-        ],
-        properties=[
-            "4-bit state encoding matches the baseline controller on every checked cycle",
-            "all control outputs match the baseline controller on every checked cycle",
-            "busy and done agree exactly with the baseline controller semantics",
-        ],
-        rtl_sources=[
-            ROOT / "rtl" / "src" / "controller.sv",
-            GENERATED_CONTROLLER_RTL,
-            GENERATED_CONTROLLER_WRAPPER,
-        ],
-    )
+def formal_jobs() -> list[FormalJob]:
+    common_sources = [
+        ROOT / "rtl" / "src" / "controller.sv",
+        GENERATED_CONTROLLER_RTL,
+        GENERATED_CONTROLLER_WRAPPER,
+    ]
+    equivalence_harness = ROOT / "smt" / "rtl" / "controller" / "formal_generated_controller_equivalence.sv"
+    illegal_state_harness = ROOT / "smt" / "rtl" / "controller" / "formal_generated_controller_illegal_state.sv"
+    common_assumptions = [
+        "Reset is held low for the first two cycles and then released permanently.",
+        "start, hidden_idx, and input_idx remain unconstrained after reset release.",
+        "The Sparkle wrapper maps active-low rst_n to the generated module's active-high rst input.",
+    ]
+    common_properties = [
+        "4-bit state encoding matches the baseline controller on every checked cycle",
+        "all control outputs match the baseline controller on every checked cycle",
+        "busy and done agree exactly with the baseline controller semantics",
+    ]
+    return [
+        FormalJob(
+            name="generated_controller_equivalence_default",
+            family="parameter_equivalence",
+            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=4, HIDDEN_NEURONS=8.",
+            top="formal_generated_controller_equivalence",
+            harness=equivalence_harness,
+            depth=12,
+            assumptions=common_assumptions,
+            properties=common_properties,
+            rtl_sources=common_sources,
+            defines=["INPUT_NEURONS_VALUE=4", "HIDDEN_NEURONS_VALUE=8"],
+        ),
+        FormalJob(
+            name="generated_controller_equivalence_3x5",
+            family="parameter_equivalence",
+            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=3, HIDDEN_NEURONS=5.",
+            top="formal_generated_controller_equivalence",
+            harness=equivalence_harness,
+            depth=12,
+            assumptions=common_assumptions,
+            properties=common_properties,
+            rtl_sources=common_sources,
+            defines=["INPUT_NEURONS_VALUE=3", "HIDDEN_NEURONS_VALUE=5"],
+        ),
+        FormalJob(
+            name="generated_controller_equivalence_1x1",
+            family="parameter_equivalence",
+            description="Bounded equivalence between the hand-written controller and the Sparkle wrapper for INPUT_NEURONS=1, HIDDEN_NEURONS=1.",
+            top="formal_generated_controller_equivalence",
+            harness=equivalence_harness,
+            depth=12,
+            assumptions=common_assumptions,
+            properties=common_properties,
+            rtl_sources=common_sources,
+            defines=["INPUT_NEURONS_VALUE=1", "HIDDEN_NEURONS_VALUE=1"],
+        ),
+        FormalJob(
+            name="generated_controller_illegal_state_recovery",
+            family="illegal_state_recovery",
+            description="Parity with the baseline controller when both designs begin from the same invalid 4-bit state encoding.",
+            top="formal_generated_controller_illegal_state",
+            harness=illegal_state_harness,
+            depth=2,
+            assumptions=[
+                "rst_n is released from the initial step so the controller state is unconstrained before the first clock edge.",
+                "Both controllers are constrained to the same invalid state encoding in the first checked cycle.",
+                "start, hidden_idx, and input_idx remain unconstrained while invalid-state outputs and one-cycle recovery are checked.",
+            ],
+            properties=[
+                "invalid-state outputs match the baseline busy/done/control semantics in the seeded cycle",
+                "the generated wrapper recovers to IDLE in one cycle exactly like the baseline controller",
+            ],
+            rtl_sources=common_sources,
+            defines=["INPUT_NEURONS_VALUE=4", "HIDDEN_NEURONS_VALUE=8"],
+        ),
+    ]
 
 
 def build_yosys_script(job: FormalJob, smt2_path: Path) -> str:
     verilog_sources = " ".join(relative(path) for path in job.rtl_sources + [job.harness])
+    define_flags = " ".join(f"-D{item}" for item in ["FORMAL", *job.defines])
     return "\n".join(
         [
-            f"read_verilog -DFORMAL -sv -formal {verilog_sources}",
+            f"read_verilog {define_flags} -sv -formal {verilog_sources}",
             f"prep -top {job.top}",
             "async2sync",
             "dffunmap",
@@ -144,6 +200,7 @@ def run_job(job: FormalJob, yosys_bin: str, smtbmc_bin: str, solver_bin: str) ->
 
     return FormalResult(
         name=job.name,
+        family=job.family,
         description=job.description,
         top=job.top,
         depth=job.depth,
@@ -180,27 +237,47 @@ def main() -> int:
         )
 
     FORMAL_BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    job = formal_job()
-    result = run_job(job, args.yosys, args.smtbmc, args.solver)
+    jobs = formal_jobs()
+    results = [run_job(job, args.yosys, args.smtbmc, args.solver) for job in jobs]
+    overall_result = "pass" if all(item.result == "pass" for item in results) else "fail"
 
+    yosys_version = tool_version([args.yosys, "-V"])
+    solver_version = tool_version([args.solver, "--version"])
+    smtbmc_version = tool_version([args.smtbmc, "--version"], fallback=f"bundled with {yosys_version}")
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "source_generated_rtl": relative(GENERATED_CONTROLLER_RTL),
-        "source_wrapper": relative(GENERATED_CONTROLLER_WRAPPER),
-        "tool_versions": {
-            "yosys": tool_version([args.yosys, "-V"]),
-            "yosys_smtbmc": tool_version([args.smtbmc, "--version"]),
-            "solver": tool_version([args.solver, "--version"]),
+        "overall_result": overall_result,
+        "claim_scope": "bounded equivalence through the parameterized sparkle_controller_wrapper boundary",
+        "tool": {
+            "driver": "python3 smt/rtl/check_generated_controller.py",
+            "yosys": str(args.yosys),
+            "yosys_version": yosys_version,
+            "yosys_smtbmc": str(args.smtbmc),
+            "yosys_smtbmc_version": smtbmc_version,
+            "solver": str(args.solver),
+            "solver_version": solver_version,
+            "command": (
+                f"python3 smt/rtl/check_generated_controller.py --yosys {args.yosys} "
+                f"--smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
+            ),
         },
-        "result": asdict(result),
+        "sources": {
+            "rtl": [
+                relative(ROOT / "rtl" / "src" / "controller.sv"),
+                relative(GENERATED_CONTROLLER_RTL),
+                relative(GENERATED_CONTROLLER_WRAPPER),
+            ],
+            "harnesses": sorted({relative(job.harness) for job in jobs}),
+        },
+        "results": [asdict(result) for result in results],
     }
     args.summary.parent.mkdir(parents=True, exist_ok=True)
-    args.summary.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    status = result.result.upper()
-    print(f"{status} {result.name}")
+    for result in results:
+        print(f"{result.result.upper():4} {result.family} {result.name}")
     print(f"wrote {args.summary}")
-    return 0 if result.result == "pass" else 1
+    return 0 if overall_result == "pass" else 1
 
 
 if __name__ == "__main__":

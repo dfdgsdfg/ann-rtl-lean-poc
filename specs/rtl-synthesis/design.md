@@ -1,4 +1,4 @@
-# RTL-Synthsis Design
+# RTL-Synthesis Design
 
 ## 1. Design Goal
 

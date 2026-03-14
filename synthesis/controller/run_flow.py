@@ -13,17 +13,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DOMAIN_ROOT = ROOT / "synthesis" / "controller"
-DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthsis" / "spot"
-DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthsis_summary.json"
+DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthesis" / "spot"
+DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
 
 TLSF_SOURCE = DOMAIN_ROOT / "controller.tlsf"
 FORMAL_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
 BASELINE_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
-COMPAT_WRAPPER = ROOT / "experiments" / "generated-rtl" / "rtl-synthsis" / "spot" / "controller_spot_compat.sv"
+COMPAT_WRAPPER = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
 
 SPEC_SOURCES = [
-    "specs/rtl-synthsis/requirement.md",
-    "specs/rtl-synthsis/design.md",
+    "specs/rtl-synthesis/requirement.md",
+    "specs/rtl-synthesis/design.md",
     "experiments/generated-rtl-vs-rtl.md",
 ]
 
@@ -35,6 +35,16 @@ ABSTRACT_INPUTS = [
     "last_hidden",
     "output_mac_active",
     "output_mac_guard",
+    "hidden_mac_pos_b0",
+    "hidden_mac_pos_b1",
+    "hidden_mac_pos_b2",
+    "hidden_neuron_ord_b0",
+    "hidden_neuron_ord_b1",
+    "hidden_neuron_ord_b2",
+    "output_mac_pos_b0",
+    "output_mac_pos_b1",
+    "output_mac_pos_b2",
+    "output_mac_pos_b3",
 ]
 
 PHASE_OUTPUTS = [
@@ -230,7 +240,7 @@ def build_equivalence_script(generated_core: Path, smt2_path: Path) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the rtl-synthsis Spot/ltlsynt flow.")
+    parser = argparse.ArgumentParser(description="Run the rtl-synthesis Spot/ltlsynt flow.")
     parser.add_argument(
         "--ltlsynt",
         default=shutil.which("ltlsynt") or "ltlsynt",
@@ -421,6 +431,7 @@ def main() -> int:
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "overall_result": overall_result,
+        "assumption_profile": "exact_schedule_v1",
         "tool": {
             "driver": "python3 synthesis/controller/run_flow.py",
             "ltlsynt": str(args.ltlsynt),

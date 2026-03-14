@@ -13,7 +13,7 @@ The `rtl-formalize-synthsis` domain covers:
 This domain is distinct from:
 
 - `formalize`: pure Lean specs, machine models, and proofs
-- `rtl-synthsis`: reactive controller synthesis from temporal specifications such as GR(1)/TLSF
+- `rtl-synthesis`: reactive controller synthesis from temporal specifications such as GR(1)/TLSF
 - `asic`: logic synthesis and physical-design flow
 
 ## 2. Scope
@@ -26,6 +26,8 @@ The preferred first milestone is one of:
 
 1. controller-only generation that matches [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
 2. controller plus one or two simple primitives, such as ReLU or ROM access structure
+
+For controller-only scope, the repository may satisfy the exact `controller.sv` module boundary with a thin stable wrapper around the emitted Sparkle module, as long as that wrapper preserves the same parameters, ports, and controller behavior.
 
 This smaller scope is deliberate:
 

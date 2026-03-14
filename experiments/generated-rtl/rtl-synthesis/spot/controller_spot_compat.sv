@@ -38,6 +38,9 @@ module controller_spot_compat #(
   logic last_hidden;
   logic output_mac_active;
   logic output_mac_guard;
+  logic [2:0] hidden_mac_pos;
+  logic [2:0] hidden_neuron_ord;
+  logic [3:0] output_mac_pos;
 
   logic core_phase_idle;
   logic core_phase_load_input;
@@ -65,6 +68,9 @@ module controller_spot_compat #(
   assign last_hidden = (hidden_idx == LAST_HIDDEN_IDX);
   assign output_mac_active = (input_idx < HIDDEN_NEURONS_4B);
   assign output_mac_guard = (input_idx == HIDDEN_NEURONS_4B);
+  assign hidden_mac_pos = hidden_mac_active ? input_idx[2:0] : INPUT_NEURONS_4B[2:0];
+  assign hidden_neuron_ord = (hidden_idx < HIDDEN_NEURONS_4B) ? hidden_idx[2:0] : LAST_HIDDEN_IDX[2:0];
+  assign output_mac_pos = output_mac_active ? input_idx : HIDDEN_NEURONS_4B;
 
   controller_spot_core u_controller_spot_core (
     .clk(clk),
@@ -75,6 +81,16 @@ module controller_spot_compat #(
     .last_hidden(last_hidden),
     .output_mac_active(output_mac_active),
     .output_mac_guard(output_mac_guard),
+    .hidden_mac_pos_b0(hidden_mac_pos[0]),
+    .hidden_mac_pos_b1(hidden_mac_pos[1]),
+    .hidden_mac_pos_b2(hidden_mac_pos[2]),
+    .hidden_neuron_ord_b0(hidden_neuron_ord[0]),
+    .hidden_neuron_ord_b1(hidden_neuron_ord[1]),
+    .hidden_neuron_ord_b2(hidden_neuron_ord[2]),
+    .output_mac_pos_b0(output_mac_pos[0]),
+    .output_mac_pos_b1(output_mac_pos[1]),
+    .output_mac_pos_b2(output_mac_pos[2]),
+    .output_mac_pos_b3(output_mac_pos[3]),
     .phase_idle(core_phase_idle),
     .phase_load_input(core_phase_load_input),
     .phase_mac_hidden(core_phase_mac_hidden),

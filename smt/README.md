@@ -5,6 +5,7 @@ This directory implements the current SMT scope described in [`specs/smt/require
 Current scope:
 
 - RTL-backed control proofs for [`rtl/src/controller.sv`](../rtl/src/controller.sv) and [`rtl/src/mlp_core.sv`](../rtl/src/mlp_core.sv)
+- bounded wrapper-equivalence and invalid-state recovery proofs for the Sparkle-generated controller experiment
 - solver-backed overflow and width checks over the frozen contract in [`contract/result/weights.json`](../contract/result/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs
@@ -37,6 +38,12 @@ Run only the RTL control checks:
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
 ```
 
+Run only the generated-controller checks:
+
+```bash
+python3 smt/rtl/check_generated_controller.py --summary build/smt/generated_controller_summary.json
+```
+
 Export the frozen arithmetic assumptions:
 
 ```bash
@@ -58,6 +65,7 @@ python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contra
 Generated artifacts:
 
 - `build/smt/rtl_control_summary.json`
+- `build/smt/generated_controller_summary.json`
 - `build/smt/contract_assumptions.json`
 - `build/smt/contract_overflow_summary.json`
 - `build/smt/contract_equivalence_summary.json`

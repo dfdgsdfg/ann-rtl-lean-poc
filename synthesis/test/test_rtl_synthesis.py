@@ -19,13 +19,13 @@ CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 RTL_SRC_DIR = ROOT / "rtl" / "src"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
 SYNTHESIS_CONTROLLER_DIR = ROOT / "synthesis" / "controller"
-RTL_SYNTHSIS_EXPERIMENT_DIR = ROOT / "experiments" / "generated-rtl" / "rtl-synthsis" / "spot"
-RTL_SYNTHSIS_SPEC_DIR = ROOT / "specs" / "rtl-synthsis"
+RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot"
+RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "generated-rtl-vs-rtl.md"
 
 
 FAKE_AIGER = """\
-aag 1 7 1 9 0
+aag 17 17 0 9 0
 2
 4
 6
@@ -33,7 +33,16 @@ aag 1 7 1 9 0
 10
 12
 14
-16 0
+16
+18
+20
+22
+24
+26
+28
+30
+32
+34
 0
 0
 0
@@ -50,6 +59,16 @@ i3 hidden_mac_guard
 i4 last_hidden
 i5 output_mac_active
 i6 output_mac_guard
+i7 hidden_mac_pos_b0
+i8 hidden_mac_pos_b1
+i9 hidden_mac_pos_b2
+i10 hidden_neuron_ord_b0
+i11 hidden_neuron_ord_b1
+i12 hidden_neuron_ord_b2
+i13 output_mac_pos_b0
+i14 output_mac_pos_b1
+i15 output_mac_pos_b2
+i16 output_mac_pos_b3
 o0 phase_idle
 o1 phase_load_input
 o2 phase_mac_hidden
@@ -74,6 +93,16 @@ module controller_spot_core (
   input  logic last_hidden,
   input  logic output_mac_active,
   input  logic output_mac_guard,
+  input  logic hidden_mac_pos_b0,
+  input  logic hidden_mac_pos_b1,
+  input  logic hidden_mac_pos_b2,
+  input  logic hidden_neuron_ord_b0,
+  input  logic hidden_neuron_ord_b1,
+  input  logic hidden_neuron_ord_b2,
+  input  logic output_mac_pos_b0,
+  input  logic output_mac_pos_b1,
+  input  logic output_mac_pos_b2,
+  input  logic output_mac_pos_b3,
   output logic phase_idle,
   output logic phase_load_input,
   output logic phase_mac_hidden,
@@ -144,12 +173,12 @@ def _write_executable(path: Path, text: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-class RtlSynthsisFlowTests(unittest.TestCase):
+class RtlSynthesisFlowTests(unittest.TestCase):
     def setUp(self) -> None:
         build_dir = ROOT / "build"
         build_dir.mkdir(parents=True, exist_ok=True)
         self._tmpdir = tempfile.TemporaryDirectory(dir=build_dir)
-        self.temp_root = Path(self._tmpdir.name) / "rtl-synthsis-repo"
+        self.temp_root = Path(self._tmpdir.name) / "rtl-synthesis-repo"
         self.temp_root.mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
@@ -159,11 +188,11 @@ class RtlSynthsisFlowTests(unittest.TestCase):
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
         shutil.copytree(SYNTHESIS_CONTROLLER_DIR, self.temp_root / "synthesis" / "controller", dirs_exist_ok=True)
         shutil.copytree(
-            RTL_SYNTHSIS_EXPERIMENT_DIR,
-            self.temp_root / "experiments" / "generated-rtl" / "rtl-synthsis" / "spot",
+            RTL_SYNTHESIS_EXPERIMENT_DIR,
+            self.temp_root / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot",
             dirs_exist_ok=True,
         )
-        shutil.copytree(RTL_SYNTHSIS_SPEC_DIR, self.temp_root / "specs" / "rtl-synthsis", dirs_exist_ok=True)
+        shutil.copytree(RTL_SYNTHESIS_SPEC_DIR, self.temp_root / "specs" / "rtl-synthesis", dirs_exist_ok=True)
         (self.temp_root / "experiments").mkdir(parents=True, exist_ok=True)
         shutil.copy2(EXPERIMENT_TRACK_NOTE, self.temp_root / "experiments" / "generated-rtl-vs-rtl.md")
 
@@ -261,16 +290,51 @@ else:
 
     def _tool_args(self) -> list[str]:
         return [
-            f"RTL_SYNTHSIS_LTLSYNT={self.tools_dir / 'ltlsynt'}",
-            f"RTL_SYNTHSIS_SYFCO={self.tools_dir / 'syfco'}",
-            f"RTL_SYNTHSIS_YOSYS={self.tools_dir / 'yosys'}",
-            f"RTL_SYNTHSIS_SMTBMC={self.tools_dir / 'yosys-smtbmc'}",
-            f"RTL_SYNTHSIS_Z3={self.tools_dir / 'z3'}",
+            f"RTL_SYNTHESIS_LTLSYNT={self.tools_dir / 'ltlsynt'}",
+            f"RTL_SYNTHESIS_SYFCO={self.tools_dir / 'syfco'}",
+            f"RTL_SYNTHESIS_YOSYS={self.tools_dir / 'yosys'}",
+            f"RTL_SYNTHESIS_SMTBMC={self.tools_dir / 'yosys-smtbmc'}",
+            f"RTL_SYNTHESIS_Z3={self.tools_dir / 'z3'}",
         ]
 
-    def test_make_rtl_synthsis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
+    def test_controller_tlsf_records_exact_schedule_v1_assumptions(self) -> None:
+        tlsf_path = ROOT / "synthesis" / "controller" / "controller.tlsf"
+        tlsf_text = tlsf_path.read_text(encoding="utf-8")
+
+        for signal in (
+            "hidden_mac_pos_b0",
+            "hidden_mac_pos_b1",
+            "hidden_mac_pos_b2",
+            "hidden_neuron_ord_b0",
+            "hidden_neuron_ord_b1",
+            "hidden_neuron_ord_b2",
+            "output_mac_pos_b0",
+            "output_mac_pos_b1",
+            "output_mac_pos_b2",
+            "output_mac_pos_b3",
+        ):
+            self.assertIn(f"    {signal};", tlsf_text)
+
+        for snippet in (
+            'DESCRIPTION: "Controller-only phase contract for rtl/src/controller.sv with exact_schedule_v1 assumptions"',
+            "G(!reset && phase_mac_hidden -> (",
+            "G(!reset && phase_mac_output -> (",
+            "G(!reset && phase_next_hidden -> (",
+            "G(!reset && phase_load_input -> X (",
+            "G(!reset && phase_mac_hidden &&",
+            "G(!reset && phase_bias_hidden -> X (",
+            "G(!reset && phase_act_hidden -> X (",
+            "G(!reset && phase_next_hidden && last_hidden -> X (",
+            "G(!reset && phase_bias_output -> X (",
+            "G(!reset && phase_done && start -> X (",
+            "G(!reset && phase_done && !start -> X (",
+            "G(!reset && phase_idle && !start -> X (",
+        ):
+            self.assertIn(snippet, tlsf_text)
+
+    def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
-            ["make", "rtl-synthsis", *self._tool_args()],
+            ["make", "rtl-synthesis", *self._tool_args()],
             cwd=self.temp_root,
             text=True,
             capture_output=True,
@@ -284,23 +348,24 @@ else:
         self.assertIn("PASS aiger_generation", output)
         self.assertIn("PASS controller_equivalence", output)
 
-        summary_path = self.temp_root / "build" / "rtl-synthsis" / "spot" / "rtl_synthsis_summary.json"
+        summary_path = self.temp_root / "build" / "rtl-synthesis" / "spot" / "rtl_synthesis_summary.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["overall_result"], "pass")
+        self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
         self.assertEqual(summary["claim_scope"], "controller-only equivalence through the raw controller module boundary")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthsis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())
         self.assertTrue((generated_dir / "controller.sv").exists())
         self.assertTrue((generated_dir / "controller_spot.aag").exists())
 
-    def test_make_rtl_synthsis_sim_runs_with_fake_tools(self) -> None:
+    def test_make_rtl_synthesis_sim_runs_with_fake_tools(self) -> None:
         for tool in ("make", "iverilog", "vvp", "verilator"):
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
         result = subprocess.run(
-            ["make", "rtl-synthsis-sim", *self._tool_args()],
+            ["make", "rtl-synthesis-sim", *self._tool_args()],
             cwd=self.temp_root,
             text=True,
             capture_output=True,

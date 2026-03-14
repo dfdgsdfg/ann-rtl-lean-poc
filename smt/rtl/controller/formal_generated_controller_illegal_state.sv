@@ -6,7 +6,7 @@
 `define HIDDEN_NEURONS_VALUE 8
 `endif
 
-module formal_generated_controller_equivalence;
+module formal_generated_controller_illegal_state;
   (* gclk *) reg clk;
   localparam int INPUT_NEURONS = `INPUT_NEURONS_VALUE;
   localparam int HIDDEN_NEURONS = `HIDDEN_NEURONS_VALUE;
@@ -15,6 +15,7 @@ module formal_generated_controller_equivalence;
   logic       start;
   logic [3:0] hidden_idx;
   logic [3:0] input_idx;
+  (* anyconst *) logic [3:0] invalid_state;
 
   logic [3:0] baseline_state;
   logic       baseline_load_input;
@@ -41,7 +42,7 @@ module formal_generated_controller_equivalence;
   logic       generated_busy;
 
   reg       past_valid;
-  reg [3:0] step;
+  reg [1:0] step;
 
   controller #(
     .INPUT_NEURONS(INPUT_NEURONS),
@@ -89,21 +90,34 @@ module formal_generated_controller_equivalence;
 
   initial begin
     past_valid = 1'b0;
-    step = 4'd0;
+    step = 2'd0;
   end
 
   always @* begin
-    if (step < 4'd2) begin
-      assume (!rst_n);
-    end else begin
-      assume (rst_n);
-    end
+    assume (rst_n);
+    assume (invalid_state > 4'd8);
   end
 
   always @(posedge clk) begin
     past_valid <= 1'b1;
-    if (step < 4'd12) begin
-      step <= step + 4'd1;
+    if (step < 2'd2) begin
+      step <= step + 2'd1;
+    end
+
+    if (!past_valid) begin
+      assume (baseline_state == invalid_state);
+      assume (generated_state == invalid_state);
+      assert (baseline_busy);
+      assert (generated_busy);
+      assert (!baseline_done);
+      assert (!generated_done);
+    end else if (step == 2'd1) begin
+      assert (baseline_state == 4'd0);
+      assert (generated_state == 4'd0);
+      assert (!baseline_busy);
+      assert (!generated_busy);
+      assert (!baseline_done);
+      assert (!generated_done);
     end
 
     assert (baseline_state == generated_state);
@@ -117,10 +131,5 @@ module formal_generated_controller_equivalence;
     assert (baseline_do_bias_output == generated_do_bias_output);
     assert (baseline_done == generated_done);
     assert (baseline_busy == generated_busy);
-
-    if (past_valid && (step < 4'd3)) begin
-      assert (baseline_state == 4'd0);
-      assert (generated_state == 4'd0);
-    end
   end
 endmodule

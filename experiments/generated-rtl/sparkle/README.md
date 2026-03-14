@@ -5,7 +5,7 @@ This directory holds the generated-controller experiment for `rtl-formalize-synt
 Files:
 
 - `sparkle_controller.sv`: generated Sparkle RTL artifact
-- `sparkle_controller_wrapper.sv`: stable wrapper matching `rtl/src/controller.sv`
+- `sparkle_controller_wrapper.sv`: stable wrapper preserving the `rtl/src/controller.sv` parameter and port boundary
 
 Generation command:
 
@@ -18,17 +18,20 @@ Validation commands:
 ```bash
 make smt-generated-controller
 make sim-generated-controller
+make smt
 ```
 
 Scope and trust boundary:
 
 - scope: controller-only
 - semantic baseline: `rtl/src/controller.sv`
+- stable comparison boundary: `sparkle_controller_wrapper`, not the raw emitted Sparkle module
 - proof boundary: the hand-written Lean proofs in `formalize/` do not prove Sparkle codegen
-- v1 validation: Sparkle elaboration plus RTL equivalence checks against the hand-written controller
+- v1 validation: Sparkle elaboration, bounded formal wrapper-equivalence checks for `4/8`, `3/5`, and `1/1`, an invalid-state recovery proof, and directed simulation traces for `4/8` and `3/5`
 
 Wrapper mapping:
 
 - generated module: `TinyMLP_sparkleControllerPacked`
-- generated ports: `_gen_start`, `_gen_hidden_idx`, `_gen_input_idx`, `clk`, `rst`, `out`
+- wrapper parameters: `INPUT_NEURONS`, `HIDDEN_NEURONS`
+- generated ports: `_gen_start`, `_gen_hidden_idx`, `_gen_input_idx`, `_gen_inputNeurons4b`, `_gen_hiddenNeurons4b`, `_gen_lastHiddenIdx`, `clk`, `rst`, `out`
 - packed output bus: `{state[3:0], load_input, clear_acc, do_mac_hidden, do_bias_hidden, do_act_hidden, advance_hidden, do_mac_output, do_bias_output, done, busy}`

@@ -17,7 +17,7 @@ Each domain may contain:
 - `formalize-smt`: optional SMT-assisted Lean proof workflow
 - `smt`: solver-backed verification outside Lean
 - `rtl-formalize-synthsis`: Lean Signal-DSL hardware generation via Sparkle
-- `rtl-synthsis`: reactive controller synthesis from temporal specifications
+- `rtl-synthesis`: reactive controller synthesis from temporal specifications
 - `simulations`: vectors, testbench, regression flow
 - `experiments`: optional comparison and evaluation work
 - `asic`: synthesis and physical-design flow
@@ -25,7 +25,7 @@ Each domain may contain:
 ## Process
 
 Main baseline:
-`ann -> contract -> rtl -> formalize -> rtl-synthsis -> simulations -> experiments -> asic`
+`ann -> contract -> rtl -> formalize -> rtl-synthesis -> simulations -> experiments -> asic`
 
 Optional Lean-generated RTL path:
 `ann -> contract -> formalize -> rtl-formalize-synthsis -> simulations -> experiments -> asic`

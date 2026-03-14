@@ -26,7 +26,7 @@ Recommended experiment tracks:
 - Latency measurement in cycles for one inference
 - Area and timing comparisons across synthesis settings
 - Generated RTL from `rtl-formalize-synthsis` versus hand-written `rtl/`
-- Controller-only reactive synthesis from `rtl-synthsis` versus `rtl/src/controller.sv`
+- Controller-only reactive synthesis from `rtl-synthesis` versus `rtl/src/controller.sv`
 - Mixed-path experiments, such as a synthesized controller paired with the hand-written datapath
 - Scope-staged `rtl-formalize-synthsis` experiments: controller-only, primitive path, or full core
 
@@ -54,7 +54,7 @@ Experiment results should produce at least one of the following:
 - Logged report extracts
 - Saved vector-sweep results
 - Implementation-comparison reports with baseline and candidate artifact paths
-- Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthsis`, or `rtl-synthsis`
+- Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthsis`, or `rtl-synthesis`
 
 ## 5. Acceptance Criteria
 
@@ -63,6 +63,6 @@ The `experiments` domain is complete when:
 1. At least one functional experiment is automated.
 2. At least one implementation metric is measured, such as cycles, area, or timing.
 3. The command path from source inputs to recorded outputs is documented.
-4. Any `rtl-formalize-synthsis` or `rtl-synthsis` experiment records both provenance and comparison against the committed `rtl/` baseline.
+4. Any `rtl-formalize-synthsis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
 5. Any generated implementation experiment states its declared scope, such as controller-only, primitive path, or full core.
 6. Any generated implementation experiment states whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.

@@ -1,6 +1,6 @@
 INFO {
   TITLE:       "TinyMLP Controller Reactive-Synthesis Contract"
-  DESCRIPTION: "Controller-only phase contract for rtl/src/controller.sv"
+  DESCRIPTION: "Controller-only phase contract for rtl/src/controller.sv with exact_schedule_v1 assumptions"
   SEMANTICS:   Mealy
   TARGET:      Mealy
 }
@@ -14,6 +14,16 @@ MAIN {
     last_hidden;
     output_mac_active;
     output_mac_guard;
+    hidden_mac_pos_b0;
+    hidden_mac_pos_b1;
+    hidden_mac_pos_b2;
+    hidden_neuron_ord_b0;
+    hidden_neuron_ord_b1;
+    hidden_neuron_ord_b2;
+    output_mac_pos_b0;
+    output_mac_pos_b1;
+    output_mac_pos_b2;
+    output_mac_pos_b3;
   }
 
   OUTPUTS {
@@ -41,8 +51,339 @@ MAIN {
   }
 
   REQUIRE {
-    G(!(hidden_mac_active && hidden_mac_guard));
-    G(!(output_mac_active && output_mac_guard));
+    G(reset -> (
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0 &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+
+    G(!reset && phase_mac_hidden -> (
+      (
+        hidden_mac_active &&
+        !hidden_mac_guard &&
+        (
+          (!hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0) ||
+          (!hidden_mac_pos_b2 && !hidden_mac_pos_b1 && hidden_mac_pos_b0) ||
+          (!hidden_mac_pos_b2 && hidden_mac_pos_b1 && !hidden_mac_pos_b0) ||
+          (!hidden_mac_pos_b2 && hidden_mac_pos_b1 && hidden_mac_pos_b0)
+        )
+      ) ||
+      (
+        !hidden_mac_active &&
+        hidden_mac_guard &&
+        hidden_mac_pos_b2 &&
+        !hidden_mac_pos_b1 &&
+        !hidden_mac_pos_b0
+      )
+    ));
+
+    G(!reset && phase_mac_output -> (
+      (
+        output_mac_active &&
+        !output_mac_guard &&
+        (
+          (!output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0) ||
+          (!output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0)
+        )
+      ) ||
+      (
+        !output_mac_active &&
+        output_mac_guard &&
+        output_mac_pos_b3 &&
+        !output_mac_pos_b2 &&
+        !output_mac_pos_b1 &&
+        !output_mac_pos_b0
+      )
+    ));
+
+    G(!reset && phase_next_hidden -> (
+      (
+        !last_hidden &&
+        (
+          !hidden_neuron_ord_b2 ||
+          !hidden_neuron_ord_b1 ||
+          !hidden_neuron_ord_b0
+        )
+      ) ||
+      (
+        last_hidden &&
+        hidden_neuron_ord_b2 &&
+        hidden_neuron_ord_b1 &&
+        hidden_neuron_ord_b0
+      )
+    ));
+
+    G(!reset && phase_load_input -> X (
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0 &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+
+    G(!reset && phase_mac_hidden &&
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0 -> X (
+        !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && hidden_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && hidden_mac_pos_b0 -> X (
+        !hidden_mac_pos_b2 && hidden_mac_pos_b1 && !hidden_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_mac_pos_b2 && hidden_mac_pos_b1 && !hidden_mac_pos_b0 -> X (
+        !hidden_mac_pos_b2 && hidden_mac_pos_b1 && hidden_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_mac_pos_b2 && hidden_mac_pos_b1 && hidden_mac_pos_b0 -> X (
+        hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0 -> X (
+        hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0
+      )
+    );
+    G(!reset && phase_bias_hidden -> X (
+      hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0
+    ));
+    G(!reset && phase_act_hidden -> X (
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0
+    ));
+    G(!reset && phase_next_hidden && !last_hidden -> X (
+      !hidden_mac_pos_b2 && !hidden_mac_pos_b1 && !hidden_mac_pos_b0
+    ));
+
+    G(!reset && phase_load_input -> X (
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+    ));
+    G(!reset && phase_mac_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_mac_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_bias_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_act_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 && !last_hidden -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 && !last_hidden -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 && !last_hidden -> X (
+        !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      !hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 && !last_hidden -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 && !last_hidden -> X (
+        hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && hidden_neuron_ord_b0 && !last_hidden -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && !hidden_neuron_ord_b0 && !last_hidden -> X (
+        hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0
+      )
+    );
+    G(!reset && phase_next_hidden &&
+      hidden_neuron_ord_b2 && hidden_neuron_ord_b1 && hidden_neuron_ord_b0 && last_hidden -> X (
+        !hidden_neuron_ord_b2 && !hidden_neuron_ord_b1 && !hidden_neuron_ord_b0
+      )
+    );
+
+    G(!reset && phase_next_hidden && last_hidden -> X (
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && !output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && output_mac_pos_b2 && !output_mac_pos_b1 && output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && !output_mac_pos_b0 -> X (
+        !output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      !output_mac_pos_b3 && output_mac_pos_b2 && output_mac_pos_b1 && output_mac_pos_b0 -> X (
+        output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_mac_output &&
+      output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0 -> X (
+        output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+      )
+    );
+    G(!reset && phase_bias_output -> X (
+      output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+    G(!reset && phase_done && start -> X (
+      output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+    G(!reset && phase_done && !start -> X (
+      output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
+    G(!reset && phase_idle && !start -> X (
+      !output_mac_pos_b3 && !output_mac_pos_b2 && !output_mac_pos_b1 && !output_mac_pos_b0
+    ));
   }
 
   ASSERT {

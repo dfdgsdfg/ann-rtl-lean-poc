@@ -256,18 +256,22 @@ All solver checks run through `make smt`:
 make smt
 ```
 
-This runs four steps in sequence:
+This runs five steps in sequence:
 
 1. **Assumption export** — writes `build/smt/contract_assumptions.json`
 2. **RTL control checks** — 5 formal jobs via Yosys + yosys-smtbmc + Z3
-3. **Contract overflow checks** — 8 QF_BV queries via Z3
-4. **Contract equivalence checks** — 6 QF_BV queries via Z3
+3. **Generated-controller checks** — 4 bounded formal jobs over the Sparkle wrapper boundary via Yosys + yosys-smtbmc + Z3
+4. **Contract overflow checks** — 8 QF_BV queries via Z3
+5. **Contract equivalence checks** — 6 QF_BV queries via Z3
 
 Individual steps can be run separately:
 
 ```bash
 # RTL control only
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
+
+# Generated controller only
+python3 smt/rtl/check_generated_controller.py --summary build/smt/generated_controller_summary.json
 
 # Contract overflow only
 python3 smt/contract/overflow/check_bounds.py --summary build/smt/contract_overflow_summary.json

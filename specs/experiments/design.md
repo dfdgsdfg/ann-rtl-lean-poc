@@ -11,7 +11,7 @@ The design should favor:
 - Low setup overhead
 - Traceability back to committed inputs
 - Clear separation between canonical implementation artifacts and experimental generated variants
-- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthsis`, and `rtl-synthsis`
+- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthsis`, and `rtl-synthesis`
 
 ## 2. Recommended Experiment Tracks
 
@@ -46,7 +46,7 @@ Measure:
 Compare the committed hand-written RTL against alternative implementation paths such as:
 
 - generated RTL derived from the `rtl-formalize-synthsis` domain
-- translated controller artifacts from the `rtl-synthsis` domain
+- translated controller artifacts from the `rtl-synthesis` domain
 - reactive-synthesis-generated FSM candidates
 - mixed-path implementations such as a synthesized controller paired with the hand-written datapath
 
@@ -56,7 +56,7 @@ These experiments should keep the comparison honest:
 - generated artifacts live outside `rtl/`
 - the frozen contract remains the semantic anchor
 - `rtl-formalize-synthsis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
-- `rtl-synthsis` is scoped first to the controller, not the ANN datapath
+- `rtl-synthesis` is scoped first to the controller, not the ANN datapath
 
 ### RTL-Formalize-Synthsis Studies
 
@@ -69,7 +69,7 @@ Typical questions:
 - how much of the baseline can be replaced: controller-only, primitive path, or full core?
 - what trust boundary remains between the pure Lean proof layer and the emitted RTL?
 
-### RTL-Synthsis Studies
+### RTL-Synthesis Studies
 
 Compare controller artifacts produced from temporal specifications against `rtl/src/controller.sv`.
 
@@ -97,7 +97,7 @@ This can be implemented with scripts plus short markdown reports.
 ## 4. Suggested Workflow
 
 1. Export a fixed parameter set
-2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthsis`, `rtl-synthsis`, or a mixed path
+2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthsis`, `rtl-synthesis`, or a mixed path
 3. Generate vectors
 4. Materialize the candidate implementation variant
 5. Run simulation or synthesis
@@ -115,4 +115,4 @@ For implementation-branch comparisons, the summary should include:
 
 ## 5. Success Signal
 
-The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthsis` path, and the `rtl-synthsis` path and understand what changed without reverse-engineering the repository.
+The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthsis` path, and the `rtl-synthesis` path and understand what changed without reverse-engineering the repository.

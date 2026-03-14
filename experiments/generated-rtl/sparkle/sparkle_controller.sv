@@ -5,6 +5,9 @@ module TinyMLP_sparkleControllerPacked (
     input logic _gen_start,
     input logic [3:0] _gen_hidden_idx,
     input logic [3:0] _gen_input_idx,
+    input logic [3:0] _gen_inputNeurons4b,
+    input logic [3:0] _gen_hiddenNeurons4b,
+    input logic [3:0] _gen_lastHiddenIdx,
     input logic clk,
     input logic rst,
     output logic [13:0] out
@@ -29,29 +32,29 @@ module TinyMLP_sparkleControllerPacked (
     logic _gen_isBiasOutput;
     logic [3:0] _tmp_b_9;
     logic _gen_isDone;
-    logic [3:0] _tmp_b_10;
     logic _gen_inputGuardReached;
-    logic [3:0] _tmp_b_11;
     logic _gen_outputGuardReached;
-    logic [3:0] _tmp_b_12;
     logic _gen_hiddenLast;
     logic _gen_notStart;
-    logic _tmp_mux_cond_13;
-    logic [3:0] _tmp_mux_then_14;
+    logic _tmp_mux_cond_10;
+    logic [3:0] _tmp_mux_then_11;
+    logic [3:0] _tmp_mux_then_12;
+    logic [3:0] _tmp_mux_then_13;
+    logic _tmp_mux_cond_14;
     logic [3:0] _tmp_mux_then_15;
-    logic _tmp_mux_cond_16;
+    logic [3:0] _tmp_mux_then_16;
     logic [3:0] _tmp_mux_then_17;
     logic [3:0] _tmp_mux_then_18;
-    logic [3:0] _tmp_mux_then_19;
-    logic _tmp_mux_cond_20;
+    logic _tmp_mux_cond_19;
+    logic [3:0] _tmp_mux_then_20;
     logic [3:0] _tmp_mux_then_21;
-    logic [3:0] _tmp_mux_then_22;
-    logic _tmp_mux_cond_23;
+    logic _tmp_mux_cond_22;
+    logic [3:0] _tmp_mux_then_23;
     logic [3:0] _tmp_mux_then_24;
     logic [3:0] _tmp_mux_then_25;
     logic _tmp_mux_cond_26;
     logic [3:0] _tmp_mux_then_27;
-    logic [3:0] _tmp_mux_else_28;
+    logic [3:0] _tmp_mux_then_28;
     logic [3:0] _tmp_mux_else_29;
     logic [3:0] _tmp_mux_else_30;
     logic [3:0] _tmp_mux_else_31;
@@ -60,80 +63,49 @@ module TinyMLP_sparkleControllerPacked (
     logic [3:0] _tmp_mux_else_34;
     logic [3:0] _tmp_mux_else_35;
     logic [3:0] _tmp_mux_else_36;
+    logic [3:0] _tmp_mux_else_37;
+    logic [3:0] _tmp_mux_else_38;
+    logic [3:0] _tmp_mux_else_39;
+    logic [3:0] _tmp_mux_else_40;
+    logic [3:0] _tmp_mux_else_41;
+    logic [3:0] _tmp_mux_else_42;
     logic [3:0] _gen_nextState;
-    logic [3:0] _tmp_loop_body_37;
-    logic [3:0] _tmp_b_38;
+    logic [3:0] _tmp_loop_body_43;
+    logic [3:0] _tmp_b_44;
+    logic _gen_isIdle_1;
+    logic [3:0] _tmp_b_45;
     logic _gen_load_input;
-    logic [3:0] _tmp_b_39;
-    logic _tmp_arg1_40;
-    logic [3:0] _tmp_b_41;
-    logic _tmp_arg1_42;
-    logic [3:0] _tmp_b_43;
-    logic _tmp_arg2_44;
-    logic _tmp_arg1_45;
     logic [3:0] _tmp_b_46;
-    logic _tmp_arg2_47;
-    logic _tmp_arg1_48;
-    logic [3:0] _tmp_b_49;
-    logic _tmp_arg2_50;
-    logic _tmp_arg2_51;
+    logic _tmp_arg1_47;
+    logic _tmp_arg2_48;
     logic _gen_do_mac_hidden;
-    logic [3:0] _tmp_b_52;
+    logic [3:0] _tmp_b_49;
     logic _gen_do_bias_hidden;
-    logic [3:0] _tmp_b_53;
+    logic [3:0] _tmp_b_50;
     logic _gen_do_act_hidden;
-    logic [3:0] _tmp_b_54;
+    logic [3:0] _tmp_b_51;
     logic _gen_advance_hidden;
-    logic [3:0] _tmp_b_55;
-    logic _tmp_arg1_56;
-    logic [3:0] _tmp_b_57;
-    logic _tmp_arg1_58;
-    logic [3:0] _tmp_b_59;
-    logic _tmp_arg2_60;
-    logic _tmp_arg1_61;
-    logic [3:0] _tmp_b_62;
-    logic _tmp_arg2_63;
-    logic _tmp_arg1_64;
-    logic [3:0] _tmp_b_65;
-    logic _tmp_arg2_66;
-    logic _tmp_arg1_67;
-    logic [3:0] _tmp_b_68;
-    logic _tmp_arg2_69;
-    logic _tmp_arg1_70;
-    logic [3:0] _tmp_b_71;
-    logic _tmp_arg2_72;
-    logic _tmp_arg1_73;
-    logic [3:0] _tmp_b_74;
-    logic _tmp_arg2_75;
-    logic _tmp_arg1_76;
-    logic [3:0] _tmp_b_77;
-    logic _tmp_arg2_78;
-    logic _tmp_arg2_79;
+    logic [3:0] _tmp_b_52;
+    logic _tmp_arg1_53;
+    logic _tmp_arg2_54;
     logic _gen_do_mac_output;
-    logic [3:0] _tmp_b_80;
+    logic [3:0] _tmp_b_55;
     logic _gen_do_bias_output;
-    logic [3:0] _tmp_b_81;
+    logic [3:0] _tmp_b_56;
     logic _gen_done;
-    logic [3:0] _tmp_b_82;
-    logic _tmp_arg2_83;
-    logic _tmp_arg1_84;
-    logic _tmp_arg1_85;
-    logic _tmp_arg1_86;
-    logic _tmp_arg1_87;
-    logic [3:0] _tmp_b_88;
-    logic _tmp_arg2_89;
-    logic _tmp_arg1_90;
+    logic _tmp_arg1_57;
+    logic _tmp_arg2_58;
     logic _gen_busy;
-    logic [1:0] _tmp_b_91;
-    logic [2:0] _tmp_b_92;
-    logic [3:0] _tmp_b_93;
-    logic [4:0] _tmp_b_94;
-    logic [5:0] _tmp_b_95;
-    logic [6:0] _tmp_b_96;
-    logic [7:0] _tmp_b_97;
-    logic [8:0] _tmp_b_98;
-    logic [9:0] _tmp_b_99;
-    logic [13:0] _tmp_result_100;
+    logic [1:0] _tmp_b_59;
+    logic [2:0] _tmp_b_60;
+    logic [3:0] _tmp_b_61;
+    logic [4:0] _tmp_b_62;
+    logic [5:0] _tmp_b_63;
+    logic [6:0] _tmp_b_64;
+    logic [7:0] _tmp_b_65;
+    logic [8:0] _tmp_b_66;
+    logic [9:0] _tmp_b_67;
+    logic [13:0] _tmp_result_68;
 
 
     assign _tmp_b_1 = 4'd0;
@@ -172,43 +144,43 @@ module TinyMLP_sparkleControllerPacked (
 
     assign _gen_isDone = (_tmp_loop_0 == _tmp_b_9);
 
-    assign _tmp_b_10 = 4'd4;
+    assign _gen_inputGuardReached = (_gen_input_idx == _gen_inputNeurons4b);
 
-    assign _gen_inputGuardReached = (_gen_input_idx == _tmp_b_10);
+    assign _gen_outputGuardReached = (_gen_input_idx == _gen_hiddenNeurons4b);
 
-    assign _tmp_b_11 = 4'd8;
-
-    assign _gen_outputGuardReached = (_gen_input_idx == _tmp_b_11);
-
-    assign _tmp_b_12 = 4'd7;
-
-    assign _gen_hiddenLast = (_gen_hidden_idx == _tmp_b_12);
+    assign _gen_hiddenLast = (_gen_hidden_idx == _gen_lastHiddenIdx);
 
     assign _gen_notStart = ~_gen_start;
 
-    assign _tmp_mux_cond_13 = (_gen_isIdle & _gen_start);
+    assign _tmp_mux_cond_10 = (_gen_isIdle & _gen_start);
 
-    assign _tmp_mux_then_14 = 4'd1;
+    assign _tmp_mux_then_11 = 4'd1;
 
-    assign _tmp_mux_then_15 = 4'd2;
+    assign _tmp_mux_then_12 = 4'd0;
 
-    assign _tmp_mux_cond_16 = (_gen_isMacHidden & _gen_inputGuardReached);
+    assign _tmp_mux_then_13 = 4'd2;
 
-    assign _tmp_mux_then_17 = 4'd3;
+    assign _tmp_mux_cond_14 = (_gen_isMacHidden & _gen_inputGuardReached);
 
-    assign _tmp_mux_then_18 = 4'd4;
+    assign _tmp_mux_then_15 = 4'd3;
 
-    assign _tmp_mux_then_19 = 4'd5;
+    assign _tmp_mux_then_16 = 4'd2;
 
-    assign _tmp_mux_cond_20 = (_gen_isNextHidden & _gen_hiddenLast);
+    assign _tmp_mux_then_17 = 4'd4;
 
-    assign _tmp_mux_then_21 = 4'd6;
+    assign _tmp_mux_then_18 = 4'd5;
 
-    assign _tmp_mux_then_22 = 4'd2;
+    assign _tmp_mux_cond_19 = (_gen_isNextHidden & _gen_hiddenLast);
 
-    assign _tmp_mux_cond_23 = (_gen_isMacOutput & _gen_outputGuardReached);
+    assign _tmp_mux_then_20 = 4'd6;
 
-    assign _tmp_mux_then_24 = 4'd7;
+    assign _tmp_mux_then_21 = 4'd2;
+
+    assign _tmp_mux_cond_22 = (_gen_isMacOutput & _gen_outputGuardReached);
+
+    assign _tmp_mux_then_23 = 4'd7;
+
+    assign _tmp_mux_then_24 = 4'd6;
 
     assign _tmp_mux_then_25 = 4'd8;
 
@@ -216,179 +188,117 @@ module TinyMLP_sparkleControllerPacked (
 
     assign _tmp_mux_then_27 = 4'd0;
 
-    assign _tmp_mux_else_28 = (_tmp_mux_cond_26 ? _tmp_mux_then_27 : _tmp_loop_0);
+    assign _tmp_mux_then_28 = 4'd8;
 
-    assign _tmp_mux_else_29 = (_gen_isBiasOutput ? _tmp_mux_then_25 : _tmp_mux_else_28);
+    assign _tmp_mux_else_29 = 4'd0;
 
-    assign _tmp_mux_else_30 = (_tmp_mux_cond_23 ? _tmp_mux_then_24 : _tmp_mux_else_29);
+    assign _tmp_mux_else_30 = (_gen_isDone ? _tmp_mux_then_28 : _tmp_mux_else_29);
 
-    assign _tmp_mux_else_31 = (_gen_isNextHidden ? _tmp_mux_then_22 : _tmp_mux_else_30);
+    assign _tmp_mux_else_31 = (_tmp_mux_cond_26 ? _tmp_mux_then_27 : _tmp_mux_else_30);
 
-    assign _tmp_mux_else_32 = (_tmp_mux_cond_20 ? _tmp_mux_then_21 : _tmp_mux_else_31);
+    assign _tmp_mux_else_32 = (_gen_isBiasOutput ? _tmp_mux_then_25 : _tmp_mux_else_31);
 
-    assign _tmp_mux_else_33 = (_gen_isActHidden ? _tmp_mux_then_19 : _tmp_mux_else_32);
+    assign _tmp_mux_else_33 = (_gen_isMacOutput ? _tmp_mux_then_24 : _tmp_mux_else_32);
 
-    assign _tmp_mux_else_34 = (_gen_isBiasHidden ? _tmp_mux_then_18 : _tmp_mux_else_33);
+    assign _tmp_mux_else_34 = (_tmp_mux_cond_22 ? _tmp_mux_then_23 : _tmp_mux_else_33);
 
-    assign _tmp_mux_else_35 = (_tmp_mux_cond_16 ? _tmp_mux_then_17 : _tmp_mux_else_34);
+    assign _tmp_mux_else_35 = (_gen_isNextHidden ? _tmp_mux_then_21 : _tmp_mux_else_34);
 
-    assign _tmp_mux_else_36 = (_gen_isLoadInput ? _tmp_mux_then_15 : _tmp_mux_else_35);
+    assign _tmp_mux_else_36 = (_tmp_mux_cond_19 ? _tmp_mux_then_20 : _tmp_mux_else_35);
 
-    assign _gen_nextState = (_tmp_mux_cond_13 ? _tmp_mux_then_14 : _tmp_mux_else_36);
+    assign _tmp_mux_else_37 = (_gen_isActHidden ? _tmp_mux_then_18 : _tmp_mux_else_36);
+
+    assign _tmp_mux_else_38 = (_gen_isBiasHidden ? _tmp_mux_then_17 : _tmp_mux_else_37);
+
+    assign _tmp_mux_else_39 = (_gen_isMacHidden ? _tmp_mux_then_16 : _tmp_mux_else_38);
+
+    assign _tmp_mux_else_40 = (_tmp_mux_cond_14 ? _tmp_mux_then_15 : _tmp_mux_else_39);
+
+    assign _tmp_mux_else_41 = (_gen_isLoadInput ? _tmp_mux_then_13 : _tmp_mux_else_40);
+
+    assign _tmp_mux_else_42 = (_gen_isIdle ? _tmp_mux_then_12 : _tmp_mux_else_41);
+
+    assign _gen_nextState = (_tmp_mux_cond_10 ? _tmp_mux_then_11 : _tmp_mux_else_42);
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_loop_body_37 <= 4'd0;
+            _tmp_loop_body_43 <= 4'd0;
         else
-            _tmp_loop_body_37 <= _gen_nextState;
+            _tmp_loop_body_43 <= _gen_nextState;
     end
 
-    assign _tmp_loop_0 = _tmp_loop_body_37;
+    assign _tmp_loop_0 = _tmp_loop_body_43;
 
-    assign _tmp_b_38 = 4'd1;
+    assign _tmp_b_44 = 4'd0;
 
-    assign _gen_load_input = (_tmp_loop_body_37 == _tmp_b_38);
+    assign _gen_isIdle_1 = (_tmp_loop_body_43 == _tmp_b_44);
 
-    assign _tmp_b_39 = 4'd2;
+    assign _tmp_b_45 = 4'd1;
 
-    assign _tmp_arg1_40 = (_tmp_loop_body_37 == _tmp_b_39);
-
-    assign _tmp_b_41 = 4'd0;
-
-    assign _tmp_arg1_42 = (_gen_input_idx == _tmp_b_41);
-
-    assign _tmp_b_43 = 4'd1;
-
-    assign _tmp_arg2_44 = (_gen_input_idx == _tmp_b_43);
-
-    assign _tmp_arg1_45 = (_tmp_arg1_42 | _tmp_arg2_44);
+    assign _gen_load_input = (_tmp_loop_body_43 == _tmp_b_45);
 
     assign _tmp_b_46 = 4'd2;
 
-    assign _tmp_arg2_47 = (_gen_input_idx == _tmp_b_46);
+    assign _tmp_arg1_47 = (_tmp_loop_body_43 == _tmp_b_46);
 
-    assign _tmp_arg1_48 = (_tmp_arg1_45 | _tmp_arg2_47);
+    assign _tmp_arg2_48 = (_gen_input_idx < _gen_inputNeurons4b);
+
+    assign _gen_do_mac_hidden = (_tmp_arg1_47 & _tmp_arg2_48);
 
     assign _tmp_b_49 = 4'd3;
 
-    assign _tmp_arg2_50 = (_gen_input_idx == _tmp_b_49);
+    assign _gen_do_bias_hidden = (_tmp_loop_body_43 == _tmp_b_49);
 
-    assign _tmp_arg2_51 = (_tmp_arg1_48 | _tmp_arg2_50);
+    assign _tmp_b_50 = 4'd4;
 
-    assign _gen_do_mac_hidden = (_tmp_arg1_40 & _tmp_arg2_51);
+    assign _gen_do_act_hidden = (_tmp_loop_body_43 == _tmp_b_50);
 
-    assign _tmp_b_52 = 4'd3;
+    assign _tmp_b_51 = 4'd5;
 
-    assign _gen_do_bias_hidden = (_tmp_loop_body_37 == _tmp_b_52);
+    assign _gen_advance_hidden = (_tmp_loop_body_43 == _tmp_b_51);
 
-    assign _tmp_b_53 = 4'd4;
+    assign _tmp_b_52 = 4'd6;
 
-    assign _gen_do_act_hidden = (_tmp_loop_body_37 == _tmp_b_53);
+    assign _tmp_arg1_53 = (_tmp_loop_body_43 == _tmp_b_52);
 
-    assign _tmp_b_54 = 4'd5;
+    assign _tmp_arg2_54 = (_gen_input_idx < _gen_hiddenNeurons4b);
 
-    assign _gen_advance_hidden = (_tmp_loop_body_37 == _tmp_b_54);
+    assign _gen_do_mac_output = (_tmp_arg1_53 & _tmp_arg2_54);
 
-    assign _tmp_b_55 = 4'd6;
+    assign _tmp_b_55 = 4'd7;
 
-    assign _tmp_arg1_56 = (_tmp_loop_body_37 == _tmp_b_55);
+    assign _gen_do_bias_output = (_tmp_loop_body_43 == _tmp_b_55);
 
-    assign _tmp_b_57 = 4'd0;
+    assign _tmp_b_56 = 4'd8;
 
-    assign _tmp_arg1_58 = (_gen_input_idx == _tmp_b_57);
+    assign _gen_done = (_tmp_loop_body_43 == _tmp_b_56);
 
-    assign _tmp_b_59 = 4'd1;
+    assign _tmp_arg1_57 = ~_gen_isIdle_1;
 
-    assign _tmp_arg2_60 = (_gen_input_idx == _tmp_b_59);
+    assign _tmp_arg2_58 = ~_gen_done;
 
-    assign _tmp_arg1_61 = (_tmp_arg1_58 | _tmp_arg2_60);
+    assign _gen_busy = (_tmp_arg1_57 & _tmp_arg2_58);
 
-    assign _tmp_b_62 = 4'd2;
+    assign _tmp_b_59 = {_gen_done, _gen_busy};
 
-    assign _tmp_arg2_63 = (_gen_input_idx == _tmp_b_62);
+    assign _tmp_b_60 = {_gen_do_bias_output, _tmp_b_59};
 
-    assign _tmp_arg1_64 = (_tmp_arg1_61 | _tmp_arg2_63);
+    assign _tmp_b_61 = {_gen_do_mac_output, _tmp_b_60};
 
-    assign _tmp_b_65 = 4'd3;
+    assign _tmp_b_62 = {_gen_advance_hidden, _tmp_b_61};
 
-    assign _tmp_arg2_66 = (_gen_input_idx == _tmp_b_65);
+    assign _tmp_b_63 = {_gen_do_act_hidden, _tmp_b_62};
 
-    assign _tmp_arg1_67 = (_tmp_arg1_64 | _tmp_arg2_66);
+    assign _tmp_b_64 = {_gen_do_bias_hidden, _tmp_b_63};
 
-    assign _tmp_b_68 = 4'd4;
+    assign _tmp_b_65 = {_gen_do_mac_hidden, _tmp_b_64};
 
-    assign _tmp_arg2_69 = (_gen_input_idx == _tmp_b_68);
+    assign _tmp_b_66 = {_gen_load_input, _tmp_b_65};
 
-    assign _tmp_arg1_70 = (_tmp_arg1_67 | _tmp_arg2_69);
+    assign _tmp_b_67 = {_gen_load_input, _tmp_b_66};
 
-    assign _tmp_b_71 = 4'd5;
+    assign _tmp_result_68 = {_tmp_loop_body_43, _tmp_b_67};
 
-    assign _tmp_arg2_72 = (_gen_input_idx == _tmp_b_71);
-
-    assign _tmp_arg1_73 = (_tmp_arg1_70 | _tmp_arg2_72);
-
-    assign _tmp_b_74 = 4'd6;
-
-    assign _tmp_arg2_75 = (_gen_input_idx == _tmp_b_74);
-
-    assign _tmp_arg1_76 = (_tmp_arg1_73 | _tmp_arg2_75);
-
-    assign _tmp_b_77 = 4'd7;
-
-    assign _tmp_arg2_78 = (_gen_input_idx == _tmp_b_77);
-
-    assign _tmp_arg2_79 = (_tmp_arg1_76 | _tmp_arg2_78);
-
-    assign _gen_do_mac_output = (_tmp_arg1_56 & _tmp_arg2_79);
-
-    assign _tmp_b_80 = 4'd7;
-
-    assign _gen_do_bias_output = (_tmp_loop_body_37 == _tmp_b_80);
-
-    assign _tmp_b_81 = 4'd8;
-
-    assign _gen_done = (_tmp_loop_body_37 == _tmp_b_81);
-
-    assign _tmp_b_82 = 4'd2;
-
-    assign _tmp_arg2_83 = (_tmp_loop_body_37 == _tmp_b_82);
-
-    assign _tmp_arg1_84 = (_gen_load_input | _tmp_arg2_83);
-
-    assign _tmp_arg1_85 = (_tmp_arg1_84 | _gen_do_bias_hidden);
-
-    assign _tmp_arg1_86 = (_tmp_arg1_85 | _gen_do_act_hidden);
-
-    assign _tmp_arg1_87 = (_tmp_arg1_86 | _gen_advance_hidden);
-
-    assign _tmp_b_88 = 4'd6;
-
-    assign _tmp_arg2_89 = (_tmp_loop_body_37 == _tmp_b_88);
-
-    assign _tmp_arg1_90 = (_tmp_arg1_87 | _tmp_arg2_89);
-
-    assign _gen_busy = (_tmp_arg1_90 | _gen_do_bias_output);
-
-    assign _tmp_b_91 = {_gen_done, _gen_busy};
-
-    assign _tmp_b_92 = {_gen_do_bias_output, _tmp_b_91};
-
-    assign _tmp_b_93 = {_gen_do_mac_output, _tmp_b_92};
-
-    assign _tmp_b_94 = {_gen_advance_hidden, _tmp_b_93};
-
-    assign _tmp_b_95 = {_gen_do_act_hidden, _tmp_b_94};
-
-    assign _tmp_b_96 = {_gen_do_bias_hidden, _tmp_b_95};
-
-    assign _tmp_b_97 = {_gen_do_mac_hidden, _tmp_b_96};
-
-    assign _tmp_b_98 = {_gen_load_input, _tmp_b_97};
-
-    assign _tmp_b_99 = {_gen_load_input, _tmp_b_98};
-
-    assign _tmp_result_100 = {_tmp_loop_body_37, _tmp_b_99};
-
-    assign out = _tmp_result_100;
+    assign out = _tmp_result_68;
 
 endmodule

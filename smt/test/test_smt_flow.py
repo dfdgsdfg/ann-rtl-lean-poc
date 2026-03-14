@@ -37,7 +37,7 @@ class SmtFlowTests(unittest.TestCase):
             self.assertEqual(exported["boundedness"]["status"], "verified")
 
     def test_make_smt_runs_all_smt_checks(self) -> None:
-        for tool in ("make", "z3", "yosys", "yosys-smtbmc"):
+        for tool in ("make", "lake", "z3", "yosys", "yosys-smtbmc"):
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
@@ -52,18 +52,26 @@ class SmtFlowTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("controller_interface", output)
+        self.assertIn("generated_controller_equivalence_default", output)
         self.assertIn("hidden_products_fit_int16", output)
         self.assertIn("out_bit_equivalent", output)
 
         rtl_summary = json.loads((ROOT / "build" / "smt" / "rtl_control_summary.json").read_text(encoding="utf-8"))
+        generated_summary = json.loads((ROOT / "build" / "smt" / "generated_controller_summary.json").read_text(encoding="utf-8"))
         contract_summary = json.loads((ROOT / "build" / "smt" / "contract_assumptions.json").read_text(encoding="utf-8"))
         overflow_summary = json.loads((ROOT / "build" / "smt" / "contract_overflow_summary.json").read_text(encoding="utf-8"))
         equivalence_summary = json.loads((ROOT / "build" / "smt" / "contract_equivalence_summary.json").read_text(encoding="utf-8"))
 
         self.assertEqual(rtl_summary["overall_result"], "pass")
+        self.assertEqual(generated_summary["overall_result"], "pass")
         self.assertEqual(contract_summary["arithmetic"]["accumulator_bits"], 32)
         self.assertEqual(overflow_summary["overall_result"], "pass")
         self.assertEqual(equivalence_summary["overall_result"], "pass")
+        self.assertEqual(
+            {result["family"] for result in generated_summary["results"]},
+            {"parameter_equivalence", "illegal_state_recovery"},
+        )
+        self.assertGreaterEqual(len(generated_summary["results"]), 4)
         self.assertEqual(
             {result["family"] for result in rtl_summary["results"]},
             {"controller_interface", "boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
