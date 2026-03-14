@@ -11,8 +11,8 @@ from .params import HIDDEN_SIZE, INPUT_SIZE
 from .quantize_helpers import relu, wrap_signed
 from .schema import coerce_weights_payload
 
-TEST_VECTORS_PATH = ROOT / "simulations" / "rtl" / "test_vectors.mem"
-TEST_VECTORS_META_PATH = ROOT / "simulations" / "rtl" / "test_vectors_meta.svh"
+TEST_VECTORS_PATH = ROOT / "simulations" / "shared" / "test_vectors.mem"
+TEST_VECTORS_META_PATH = ROOT / "simulations" / "shared" / "test_vectors_meta.svh"
 VECTOR_HEX_WIDTH = 17
 
 SMOKE_VECTORS = (
@@ -117,7 +117,12 @@ def _load_contract_weights() -> dict[str, object]:
 
 
 def _build_scored_vectors(weights: dict[str, object]) -> tuple[tuple[tuple[int, int, int, int], int], ...]:
-    return tuple((vector, _score(vector, weights=weights)) for vector in SMOKE_VECTORS)
+    scored_vectors = [(vector, _score(vector, weights=weights)) for vector in SMOKE_VECTORS]
+    witness_vectors = _synthesize_witness_vectors(weights)
+    for witness_class in WITNESS_CLASSES:
+        witness = witness_vectors[witness_class]
+        scored_vectors.append((witness, _score(witness, weights=weights)))
+    return tuple(scored_vectors)
 
 
 def render_vectors(weights: dict[str, object]) -> str:

@@ -12,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SUMMARY = ROOT / "build" / "smt" / "generated_controller_summary.json"
 FORMAL_BUILD_DIR = ROOT / "build" / "smt" / "generated_controller"
-GENERATED_CONTROLLER_RTL = ROOT / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
-GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller_wrapper.sv"
+GENERATED_CONTROLLER_RTL = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
+GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv"
 
 
 @dataclass(frozen=True)

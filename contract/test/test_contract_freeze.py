@@ -37,8 +37,8 @@ class FreezeContractTests(unittest.TestCase):
         self.weight_rom_path = self.temp_root / "rtl" / "src" / "weight_rom.sv"
         self.lean_spec_path = self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
         self.model_doc_path = self.temp_root / "contract" / "result" / "model.md"
-        self.vectors_path = self.temp_root / "simulations" / "rtl" / "test_vectors.mem"
-        self.vector_meta_path = self.temp_root / "simulations" / "rtl" / "test_vectors_meta.svh"
+        self.vectors_path = self.temp_root / "simulations" / "shared" / "test_vectors.mem"
+        self.vector_meta_path = self.temp_root / "simulations" / "shared" / "test_vectors_meta.svh"
 
         self.weight_rom_path.parent.mkdir(parents=True, exist_ok=True)
         self.weight_rom_path.write_text(WEIGHT_ROM_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
@@ -149,9 +149,9 @@ class FreezeContractTests(unittest.TestCase):
 
         self.assertEqual(resolved, RUN_DIR)
 
-    def test_render_vectors_smoke_only_succeeds_for_always_positive_weights(self) -> None:
-        rendered = gen_vectors.render_vectors(self._always_positive_weights())
-        self.assertEqual(len([line for line in rendered.splitlines() if line]), len(gen_vectors.SMOKE_VECTORS))
+    def test_render_vectors_fails_when_score_class_witnesses_are_missing(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unable to synthesize required score-class witnesses for zero"):
+            gen_vectors.render_vectors(self._always_positive_weights())
 
     def test_check_witness_coverage_fails_for_always_positive_weights(self) -> None:
         self.contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
@@ -180,6 +180,7 @@ class FreezeContractTests(unittest.TestCase):
         repo_root = self.temp_root / "sim-repo"
         (repo_root / "contract" / "result").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
+        (repo_root / "simulations" / "shared").mkdir(parents=True, exist_ok=True)
         (repo_root / "build" / "sim").mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
@@ -190,8 +191,8 @@ class FreezeContractTests(unittest.TestCase):
 
         stamp_path = repo_root / "build" / "sim" / "vectors.stamp"
         stamp_path.write_text("stale stamp\n", encoding="utf-8")
-        vectors_path = repo_root / "simulations" / "rtl" / "test_vectors.mem"
-        vector_meta_path = repo_root / "simulations" / "rtl" / "test_vectors_meta.svh"
+        vectors_path = repo_root / "simulations" / "shared" / "test_vectors.mem"
+        vector_meta_path = repo_root / "simulations" / "shared" / "test_vectors_meta.svh"
         self.assertFalse(vectors_path.exists())
         self.assertFalse(vector_meta_path.exists())
 

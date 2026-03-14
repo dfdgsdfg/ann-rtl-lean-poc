@@ -33,7 +33,7 @@ make freeze-check
 make sim
 ```
 
-The `train` command with default settings automatically freezes the contract and regenerates downstream artifacts (including `simulations/rtl/test_vectors.mem`). Use `--skip-export` to train without freezing.
+The `train` command with default settings automatically freezes the contract and regenerates downstream artifacts (including `simulations/shared/test_vectors.mem`). Use `--skip-export` to train without freezing.
 
 `make sim` is the canonical regression entry point. It runs the same SystemVerilog bench through both `Icarus Verilog` and `Verilator`, and the regression fails if either simulator fails.
 

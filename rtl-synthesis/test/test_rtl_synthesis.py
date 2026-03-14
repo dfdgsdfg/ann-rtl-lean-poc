@@ -18,8 +18,9 @@ CONTRACT_RESULT_DIR = ROOT / "contract" / "result"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 RTL_SRC_DIR = ROOT / "rtl" / "src"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
+SIM_SHARED_DIR = ROOT / "simulations" / "shared"
 RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
-RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot"
+RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "rtl-synthesis" / "spot"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "generated-rtl-vs-rtl.md"
 
@@ -167,10 +168,10 @@ module controller_spot_core (
 endmodule
 """
 
-ASYNC_RESET_BRIDGE_TB = """\
+RESET_RELEASE_ACCEPT_TB = """\
 `timescale 1ns/1ps
 
-module async_reset_bridge_tb;
+module reset_release_accept_tb;
   logic clk;
   logic rst_n;
   logic start;
@@ -282,31 +283,16 @@ module async_reset_bridge_tb;
     input_idx = 4'd0;
 
     repeat (2) @(negedge clk);
+    start = 1'b1;
     rst_n = 1'b1;
     @(negedge clk);
-    check_equal("post_reset_idle");
-
-    start = 1'b1;
-    @(negedge clk);
-    check_equal("accepted_start");
+    check_equal("accept_on_reset_release");
 
     start = 1'b0;
-    input_idx = 4'd0;
     @(negedge clk);
-    check_equal("mac_hidden_before_async_pulse");
+    check_equal("load_input_to_mac_hidden");
 
-    #1 rst_n = 1'b0;
-    #1 check_equal("during_async_reset_pulse");
-    #1 rst_n = 1'b1;
-    #1 check_equal("after_async_reset_pulse_before_clock");
-
-    @(negedge clk);
-    check_equal("after_sampled_async_reset");
-
-    @(negedge clk);
-    check_equal("steady_idle_after_async_reset");
-
-    $display("PASS async reset bridge");
+    $display("PASS reset release accept");
     $finish;
   end
 endmodule
@@ -331,10 +317,11 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
         shutil.copytree(RTL_SRC_DIR, self.temp_root / "rtl" / "src", dirs_exist_ok=True)
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
+        shutil.copytree(SIM_SHARED_DIR, self.temp_root / "simulations" / "shared", dirs_exist_ok=True)
         shutil.copytree(RTL_SYNTHESIS_CONTROLLER_DIR, self.temp_root / "rtl-synthesis" / "controller", dirs_exist_ok=True)
         shutil.copytree(
             RTL_SYNTHESIS_EXPERIMENT_DIR,
-            self.temp_root / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot",
+            self.temp_root / "experiments" / "rtl-synthesis" / "spot",
             dirs_exist_ok=True,
         )
         shutil.copytree(RTL_SYNTHESIS_SPEC_DIR, self.temp_root / "specs" / "rtl-synthesis", dirs_exist_ok=True)
@@ -477,26 +464,28 @@ else:
         ):
             self.assertIn(snippet, tlsf_text)
 
-    def test_wrapper_source_records_async_reset_bridge(self) -> None:
-        wrapper_path = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+    def test_wrapper_source_records_direct_reset_boundary(self) -> None:
+        wrapper_path = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
         wrapper_text = wrapper_path.read_text(encoding="utf-8")
 
         for snippet in (
             "logic core_reset;",
-            "logic reset_pending;",
-            "always_ff @(posedge clk or negedge rst_n) begin",
-            "assign core_reset = !rst_n || reset_pending;",
-            "if (core_reset) begin",
+            "assign core_reset = !rst_n;",
+            "if (!rst_n) begin",
         ):
             self.assertIn(snippet, wrapper_text)
 
-    def test_formal_harness_records_exact_schedule_v1_counter_assumptions(self) -> None:
+    def test_formal_harness_records_sampled_interface_checks(self) -> None:
         harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_controller_spot_equivalence.sv"
         harness_text = harness_path.read_text(encoding="utf-8")
 
         for snippet in (
             "logic history_valid;",
             "logic [3:0] prev_baseline_state;",
+            "logic sampled_rst_n;",
+            "always @(negedge clk) begin",
+            "assume (rst_n == sampled_rst_n);",
+            "assert (generated_state == baseline_state);",
             "assume (input_idx <= INPUT_NEURONS_4B);",
             "assume (input_idx <= HIDDEN_NEURONS_4B);",
             "if (history_valid && prev_rst_n && prev_baseline_state == DONE && !prev_start) begin",
@@ -506,7 +495,7 @@ else:
         ):
             self.assertIn(snippet, harness_text)
 
-    def test_wrapper_matches_baseline_on_short_async_reset_pulse(self) -> None:
+    def test_wrapper_matches_baseline_when_start_is_high_on_reset_release(self) -> None:
         for tool in ("iverilog", "vvp"):
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
@@ -516,9 +505,9 @@ else:
         fake_core_path = generated_dir / "controller_spot_core.sv"
         fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
 
-        tb_path = self.temp_root / "build" / "async_reset_bridge_tb.sv"
-        tb_path.write_text(textwrap.dedent(ASYNC_RESET_BRIDGE_TB), encoding="utf-8")
-        out_path = self.temp_root / "build" / "async_reset_bridge_tb.out"
+        tb_path = self.temp_root / "build" / "reset_release_accept_tb.sv"
+        tb_path.write_text(textwrap.dedent(RESET_RELEASE_ACCEPT_TB), encoding="utf-8")
+        out_path = self.temp_root / "build" / "reset_release_accept_tb.out"
 
         compile_result = subprocess.run(
             [
@@ -528,7 +517,7 @@ else:
                 str(out_path),
                 str(tb_path),
                 str(self.temp_root / "rtl" / "src" / "controller.sv"),
-                str(self.temp_root / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
+                str(self.temp_root / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
                 str(fake_core_path),
             ],
             cwd=self.temp_root,
@@ -548,7 +537,7 @@ else:
         )
         run_output = run_result.stdout + run_result.stderr
         self.assertEqual(run_result.returncode, 0, msg=run_output)
-        self.assertIn("PASS async reset bridge", run_output)
+        self.assertIn("PASS reset release accept", run_output)
 
     def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
@@ -572,7 +561,7 @@ else:
         self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
         self.assertEqual(
             summary["claim_scope"],
-            "bounded (12-cycle) raw controller-interface equivalence under exact_schedule_v1 assumptions",
+            "bounded (12-cycle) sampled controller-interface equivalence under exact_schedule_v1 assumptions",
         )
 
         generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"

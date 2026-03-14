@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 RTL_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
-GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller_wrapper.sv"
+GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv"
 CHECK_SCRIPT = ROOT / "smt" / "rtl" / "check_generated_controller.py"
 FORMAL_CONTROLLER_DIR = ROOT / "smt" / "rtl" / "controller"
 
@@ -52,10 +52,10 @@ class GeneratedControllerFlowTests(unittest.TestCase):
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
         (self.temp_root / "rtl" / "src").mkdir(parents=True, exist_ok=True)
         shutil.copy2(RTL_CONTROLLER, self.temp_root / "rtl" / "src" / "controller.sv")
-        (self.temp_root / "experiments" / "generated-rtl" / "sparkle").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle").mkdir(parents=True, exist_ok=True)
         shutil.copy2(
             GENERATED_CONTROLLER_WRAPPER,
-            self.temp_root / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller_wrapper.sv",
+            self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv",
         )
         (self.temp_root / "smt" / "rtl").mkdir(parents=True, exist_ok=True)
         shutil.copy2(CHECK_SCRIPT, self.temp_root / "smt" / "rtl" / "check_generated_controller.py")
@@ -100,7 +100,7 @@ cwd = pathlib.Path.cwd()
 pkg_src = cwd / "src"
 root_module = pkg_src / "TinyMLP.lean"
 emit_module = pkg_src / "TinyMLP" / "Emit.lean"
-artifact = cwd.parent / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
+artifact = cwd.parent / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
 
 if not root_module.exists():
     raise SystemExit("missing src/TinyMLP.lean")
@@ -175,7 +175,7 @@ else:
         return env
 
     def test_make_rtl_formalize_build_does_not_emit_artifact(self) -> None:
-        artifact_path = self.temp_root / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv"
+        artifact_path = self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
         self.assertFalse(artifact_path.exists())
 
         result = subprocess.run(
@@ -228,7 +228,7 @@ else:
             {"parameter_equivalence", "illegal_state_recovery"},
         )
         self.assertTrue(
-            (self.temp_root / "experiments" / "generated-rtl" / "sparkle" / "sparkle_controller.sv").exists()
+            (self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv").exists()
         )
 
 

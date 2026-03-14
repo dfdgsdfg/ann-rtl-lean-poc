@@ -79,7 +79,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) writes three files from 
 graph TD
     W[contract/result/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
     W --> SPEC["formalize/src/TinyMLP/Defs/SpecCore.lean<br/>Lean weight definitions"]
-    W --> VEC["simulations/rtl/test_vectors.mem<br/>packed test vectors + expected scores"]
+    W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
 This guarantees that the RTL ROM, the Lean spec, and the simulation expectations all use the same numbers. There is no manual copying.
@@ -410,7 +410,7 @@ This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that R
 
 ### How Test Vectors Are Generated
 
-The freeze pipeline generates `simulations/rtl/test_vectors.mem` from the frozen weights. Each vector is a packed hex record:
+The freeze pipeline generates `simulations/shared/test_vectors.mem` from the frozen weights. Each vector is a packed hex record:
 
 ```text
 [32-bit expected score] [1-bit expected out] [8-bit in0] [8-bit in1] [8-bit in2] [8-bit in3]

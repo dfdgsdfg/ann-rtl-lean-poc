@@ -19,7 +19,7 @@ DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
 TLSF_SOURCE = DOMAIN_ROOT / "controller.tlsf"
 FORMAL_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
 BASELINE_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
-COMPAT_WRAPPER = ROOT / "experiments" / "generated-rtl" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
 
 SPEC_SOURCES = [
     "specs/rtl-synthesis/requirement.md",
@@ -61,7 +61,7 @@ PHASE_OUTPUTS = [
 
 EQUIVALENCE_DEPTH = 12
 CLAIM_SCOPE = (
-    f"bounded ({EQUIVALENCE_DEPTH}-cycle) raw controller-interface equivalence "
+    f"bounded ({EQUIVALENCE_DEPTH}-cycle) sampled controller-interface equivalence "
     "under exact_schedule_v1 assumptions"
 )
 

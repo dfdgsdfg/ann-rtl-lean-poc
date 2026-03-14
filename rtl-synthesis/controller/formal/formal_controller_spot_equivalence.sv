@@ -50,6 +50,10 @@ module formal_controller_spot_equivalence;
   logic [3:0] prev_baseline_state;
   logic [3:0] prev_hidden_idx;
   logic [3:0] prev_input_idx;
+  logic sampled_rst_n;
+  logic sampled_start;
+  logic [3:0] sampled_hidden_idx;
+  logic [3:0] sampled_input_idx;
 
   controller baseline_controller (
     .clk(clk),
@@ -97,6 +101,10 @@ module formal_controller_spot_equivalence;
     prev_baseline_state = IDLE;
     prev_hidden_idx = 4'd0;
     prev_input_idx = 4'd0;
+    sampled_rst_n = 1'b0;
+    sampled_start = 1'b0;
+    sampled_hidden_idx = 4'd0;
+    sampled_input_idx = 4'd0;
   end
 
   always @* begin
@@ -219,23 +227,36 @@ module formal_controller_spot_equivalence;
       step <= step + 5'd1;
     end
 
-    assert (generated_state == baseline_state);
-    assert (generated_load_input == baseline_load_input);
-    assert (generated_clear_acc == baseline_clear_acc);
-    assert (generated_do_mac_hidden == baseline_do_mac_hidden);
-    assert (generated_do_bias_hidden == baseline_do_bias_hidden);
-    assert (generated_do_act_hidden == baseline_do_act_hidden);
-    assert (generated_advance_hidden == baseline_advance_hidden);
-    assert (generated_do_mac_output == baseline_do_mac_output);
-    assert (generated_do_bias_output == baseline_do_bias_output);
-    assert (generated_done == baseline_done);
-    assert (generated_busy == baseline_busy);
-
     history_valid <= 1'b1;
     prev_rst_n <= rst_n;
     prev_start <= start;
     prev_baseline_state <= baseline_state;
     prev_hidden_idx <= hidden_idx;
     prev_input_idx <= input_idx;
+    sampled_rst_n <= rst_n;
+    sampled_start <= start;
+    sampled_hidden_idx <= hidden_idx;
+    sampled_input_idx <= input_idx;
+  end
+
+  always @(negedge clk) begin
+    if (history_valid) begin
+      assume (rst_n == sampled_rst_n);
+      assume (start == sampled_start);
+      assume (hidden_idx == sampled_hidden_idx);
+      assume (input_idx == sampled_input_idx);
+
+      assert (generated_state == baseline_state);
+      assert (generated_load_input == baseline_load_input);
+      assert (generated_clear_acc == baseline_clear_acc);
+      assert (generated_do_mac_hidden == baseline_do_mac_hidden);
+      assert (generated_do_bias_hidden == baseline_do_bias_hidden);
+      assert (generated_do_act_hidden == baseline_do_act_hidden);
+      assert (generated_advance_hidden == baseline_advance_hidden);
+      assert (generated_do_mac_output == baseline_do_mac_output);
+      assert (generated_do_bias_output == baseline_do_bias_output);
+      assert (generated_done == baseline_done);
+      assert (generated_busy == baseline_busy);
+    end
   end
 endmodule

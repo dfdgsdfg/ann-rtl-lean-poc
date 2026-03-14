@@ -100,7 +100,7 @@ The `contract` domain must own all code needed to:
 - Build the frozen contract payload with arithmetic and quantization metadata
 - Freeze a selected ANN run into `contract/result/weights.json`
 - Validate that frozen artifacts are in sync
-- Generate downstream artifacts: `rtl/src/weight_rom.sv`, `formalize/src/TinyMLP/Defs/SpecCore.lean`, `contract/result/model.md`, `simulations/rtl/test_vectors.mem`
+- Generate downstream artifacts: `rtl/src/weight_rom.sv`, `formalize/src/TinyMLP/Defs/SpecCore.lean`, `contract/result/model.md`, `simulations/shared/test_vectors.mem`
 
 Low-level quantization math (rounding, clipping, range checks) used during validation may be duplicated from or shared with the ANN domain, but the contract domain must not import ANN modules.
 

@@ -106,8 +106,8 @@ Relevant docs:
 
 - [experiments/README.md](experiments/README.md)
 - [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
-- [experiments/generated-rtl/sparkle/README.md](experiments/generated-rtl/sparkle/README.md)
-- [experiments/generated-rtl/rtl-synthesis/spot/README.md](experiments/generated-rtl/rtl-synthesis/spot/README.md)
+- [experiments/rtl-formalize-synthsis/sparkle/README.md](experiments/rtl-formalize-synthsis/sparkle/README.md)
+- [experiments/rtl-synthesis/spot/README.md](experiments/rtl-synthesis/spot/README.md)
 - [rtl-synthesis/controller/README.md](rtl-synthesis/controller/README.md)
 - [specs/rtl-synthesis/requirement.md](specs/rtl-synthesis/requirement.md)
 - [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
@@ -224,7 +224,7 @@ The main human-facing outputs are:
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
-- `simulations/rtl/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke-vector set)
+- `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke-vector set plus dedicated positive/zero/negative witnesses)
 
 `contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 

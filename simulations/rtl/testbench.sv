@@ -445,7 +445,7 @@ module testbench;
     start_pulse_cases = 0;
     stop_run = 1'b0;
 
-    $readmemh("simulations/rtl/test_vectors.mem", vectors);
+    $readmemh("simulations/shared/test_vectors.mem", vectors);
 
     repeat (4) @(posedge clk);
     rst_n = 1'b1;

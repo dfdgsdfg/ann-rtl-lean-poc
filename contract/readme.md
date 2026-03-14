@@ -21,13 +21,13 @@ Running the freeze step refreshes these files from the same frozen payload:
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
 - `formalize/src/TinyMLP/Defs/SpecCore.lean`
-- `simulations/rtl/test_vectors.mem`
+- `simulations/shared/test_vectors.mem`
 
 Related provenance lives in `ann/results/selected_run.json`. That file points to the selected ANN run, its `weights_quantized.json`, and the canonical contract weights file.
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
 
-`simulations/rtl/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a fixed deterministic smoke-vector set. A separate strict witness check can verify whether the deterministic candidate pool can still synthesize positive/zero/negative score witnesses for the current frozen model.
+`simulations/shared/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a fixed deterministic smoke-vector set plus one synthesized positive, zero, and negative witness. A separate strict witness check can still verify that the deterministic candidate pool can synthesize those required score classes for the current frozen model.
 
 ## How To Use It
 
@@ -75,7 +75,7 @@ python3 -m contract.src.freeze --check
 
 ### 4. Regenerate only the simulation vectors
 
-If the contract is already frozen and you only need to refresh `simulations/rtl/test_vectors.mem`:
+If the contract is already frozen and you only need to refresh `simulations/shared/test_vectors.mem`:
 
 ```bash
 python3 -m contract.src.gen_vectors

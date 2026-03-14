@@ -5,7 +5,7 @@ This directory contains the committed source inputs for the `rtl-synthesis` cont
 Stable source assets:
 
 - `controller.tlsf`: TLSF contract for the controller phase machine
-- `formal/formal_controller_spot_equivalence.sv`: bounded exact-schedule raw-port equivalence harness against `rtl/src/controller.sv`
+- `formal/formal_controller_spot_equivalence.sv`: bounded exact-schedule sampled-interface equivalence harness against `rtl/src/controller.sv`
 - `run_flow.py`: driver that runs `ltlsynt`, translates AIGER with Yosys, and checks bounded formal equivalence
 
 The committed TLSF uses the `exact_schedule_v1` assumption profile:
@@ -16,15 +16,15 @@ The committed TLSF uses the `exact_schedule_v1` assumption profile:
 - explicit output MAC position bits for the concrete `0 -> 1 -> ... -> 7 -> 8` schedule
 - restart assumptions for `LOAD_INPUT`, hidden-neuron rollover, output entry, and `DONE` hold/release behavior
 
-The current formal result recorded by `run_flow.py` is a bounded `12`-cycle raw controller-interface equivalence check under those `exact_schedule_v1` assumptions.
+The current formal result recorded by `run_flow.py` is a bounded `12`-cycle sampled controller-interface equivalence check under those `exact_schedule_v1` assumptions.
 
 Generated outputs are written under `build/rtl-synthesis/spot/`.
 
 The committed compatibility wrapper lives in:
 
-- `experiments/generated-rtl/rtl-synthesis/spot/controller_spot_compat.sv`
+- `experiments/rtl-synthesis/spot/controller_spot_compat.sv`
 
-That wrapper is paired with the build-generated `controller_spot_core.sv` and build-generated `controller.sv` alias for mixed-path simulation.
+That wrapper is paired with the build-generated `controller_spot_core.sv` and build-generated `controller.sv` alias for mixed-path simulation, and it only claims parity at the sampled controller boundary used by the mixed-path bench.
 
 Required external tools:
 

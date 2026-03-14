@@ -9,6 +9,6 @@ open Sparkle.Core.Domain
 
 namespace TinyMLP
 
-#writeVerilogDesign sparkleControllerPacked "../experiments/generated-rtl/sparkle/sparkle_controller.sv"
+#writeVerilogDesign sparkleControllerPacked "../experiments/rtl-formalize-synthsis/sparkle/sparkle_controller.sv"
 
 end TinyMLP
