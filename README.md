@@ -105,12 +105,12 @@ That means:
 Relevant docs:
 
 - [experiments/README.md](experiments/README.md)
-- [experiments/generated-rtl-vs-rtl.md](experiments/generated-rtl-vs-rtl.md)
-- [experiments/rtl-formalize-synthsis/sparkle/README.md](experiments/rtl-formalize-synthsis/sparkle/README.md)
+- [experiments/implementation-branch-comparison.md](experiments/implementation-branch-comparison.md)
+- [experiments/rtl-formalize-synthesis/sparkle/README.md](experiments/rtl-formalize-synthesis/sparkle/README.md)
 - [experiments/rtl-synthesis/spot/README.md](experiments/rtl-synthesis/spot/README.md)
 - [rtl-synthesis/controller/README.md](rtl-synthesis/controller/README.md)
 - [specs/rtl-synthesis/requirement.md](specs/rtl-synthesis/requirement.md)
-- [specs/rtl-formalize-synthsis/requirement.md](specs/rtl-formalize-synthsis/requirement.md)
+- [specs/rtl-formalize-synthesis/requirement.md](specs/rtl-formalize-synthesis/requirement.md)
 
 ## Dependencies
 

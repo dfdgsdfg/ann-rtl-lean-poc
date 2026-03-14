@@ -10,7 +10,7 @@ The `simulations` domain covers:
 - Python reference-model comparison
 - Test-vector generation
 - Regression and pass or fail criteria
-- Declared simulation support boundaries for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthsis`
+- Declared simulation support boundaries for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`
 
 ## 2. Testbench Requirements
 
@@ -39,7 +39,7 @@ The simulation domain must define support for these RTL implementation branches:
 
 - `rtl/`: canonical full-core simulation support against the shared vector-driven `mlp_core` bench
 - `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath and vector format while replacing the controller implementation
-- `rtl-formalize-synthsis`: at minimum, controller-only simulation support against the `rtl/src/controller.sv` boundary; any claim of primitive-path or full-core support must be declared separately and validated with the matching bench
+- `rtl-formalize-synthesis`: at minimum, controller-only simulation support against the `rtl/src/controller.sv` boundary; any claim of primitive-path or full-core support must be declared separately and validated with the matching bench
 
 Each simulation entry point, summary, or experiment note must state:
 
@@ -104,7 +104,7 @@ simulations/
     testbench.sv
   rtl-synthesis/
     ...
-  rtl-formalize-synthsis/
+  rtl-formalize-synthesis/
     ...
 
 ann/
@@ -123,7 +123,7 @@ If branch-local simulation support exists, the directory structure must make the
 - shared vector assets must not be duplicated per branch unless the vector format itself differs
 - `rtl/` must keep a baseline full-core bench
 - `rtl-synthesis` may reuse the baseline bench when it preserves the `mlp_core` boundary
-- `rtl-formalize-synthsis` may use a branch-local controller bench while it remains controller-only
+- `rtl-formalize-synthesis` may use a branch-local controller bench while it remains controller-only
 
 ## 7. Acceptance Criteria
 
@@ -133,5 +133,5 @@ The `simulations` domain is complete when:
 2. RTL outputs are automatically checked against Python-generated expectations.
 3. Directed tests pass.
 4. Generated regression vectors pass or produce actionable mismatch logs.
-5. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthsis`.
+5. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
 6. Any branch that is not yet full-core support is clearly labeled as mixed-path or controller-only rather than described as baseline-equivalent simulation support.

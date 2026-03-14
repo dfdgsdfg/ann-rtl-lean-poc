@@ -16,7 +16,7 @@ Each domain may contain:
 - `formalize`: Lean models and proof targets
 - `formalize-smt`: optional SMT-assisted Lean proof workflow
 - `smt`: solver-backed verification outside Lean
-- `rtl-formalize-synthsis`: Lean Signal-DSL hardware generation via Sparkle
+- `rtl-formalize-synthesis`: Lean Signal-DSL hardware generation via Sparkle
 - `rtl-synthesis`: reactive controller synthesis from temporal specifications
 - `simulations`: vectors, testbench, regression flow
 - `experiments`: optional comparison and evaluation work
@@ -31,7 +31,7 @@ Optional controller-synthesis branch:
 `ann -> contract -> rtl + rtl-synthesis -> simulations -> experiments -> asic`
 
 Optional Lean-generated RTL branch:
-`ann -> contract -> formalize -> rtl-formalize-synthsis -> simulations -> experiments -> asic`
+`ann -> contract -> formalize -> rtl-formalize-synthesis -> simulations -> experiments -> asic`
 
 Cross-cutting verification complement:
 `contract -> rtl -> smt`
@@ -43,7 +43,7 @@ The `simulations` and `experiments` specs should state the support level for eac
 
 - `rtl/`: full-core baseline
 - `rtl-synthesis`: mixed-path support unless a wider generated replacement is declared
-- `rtl-formalize-synthsis`: controller-only or other explicitly declared generated scope
+- `rtl-formalize-synthesis`: controller-only or other explicitly declared generated scope
 
 They should also prefer a branch-first layout:
 

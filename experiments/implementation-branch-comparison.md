@@ -1,6 +1,6 @@
-# Generated RTL vs Hand-Written RTL
+# Implementation Branch Comparison Guide
 
-This note defines how to add a generated-implementation track to this repository without confusing it with the current source of truth.
+This note defines how to compare implementation branches in this repository without confusing experiment tracks with the current source of truth.
 
 ## Position
 
@@ -35,14 +35,14 @@ The arithmetic datapath should stay anchored to the frozen contract. Reactive sy
 ## Guardrails
 
 - Do not overwrite `rtl/src/*.sv` with generated outputs.
-- Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthsis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
+- Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthesis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
 - Treat `contract/result/weights.json` as the shared semantic anchor for all implementation variants.
 - Treat `formalize/` as the semantic/proof anchor until a trustworthy generator exists.
 - Treat reactive synthesis as controller-only unless there is a precise story for arithmetic and ROM integration.
 
 ## Comparison Matrix
 
-Any `generated-rtl` vs `rtl` experiment should report at least:
+Any implementation-branch comparison should report at least:
 
 - **Functional agreement**: does the candidate match the frozen Python/contract behavior on the generated vector set?
 - **Cycle agreement**: does it preserve the `76`-cycle transaction timing and the `start` / `busy` / `done` contract?

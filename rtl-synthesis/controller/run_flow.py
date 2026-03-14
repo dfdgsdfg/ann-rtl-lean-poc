@@ -24,7 +24,7 @@ COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_s
 SPEC_SOURCES = [
     "specs/rtl-synthesis/requirement.md",
     "specs/rtl-synthesis/design.md",
-    "experiments/generated-rtl-vs-rtl.md",
+    "experiments/implementation-branch-comparison.md",
 ]
 
 ABSTRACT_INPUTS = [

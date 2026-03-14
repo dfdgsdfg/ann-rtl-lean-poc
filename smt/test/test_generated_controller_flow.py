@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 RTL_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
-GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv"
+GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller_wrapper.sv"
+GENERATED_CONTROLLER_TB = ROOT / "simulations" / "rtl-formalize-synthesis" / "generated_controller_testbench.sv"
 CHECK_SCRIPT = ROOT / "smt" / "rtl" / "check_generated_controller.py"
 FORMAL_CONTROLLER_DIR = ROOT / "smt" / "rtl" / "controller"
 
@@ -52,10 +53,15 @@ class GeneratedControllerFlowTests(unittest.TestCase):
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
         (self.temp_root / "rtl" / "src").mkdir(parents=True, exist_ok=True)
         shutil.copy2(RTL_CONTROLLER, self.temp_root / "rtl" / "src" / "controller.sv")
-        (self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "experiments" / "rtl-formalize-synthesis" / "sparkle").mkdir(parents=True, exist_ok=True)
         shutil.copy2(
             GENERATED_CONTROLLER_WRAPPER,
-            self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv",
+            self.temp_root / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller_wrapper.sv",
+        )
+        (self.temp_root / "simulations" / "rtl-formalize-synthesis").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(
+            GENERATED_CONTROLLER_TB,
+            self.temp_root / "simulations" / "rtl-formalize-synthesis" / "generated_controller_testbench.sv",
         )
         (self.temp_root / "smt" / "rtl").mkdir(parents=True, exist_ok=True)
         shutil.copy2(CHECK_SCRIPT, self.temp_root / "smt" / "rtl" / "check_generated_controller.py")
@@ -64,20 +70,33 @@ class GeneratedControllerFlowTests(unittest.TestCase):
             self.temp_root / "smt" / "rtl" / "controller",
             dirs_exist_ok=True,
         )
-        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP").mkdir(parents=True, exist_ok=True)
-        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthesis" / "lakefile.lean").write_text(
+            "-- fake lakefile\n",
+            encoding="utf-8",
+        )
+        (self.temp_root / "rtl-formalize-synthesis" / "lake-manifest.json").write_text(
+            "{}\n",
+            encoding="utf-8",
+        )
+        (self.temp_root / "rtl-formalize-synthesis" / "lean-toolchain").write_text(
+            "leanprover/lean4:nightly\n",
+            encoding="utf-8",
+        )
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP.lean").write_text(
             "import TinyMLP.Types\\nimport TinyMLP.ControllerSignal\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "Types.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "Types.lean").write_text(
             "-- fake types module\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "ControllerSignal.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "ControllerSignal.lean").write_text(
             "-- fake controller module\\n",
             encoding="utf-8",
         )
-        (self.temp_root / "rtl-formalize-synthsis" / "src" / "TinyMLP" / "Emit.lean").write_text(
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLP" / "Emit.lean").write_text(
             "-- fake emit entrypoint\n",
             encoding="utf-8",
         )
@@ -100,7 +119,7 @@ cwd = pathlib.Path.cwd()
 pkg_src = cwd / "src"
 root_module = pkg_src / "TinyMLP.lean"
 emit_module = pkg_src / "TinyMLP" / "Emit.lean"
-artifact = cwd.parent / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
+artifact = cwd.parent / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
 
 if not root_module.exists():
     raise SystemExit("missing src/TinyMLP.lean")
@@ -175,11 +194,11 @@ else:
         return env
 
     def test_make_rtl_formalize_build_does_not_emit_artifact(self) -> None:
-        artifact_path = self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
+        artifact_path = self.temp_root / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
         self.assertFalse(artifact_path.exists())
 
         result = subprocess.run(
-            ["make", "rtl-formalize-synthsis-build"],
+            ["make", "rtl-formalize-synthesis-build"],
             cwd=self.temp_root,
             text=True,
             capture_output=True,
@@ -190,6 +209,21 @@ else:
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertFalse(artifact_path.exists(), msg=output)
+
+    def test_make_n_sim_generated_controller_resolves_emitted_artifact_target(self) -> None:
+        result = subprocess.run(
+            ["make", "-n", "sim-generated-controller"],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("cd rtl-formalize-synthesis && lake build", output)
+        self.assertIn("cd rtl-formalize-synthesis && lake env lean src/TinyMLP/Emit.lean", output)
+        self.assertIn("iverilog -g2012 -s generated_controller_testbench", output)
 
     def test_make_smt_generated_controller_writes_multi_job_summary(self) -> None:
         result = subprocess.run(
@@ -228,7 +262,7 @@ else:
             {"parameter_equivalence", "illegal_state_recovery"},
         )
         self.assertTrue(
-            (self.temp_root / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv").exists()
+            (self.temp_root / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv").exists()
         )
 
 

@@ -22,7 +22,7 @@ SIM_SHARED_DIR = ROOT / "simulations" / "shared"
 RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
 RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "rtl-synthesis" / "spot"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
-EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "generated-rtl-vs-rtl.md"
+EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "implementation-branch-comparison.md"
 
 
 FAKE_AIGER = """\
@@ -326,7 +326,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         )
         shutil.copytree(RTL_SYNTHESIS_SPEC_DIR, self.temp_root / "specs" / "rtl-synthesis", dirs_exist_ok=True)
         (self.temp_root / "experiments").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(EXPERIMENT_TRACK_NOTE, self.temp_root / "experiments" / "generated-rtl-vs-rtl.md")
+        shutil.copy2(EXPERIMENT_TRACK_NOTE, self.temp_root / "experiments" / "implementation-branch-comparison.md")
 
         self.tools_dir = self.temp_root / "fake-tools"
         self.tools_dir.mkdir(parents=True, exist_ok=True)
@@ -568,6 +568,21 @@ else:
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())
         self.assertTrue((generated_dir / "controller.sv").exists())
         self.assertTrue((generated_dir / "controller_spot.aag").exists())
+
+    def test_make_n_rtl_synthesis_sim_resolves_summary_backed_generated_artifacts(self) -> None:
+        result = subprocess.run(
+            ["make", "-n", "rtl-synthesis-sim"],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("python3 rtl-synthesis/controller/run_flow.py", output)
+        self.assertIn("iverilog -g2012", output)
+        self.assertIn("verilator --binary --timing", output)
 
     def test_make_rtl_synthesis_sim_runs_with_fake_tools(self) -> None:
         for tool in ("make", "iverilog", "vvp", "verilator"):

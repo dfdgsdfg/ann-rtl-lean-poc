@@ -12,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SUMMARY = ROOT / "build" / "smt" / "generated_controller_summary.json"
 FORMAL_BUILD_DIR = ROOT / "build" / "smt" / "generated_controller"
-GENERATED_CONTROLLER_RTL = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller.sv"
-GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthsis" / "sparkle" / "sparkle_controller_wrapper.sv"
+GENERATED_CONTROLLER_RTL = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller.sv"
+GENERATED_CONTROLLER_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_controller_wrapper.sv"
 
 
 @dataclass(frozen=True)
@@ -233,7 +233,7 @@ def main() -> int:
 
     if not GENERATED_CONTROLLER_RTL.exists():
         parser.error(
-            f"missing generated RTL artifact: {relative(GENERATED_CONTROLLER_RTL)}; run `make rtl-formalize-synthsis-emit` first"
+            f"missing generated RTL artifact: {relative(GENERATED_CONTROLLER_RTL)}; run `make rtl-formalize-synthesis-emit` first"
         )
 
     FORMAL_BUILD_DIR.mkdir(parents=True, exist_ok=True)

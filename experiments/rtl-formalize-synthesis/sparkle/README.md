@@ -1,6 +1,6 @@
 # Sparkle Controller Track
 
-This directory holds the branch-local generated-controller experiment for `rtl-formalize-synthsis`.
+This directory holds the branch-local generated-controller experiment for `rtl-formalize-synthesis`.
 
 Files:
 
@@ -10,7 +10,7 @@ Files:
 Generation command:
 
 ```bash
-make rtl-formalize-synthsis-emit
+make rtl-formalize-synthesis-emit
 ```
 
 Validation commands:

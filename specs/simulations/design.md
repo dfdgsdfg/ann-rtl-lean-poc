@@ -41,7 +41,7 @@ Branch-specific simulation entry points should remain separate from the canonica
 
 - `make sim`: full-core regression for the hand-written `rtl/` implementation
 - `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath and shared vectors
-- `make sim-generated-controller`: controller-only comparison bench for the Sparkle-generated `rtl-formalize-synthsis` controller wrapper
+- `make sim-generated-controller`: controller-only comparison bench for the Sparkle-generated `rtl-formalize-synthesis` controller wrapper
 
 The simulation layer must say plainly whether a branch is supported as:
 
@@ -59,7 +59,7 @@ The simulation design supports three RTL implementation tracks with different cu
 
 - `rtl/`: the canonical full-core implementation and the source of the shared vector-driven regression bench
 - `rtl-synthesis`: a controller-only generation flow that is simulated as a mixed path by reusing the baseline datapath and replacing the controller module boundary
-- `rtl-formalize-synthsis`: a Sparkle-generated controller path that is currently simulated at the controller boundary, not yet as a full generated `mlp_core`
+- `rtl-formalize-synthesis`: a Sparkle-generated controller path that is currently simulated at the controller boundary, not yet as a full generated `mlp_core`
 
 This split is intentional as long as the scope is declared in commands, summaries, and experiment notes. A controller-only branch should not be described as full-core support.
 
@@ -103,7 +103,7 @@ Once the datapath is stable, the regression suite can expand to random sweeps an
 
 For multi-branch support, each regression result should also record:
 
-- implementation branch: `rtl/`, `rtl-synthesis`, or `rtl-formalize-synthsis`
+- implementation branch: `rtl/`, `rtl-synthesis`, or `rtl-formalize-synthesis`
 - declared scope: full-core, mixed-path, or controller-only
 - bench identity: shared vector bench or branch-local comparison bench
 - contract/vector provenance shared across the compared branches
@@ -120,7 +120,7 @@ This avoids maintaining duplicate weight definitions by hand.
 
 The generated vector file should remain plain text, but it should carry enough information for the bench to distinguish positive, zero, and negative expected scores instead of only the final class bit.
 
-The frozen contract and generated vectors are the common semantic anchor for `rtl/` and `rtl-synthesis`. A controller-only `rtl-formalize-synthsis` bench may use a reduced interface, but it should still cite the same baseline controller states and timing semantics.
+The frozen contract and generated vectors are the common semantic anchor for `rtl/` and `rtl-synthesis`. A controller-only `rtl-formalize-synthesis` bench may use a reduced interface, but it should still cite the same baseline controller states and timing semantics.
 
 ## 8. Recommended Layout
 
@@ -137,7 +137,7 @@ simulations/
     testbench.sv
   rtl-synthesis/
     ...
-  rtl-formalize-synthsis/
+  rtl-formalize-synthesis/
     generated_controller_testbench.sv
 ```
 
@@ -146,7 +146,7 @@ Layout rules:
 - shared vectors and include files should live in one common location
 - the baseline full-core bench should stay distinct from controller-only comparison benches
 - `rtl-synthesis` should reuse the shared full-core bench when it is only swapping the controller boundary
-- `rtl-formalize-synthsis` may keep a separate branch-local bench while it remains controller-only
+- `rtl-formalize-synthesis` may keep a separate branch-local bench while it remains controller-only
 - branch-local simulation files should be named so their scope is obvious from the path alone
 
 ## 9. Debugging Plan

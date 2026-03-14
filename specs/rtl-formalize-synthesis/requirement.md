@@ -4,7 +4,7 @@
 
 This document defines the requirements for a Lean-to-RTL path based on [Verilean/sparkle](https://github.com/Verilean/sparkle).
 
-The `rtl-formalize-synthsis` domain covers:
+The `rtl-formalize-synthesis` domain covers:
 
 - expressing hardware in Lean using Sparkle's Signal DSL
 - generating Verilog/SystemVerilog from that Lean description
@@ -135,7 +135,7 @@ Manual duplication of weights between the contract and Sparkle sources is not ac
 
 ## 7. Artifact Requirements
 
-The `rtl-formalize-synthsis` flow must produce or define:
+The `rtl-formalize-synthesis` flow must produce or define:
 
 - Lean source implementing the Sparkle hardware description
 - an emitted Verilog/SystemVerilog artifact
@@ -195,7 +195,7 @@ Desired but not mandatory for the first milestone:
 
 ## 10. Acceptance Criteria
 
-The `rtl-formalize-synthsis` domain is complete when:
+The `rtl-formalize-synthesis` domain is complete when:
 
 1. A Sparkle-based Lean hardware description exists for a declared small but meaningful scope, preferably controller-only as the first milestone.
 2. The repository documents the exact command used to emit Verilog/SystemVerilog from that Lean source.

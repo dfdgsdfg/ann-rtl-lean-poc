@@ -23,7 +23,7 @@ The first milestone should also be smaller than the full repository baseline. Un
 The repository now has three adjacent but different formal-generation stories:
 
 - `formalize`: prove the intended behavior in Lean
-- `rtl-formalize-synthsis`: implement hardware in Lean using Sparkle and emit RTL
+- `rtl-formalize-synthesis`: implement hardware in Lean using Sparkle and emit RTL
 - `rtl-synthesis`: synthesize a controller from temporal logic such as GR(1)/TLSF
 
 This separation matters because the implementation styles and trust boundaries are different.
@@ -35,7 +35,7 @@ This separation matters because the implementation styles and trust boundaries a
 - machine model
 - temporal proofs
 
-### `rtl-formalize-synthsis`
+### `rtl-formalize-synthesis`
 
 - synthesizable Signal DSL implementation
 - hardware state declarations
@@ -69,7 +69,7 @@ This avoids overloading the current `formalize/` files with backend-specific con
 
 ### 3.2 Scope Philosophy
 
-The right scope for `rtl-formalize-synthsis` is:
+The right scope for `rtl-formalize-synthesis` is:
 
 - smaller than full `mlp_core` at first
 - larger than a toy disconnected from this repository
@@ -88,7 +88,7 @@ This is different from the `rtl-synthesis` domain in motivation, but similar in 
 The exact directory layout can evolve, but the design should aim for something close to:
 
 ```text
-rtl-formalize-synthsis/
+rtl-formalize-synthesis/
   lakefile.lean
   lean-toolchain
   src/

@@ -11,7 +11,7 @@ The design should favor:
 - Low setup overhead
 - Traceability back to committed inputs
 - Clear separation between canonical implementation artifacts and experimental generated variants
-- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthsis`, and `rtl-synthesis`
+- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, and `rtl-synthesis`
 - Explicit declaration of support level for each branch under comparison
 
 ## 2. Recommended Experiment Tracks
@@ -46,7 +46,7 @@ Measure:
 
 Compare the committed hand-written RTL against alternative implementation paths such as:
 
-- generated RTL derived from the `rtl-formalize-synthsis` domain
+- generated RTL derived from the `rtl-formalize-synthesis` domain
 - translated controller artifacts from the `rtl-synthesis` domain
 - reactive-synthesis-generated FSM candidates
 - mixed-path implementations such as a synthesized controller paired with the hand-written datapath
@@ -56,14 +56,14 @@ These experiments should keep the comparison honest:
 - `rtl/` stays the baseline implementation
 - generated artifacts live outside `rtl/`
 - the frozen contract remains the semantic anchor
-- `rtl-formalize-synthsis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
+- `rtl-formalize-synthesis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
 - `rtl-synthesis` is scoped first to the controller, not the ANN datapath
 
 Current support levels should be recorded as part of the experiment design:
 
 - `rtl/`: baseline full-core implementation
 - `rtl-synthesis`: mixed-path implementation support by swapping only the controller and reusing the baseline datapath
-- `rtl-formalize-synthsis`: controller-only support unless a wider generated path is explicitly materialized and validated
+- `rtl-formalize-synthesis`: controller-only support unless a wider generated path is explicitly materialized and validated
 
 ### RTL-Formalize-Synthsis Studies
 
@@ -114,7 +114,7 @@ experiments/
     ...
   rtl-synthesis/
     ...
-  rtl-formalize-synthsis/
+  rtl-formalize-synthesis/
     ...
 ```
 
@@ -134,7 +134,7 @@ Layout rules:
 ## 5. Suggested Workflow
 
 1. Export a fixed parameter set
-2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthsis`, `rtl-synthesis`, or a mixed path
+2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or a mixed path
 3. Declare the support level for that branch: full-core, mixed-path, or controller-only
 4. Generate vectors
 5. Materialize the candidate implementation variant
@@ -150,8 +150,8 @@ For implementation-branch comparisons, the summary should include:
 - exact generator, synthesis-spec, or wrapper provenance
 - declared implementation scope, such as controller-only or full core
 - declared support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity
-- explicit trust-boundary statement when the artifact comes from `rtl-formalize-synthsis`
+- explicit trust-boundary statement when the artifact comes from `rtl-formalize-synthesis`
 
 ## 6. Success Signal
 
-The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthsis` path, and the `rtl-synthesis` path and understand what changed without reverse-engineering the repository.
+The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthesis` path, and the `rtl-synthesis` path and understand what changed without reverse-engineering the repository.
