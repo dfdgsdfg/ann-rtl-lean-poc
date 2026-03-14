@@ -155,7 +155,7 @@ private theorem inputIdx_eq_inputCount_beq {cs : ControlState} (hs : ControlInva
   have hx := inputIdx_lt_modulus hs
   have hy : inputCount < 2 ^ stateWidth := by decide
   by_cases hEq : cs.inputIdx = inputCount
-  · simpa [hEq] using (bitvec4_beq_true_iff hx hy).2 hEq
+  · simp [inputCount4b, hEq]
   · have hFalse : ((BitVec.ofNat stateWidth cs.inputIdx) == inputCount4b) = false := by
       cases hBeq : ((BitVec.ofNat stateWidth cs.inputIdx) == inputCount4b) with
       | false => rfl
@@ -167,7 +167,7 @@ private theorem hiddenIdx_eq_lastHiddenIdx_beq {cs : ControlState} (hs : Control
   have hx := hiddenIdx_lt_modulus hs
   have hy : hiddenCount - 1 < 2 ^ stateWidth := by decide
   by_cases hEq : cs.hiddenIdx = hiddenCount - 1
-  · simpa [hEq] using (bitvec4_beq_true_iff hx hy).2 hEq
+  · simp [lastHiddenIdx4b, hEq]
   · have hFalse : ((BitVec.ofNat stateWidth cs.hiddenIdx) == lastHiddenIdx4b) = false := by
       cases hBeq : ((BitVec.ofNat stateWidth cs.hiddenIdx) == lastHiddenIdx4b) with
       | false => rfl
@@ -197,6 +197,18 @@ private theorem inputIdx_lt_hiddenCount_bool {cs : ControlState} (hs : ControlIn
       | false => rfl
       | true => exact False.elim (hLt ((bitvec4_ult_true_iff hx hy).1 hUlt))
     simp [hLt, hFalse]
+
+private theorem inputIdx_eq_hiddenCount_beq {cs : ControlState} (hs : ControlInvariant cs) :
+    ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = decide (cs.inputIdx = hiddenCount) := by
+  have hx := inputIdx_lt_modulus hs
+  have hy : hiddenCount < 2 ^ stateWidth := by decide
+  by_cases hEq : cs.inputIdx = hiddenCount
+  · simp [hiddenCount4b, hEq]
+  · have hFalse : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = false := by
+      cases hBeq : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) with
+      | false => rfl
+      | true => exact False.elim (hEq ((bitvec4_beq_true_iff hx hy).1 hBeq))
+    simp [hEq, hFalse]
 
 theorem controllerPhaseNextComb_refines_timedControlStep (sample : CtrlSample) (cs : ControlState)
     (hs : ControlInvariant cs) :
@@ -249,36 +261,14 @@ theorem controllerPhaseNextComb_refines_timedControlStep (sample : CtrlSample) (
   | macOutput =>
       by_cases hLt : cs.inputIdx < hiddenCount
       · have hGuard : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = false := by
-          have hx := inputIdx_lt_modulus hs
-          have hy : hiddenCount < 2 ^ stateWidth := by decide
-          have hEqCount : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) =
-              decide (cs.inputIdx = hiddenCount) := by
-            by_cases hEq : cs.inputIdx = hiddenCount
-            · simpa [hEq] using (bitvec4_beq_true_iff hx hy).2 hEq
-            · have hFalse : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = false := by
-                cases hBeq : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) with
-                | false => rfl
-                | true => exact False.elim (hEq ((bitvec4_beq_true_iff hx hy).1 hBeq))
-              simp [hEq, hFalse]
-          rw [hEqCount]
+          rw [inputIdx_eq_hiddenCount_beq hs]
           simp [Nat.ne_of_lt hLt]
         simp [controllerPhaseNextComb, timedControlStep, controlStep, encodePhase, hphase, hLt, hGuard]
       · have hEq : cs.inputIdx = hiddenCount := by
           have hInv := controlInvariant_macOutput hs hphase
           omega
         have hGuard : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = true := by
-          have hx := inputIdx_lt_modulus hs
-          have hy : hiddenCount < 2 ^ stateWidth := by decide
-          have hEqCount : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) =
-              decide (cs.inputIdx = hiddenCount) := by
-            by_cases hEq' : cs.inputIdx = hiddenCount
-            · simpa [hEq'] using (bitvec4_beq_true_iff hx hy).2 hEq'
-            · have hFalse : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) = false := by
-                cases hBeq : ((BitVec.ofNat stateWidth cs.inputIdx) == hiddenCount4b) with
-                | false => rfl
-                | true => exact False.elim (hEq' ((bitvec4_beq_true_iff hx hy).1 hBeq))
-              simp [hEq', hFalse]
-          rw [hEqCount]
+          rw [inputIdx_eq_hiddenCount_beq hs]
           simp [hEq]
         simp [controllerPhaseNextComb, timedControlStep, controlStep, encodePhase, hphase, hEq]
   | biasOutput =>
@@ -315,29 +305,29 @@ private theorem controllerPhaseNext_atTime {dom : DomainConfig}
   by_cases hIdle : state.val t = stIdle
   · simp [controllerPhaseNextComb, hIdle]
   · by_cases hLoad : state.val t = stLoadInput
-    · simp [controllerPhaseNextComb, hIdle, hLoad]
+    · simp [controllerPhaseNextComb, hLoad]
     · by_cases hMacHidden : state.val t = stMacHidden
       · by_cases hInput : input_idx.val t = inputNeurons4b.val t
-        · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hInput]
-        · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hInput]
+        · simp [controllerPhaseNextComb, hMacHidden, hInput]
+        · simp [controllerPhaseNextComb, hMacHidden, hInput]
       · by_cases hBiasHidden : state.val t = stBiasHidden
-        · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden]
+        · simp [controllerPhaseNextComb, hBiasHidden]
         · by_cases hActHidden : state.val t = stActHidden
-          · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden]
+          · simp [controllerPhaseNextComb, hActHidden]
           · by_cases hNextHidden : state.val t = stNextHidden
             · by_cases hLast : hidden_idx.val t = lastHiddenIdx.val t
-              · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hLast]
-              · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hLast]
+              · simp [controllerPhaseNextComb, hNextHidden, hLast]
+              · simp [controllerPhaseNextComb, hNextHidden, hLast]
             · by_cases hMacOutput : state.val t = stMacOutput
               · by_cases hOutput : input_idx.val t = hiddenNeurons4b.val t
-                · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hOutput]
-                · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hOutput]
+                · simp [controllerPhaseNextComb, hMacOutput, hOutput]
+                · simp [controllerPhaseNextComb, hMacOutput, hOutput]
               · by_cases hBiasOutput : state.val t = stBiasOutput
-                · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hBiasOutput]
+                · simp [controllerPhaseNextComb, hBiasOutput]
                 · by_cases hDone : state.val t = stDone
                   · by_cases hStart : start.val t = true
-                    · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hBiasOutput, hDone, hStart]
-                    · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hBiasOutput, hDone, hStart]
+                    · simp [controllerPhaseNextComb, hDone, hStart]
+                    · simp [controllerPhaseNextComb, hDone, hStart]
                   · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hBiasOutput, hDone]
 
 theorem phaseSignal_satisfies_controller_equation_at {dom : DomainConfig}

@@ -1,0 +1,27 @@
+diff --git a/lean-toolchain b/lean-toolchain
+index 155e2df..7d56fef 100644
+--- a/lean-toolchain
++++ b/lean-toolchain
+@@ -1 +1 @@
+-leanprover/lean4:v4.28.0-rc1
++leanprover/lean4:v4.28.0
+diff --git a/Sparkle/Verification/Temporal.lean b/Sparkle/Verification/Temporal.lean
+index 602465c..e45e8f6 100644
+--- a/Sparkle/Verification/Temporal.lean
++++ b/Sparkle/Verification/Temporal.lean
+@@ -188,7 +188,13 @@ theorem stableFor_induction {d : DomainConfig} {α : Type} [BEq α]
+     (s : Signal d α) (v : α) (n : Nat) :
+   s.atTime 0 == v →
+   (∀ (t : Nat), t < n → s.atTime t == v → s.atTime (t + 1) == v) →
+   stableFor s v (n + 1) := by
+-  sorry
++  intro hBase hStep t ht
++  induction t generalizing n with
++  | zero =>
++      simpa using hBase
++  | succ t ih =>
++      have ht' : t < n := Nat.lt_of_succ_lt_succ ht
++      exact hStep t ht' (ih (Nat.lt_succ_of_lt ht'))
+ 
+ /--
+   Composition lemma: If P always holds and P implies Q, then Q always holds.

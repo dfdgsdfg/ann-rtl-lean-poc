@@ -1,4 +1,5 @@
-import Sparkle
+import Sparkle.Core.Domain
+import Sparkle.Core.Signal
 import TinyMLPSparkle.Types
 
 open Sparkle.Core.Domain

@@ -110,6 +110,10 @@ class FreezeContractTests(unittest.TestCase):
             self.assertEqual(out_path, self.contract_weights_path)
             freeze.validate_contract()
 
+        weight_rom_text = self.weight_rom_path.read_text(encoding="utf-8")
+        self.assertIn("assign formal_hidden_weight_case_hit = (hidden_idx < 4'd8) && (input_idx < 4'd4);", weight_rom_text)
+        self.assertIn("assign formal_output_weight_case_hit = (input_idx < 4'd8);", weight_rom_text)
+
         for path in (
             self.contract_weights_path,
             self.selected_run_path,

@@ -67,9 +67,9 @@ def first_output_line(proc: subprocess.CompletedProcess[str]) -> str:
     return text.splitlines()[0].strip() if text else "unknown"
 
 
-def tool_version(commands: list[list[str]], fallback: str = "unknown") -> str:
+def tool_version(commands: list[list[str]], fallback: str = "unknown", *, cwd: Path = ROOT) -> str:
     for command in commands:
-        proc = run_command(command)
+        proc = run_command(command, cwd=cwd)
         if proc.returncode == 0 and (proc.stdout or proc.stderr):
             return first_output_line(proc)
     return fallback

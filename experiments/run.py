@@ -597,12 +597,21 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
     bridge_path = family_root / "lean_fixed_point_bridge.json"
 
     export_log = logs_dir / "lean_export.log"
+    build_command = [args.lake, "build"]
     export_command = [args.lake, "env", "lean", "--run", str(SEMANTIC_BRIDGE_SCRIPT), str(bridge_path)]
     if tool_exists(args.lake):
-        export_proc = run_command(export_command, cwd=ROOT / "formalize")
-        export_output = (export_proc.stdout or "") + (export_proc.stderr or "")
-        write_command_log(export_log, export_output or "(no output)\n")
-        export_result = "pass" if export_proc.returncode == 0 and bridge_path.exists() else "fail"
+        build_proc = run_command(build_command, cwd=ROOT / "formalize")
+        build_output = (build_proc.stdout or "") + (build_proc.stderr or "")
+        log_chunks = [f"$ {command_text(build_command)}\n{build_output or '(no output)\\n'}"]
+        if build_proc.returncode == 0:
+            export_proc = run_command(export_command, cwd=ROOT / "formalize")
+            export_output = (export_proc.stdout or "") + (export_proc.stderr or "")
+            log_chunks.append(f"$ {command_text(export_command)}\n{export_output or '(no output)\\n'}")
+            export_result = "pass" if export_proc.returncode == 0 and bridge_path.exists() else "fail"
+        else:
+            log_chunks.append(f"$ {command_text(export_command)}\n(skipped because lake build failed)\n")
+            export_result = "fail"
+        write_command_log(export_log, "\n".join(log_chunks))
     else:
         write_command_log(export_log, "missing required tool: lake\n")
         export_result = "fail"
@@ -610,7 +619,7 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
         make_step(
             name="lean_semantic_bridge_export",
             result=export_result,
-            command=command_text(export_command),
+            command=f"{command_text(build_command)} && {command_text(export_command)}",
             log_path=export_log,
             artifacts={"semantic_bridge": bridge_path} if bridge_path.exists() else {},
         )
@@ -698,7 +707,7 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
         "claim_scope": "Lean fixed-point semantics are exported as a machine-readable artifact, aligned with the frozen contract, and connected to RTL-style datapath equivalence through solver-backed checks",
         "tool_versions": {
             "python3": tool_version([["python3", "--version"]]),
-            "lake": tool_version([[args.lake, "--version"]]) if tool_exists(args.lake) else "missing",
+            "lake": tool_version([[args.lake, "--version"]], cwd=ROOT / "formalize") if tool_exists(args.lake) else "missing",
             "z3": tool_version([[args.z3, "--version"]]) if tool_exists(args.z3) else "missing",
         },
         "results": results,

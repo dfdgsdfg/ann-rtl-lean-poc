@@ -6,7 +6,7 @@
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
        rtl-synthesis rtl-synthesis-check-tools rtl-synthesis-smoke rtl-synthesis-sim rtl-synthesis-iverilog \
        rtl-synthesis-verilator clean-rtl-synthesis \
-       rtl-formalize-synthesis-emit rtl-formalize-synthesis-build smt-generated-controller \
+       rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-build smt-generated-controller \
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
@@ -59,8 +59,12 @@ GENERATED_CONTROLLER_SIM_BUILD_DIR := build/sim-generated-controller
 GENERATED_CONTROLLER_TB := simulations/rtl-formalize-synthesis/generated_controller_testbench.sv
 GENERATED_CONTROLLER_IVERILOG_BIN := $(GENERATED_CONTROLLER_SIM_BUILD_DIR)/generated_controller_tb.out
 SPARKLE_PKG_DIR := rtl-formalize-synthesis
+SPARKLE_VENDOR_DIR := $(SPARKLE_PKG_DIR)/vendor/Sparkle
+SPARKLE_PREPARE_SCRIPT := $(SPARKLE_PKG_DIR)/scripts/prepare_sparkle.sh
 SPARKLE_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle.lean \
 	$(wildcard $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/*.lean) \
+	$(SPARKLE_PREPARE_SCRIPT) \
+	$(SPARKLE_PKG_DIR)/patches/sparkle-local.patch \
 	$(SPARKLE_PKG_DIR)/lakefile.lean \
 	$(SPARKLE_PKG_DIR)/lean-toolchain \
 	$(SPARKLE_PKG_DIR)/lake-manifest.json
@@ -123,13 +127,17 @@ $(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTOR_STAMP)
 clean-sim:
 	rm -rf $(SIM_BUILD_DIR)
 
-rtl-formalize-synthesis-build:
+rtl-formalize-synthesis-prepare:
+	@command -v git >/dev/null 2>&1 || { echo "missing required tool: git"; exit 1; }
+	$(SPARKLE_PREPARE_SCRIPT)
+
+rtl-formalize-synthesis-build: rtl-formalize-synthesis-prepare
 	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
 	cd $(SPARKLE_PKG_DIR) && lake build
 
 $(GENERATED_CONTROLLER_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
 	@mkdir -p $(GENERATED_CONTROLLER_DIR)
-	cd $(SPARKLE_PKG_DIR) && lake env lean src/TinyMLPSparkle/Emit.lean
+	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
 
 rtl-formalize-synthesis-emit: $(GENERATED_CONTROLLER_ARTIFACT)
 

@@ -9,3 +9,4 @@ rel-build/
 ann/results/scratch/
 ann/results/tmp/
 *.log
+rtl-formalize-synthesis/vendor/

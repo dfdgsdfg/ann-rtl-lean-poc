@@ -79,5 +79,10 @@ module weight_rom (
   end
 
   assign b2_data = -32'sd1;
+
+`ifdef FORMAL
+  assign formal_hidden_weight_case_hit = (hidden_idx < 4'd8) && (input_idx < 4'd4);
+  assign formal_output_weight_case_hit = (input_idx < 4'd8);
+`endif
   // END AUTO-GENERATED ROM
 endmodule

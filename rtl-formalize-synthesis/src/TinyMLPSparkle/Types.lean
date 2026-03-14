@@ -1,4 +1,4 @@
-import Sparkle
+import Sparkle.Core.Signal
 
 namespace TinyMLP.Sparkle
 
