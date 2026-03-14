@@ -11,7 +11,7 @@ from ann.src import evaluate as ann_evaluate
 from ann.src import train as ann_train
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LATEST_QUANTIZED = ROOT / "ann" / "results" / "latest" / "weights_quantized.json"
 
 
