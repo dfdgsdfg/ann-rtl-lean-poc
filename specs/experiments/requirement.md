@@ -30,6 +30,12 @@ Recommended experiment tracks:
 - Mixed-path experiments, such as a synthesized controller paired with the hand-written datapath
 - Scope-staged `rtl-formalize-synthsis` experiments: controller-only, primitive path, or full core
 
+The experiment domain must treat the three RTL implementation branches as distinct support classes:
+
+- `rtl/`: baseline full-core branch
+- `rtl-synthesis`: mixed-path branch unless it explicitly replaces more than the controller
+- `rtl-formalize-synthsis`: controller-only or other declared generated scope, but never implicitly baseline-equivalent
+
 ## 3. Reproducibility Requirements
 
 Experiment outputs must be reproducible from:
@@ -42,6 +48,7 @@ Experiment outputs must be reproducible from:
 - Declared implementation branch and scope
 - Tool versions for Sparkle or the selected reactive-synthesis tool when applicable
 - Wrapper or translation revision when the generated artifact is not directly simulator-ready
+- Declared support level such as full-core, mixed-path, or controller-only
 
 Ad hoc manual experiments are not sufficient.
 
@@ -55,6 +62,15 @@ Experiment results should produce at least one of the following:
 - Saved vector-sweep results
 - Implementation-comparison reports with baseline and candidate artifact paths
 - Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthsis`, or `rtl-synthesis`
+- Support-boundary notes that identify whether the evidence is full-core simulation, mixed-path simulation, controller-only simulation, formal parity, or QoR-only analysis
+
+The experiment directory structure should default to branch-first organization:
+
+- `experiments/rtl/`
+- `experiments/rtl-synthesis/`
+- `experiments/rtl-formalize-synthsis/`
+
+Tool-specific or generator-specific subfolders are acceptable underneath those branch folders when needed.
 
 ## 5. Acceptance Criteria
 
@@ -66,3 +82,5 @@ The `experiments` domain is complete when:
 4. Any `rtl-formalize-synthsis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
 5. Any generated implementation experiment states its declared scope, such as controller-only, primitive path, or full core.
 6. Any generated implementation experiment states whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
+7. Cross-branch experiment records also state the branch support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity.
+8. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.

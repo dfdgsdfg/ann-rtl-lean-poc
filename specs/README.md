@@ -24,10 +24,13 @@ Each domain may contain:
 
 ## Process
 
-Main baseline:
-`ann -> contract -> rtl -> formalize -> rtl-synthesis -> simulations -> experiments -> asic`
+Canonical implementation path:
+`ann -> contract -> rtl -> simulations -> experiments -> asic`
 
-Optional Lean-generated RTL path:
+Optional controller-synthesis branch:
+`ann -> contract -> rtl + rtl-synthesis -> simulations -> experiments -> asic`
+
+Optional Lean-generated RTL branch:
 `ann -> contract -> formalize -> rtl-formalize-synthsis -> simulations -> experiments -> asic`
 
 Cross-cutting verification complement:
@@ -35,3 +38,14 @@ Cross-cutting verification complement:
 
 Optional proof-automation complement:
 `formalize -> formalize-smt`
+
+The `simulations` and `experiments` specs should state the support level for each RTL branch:
+
+- `rtl/`: full-core baseline
+- `rtl-synthesis`: mixed-path support unless a wider generated replacement is declared
+- `rtl-formalize-synthsis`: controller-only or other explicitly declared generated scope
+
+They should also prefer a branch-first layout:
+
+- `experiments/` should use branch folders directly
+- `simulations/` should keep shared assets separate from branch-local benches

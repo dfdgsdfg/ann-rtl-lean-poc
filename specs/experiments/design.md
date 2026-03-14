@@ -12,6 +12,7 @@ The design should favor:
 - Traceability back to committed inputs
 - Clear separation between canonical implementation artifacts and experimental generated variants
 - Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthsis`, and `rtl-synthesis`
+- Explicit declaration of support level for each branch under comparison
 
 ## 2. Recommended Experiment Tracks
 
@@ -58,6 +59,12 @@ These experiments should keep the comparison honest:
 - `rtl-formalize-synthsis` may target controller-only, primitive-only, or full-core generation, but the declared scope must be explicit
 - `rtl-synthesis` is scoped first to the controller, not the ANN datapath
 
+Current support levels should be recorded as part of the experiment design:
+
+- `rtl/`: baseline full-core implementation
+- `rtl-synthesis`: mixed-path implementation support by swapping only the controller and reusing the baseline datapath
+- `rtl-formalize-synthsis`: controller-only support unless a wider generated path is explicitly materialized and validated
+
 ### RTL-Formalize-Synthsis Studies
 
 Compare Sparkle-generated RTL against the hand-written baseline and the pure Lean model.
@@ -91,18 +98,49 @@ Each experiment should keep a stable mapping between:
 - Source spec or generator revision when the artifact is generated rather than hand-written
 - Implementation branch and declared scope, such as baseline RTL, Sparkle controller-only RTL, or GR(1)-synthesized controller
 - Validation level, such as theorem-level model comparison, RTL simulation agreement, or QoR-only comparison
+- Support level, such as full-core, mixed-path, or controller-only
 
 This can be implemented with scripts plus short markdown reports.
 
-## 4. Suggested Workflow
+## 4. Recommended Layout
+
+The experiment directory should prefer branch-oriented folders over tool-oriented folders when the main question is cross-branch support.
+
+Recommended structure:
+
+```text
+experiments/
+  rtl/
+    ...
+  rtl-synthesis/
+    ...
+  rtl-formalize-synthsis/
+    ...
+```
+
+Within each branch folder, the experiment files should separate:
+
+- committed wrappers or compatibility shims
+- generated artifacts or references to generated artifact locations
+- branch-specific reports and README notes
+
+Layout rules:
+
+- branch identity should be obvious from the path alone
+- generated artifacts should stay outside the canonical `rtl/` source tree
+- mixed-path experiments should live under the branch that owns the replacement logic, not under the baseline branch
+- if tool-specific subfolders are needed, they should sit underneath the branch folder rather than replacing the branch layer
+
+## 5. Suggested Workflow
 
 1. Export a fixed parameter set
 2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthsis`, `rtl-synthesis`, or a mixed path
-3. Generate vectors
-4. Materialize the candidate implementation variant
-5. Run simulation or synthesis
-6. Parse outputs into a summary
-7. Save the summary in a documented location
+3. Declare the support level for that branch: full-core, mixed-path, or controller-only
+4. Generate vectors
+5. Materialize the candidate implementation variant
+6. Run simulation or synthesis
+7. Parse outputs into a summary
+8. Save the summary in a documented location
 
 For implementation-branch comparisons, the summary should include:
 
@@ -111,8 +149,9 @@ For implementation-branch comparisons, the summary should include:
 - synthesis report deltas
 - exact generator, synthesis-spec, or wrapper provenance
 - declared implementation scope, such as controller-only or full core
+- declared support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity
 - explicit trust-boundary statement when the artifact comes from `rtl-formalize-synthsis`
 
-## 5. Success Signal
+## 6. Success Signal
 
 The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthsis` path, and the `rtl-synthesis` path and understand what changed without reverse-engineering the repository.
