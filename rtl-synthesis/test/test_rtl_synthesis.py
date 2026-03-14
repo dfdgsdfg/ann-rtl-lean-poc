@@ -298,6 +298,153 @@ module reset_release_accept_tb;
 endmodule
 """
 
+SHORT_ASYNC_RESET_PULSE_TB = """\
+`timescale 1ns/1ps
+
+module short_async_reset_pulse_tb;
+  logic clk;
+  logic rst_n;
+  logic start;
+  logic [3:0] hidden_idx;
+  logic [3:0] input_idx;
+
+  logic [3:0] baseline_state;
+  logic       baseline_load_input;
+  logic       baseline_clear_acc;
+  logic       baseline_do_mac_hidden;
+  logic       baseline_do_bias_hidden;
+  logic       baseline_do_act_hidden;
+  logic       baseline_advance_hidden;
+  logic       baseline_do_mac_output;
+  logic       baseline_do_bias_output;
+  logic       baseline_done;
+  logic       baseline_busy;
+
+  logic [3:0] generated_state;
+  logic       generated_load_input;
+  logic       generated_clear_acc;
+  logic       generated_do_mac_hidden;
+  logic       generated_do_bias_hidden;
+  logic       generated_do_act_hidden;
+  logic       generated_advance_hidden;
+  logic       generated_do_mac_output;
+  logic       generated_do_bias_output;
+  logic       generated_done;
+  logic       generated_busy;
+
+  controller baseline_controller (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start),
+    .hidden_idx(hidden_idx),
+    .input_idx(input_idx),
+    .state(baseline_state),
+    .load_input(baseline_load_input),
+    .clear_acc(baseline_clear_acc),
+    .do_mac_hidden(baseline_do_mac_hidden),
+    .do_bias_hidden(baseline_do_bias_hidden),
+    .do_act_hidden(baseline_do_act_hidden),
+    .advance_hidden(baseline_advance_hidden),
+    .do_mac_output(baseline_do_mac_output),
+    .do_bias_output(baseline_do_bias_output),
+    .done(baseline_done),
+    .busy(baseline_busy)
+  );
+
+  controller_spot_compat generated_controller (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start),
+    .hidden_idx(hidden_idx),
+    .input_idx(input_idx),
+    .state(generated_state),
+    .load_input(generated_load_input),
+    .clear_acc(generated_clear_acc),
+    .do_mac_hidden(generated_do_mac_hidden),
+    .do_bias_hidden(generated_do_bias_hidden),
+    .do_act_hidden(generated_do_act_hidden),
+    .advance_hidden(generated_advance_hidden),
+    .do_mac_output(generated_do_mac_output),
+    .do_bias_output(generated_do_bias_output),
+    .done(generated_done),
+    .busy(generated_busy)
+  );
+
+  always #5 clk = ~clk;
+
+  task automatic check_equal(input string label);
+    begin
+      if (baseline_state !== generated_state ||
+          baseline_load_input !== generated_load_input ||
+          baseline_clear_acc !== generated_clear_acc ||
+          baseline_do_mac_hidden !== generated_do_mac_hidden ||
+          baseline_do_bias_hidden !== generated_do_bias_hidden ||
+          baseline_do_act_hidden !== generated_do_act_hidden ||
+          baseline_advance_hidden !== generated_advance_hidden ||
+          baseline_do_mac_output !== generated_do_mac_output ||
+          baseline_do_bias_output !== generated_do_bias_output ||
+          baseline_done !== generated_done ||
+          baseline_busy !== generated_busy) begin
+        $display(
+          "FAIL %s state=%0d/%0d load=%0d/%0d clear=%0d/%0d mac_h=%0d/%0d bias_h=%0d/%0d act_h=%0d/%0d next_h=%0d/%0d mac_o=%0d/%0d bias_o=%0d/%0d done=%0d/%0d busy=%0d/%0d",
+          label,
+          baseline_state, generated_state,
+          baseline_load_input, generated_load_input,
+          baseline_clear_acc, generated_clear_acc,
+          baseline_do_mac_hidden, generated_do_mac_hidden,
+          baseline_do_bias_hidden, generated_do_bias_hidden,
+          baseline_do_act_hidden, generated_do_act_hidden,
+          baseline_advance_hidden, generated_advance_hidden,
+          baseline_do_mac_output, generated_do_mac_output,
+          baseline_do_bias_output, generated_do_bias_output,
+          baseline_done, generated_done,
+          baseline_busy, generated_busy
+        );
+        $finish_and_return(1);
+      end
+    end
+  endtask
+
+  initial begin
+    clk = 1'b0;
+    rst_n = 1'b0;
+    start = 1'b0;
+    hidden_idx = 4'd0;
+    input_idx = 4'd0;
+
+    repeat (2) @(negedge clk);
+    start = 1'b1;
+    rst_n = 1'b1;
+    @(negedge clk);
+    check_equal("accept_on_reset_release");
+
+    start = 1'b0;
+    @(negedge clk);
+    check_equal("load_input_to_mac_hidden");
+
+    input_idx = 4'd1;
+    @(negedge clk);
+    check_equal("mac_hidden_progress");
+
+    #1;
+    rst_n = 1'b0;
+    #1;
+    check_equal("during_short_async_reset_pulse");
+
+    #1;
+    rst_n = 1'b1;
+    #1;
+    check_equal("after_short_async_reset_release_before_posedge");
+
+    @(negedge clk);
+    check_equal("after_short_async_reset_release");
+
+    $display("PASS short async reset pulse");
+    $finish;
+  end
+endmodule
+"""
+
 
 def _write_executable(path: Path, text: str) -> None:
     path.write_text(textwrap.dedent(text), encoding="utf-8")
@@ -470,8 +617,11 @@ else:
 
         for snippet in (
             "logic core_reset;",
-            "assign core_reset = !rst_n;",
-            "if (!rst_n) begin",
+            "logic core_reset_pending = 1'b0;",
+            "logic reset_consumed = 1'b0;",
+            "assign core_reset = !rst_n || (core_reset_pending && !reset_consumed);",
+            "reset_consumed <= 1'b1;",
+            "if (core_reset) begin",
         ):
             self.assertIn(snippet, wrapper_text)
 
@@ -481,17 +631,22 @@ else:
 
         for snippet in (
             "logic history_valid;",
-            "logic [3:0] prev_baseline_state;",
+            "logic [3:0] sampled_baseline_state;",
+            "logic [3:0] prev_sampled_baseline_state;",
             "logic sampled_rst_n;",
             "always @(negedge clk) begin",
+            "sampled_baseline_state <= baseline_state;",
+            "always @(posedge clk) begin",
             "assume (rst_n == sampled_rst_n);",
+            "if (!prev_sampled_rst_n && sampled_rst_n) begin",
+            "unique case (prev_sampled_baseline_state)",
             "assert (generated_state == baseline_state);",
-            "assume (input_idx <= INPUT_NEURONS_4B);",
-            "assume (input_idx <= HIDDEN_NEURONS_4B);",
-            "if (history_valid && prev_rst_n && prev_baseline_state == DONE && !prev_start) begin",
-            "if (prev_input_idx < INPUT_NEURONS_4B) begin",
-            "assume (input_idx == prev_input_idx + 4'd1);",
-            "if (prev_hidden_idx == LAST_HIDDEN_IDX) begin",
+            "assume (sampled_input_idx <= INPUT_NEURONS_4B);",
+            "assume (sampled_input_idx <= HIDDEN_NEURONS_4B);",
+            "if (history_valid && prev_sampled_rst_n && prev_sampled_baseline_state == DONE && !prev_sampled_start) begin",
+            "if (prev_sampled_input_idx < INPUT_NEURONS_4B) begin",
+            "assume (sampled_input_idx == prev_sampled_input_idx + 4'd1);",
+            "if (prev_sampled_hidden_idx == LAST_HIDDEN_IDX) begin",
         ):
             self.assertIn(snippet, harness_text)
 
@@ -539,6 +694,97 @@ else:
         self.assertEqual(run_result.returncode, 0, msg=run_output)
         self.assertIn("PASS reset release accept", run_output)
 
+    def test_wrapper_matches_baseline_across_short_async_reset_pulse(self) -> None:
+        for tool in ("iverilog", "vvp"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"missing required tool: {tool}")
+
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        fake_core_path = generated_dir / "controller_spot_core.sv"
+        fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
+
+        tb_path = self.temp_root / "build" / "short_async_reset_pulse_tb.sv"
+        tb_path.write_text(textwrap.dedent(SHORT_ASYNC_RESET_PULSE_TB), encoding="utf-8")
+        out_path = self.temp_root / "build" / "short_async_reset_pulse_tb.out"
+
+        compile_result = subprocess.run(
+            [
+                "iverilog",
+                "-g2012",
+                "-o",
+                str(out_path),
+                str(tb_path),
+                str(self.temp_root / "rtl" / "src" / "controller.sv"),
+                str(self.temp_root / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
+                str(fake_core_path),
+            ],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        compile_output = compile_result.stdout + compile_result.stderr
+        self.assertEqual(compile_result.returncode, 0, msg=compile_output)
+
+        run_result = subprocess.run(
+            ["vvp", str(out_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        run_output = run_result.stdout + run_result.stderr
+        self.assertEqual(run_result.returncode, 0, msg=run_output)
+        self.assertIn("PASS short async reset pulse", run_output)
+
+    def test_formal_harness_passes_real_yosys_smoke(self) -> None:
+        for tool in ("yosys", "yosys-smtbmc", "z3"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"missing required tool: {tool}")
+
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        fake_core_path = generated_dir / "controller_spot_core.sv"
+        fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
+
+        smt2_path = generated_dir / "formal_controller_spot_equivalence_smoke.smt2"
+        script_path = generated_dir / "formal_controller_spot_equivalence_smoke.ys"
+        script_path.write_text(
+            textwrap.dedent(
+                f"""\
+                read_verilog -sv -formal rtl/src/controller.sv experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} rtl-synthesis/controller/formal/formal_controller_spot_equivalence.sv
+                prep -top formal_controller_spot_equivalence
+                async2sync
+                dffunmap
+                write_smt2 -wires {smt2_path}
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        yosys_result = subprocess.run(
+            ["yosys", "-q", "-s", str(script_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        yosys_output = yosys_result.stdout + yosys_result.stderr
+        self.assertEqual(yosys_result.returncode, 0, msg=yosys_output)
+
+        smtbmc_result = subprocess.run(
+            ["yosys-smtbmc", "-s", "z3", "--presat", "-t", "80", str(smt2_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        smtbmc_output = smtbmc_result.stdout + smtbmc_result.stderr
+        self.assertEqual(smtbmc_result.returncode, 0, msg=smtbmc_output)
+        self.assertIn("Status: PASSED", smtbmc_output)
+        self.assertNotIn("PREUNSAT", smtbmc_output)
+
     def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
             ["make", "rtl-synthesis", *self._tool_args()],
@@ -561,13 +807,46 @@ else:
         self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
         self.assertEqual(
             summary["claim_scope"],
-            "bounded (12-cycle) sampled controller-interface equivalence under exact_schedule_v1 assumptions",
+            "bounded (80-cycle) sampled controller-interface equivalence through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under exact_schedule_v1 assumptions",
         )
 
         generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())
         self.assertTrue((generated_dir / "controller.sv").exists())
         self.assertTrue((generated_dir / "controller_spot.aag").exists())
+
+    def test_run_flow_accepts_relative_build_dir_with_fake_tools(self) -> None:
+        result = subprocess.run(
+            [
+                "python3",
+                "rtl-synthesis/controller/run_flow.py",
+                "--ltlsynt",
+                str(self.tools_dir / "ltlsynt"),
+                "--syfco",
+                str(self.tools_dir / "syfco"),
+                "--yosys",
+                str(self.tools_dir / "yosys"),
+                "--smtbmc",
+                str(self.tools_dir / "yosys-smtbmc"),
+                "--solver",
+                str(self.tools_dir / "z3"),
+                "--build-dir",
+                "rel-build",
+                "--summary",
+                "rel-build/out.json",
+            ],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            env=self._make_env(),
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertTrue((self.temp_root / "rel-build" / "out.json").exists(), msg=output)
+        self.assertTrue((self.temp_root / "rel-build" / "generated" / "controller_spot_core.sv").exists(), msg=output)
+        self.assertTrue((self.temp_root / "rel-build" / "generated" / "controller_spot.aag").exists(), msg=output)
 
     def test_make_n_rtl_synthesis_sim_resolves_summary_backed_generated_artifacts(self) -> None:
         result = subprocess.run(

@@ -1,6 +1,7 @@
 .lake/
 .lake-build/
 build/
+rel-build/
 **/__pycache__/
 *.olean
 *.ilean

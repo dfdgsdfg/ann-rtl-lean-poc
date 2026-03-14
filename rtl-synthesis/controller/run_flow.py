@@ -59,10 +59,11 @@ PHASE_OUTPUTS = [
     "phase_done",
 ]
 
-EQUIVALENCE_DEPTH = 12
+EQUIVALENCE_DEPTH = 80
 CLAIM_SCOPE = (
     f"bounded ({EQUIVALENCE_DEPTH}-cycle) sampled controller-interface equivalence "
-    "under exact_schedule_v1 assumptions"
+    "through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under "
+    "exact_schedule_v1 assumptions"
 )
 
 
@@ -75,8 +76,16 @@ class CommandArtifact:
     artifacts: dict[str, str]
 
 
+def rooted_path(path: Path) -> Path:
+    return path if path.is_absolute() else (ROOT / path).resolve()
+
+
 def relative(path: Path) -> str:
-    return str(path.relative_to(ROOT))
+    resolved = rooted_path(path)
+    try:
+        return str(resolved.relative_to(ROOT))
+    except ValueError:
+        return str(resolved)
 
 
 def tool_exists(tool: str) -> bool:
@@ -291,7 +300,8 @@ def main() -> int:
         if not tool_exists(tool):
             raise SystemExit(f"missing required tool: {tool}")
 
-    build_dir = args.build_dir
+    build_dir = rooted_path(args.build_dir)
+    summary_path = rooted_path(args.summary)
     generated_dir = build_dir / "generated"
     logs_dir = build_dir / "logs"
     generated_dir.mkdir(parents=True, exist_ok=True)
@@ -450,7 +460,7 @@ def main() -> int:
             "solver_version": solver_version,
             "command": (
                 f"python3 rtl-synthesis/controller/run_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
-                f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
+                f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --summary {relative(summary_path)}"
             ),
         },
         "claim_scope": CLAIM_SCOPE,
@@ -464,12 +474,12 @@ def main() -> int:
         "results": [asdict(item) for item in results],
     }
 
-    args.summary.parent.mkdir(parents=True, exist_ok=True)
-    args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     for item in results:
         print(f"{item.result.upper():4} {item.name}")
-    print(f"wrote {args.summary}")
+    print(f"wrote {summary_path}")
     return 0 if overall_result == "pass" else 1
 
 

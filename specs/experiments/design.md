@@ -14,9 +14,11 @@ The design should favor:
 - Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, and `rtl-synthesis`
 - Explicit declaration of support level for each branch under comparison
 
-## 2. Recommended Experiment Tracks
+## 2. Experiment Families
 
-### Functional Sweeps
+The experiment layer should be organized by the uncertainty each family is meant to reduce.
+
+### Semantic Closure
 
 Run generated vectors through:
 
@@ -26,7 +28,13 @@ Run generated vectors through:
 
 The goal is to show end-to-end agreement at scale, not just with a few directed vectors.
 
-### Quantization Sensitivity
+This family should also include an explicit Lean fixed-point <-> RTL datapath equivalence study. That comparison closes the main unverified gap between the formal model and the committed datapath implementation.
+
+### Artifact Consistency and Boundary Robustness
+
+First, check artifact consistency automatically:
+
+- Contract -> ROM automatic consistency check
 
 Compare behavior under:
 
@@ -34,13 +42,23 @@ Compare behavior under:
 - Alternative quantization choices
 - Boundary-case weights and biases
 
-### Performance and Cost
+This family is about confidence at the `ann -> contract` boundary and about keeping frozen downstream artifacts aligned with that contract.
+
+### Implementation Characterization
 
 Measure:
 
 - Cycles per inference
 - Area across synthesis runs
 - Timing slack or critical-path changes
+
+QoR studies should use real synthesis outputs and the frozen contract inputs used elsewhere in the repository. The point is to characterize actual implementations, not hypothetical deltas.
+
+### Flow-Stage Validation
+
+Post-synthesis simulation should be added once the ASIC flow produces synthesized netlists or equivalent downstream artifacts.
+
+This family checks that synthesis preserves the intended behavior under the same benches or vector suites used before synthesis.
 
 ### Generated Implementation Comparisons
 
@@ -91,6 +109,7 @@ Typical questions:
 
 Each experiment should keep a stable mapping between:
 
+- Experiment family and target validation boundary
 - Input configuration
 - Tool command
 - Output artifact
@@ -133,20 +152,22 @@ Layout rules:
 
 ## 5. Suggested Workflow
 
-1. Export a fixed parameter set
-2. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or a mixed path
-3. Declare the support level for that branch: full-core, mixed-path, or controller-only
-4. Generate vectors
-5. Materialize the candidate implementation variant
-6. Run simulation or synthesis
-7. Parse outputs into a summary
-8. Save the summary in a documented location
+1. Select the experiment family: semantic closure, artifact consistency, implementation characterization, flow-stage validation, or generated implementation comparison
+2. Export a fixed parameter set
+3. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or a mixed path
+4. Declare the support level for that branch: full-core, mixed-path, or controller-only
+5. Generate vectors or consistency inputs
+6. Materialize the candidate implementation variant
+7. Run simulation, comparison, or synthesis
+8. Parse outputs into a summary
+9. Save the summary in a documented location
 
 For implementation-branch comparisons, the summary should include:
 
 - functional agreement against the same vector set
 - cycle/handshake agreement
 - synthesis report deltas
+- whether the experiment is a semantic-closure check, a boundary-robustness study, a QoR characterization, or a post-synthesis validation run
 - exact generator, synthesis-spec, or wrapper provenance
 - declared implementation scope, such as controller-only or full core
 - declared support level, such as full-core baseline, mixed-path controller replacement, or controller-only parity

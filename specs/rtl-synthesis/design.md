@@ -197,18 +197,25 @@ controller contract
   -> comparison against rtl/src/controller.sv
 ```
 
-Recommended repository shape for a future implementation:
+Current repository shape for the implemented flow:
 
 ```text
 rtl-synthesis/
   controller/
     controller.tlsf
     README.md
-    generated/
-      <tool-name>/
+    run_flow.py
+    formal/
+      formal_controller_spot_equivalence.sv
+
+build/
+  rtl-synthesis/
+    spot/
+      generated/
+      logs/
 ```
 
-The spec documents in this directory define that future artifact layout without requiring it yet.
+The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs are written under `build/rtl-synthesis/spot/`.
 
 ## 8. Tooling Direction
 

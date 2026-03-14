@@ -33,6 +33,7 @@ module controller_spot_compat #(
   localparam logic [3:0] LAST_HIDDEN_IDX = HIDDEN_NEURONS_4B - 4'd1;
 
   logic core_reset;
+  logic core_reset_pending = 1'b0;
   logic hidden_mac_active;
   logic hidden_mac_guard;
   logic last_hidden;
@@ -61,8 +62,27 @@ module controller_spot_compat #(
   logic phase_mac_output;
   logic phase_bias_output;
   logic phase_done;
+  logic reset_consumed = 1'b0;
 
-  assign core_reset = !rst_n;
+  // Preserve sub-cycle async reset pulses by holding reset high until the next
+  // rising edge only when a pulse arrived after the prior posedge.
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      core_reset_pending <= 1'b1;
+    end else begin
+      core_reset_pending <= 1'b0;
+    end
+  end
+
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      reset_consumed <= 1'b1;
+    end else begin
+      reset_consumed <= 1'b0;
+    end
+  end
+
+  assign core_reset = !rst_n || (core_reset_pending && !reset_consumed);
   assign hidden_mac_active = (input_idx < INPUT_NEURONS_4B);
   assign hidden_mac_guard = (input_idx == INPUT_NEURONS_4B);
   assign last_hidden = (hidden_idx == LAST_HIDDEN_IDX);
@@ -103,7 +123,7 @@ module controller_spot_compat #(
   );
 
   always_comb begin
-    if (!rst_n) begin
+    if (core_reset) begin
       phase_idle = 1'b1;
       phase_load_input = 1'b0;
       phase_mac_hidden = 1'b0;

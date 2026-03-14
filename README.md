@@ -239,6 +239,12 @@ The frozen implementation contract and the tooling that regenerates downstream a
 - `rtl/`
 SystemVerilog source for the tiny inference core.
 
+- `rtl-synthesis/`
+Reactive-synthesis source inputs, formal harnesses, and driver scripts for the controller experiment.
+
+- `rtl-formalize-synthesis/`
+Lean/Sparkle source for the generated-controller experiment branch.
+
 - `formalize/`
 Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.
 
