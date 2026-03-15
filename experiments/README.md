@@ -27,10 +27,11 @@ Each command writes JSON summaries and Markdown reports under `build/experiments
 
 Branch-oriented reports should record:
 
-- `generation_scope`: what the branch actually produces
-- `integration_scope`: where that generated or hand-written artifact plugs into the larger design
-- `validation_scope`: the system boundary where evidence is collected
-- `validation_method`: how that evidence was obtained
+- `artifact_kind`: what kind of implementation artifact the branch contributes
+- `assembly_boundary`: where that artifact plugs into the larger design
+- `evidence_boundary`: where evidence is collected for the recorded claim
+- `evidence_method`: how that evidence was obtained
+- `simulation_profile`: when simulation is involved, which bench, vectors, and simulators define the support boundary
 
 See:
 

@@ -16,9 +16,10 @@ It does **not** mean ASIC logic synthesis. That remains the responsibility of `s
 
 The `rtl-synthesis` domain has:
 
-- `generation_scope = controller`
-- `integration_scope = mixed-path mlp_core`
-- `validation_scope = mixed-path mlp_core` for the primary claim, with controller-scoped comparison as secondary evidence
+- `artifact_kind = generated_controller_rtl`
+- `assembly_boundary = mixed_path_mlp_core`
+- `evidence_boundary = shared_full_core_top_level_bench` for the primary claim, with controller-scoped comparison and internal-observability replay as secondary evidence
+- `evidence_method = closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression`
 
 This split is intentional. The repository is explicitly saying that synthesis is limited to the controller, while the primary evidence must still be collected at the mixed-path `mlp_core` boundary.
 
@@ -199,6 +200,8 @@ Validation must cover at least:
 - agreement on guard-cycle behavior in `MAC_HIDDEN` and `MAC_OUTPUT`
 - agreement on hold-in-`DONE` and release-to-`IDLE` behavior
 - integration with the existing datapath in [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv), including the shared full-core simulation bench reused by `rtl-synthesis-sim`
+
+The maintained experiment report must surface the primary `closed_loop_mlp_core_equivalence` result and the secondary `controller_interface_equivalence` result directly from the fresh-flow summary. It must not downgrade the branch to a passing result when only simulation passes, and it must skip the branch rather than use a committed snapshot fallback when the required fresh-flow toolchain is unavailable.
 
 ## 10. Acceptance Criteria
 

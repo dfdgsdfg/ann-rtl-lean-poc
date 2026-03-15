@@ -22,7 +22,7 @@ from ann.src.evaluate import (
 )
 from ann.src.quantize import quantize_float_weights_payload
 from ann.src.train import add_train_arguments, train
-from contract.src.freeze import freeze_contract
+from contract.src.freeze import freeze_contract, resolve_selected_run_dir, validate_canonical_contract_bundle
 
 
 def _default_quantized_output_path(source_path: Path) -> Path:
@@ -52,8 +52,13 @@ def cmd_train(args: argparse.Namespace) -> int:
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:
+    run_dir = args.run_dir
+    if run_dir is None and args.weights is None:
+        validate_canonical_contract_bundle()
+        run_dir = resolve_selected_run_dir()
+
     payload, kind, payload_path = load_evaluation_payload(
-        run_dir=args.run_dir,
+        run_dir=run_dir,
         weights_path=args.weights,
         artifact=args.artifact,
     )

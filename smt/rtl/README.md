@@ -4,12 +4,17 @@ This subtree contains the RTL-backed formal runners for the SMT domain.
 
 Current entrypoints:
 
-- `check_control.py` for the hand-written baseline RTL property families
+- `check_control.py` for both the hand-written baseline RTL source set and the Sparkle full-core source set
 
 The baseline `check_control.py` flow proves against the real RTL:
 
 - [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
 - [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+
+The Sparkle branch uses the same harness family at the shared `mlp_core` boundary, but swaps in these generated sources:
+
+- [`experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv`](../../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv)
+- [`experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv`](../../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv)
 
 Implementation notes:
 
@@ -24,6 +29,8 @@ It proves these property families:
 - `range_safety`
 - `transaction_capture`
 - `bounded_latency`
+
+The baseline branch runs all five families. The Sparkle branch runs the four `mlp_core` families against the generated wrapper-backed source set and leaves `controller_interface` on the hand-written controller RTL only.
 
 `range_safety` proves the real selector and ROM lookup hits used by `mac_a`/`weight_rom`, so the boundary checks are not satisfied by silent default-zero fallthroughs.
 

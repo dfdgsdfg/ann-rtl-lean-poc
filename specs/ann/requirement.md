@@ -174,4 +174,4 @@ The current repository implementation fixes the following default choices:
 - Epoch budget: `300`
 - Early stopping patience: `20`
 - Quantization: round-half-away-from-zero followed by signed clipping
-- Default training output directory: `ann/results/latest/`
+- Default training output directory: auto-created immutable `ann/results/runs/<run_id>/`

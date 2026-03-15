@@ -65,7 +65,8 @@
   },
   "schema_version": 1,
   "selected_epoch": 51,
-  "selected_run": "ann/results/latest",
+  "selected_run": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51",
+  "selected_run_id": "relu_teacher_v2-seed20260312-epoch51",
   "source": "trained_selected_quantized",
   "training_seed": 20260312,
   "w1": [

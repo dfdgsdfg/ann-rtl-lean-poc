@@ -4,7 +4,7 @@ This directory implements the current SMT scope described in [`specs/smt/require
 
 Current scope:
 
-- RTL-backed control proofs for [`rtl/src/controller.sv`](../rtl/src/controller.sv) and [`rtl/src/mlp_core.sv`](../rtl/src/mlp_core.sv)
+- RTL-backed control proofs for the baseline hand-written RTL and the Sparkle full-core branch at the `mlp_core` boundary
 - solver-backed overflow and width checks over the frozen contract in [`contract/result/weights.json`](../contract/result/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs
@@ -39,6 +39,12 @@ Run only the RTL control checks:
 python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
 ```
 
+Run only the Sparkle full-core RTL checks:
+
+```bash
+python3 smt/rtl/check_control.py --branch rtl-formalize-synthesis --summary build/smt/rtl_formalize_synthesis_summary.json
+```
+
 Export the frozen arithmetic assumptions:
 
 ```bash
@@ -60,10 +66,11 @@ python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contra
 Generated artifacts:
 
 - `build/smt/rtl_control_summary.json`
+- `build/smt/rtl_formalize_synthesis_summary.json`
 - `build/smt/contract_assumptions.json`
 - `build/smt/contract_overflow_summary.json`
 - `build/smt/contract_equivalence_summary.json`
 
 These summaries record the solver/tool version, the assumptions used for each property family, and a concise pass/fail result suitable for CI or local review.
 
-The Sparkle full-core branch is validated through the shared simulation and experiment flows under [`experiments/`](../experiments/README.md), not through a dedicated SMT wrapper-equivalence runner.
+The Sparkle full-core branch is checked through the same `smt/rtl/check_control.py` runner with a branch-specific source set consisting of the generated wrapper plus raw Sparkle-emitted core. The Lean theorem still stops at Signal DSL semantics; emitted RTL remains validated by SMT, simulation, and synthesis flows rather than proved in Lean alone.

@@ -12,760 +12,749 @@ module TinyMLP_sparkleMlpCorePacked (
     output logic [298:0] out
 );
 
+    logic [204:0] _tmp_loop_0;
+    logic [3:0] _gen_phase;
+    logic [200:0] _tmp_s_1;
+    logic [3:0] _gen_hidden_idx;
+    logic [200:0] _tmp_s_2;
+    logic [196:0] _tmp_s_3;
+    logic [3:0] _gen_input_idx;
+    logic [200:0] _tmp_s_4;
+    logic [196:0] _tmp_s_5;
+    logic [192:0] _tmp_s_6;
+    logic [7:0] _gen_input_reg0;
+    logic [200:0] _tmp_s_7;
+    logic [196:0] _tmp_s_8;
+    logic [192:0] _tmp_s_9;
+    logic [184:0] _tmp_s_10;
+    logic [7:0] _gen_input_reg1;
+    logic [200:0] _tmp_s_11;
+    logic [196:0] _tmp_s_12;
+    logic [192:0] _tmp_s_13;
+    logic [184:0] _tmp_s_14;
+    logic [176:0] _tmp_s_15;
+    logic [7:0] _gen_input_reg2;
+    logic [200:0] _tmp_s_16;
+    logic [196:0] _tmp_s_17;
+    logic [192:0] _tmp_s_18;
+    logic [184:0] _tmp_s_19;
+    logic [176:0] _tmp_s_20;
+    logic [168:0] _tmp_s_21;
+    logic [7:0] _gen_input_reg3;
+    logic [200:0] _tmp_s_22;
+    logic [196:0] _tmp_s_23;
+    logic [192:0] _tmp_s_24;
+    logic [184:0] _tmp_s_25;
+    logic [176:0] _tmp_s_26;
+    logic [168:0] _tmp_s_27;
+    logic [160:0] _tmp_s_28;
+    logic [15:0] _gen_hidden_reg0;
+    logic [200:0] _tmp_s_29;
+    logic [196:0] _tmp_s_30;
+    logic [192:0] _tmp_s_31;
+    logic [184:0] _tmp_s_32;
+    logic [176:0] _tmp_s_33;
+    logic [168:0] _tmp_s_34;
+    logic [160:0] _tmp_s_35;
+    logic [144:0] _tmp_s_36;
+    logic [15:0] _gen_hidden_reg1;
+    logic [200:0] _tmp_s_37;
+    logic [196:0] _tmp_s_38;
+    logic [192:0] _tmp_s_39;
+    logic [184:0] _tmp_s_40;
+    logic [176:0] _tmp_s_41;
+    logic [168:0] _tmp_s_42;
+    logic [160:0] _tmp_s_43;
+    logic [144:0] _tmp_s_44;
+    logic [128:0] _tmp_s_45;
+    logic [15:0] _gen_hidden_reg2;
+    logic [200:0] _tmp_s_46;
+    logic [196:0] _tmp_s_47;
+    logic [192:0] _tmp_s_48;
+    logic [184:0] _tmp_s_49;
+    logic [176:0] _tmp_s_50;
+    logic [168:0] _tmp_s_51;
+    logic [160:0] _tmp_s_52;
+    logic [144:0] _tmp_s_53;
+    logic [128:0] _tmp_s_54;
+    logic [112:0] _tmp_s_55;
+    logic [15:0] _gen_hidden_reg3;
+    logic [200:0] _tmp_s_56;
+    logic [196:0] _tmp_s_57;
+    logic [192:0] _tmp_s_58;
+    logic [184:0] _tmp_s_59;
+    logic [176:0] _tmp_s_60;
+    logic [168:0] _tmp_s_61;
+    logic [160:0] _tmp_s_62;
+    logic [144:0] _tmp_s_63;
+    logic [128:0] _tmp_s_64;
+    logic [112:0] _tmp_s_65;
+    logic [96:0] _tmp_s_66;
+    logic [15:0] _gen_hidden_reg4;
+    logic [200:0] _tmp_s_67;
+    logic [196:0] _tmp_s_68;
+    logic [192:0] _tmp_s_69;
+    logic [184:0] _tmp_s_70;
+    logic [176:0] _tmp_s_71;
+    logic [168:0] _tmp_s_72;
+    logic [160:0] _tmp_s_73;
+    logic [144:0] _tmp_s_74;
+    logic [128:0] _tmp_s_75;
+    logic [112:0] _tmp_s_76;
+    logic [96:0] _tmp_s_77;
+    logic [80:0] _tmp_s_78;
+    logic [15:0] _gen_hidden_reg5;
+    logic [200:0] _tmp_s_79;
+    logic [196:0] _tmp_s_80;
+    logic [192:0] _tmp_s_81;
+    logic [184:0] _tmp_s_82;
+    logic [176:0] _tmp_s_83;
+    logic [168:0] _tmp_s_84;
+    logic [160:0] _tmp_s_85;
+    logic [144:0] _tmp_s_86;
+    logic [128:0] _tmp_s_87;
+    logic [112:0] _tmp_s_88;
+    logic [96:0] _tmp_s_89;
+    logic [80:0] _tmp_s_90;
+    logic [64:0] _tmp_s_91;
+    logic [15:0] _gen_hidden_reg6;
+    logic [200:0] _tmp_s_92;
+    logic [196:0] _tmp_s_93;
+    logic [192:0] _tmp_s_94;
+    logic [184:0] _tmp_s_95;
+    logic [176:0] _tmp_s_96;
+    logic [168:0] _tmp_s_97;
+    logic [160:0] _tmp_s_98;
+    logic [144:0] _tmp_s_99;
+    logic [128:0] _tmp_s_100;
+    logic [112:0] _tmp_s_101;
+    logic [96:0] _tmp_s_102;
+    logic [80:0] _tmp_s_103;
+    logic [64:0] _tmp_s_104;
+    logic [48:0] _tmp_s_105;
+    logic [15:0] _gen_hidden_reg7;
+    logic [200:0] _tmp_s_106;
+    logic [196:0] _tmp_s_107;
+    logic [192:0] _tmp_s_108;
+    logic [184:0] _tmp_s_109;
+    logic [176:0] _tmp_s_110;
+    logic [168:0] _tmp_s_111;
+    logic [160:0] _tmp_s_112;
+    logic [144:0] _tmp_s_113;
+    logic [128:0] _tmp_s_114;
+    logic [112:0] _tmp_s_115;
+    logic [96:0] _tmp_s_116;
+    logic [80:0] _tmp_s_117;
+    logic [64:0] _tmp_s_118;
+    logic [48:0] _tmp_s_119;
+    logic [32:0] _tmp_s_120;
+    logic [31:0] _gen_acc_reg;
+    logic [200:0] _tmp_s_121;
+    logic [196:0] _tmp_s_122;
+    logic [192:0] _tmp_s_123;
+    logic [184:0] _tmp_s_124;
+    logic [176:0] _tmp_s_125;
+    logic [168:0] _tmp_s_126;
+    logic [160:0] _tmp_s_127;
+    logic [144:0] _tmp_s_128;
+    logic [128:0] _tmp_s_129;
+    logic [112:0] _tmp_s_130;
+    logic [96:0] _tmp_s_131;
+    logic [80:0] _tmp_s_132;
+    logic [64:0] _tmp_s_133;
+    logic [48:0] _tmp_s_134;
+    logic [32:0] _tmp_s_135;
+    logic _gen_out_reg;
     logic [3:0] _gen_zero4;
     logic [3:0] _gen_eight4;
     logic [3:0] _gen_one4;
     logic [15:0] _gen_zero16;
     logic [31:0] _gen_zero32;
     logic _gen_falseSig;
-    logic [200:0] _tmp_loop_0;
-    logic [3:0] _gen_hidden_idx;
-    logic [196:0] _tmp_s_1;
-    logic [3:0] _gen_input_idx;
-    logic [196:0] _tmp_s_2;
-    logic [192:0] _tmp_s_3;
-    logic [7:0] _gen_input_reg0;
-    logic [196:0] _tmp_s_4;
-    logic [192:0] _tmp_s_5;
-    logic [184:0] _tmp_s_6;
-    logic [7:0] _gen_input_reg1;
-    logic [196:0] _tmp_s_7;
-    logic [192:0] _tmp_s_8;
-    logic [184:0] _tmp_s_9;
-    logic [176:0] _tmp_s_10;
-    logic [7:0] _gen_input_reg2;
-    logic [196:0] _tmp_s_11;
-    logic [192:0] _tmp_s_12;
-    logic [184:0] _tmp_s_13;
-    logic [176:0] _tmp_s_14;
-    logic [168:0] _tmp_s_15;
-    logic [7:0] _gen_input_reg3;
-    logic [196:0] _tmp_s_16;
-    logic [192:0] _tmp_s_17;
-    logic [184:0] _tmp_s_18;
-    logic [176:0] _tmp_s_19;
-    logic [168:0] _tmp_s_20;
-    logic [160:0] _tmp_s_21;
-    logic [15:0] _gen_hidden_reg0;
-    logic [196:0] _tmp_s_22;
-    logic [192:0] _tmp_s_23;
-    logic [184:0] _tmp_s_24;
-    logic [176:0] _tmp_s_25;
-    logic [168:0] _tmp_s_26;
-    logic [160:0] _tmp_s_27;
-    logic [144:0] _tmp_s_28;
-    logic [15:0] _gen_hidden_reg1;
-    logic [196:0] _tmp_s_29;
-    logic [192:0] _tmp_s_30;
-    logic [184:0] _tmp_s_31;
-    logic [176:0] _tmp_s_32;
-    logic [168:0] _tmp_s_33;
-    logic [160:0] _tmp_s_34;
-    logic [144:0] _tmp_s_35;
-    logic [128:0] _tmp_s_36;
-    logic [15:0] _gen_hidden_reg2;
-    logic [196:0] _tmp_s_37;
-    logic [192:0] _tmp_s_38;
-    logic [184:0] _tmp_s_39;
-    logic [176:0] _tmp_s_40;
-    logic [168:0] _tmp_s_41;
-    logic [160:0] _tmp_s_42;
-    logic [144:0] _tmp_s_43;
-    logic [128:0] _tmp_s_44;
-    logic [112:0] _tmp_s_45;
-    logic [15:0] _gen_hidden_reg3;
-    logic [196:0] _tmp_s_46;
-    logic [192:0] _tmp_s_47;
-    logic [184:0] _tmp_s_48;
-    logic [176:0] _tmp_s_49;
-    logic [168:0] _tmp_s_50;
-    logic [160:0] _tmp_s_51;
-    logic [144:0] _tmp_s_52;
-    logic [128:0] _tmp_s_53;
-    logic [112:0] _tmp_s_54;
-    logic [96:0] _tmp_s_55;
-    logic [15:0] _gen_hidden_reg4;
-    logic [196:0] _tmp_s_56;
-    logic [192:0] _tmp_s_57;
-    logic [184:0] _tmp_s_58;
-    logic [176:0] _tmp_s_59;
-    logic [168:0] _tmp_s_60;
-    logic [160:0] _tmp_s_61;
-    logic [144:0] _tmp_s_62;
-    logic [128:0] _tmp_s_63;
-    logic [112:0] _tmp_s_64;
-    logic [96:0] _tmp_s_65;
-    logic [80:0] _tmp_s_66;
-    logic [15:0] _gen_hidden_reg5;
-    logic [196:0] _tmp_s_67;
-    logic [192:0] _tmp_s_68;
-    logic [184:0] _tmp_s_69;
-    logic [176:0] _tmp_s_70;
-    logic [168:0] _tmp_s_71;
-    logic [160:0] _tmp_s_72;
-    logic [144:0] _tmp_s_73;
-    logic [128:0] _tmp_s_74;
-    logic [112:0] _tmp_s_75;
-    logic [96:0] _tmp_s_76;
-    logic [80:0] _tmp_s_77;
-    logic [64:0] _tmp_s_78;
-    logic [15:0] _gen_hidden_reg6;
-    logic [196:0] _tmp_s_79;
-    logic [192:0] _tmp_s_80;
-    logic [184:0] _tmp_s_81;
-    logic [176:0] _tmp_s_82;
-    logic [168:0] _tmp_s_83;
-    logic [160:0] _tmp_s_84;
-    logic [144:0] _tmp_s_85;
-    logic [128:0] _tmp_s_86;
-    logic [112:0] _tmp_s_87;
-    logic [96:0] _tmp_s_88;
-    logic [80:0] _tmp_s_89;
-    logic [64:0] _tmp_s_90;
-    logic [48:0] _tmp_s_91;
-    logic [15:0] _gen_hidden_reg7;
-    logic [196:0] _tmp_s_92;
-    logic [192:0] _tmp_s_93;
-    logic [184:0] _tmp_s_94;
-    logic [176:0] _tmp_s_95;
-    logic [168:0] _tmp_s_96;
-    logic [160:0] _tmp_s_97;
-    logic [144:0] _tmp_s_98;
-    logic [128:0] _tmp_s_99;
-    logic [112:0] _tmp_s_100;
-    logic [96:0] _tmp_s_101;
-    logic [80:0] _tmp_s_102;
-    logic [64:0] _tmp_s_103;
-    logic [48:0] _tmp_s_104;
-    logic [32:0] _tmp_s_105;
-    logic [31:0] _gen_acc_reg;
-    logic [196:0] _tmp_s_106;
-    logic [192:0] _tmp_s_107;
-    logic [184:0] _tmp_s_108;
-    logic [176:0] _tmp_s_109;
-    logic [168:0] _tmp_s_110;
-    logic [160:0] _tmp_s_111;
-    logic [144:0] _tmp_s_112;
-    logic [128:0] _tmp_s_113;
-    logic [112:0] _tmp_s_114;
-    logic [96:0] _tmp_s_115;
-    logic [80:0] _tmp_s_116;
-    logic [64:0] _tmp_s_117;
-    logic [48:0] _tmp_s_118;
-    logic [32:0] _tmp_s_119;
-    logic _gen_out_reg;
-    logic [3:0] _tmp_loop_120;
-    logic [3:0] _tmp_b_121;
+    logic [3:0] _tmp_b_136;
     logic _gen_isIdle;
-    logic [3:0] _tmp_b_122;
-    logic _gen_isLoadInput;
-    logic [3:0] _tmp_b_123;
-    logic _gen_isMacHidden;
-    logic [3:0] _tmp_b_124;
-    logic _gen_isBiasHidden;
-    logic [3:0] _tmp_b_125;
-    logic _gen_isActHidden;
-    logic [3:0] _tmp_b_126;
-    logic _gen_isNextHidden;
-    logic [3:0] _tmp_b_127;
-    logic _gen_isMacOutput;
-    logic [3:0] _tmp_b_128;
-    logic _gen_isBiasOutput;
-    logic [3:0] _tmp_b_129;
-    logic _gen_isDone;
-    logic [3:0] _tmp_b_130;
-    logic _gen_inputGuardReached;
-    logic [3:0] _tmp_b_131;
-    logic _gen_outputGuardReached;
-    logic [3:0] _tmp_b_132;
-    logic _gen_hiddenLast;
-    logic _gen_notStart;
-    logic _tmp_mux_cond_133;
-    logic [3:0] _tmp_mux_then_134;
-    logic [3:0] _tmp_mux_then_135;
-    logic [3:0] _tmp_mux_then_136;
-    logic _tmp_mux_cond_137;
-    logic [3:0] _tmp_mux_then_138;
-    logic [3:0] _tmp_mux_then_139;
-    logic [3:0] _tmp_mux_then_140;
-    logic [3:0] _tmp_mux_then_141;
-    logic _tmp_mux_cond_142;
-    logic [3:0] _tmp_mux_then_143;
-    logic [3:0] _tmp_mux_then_144;
-    logic _tmp_mux_cond_145;
-    logic [3:0] _tmp_mux_then_146;
-    logic [3:0] _tmp_mux_then_147;
-    logic [3:0] _tmp_mux_then_148;
-    logic _tmp_mux_cond_149;
-    logic [3:0] _tmp_mux_then_150;
-    logic [3:0] _tmp_mux_then_151;
-    logic [3:0] _tmp_mux_else_152;
-    logic [3:0] _tmp_mux_else_153;
-    logic [3:0] _tmp_mux_else_154;
-    logic [3:0] _tmp_mux_else_155;
-    logic [3:0] _tmp_mux_else_156;
-    logic [3:0] _tmp_mux_else_157;
-    logic [3:0] _tmp_mux_else_158;
-    logic [3:0] _tmp_mux_else_159;
-    logic [3:0] _tmp_mux_else_160;
-    logic [3:0] _tmp_mux_else_161;
-    logic [3:0] _tmp_mux_else_162;
-    logic [3:0] _tmp_mux_else_163;
-    logic [3:0] _tmp_mux_else_164;
-    logic [3:0] _tmp_mux_else_165;
-    logic [3:0] _gen_nextState;
-    logic [3:0] _tmp_loop_body_166;
-    logic [3:0] _tmp_b_167;
-    logic _gen_isIdle_1;
-    logic [3:0] _tmp_b_168;
+    logic [3:0] _tmp_b_137;
     logic _gen_load_input;
-    logic [3:0] _tmp_b_169;
-    logic _tmp_arg1_170;
-    logic [3:0] _tmp_b_171;
-    logic _tmp_arg2_172;
+    logic [3:0] _tmp_b_138;
+    logic _tmp_arg1_139;
+    logic [3:0] _tmp_b_140;
+    logic _tmp_arg2_141;
     logic _gen_do_mac_hidden;
-    logic [3:0] _tmp_b_173;
+    logic [3:0] _tmp_b_142;
     logic _gen_do_bias_hidden;
-    logic [3:0] _tmp_b_174;
+    logic [3:0] _tmp_b_143;
     logic _gen_do_act_hidden;
-    logic [3:0] _tmp_b_175;
+    logic [3:0] _tmp_b_144;
     logic _gen_advance_hidden;
-    logic [3:0] _tmp_b_176;
-    logic _tmp_arg1_177;
-    logic [3:0] _tmp_b_178;
-    logic _tmp_arg2_179;
+    logic [3:0] _tmp_b_145;
+    logic _tmp_arg1_146;
+    logic [3:0] _tmp_b_147;
+    logic _tmp_arg2_148;
     logic _gen_do_mac_output;
-    logic [3:0] _tmp_b_180;
+    logic [3:0] _tmp_b_149;
     logic _gen_do_bias_output;
-    logic _gen_notStart_1;
+    logic _gen_notStart;
     logic _gen_idleCleanup;
-    logic [3:0] _tmp_b_181;
+    logic [3:0] _tmp_b_150;
     logic _gen_hiddenIsLast;
     logic _gen_anyMac;
-    logic [3:0] _tmp_b_182;
-    logic _tmp_mux_cond_183;
-    logic [3:0] _tmp_b_184;
-    logic _tmp_mux_cond_185;
-    logic [3:0] _tmp_b_186;
-    logic _tmp_mux_cond_187;
-    logic [3:0] _tmp_b_188;
-    logic _tmp_mux_cond_189;
-    logic [7:0] _tmp_mux_else_190;
-    logic [7:0] _tmp_mux_else_191;
-    logic [7:0] _tmp_mux_else_192;
-    logic [7:0] _tmp_mux_else_193;
+    logic [3:0] _tmp_b_151;
+    logic _tmp_mux_cond_152;
+    logic [3:0] _tmp_b_153;
+    logic _tmp_mux_cond_154;
+    logic [3:0] _tmp_b_155;
+    logic _tmp_mux_cond_156;
+    logic [3:0] _tmp_b_157;
+    logic _tmp_mux_cond_158;
+    logic [7:0] _tmp_mux_else_159;
+    logic [7:0] _tmp_mux_else_160;
+    logic [7:0] _tmp_mux_else_161;
+    logic [7:0] _tmp_mux_else_162;
     logic [7:0] _gen_selectedInput;
-    logic [3:0] _tmp_b_194;
-    logic _tmp_mux_cond_195;
-    logic [3:0] _tmp_b_196;
-    logic _tmp_mux_cond_197;
-    logic [3:0] _tmp_b_198;
-    logic _tmp_mux_cond_199;
-    logic [3:0] _tmp_b_200;
-    logic _tmp_mux_cond_201;
-    logic [3:0] _tmp_b_202;
-    logic _tmp_mux_cond_203;
-    logic [3:0] _tmp_b_204;
-    logic _tmp_mux_cond_205;
-    logic [3:0] _tmp_b_206;
-    logic _tmp_mux_cond_207;
-    logic [3:0] _tmp_b_208;
-    logic _tmp_mux_cond_209;
-    logic [15:0] _tmp_mux_else_210;
-    logic [15:0] _tmp_mux_else_211;
-    logic [15:0] _tmp_mux_else_212;
-    logic [15:0] _tmp_mux_else_213;
-    logic [15:0] _tmp_mux_else_214;
-    logic [15:0] _tmp_mux_else_215;
-    logic [15:0] _tmp_mux_else_216;
-    logic [15:0] _tmp_mux_else_217;
+    logic [3:0] _tmp_b_163;
+    logic _tmp_mux_cond_164;
+    logic [3:0] _tmp_b_165;
+    logic _tmp_mux_cond_166;
+    logic [3:0] _tmp_b_167;
+    logic _tmp_mux_cond_168;
+    logic [3:0] _tmp_b_169;
+    logic _tmp_mux_cond_170;
+    logic [3:0] _tmp_b_171;
+    logic _tmp_mux_cond_172;
+    logic [3:0] _tmp_b_173;
+    logic _tmp_mux_cond_174;
+    logic [3:0] _tmp_b_175;
+    logic _tmp_mux_cond_176;
+    logic [3:0] _tmp_b_177;
+    logic _tmp_mux_cond_178;
+    logic [15:0] _tmp_mux_else_179;
+    logic [15:0] _tmp_mux_else_180;
+    logic [15:0] _tmp_mux_else_181;
+    logic [15:0] _tmp_mux_else_182;
+    logic [15:0] _tmp_mux_else_183;
+    logic [15:0] _tmp_mux_else_184;
+    logic [15:0] _tmp_mux_else_185;
+    logic [15:0] _tmp_mux_else_186;
     logic [15:0] _gen_selectedHidden;
     logic _gen_inputSign;
-    logic [3:0] _tmp_b_218;
-    logic _tmp_arg1_219;
-    logic [3:0] _tmp_b_220;
-    logic _tmp_arg2_221;
-    logic _tmp_mux_cond_222;
-    logic [7:0] _tmp_mux_then_223;
-    logic [3:0] _tmp_b_224;
-    logic _tmp_arg1_225;
-    logic [3:0] _tmp_b_226;
-    logic _tmp_arg2_227;
-    logic _tmp_mux_cond_228;
-    logic [7:0] _tmp_mux_then_229;
-    logic [3:0] _tmp_b_230;
-    logic _tmp_arg1_231;
-    logic [3:0] _tmp_b_232;
-    logic _tmp_arg2_233;
-    logic _tmp_mux_cond_234;
-    logic [7:0] _tmp_mux_then_235;
-    logic [3:0] _tmp_b_236;
-    logic _tmp_arg1_237;
-    logic [3:0] _tmp_b_238;
-    logic _tmp_arg2_239;
-    logic _tmp_mux_cond_240;
-    logic [7:0] _tmp_mux_then_241;
-    logic [3:0] _tmp_b_242;
-    logic _tmp_arg1_243;
-    logic [3:0] _tmp_b_244;
-    logic _tmp_arg2_245;
-    logic _tmp_mux_cond_246;
-    logic [7:0] _tmp_mux_then_247;
-    logic [3:0] _tmp_b_248;
-    logic _tmp_arg1_249;
-    logic [3:0] _tmp_b_250;
-    logic _tmp_arg2_251;
-    logic _tmp_mux_cond_252;
-    logic [7:0] _tmp_mux_then_253;
-    logic [3:0] _tmp_b_254;
-    logic _tmp_arg1_255;
-    logic [3:0] _tmp_b_256;
-    logic _tmp_arg2_257;
-    logic _tmp_mux_cond_258;
-    logic [7:0] _tmp_mux_then_259;
-    logic [3:0] _tmp_b_260;
-    logic _tmp_arg1_261;
-    logic [3:0] _tmp_b_262;
-    logic _tmp_arg2_263;
-    logic _tmp_mux_cond_264;
-    logic [7:0] _tmp_mux_then_265;
-    logic [3:0] _tmp_b_266;
-    logic _tmp_arg1_267;
-    logic [3:0] _tmp_b_268;
-    logic _tmp_arg2_269;
-    logic _tmp_mux_cond_270;
-    logic [7:0] _tmp_mux_then_271;
-    logic [3:0] _tmp_b_272;
-    logic _tmp_arg1_273;
-    logic [3:0] _tmp_b_274;
-    logic _tmp_arg2_275;
-    logic _tmp_mux_cond_276;
-    logic [7:0] _tmp_mux_then_277;
-    logic [3:0] _tmp_b_278;
-    logic _tmp_arg1_279;
-    logic [3:0] _tmp_b_280;
-    logic _tmp_arg2_281;
-    logic _tmp_mux_cond_282;
-    logic [7:0] _tmp_mux_then_283;
-    logic [3:0] _tmp_b_284;
-    logic _tmp_arg1_285;
-    logic [3:0] _tmp_b_286;
-    logic _tmp_arg2_287;
-    logic _tmp_mux_cond_288;
-    logic [7:0] _tmp_mux_then_289;
-    logic [3:0] _tmp_b_290;
-    logic _tmp_arg1_291;
-    logic [3:0] _tmp_b_292;
-    logic _tmp_arg2_293;
-    logic _tmp_mux_cond_294;
-    logic [7:0] _tmp_mux_then_295;
-    logic [3:0] _tmp_b_296;
-    logic _tmp_arg1_297;
-    logic [3:0] _tmp_b_298;
-    logic _tmp_arg2_299;
-    logic _tmp_mux_cond_300;
-    logic [7:0] _tmp_mux_then_301;
-    logic [3:0] _tmp_b_302;
-    logic _tmp_arg1_303;
-    logic [3:0] _tmp_b_304;
-    logic _tmp_arg2_305;
-    logic _tmp_mux_cond_306;
-    logic [7:0] _tmp_mux_then_307;
-    logic [3:0] _tmp_b_308;
-    logic _tmp_arg1_309;
-    logic [3:0] _tmp_b_310;
-    logic _tmp_arg2_311;
-    logic _tmp_mux_cond_312;
-    logic [7:0] _tmp_mux_then_313;
-    logic [3:0] _tmp_b_314;
-    logic _tmp_arg1_315;
-    logic [3:0] _tmp_b_316;
-    logic _tmp_arg2_317;
-    logic _tmp_mux_cond_318;
-    logic [7:0] _tmp_mux_then_319;
-    logic [3:0] _tmp_b_320;
-    logic _tmp_arg1_321;
-    logic [3:0] _tmp_b_322;
-    logic _tmp_arg2_323;
-    logic _tmp_mux_cond_324;
-    logic [7:0] _tmp_mux_then_325;
-    logic [3:0] _tmp_b_326;
-    logic _tmp_arg1_327;
-    logic [3:0] _tmp_b_328;
-    logic _tmp_arg2_329;
-    logic _tmp_mux_cond_330;
-    logic [7:0] _tmp_mux_then_331;
-    logic [3:0] _tmp_b_332;
-    logic _tmp_arg1_333;
-    logic [3:0] _tmp_b_334;
-    logic _tmp_arg2_335;
-    logic _tmp_mux_cond_336;
-    logic [7:0] _tmp_mux_then_337;
-    logic [3:0] _tmp_b_338;
-    logic _tmp_arg1_339;
-    logic [3:0] _tmp_b_340;
-    logic _tmp_arg2_341;
-    logic _tmp_mux_cond_342;
-    logic [7:0] _tmp_mux_then_343;
-    logic [3:0] _tmp_b_344;
-    logic _tmp_arg1_345;
-    logic [3:0] _tmp_b_346;
-    logic _tmp_arg2_347;
-    logic _tmp_mux_cond_348;
-    logic [7:0] _tmp_mux_then_349;
-    logic [3:0] _tmp_b_350;
-    logic _tmp_arg1_351;
-    logic [3:0] _tmp_b_352;
-    logic _tmp_arg2_353;
-    logic _tmp_mux_cond_354;
-    logic [7:0] _tmp_mux_then_355;
-    logic [3:0] _tmp_b_356;
-    logic _tmp_arg1_357;
-    logic [3:0] _tmp_b_358;
-    logic _tmp_arg2_359;
-    logic _tmp_mux_cond_360;
-    logic [7:0] _tmp_mux_then_361;
-    logic [3:0] _tmp_b_362;
-    logic _tmp_arg1_363;
-    logic [3:0] _tmp_b_364;
-    logic _tmp_arg2_365;
-    logic _tmp_mux_cond_366;
-    logic [7:0] _tmp_mux_then_367;
-    logic [3:0] _tmp_b_368;
-    logic _tmp_arg1_369;
-    logic [3:0] _tmp_b_370;
-    logic _tmp_arg2_371;
-    logic _tmp_mux_cond_372;
-    logic [7:0] _tmp_mux_then_373;
-    logic [3:0] _tmp_b_374;
-    logic _tmp_arg1_375;
-    logic [3:0] _tmp_b_376;
-    logic _tmp_arg2_377;
-    logic _tmp_mux_cond_378;
-    logic [7:0] _tmp_mux_then_379;
-    logic [3:0] _tmp_b_380;
-    logic _tmp_arg1_381;
-    logic [3:0] _tmp_b_382;
-    logic _tmp_arg2_383;
-    logic _tmp_mux_cond_384;
-    logic [7:0] _tmp_mux_then_385;
-    logic [3:0] _tmp_b_386;
-    logic _tmp_arg1_387;
-    logic [3:0] _tmp_b_388;
-    logic _tmp_arg2_389;
-    logic _tmp_mux_cond_390;
-    logic [7:0] _tmp_mux_then_391;
-    logic [3:0] _tmp_b_392;
-    logic _tmp_arg1_393;
-    logic [3:0] _tmp_b_394;
-    logic _tmp_arg2_395;
-    logic _tmp_mux_cond_396;
-    logic [7:0] _tmp_mux_then_397;
-    logic [3:0] _tmp_b_398;
-    logic _tmp_arg1_399;
-    logic [3:0] _tmp_b_400;
-    logic _tmp_arg2_401;
-    logic _tmp_mux_cond_402;
-    logic [7:0] _tmp_mux_then_403;
-    logic [3:0] _tmp_b_404;
-    logic _tmp_arg1_405;
-    logic [3:0] _tmp_b_406;
-    logic _tmp_arg2_407;
-    logic _tmp_mux_cond_408;
-    logic [7:0] _tmp_mux_then_409;
+    logic [3:0] _tmp_b_187;
+    logic _tmp_arg1_188;
+    logic [3:0] _tmp_b_189;
+    logic _tmp_arg2_190;
+    logic _tmp_mux_cond_191;
+    logic [7:0] _tmp_mux_then_192;
+    logic [3:0] _tmp_b_193;
+    logic _tmp_arg1_194;
+    logic [3:0] _tmp_b_195;
+    logic _tmp_arg2_196;
+    logic _tmp_mux_cond_197;
+    logic [7:0] _tmp_mux_then_198;
+    logic [3:0] _tmp_b_199;
+    logic _tmp_arg1_200;
+    logic [3:0] _tmp_b_201;
+    logic _tmp_arg2_202;
+    logic _tmp_mux_cond_203;
+    logic [7:0] _tmp_mux_then_204;
+    logic [3:0] _tmp_b_205;
+    logic _tmp_arg1_206;
+    logic [3:0] _tmp_b_207;
+    logic _tmp_arg2_208;
+    logic _tmp_mux_cond_209;
+    logic [7:0] _tmp_mux_then_210;
+    logic [3:0] _tmp_b_211;
+    logic _tmp_arg1_212;
+    logic [3:0] _tmp_b_213;
+    logic _tmp_arg2_214;
+    logic _tmp_mux_cond_215;
+    logic [7:0] _tmp_mux_then_216;
+    logic [3:0] _tmp_b_217;
+    logic _tmp_arg1_218;
+    logic [3:0] _tmp_b_219;
+    logic _tmp_arg2_220;
+    logic _tmp_mux_cond_221;
+    logic [7:0] _tmp_mux_then_222;
+    logic [3:0] _tmp_b_223;
+    logic _tmp_arg1_224;
+    logic [3:0] _tmp_b_225;
+    logic _tmp_arg2_226;
+    logic _tmp_mux_cond_227;
+    logic [7:0] _tmp_mux_then_228;
+    logic [3:0] _tmp_b_229;
+    logic _tmp_arg1_230;
+    logic [3:0] _tmp_b_231;
+    logic _tmp_arg2_232;
+    logic _tmp_mux_cond_233;
+    logic [7:0] _tmp_mux_then_234;
+    logic [3:0] _tmp_b_235;
+    logic _tmp_arg1_236;
+    logic [3:0] _tmp_b_237;
+    logic _tmp_arg2_238;
+    logic _tmp_mux_cond_239;
+    logic [7:0] _tmp_mux_then_240;
+    logic [3:0] _tmp_b_241;
+    logic _tmp_arg1_242;
+    logic [3:0] _tmp_b_243;
+    logic _tmp_arg2_244;
+    logic _tmp_mux_cond_245;
+    logic [7:0] _tmp_mux_then_246;
+    logic [3:0] _tmp_b_247;
+    logic _tmp_arg1_248;
+    logic [3:0] _tmp_b_249;
+    logic _tmp_arg2_250;
+    logic _tmp_mux_cond_251;
+    logic [7:0] _tmp_mux_then_252;
+    logic [3:0] _tmp_b_253;
+    logic _tmp_arg1_254;
+    logic [3:0] _tmp_b_255;
+    logic _tmp_arg2_256;
+    logic _tmp_mux_cond_257;
+    logic [7:0] _tmp_mux_then_258;
+    logic [3:0] _tmp_b_259;
+    logic _tmp_arg1_260;
+    logic [3:0] _tmp_b_261;
+    logic _tmp_arg2_262;
+    logic _tmp_mux_cond_263;
+    logic [7:0] _tmp_mux_then_264;
+    logic [3:0] _tmp_b_265;
+    logic _tmp_arg1_266;
+    logic [3:0] _tmp_b_267;
+    logic _tmp_arg2_268;
+    logic _tmp_mux_cond_269;
+    logic [7:0] _tmp_mux_then_270;
+    logic [3:0] _tmp_b_271;
+    logic _tmp_arg1_272;
+    logic [3:0] _tmp_b_273;
+    logic _tmp_arg2_274;
+    logic _tmp_mux_cond_275;
+    logic [7:0] _tmp_mux_then_276;
+    logic [3:0] _tmp_b_277;
+    logic _tmp_arg1_278;
+    logic [3:0] _tmp_b_279;
+    logic _tmp_arg2_280;
+    logic _tmp_mux_cond_281;
+    logic [7:0] _tmp_mux_then_282;
+    logic [3:0] _tmp_b_283;
+    logic _tmp_arg1_284;
+    logic [3:0] _tmp_b_285;
+    logic _tmp_arg2_286;
+    logic _tmp_mux_cond_287;
+    logic [7:0] _tmp_mux_then_288;
+    logic [3:0] _tmp_b_289;
+    logic _tmp_arg1_290;
+    logic [3:0] _tmp_b_291;
+    logic _tmp_arg2_292;
+    logic _tmp_mux_cond_293;
+    logic [7:0] _tmp_mux_then_294;
+    logic [3:0] _tmp_b_295;
+    logic _tmp_arg1_296;
+    logic [3:0] _tmp_b_297;
+    logic _tmp_arg2_298;
+    logic _tmp_mux_cond_299;
+    logic [7:0] _tmp_mux_then_300;
+    logic [3:0] _tmp_b_301;
+    logic _tmp_arg1_302;
+    logic [3:0] _tmp_b_303;
+    logic _tmp_arg2_304;
+    logic _tmp_mux_cond_305;
+    logic [7:0] _tmp_mux_then_306;
+    logic [3:0] _tmp_b_307;
+    logic _tmp_arg1_308;
+    logic [3:0] _tmp_b_309;
+    logic _tmp_arg2_310;
+    logic _tmp_mux_cond_311;
+    logic [7:0] _tmp_mux_then_312;
+    logic [3:0] _tmp_b_313;
+    logic _tmp_arg1_314;
+    logic [3:0] _tmp_b_315;
+    logic _tmp_arg2_316;
+    logic _tmp_mux_cond_317;
+    logic [7:0] _tmp_mux_then_318;
+    logic [3:0] _tmp_b_319;
+    logic _tmp_arg1_320;
+    logic [3:0] _tmp_b_321;
+    logic _tmp_arg2_322;
+    logic _tmp_mux_cond_323;
+    logic [7:0] _tmp_mux_then_324;
+    logic [3:0] _tmp_b_325;
+    logic _tmp_arg1_326;
+    logic [3:0] _tmp_b_327;
+    logic _tmp_arg2_328;
+    logic _tmp_mux_cond_329;
+    logic [7:0] _tmp_mux_then_330;
+    logic [3:0] _tmp_b_331;
+    logic _tmp_arg1_332;
+    logic [3:0] _tmp_b_333;
+    logic _tmp_arg2_334;
+    logic _tmp_mux_cond_335;
+    logic [7:0] _tmp_mux_then_336;
+    logic [3:0] _tmp_b_337;
+    logic _tmp_arg1_338;
+    logic [3:0] _tmp_b_339;
+    logic _tmp_arg2_340;
+    logic _tmp_mux_cond_341;
+    logic [7:0] _tmp_mux_then_342;
+    logic [3:0] _tmp_b_343;
+    logic _tmp_arg1_344;
+    logic [3:0] _tmp_b_345;
+    logic _tmp_arg2_346;
+    logic _tmp_mux_cond_347;
+    logic [7:0] _tmp_mux_then_348;
+    logic [3:0] _tmp_b_349;
+    logic _tmp_arg1_350;
+    logic [3:0] _tmp_b_351;
+    logic _tmp_arg2_352;
+    logic _tmp_mux_cond_353;
+    logic [7:0] _tmp_mux_then_354;
+    logic [3:0] _tmp_b_355;
+    logic _tmp_arg1_356;
+    logic [3:0] _tmp_b_357;
+    logic _tmp_arg2_358;
+    logic _tmp_mux_cond_359;
+    logic [7:0] _tmp_mux_then_360;
+    logic [3:0] _tmp_b_361;
+    logic _tmp_arg1_362;
+    logic [3:0] _tmp_b_363;
+    logic _tmp_arg2_364;
+    logic _tmp_mux_cond_365;
+    logic [7:0] _tmp_mux_then_366;
+    logic [3:0] _tmp_b_367;
+    logic _tmp_arg1_368;
+    logic [3:0] _tmp_b_369;
+    logic _tmp_arg2_370;
+    logic _tmp_mux_cond_371;
+    logic [7:0] _tmp_mux_then_372;
+    logic [3:0] _tmp_b_373;
+    logic _tmp_arg1_374;
+    logic [3:0] _tmp_b_375;
+    logic _tmp_arg2_376;
+    logic _tmp_mux_cond_377;
+    logic [7:0] _tmp_mux_then_378;
+    logic [7:0] _tmp_mux_else_379;
+    logic [7:0] _tmp_mux_else_380;
+    logic [7:0] _tmp_mux_else_381;
+    logic [7:0] _tmp_mux_else_382;
+    logic [7:0] _tmp_mux_else_383;
+    logic [7:0] _tmp_mux_else_384;
+    logic [7:0] _tmp_mux_else_385;
+    logic [7:0] _tmp_mux_else_386;
+    logic [7:0] _tmp_mux_else_387;
+    logic [7:0] _tmp_mux_else_388;
+    logic [7:0] _tmp_mux_else_389;
+    logic [7:0] _tmp_mux_else_390;
+    logic [7:0] _tmp_mux_else_391;
+    logic [7:0] _tmp_mux_else_392;
+    logic [7:0] _tmp_mux_else_393;
+    logic [7:0] _tmp_mux_else_394;
+    logic [7:0] _tmp_mux_else_395;
+    logic [7:0] _tmp_mux_else_396;
+    logic [7:0] _tmp_mux_else_397;
+    logic [7:0] _tmp_mux_else_398;
+    logic [7:0] _tmp_mux_else_399;
+    logic [7:0] _tmp_mux_else_400;
+    logic [7:0] _tmp_mux_else_401;
+    logic [7:0] _tmp_mux_else_402;
+    logic [7:0] _tmp_mux_else_403;
+    logic [7:0] _tmp_mux_else_404;
+    logic [7:0] _tmp_mux_else_405;
+    logic [7:0] _tmp_mux_else_406;
+    logic [7:0] _tmp_mux_else_407;
+    logic [7:0] _tmp_mux_else_408;
+    logic [7:0] _tmp_mux_else_409;
     logic [7:0] _tmp_mux_else_410;
-    logic [7:0] _tmp_mux_else_411;
-    logic [7:0] _tmp_mux_else_412;
-    logic [7:0] _tmp_mux_else_413;
-    logic [7:0] _tmp_mux_else_414;
-    logic [7:0] _tmp_mux_else_415;
-    logic [7:0] _tmp_mux_else_416;
-    logic [7:0] _tmp_mux_else_417;
-    logic [7:0] _tmp_mux_else_418;
-    logic [7:0] _tmp_mux_else_419;
-    logic [7:0] _tmp_mux_else_420;
-    logic [7:0] _tmp_mux_else_421;
-    logic [7:0] _tmp_mux_else_422;
-    logic [7:0] _tmp_mux_else_423;
-    logic [7:0] _tmp_mux_else_424;
-    logic [7:0] _tmp_mux_else_425;
-    logic [7:0] _tmp_mux_else_426;
-    logic [7:0] _tmp_mux_else_427;
-    logic [7:0] _tmp_mux_else_428;
-    logic [7:0] _tmp_mux_else_429;
-    logic [7:0] _tmp_mux_else_430;
-    logic [7:0] _tmp_mux_else_431;
-    logic [7:0] _tmp_mux_else_432;
-    logic [7:0] _tmp_mux_else_433;
-    logic [7:0] _tmp_mux_else_434;
-    logic [7:0] _tmp_mux_else_435;
-    logic [7:0] _tmp_mux_else_436;
-    logic [7:0] _tmp_mux_else_437;
-    logic [7:0] _tmp_mux_else_438;
-    logic [7:0] _tmp_mux_else_439;
-    logic [7:0] _tmp_mux_else_440;
-    logic [7:0] _tmp_mux_else_441;
-    logic [7:0] _tmp_s_442;
+    logic [7:0] _tmp_s_411;
     logic _gen_weightSign;
-    logic _tmp_b_443;
-    logic _tmp_mux_cond_444;
-    logic [15:0] _tmp_mux_then_445;
-    logic [15:0] _tmp_mux_else_446;
+    logic _tmp_b_412;
+    logic _tmp_mux_cond_413;
+    logic [15:0] _tmp_mux_then_414;
+    logic [15:0] _tmp_mux_else_415;
     logic [15:0] _gen_inputUpper;
-    logic _tmp_b_447;
-    logic _tmp_mux_cond_448;
-    logic [15:0] _tmp_mux_then_449;
-    logic [15:0] _tmp_mux_else_450;
+    logic _tmp_b_416;
+    logic _tmp_mux_cond_417;
+    logic [15:0] _tmp_mux_then_418;
+    logic [15:0] _tmp_mux_else_419;
     logic [15:0] _gen_weightUpper;
     logic [23:0] _gen_input24;
-    logic [3:0] _tmp_b_451;
-    logic _tmp_arg1_452;
-    logic [3:0] _tmp_b_453;
-    logic _tmp_arg2_454;
-    logic _tmp_mux_cond_455;
-    logic [7:0] _tmp_mux_then_456;
-    logic [3:0] _tmp_b_457;
-    logic _tmp_arg1_458;
-    logic [3:0] _tmp_b_459;
-    logic _tmp_arg2_460;
-    logic _tmp_mux_cond_461;
-    logic [7:0] _tmp_mux_then_462;
-    logic [3:0] _tmp_b_463;
-    logic _tmp_arg1_464;
-    logic [3:0] _tmp_b_465;
-    logic _tmp_arg2_466;
-    logic _tmp_mux_cond_467;
-    logic [7:0] _tmp_mux_then_468;
-    logic [3:0] _tmp_b_469;
-    logic _tmp_arg1_470;
-    logic [3:0] _tmp_b_471;
-    logic _tmp_arg2_472;
-    logic _tmp_mux_cond_473;
-    logic [7:0] _tmp_mux_then_474;
-    logic [3:0] _tmp_b_475;
-    logic _tmp_arg1_476;
-    logic [3:0] _tmp_b_477;
-    logic _tmp_arg2_478;
-    logic _tmp_mux_cond_479;
-    logic [7:0] _tmp_mux_then_480;
-    logic [3:0] _tmp_b_481;
-    logic _tmp_arg1_482;
-    logic [3:0] _tmp_b_483;
-    logic _tmp_arg2_484;
-    logic _tmp_mux_cond_485;
-    logic [7:0] _tmp_mux_then_486;
-    logic [3:0] _tmp_b_487;
-    logic _tmp_arg1_488;
-    logic [3:0] _tmp_b_489;
-    logic _tmp_arg2_490;
-    logic _tmp_mux_cond_491;
-    logic [7:0] _tmp_mux_then_492;
-    logic [3:0] _tmp_b_493;
-    logic _tmp_arg1_494;
-    logic [3:0] _tmp_b_495;
-    logic _tmp_arg2_496;
-    logic _tmp_mux_cond_497;
-    logic [7:0] _tmp_mux_then_498;
-    logic [3:0] _tmp_b_499;
-    logic _tmp_arg1_500;
-    logic [3:0] _tmp_b_501;
-    logic _tmp_arg2_502;
-    logic _tmp_mux_cond_503;
-    logic [7:0] _tmp_mux_then_504;
-    logic [3:0] _tmp_b_505;
-    logic _tmp_arg1_506;
-    logic [3:0] _tmp_b_507;
-    logic _tmp_arg2_508;
-    logic _tmp_mux_cond_509;
-    logic [7:0] _tmp_mux_then_510;
-    logic [3:0] _tmp_b_511;
-    logic _tmp_arg1_512;
-    logic [3:0] _tmp_b_513;
-    logic _tmp_arg2_514;
-    logic _tmp_mux_cond_515;
-    logic [7:0] _tmp_mux_then_516;
-    logic [3:0] _tmp_b_517;
-    logic _tmp_arg1_518;
-    logic [3:0] _tmp_b_519;
-    logic _tmp_arg2_520;
-    logic _tmp_mux_cond_521;
-    logic [7:0] _tmp_mux_then_522;
-    logic [3:0] _tmp_b_523;
-    logic _tmp_arg1_524;
-    logic [3:0] _tmp_b_525;
-    logic _tmp_arg2_526;
-    logic _tmp_mux_cond_527;
-    logic [7:0] _tmp_mux_then_528;
-    logic [3:0] _tmp_b_529;
-    logic _tmp_arg1_530;
-    logic [3:0] _tmp_b_531;
-    logic _tmp_arg2_532;
-    logic _tmp_mux_cond_533;
-    logic [7:0] _tmp_mux_then_534;
-    logic [3:0] _tmp_b_535;
-    logic _tmp_arg1_536;
-    logic [3:0] _tmp_b_537;
-    logic _tmp_arg2_538;
-    logic _tmp_mux_cond_539;
-    logic [7:0] _tmp_mux_then_540;
-    logic [3:0] _tmp_b_541;
-    logic _tmp_arg1_542;
-    logic [3:0] _tmp_b_543;
-    logic _tmp_arg2_544;
-    logic _tmp_mux_cond_545;
-    logic [7:0] _tmp_mux_then_546;
-    logic [3:0] _tmp_b_547;
-    logic _tmp_arg1_548;
-    logic [3:0] _tmp_b_549;
-    logic _tmp_arg2_550;
-    logic _tmp_mux_cond_551;
-    logic [7:0] _tmp_mux_then_552;
-    logic [3:0] _tmp_b_553;
-    logic _tmp_arg1_554;
-    logic [3:0] _tmp_b_555;
-    logic _tmp_arg2_556;
-    logic _tmp_mux_cond_557;
-    logic [7:0] _tmp_mux_then_558;
-    logic [3:0] _tmp_b_559;
-    logic _tmp_arg1_560;
-    logic [3:0] _tmp_b_561;
-    logic _tmp_arg2_562;
-    logic _tmp_mux_cond_563;
-    logic [7:0] _tmp_mux_then_564;
-    logic [3:0] _tmp_b_565;
-    logic _tmp_arg1_566;
-    logic [3:0] _tmp_b_567;
-    logic _tmp_arg2_568;
-    logic _tmp_mux_cond_569;
-    logic [7:0] _tmp_mux_then_570;
-    logic [3:0] _tmp_b_571;
-    logic _tmp_arg1_572;
-    logic [3:0] _tmp_b_573;
-    logic _tmp_arg2_574;
-    logic _tmp_mux_cond_575;
-    logic [7:0] _tmp_mux_then_576;
-    logic [3:0] _tmp_b_577;
-    logic _tmp_arg1_578;
-    logic [3:0] _tmp_b_579;
-    logic _tmp_arg2_580;
-    logic _tmp_mux_cond_581;
-    logic [7:0] _tmp_mux_then_582;
-    logic [3:0] _tmp_b_583;
-    logic _tmp_arg1_584;
-    logic [3:0] _tmp_b_585;
-    logic _tmp_arg2_586;
-    logic _tmp_mux_cond_587;
-    logic [7:0] _tmp_mux_then_588;
-    logic [3:0] _tmp_b_589;
-    logic _tmp_arg1_590;
-    logic [3:0] _tmp_b_591;
-    logic _tmp_arg2_592;
-    logic _tmp_mux_cond_593;
-    logic [7:0] _tmp_mux_then_594;
-    logic [3:0] _tmp_b_595;
-    logic _tmp_arg1_596;
-    logic [3:0] _tmp_b_597;
-    logic _tmp_arg2_598;
-    logic _tmp_mux_cond_599;
-    logic [7:0] _tmp_mux_then_600;
-    logic [3:0] _tmp_b_601;
-    logic _tmp_arg1_602;
-    logic [3:0] _tmp_b_603;
-    logic _tmp_arg2_604;
-    logic _tmp_mux_cond_605;
-    logic [7:0] _tmp_mux_then_606;
-    logic [3:0] _tmp_b_607;
-    logic _tmp_arg1_608;
-    logic [3:0] _tmp_b_609;
-    logic _tmp_arg2_610;
-    logic _tmp_mux_cond_611;
-    logic [7:0] _tmp_mux_then_612;
-    logic [3:0] _tmp_b_613;
-    logic _tmp_arg1_614;
-    logic [3:0] _tmp_b_615;
-    logic _tmp_arg2_616;
-    logic _tmp_mux_cond_617;
-    logic [7:0] _tmp_mux_then_618;
-    logic [3:0] _tmp_b_619;
-    logic _tmp_arg1_620;
-    logic [3:0] _tmp_b_621;
-    logic _tmp_arg2_622;
-    logic _tmp_mux_cond_623;
-    logic [7:0] _tmp_mux_then_624;
-    logic [3:0] _tmp_b_625;
-    logic _tmp_arg1_626;
-    logic [3:0] _tmp_b_627;
-    logic _tmp_arg2_628;
-    logic _tmp_mux_cond_629;
-    logic [7:0] _tmp_mux_then_630;
-    logic [3:0] _tmp_b_631;
-    logic _tmp_arg1_632;
-    logic [3:0] _tmp_b_633;
-    logic _tmp_arg2_634;
-    logic _tmp_mux_cond_635;
-    logic [7:0] _tmp_mux_then_636;
-    logic [3:0] _tmp_b_637;
-    logic _tmp_arg1_638;
-    logic [3:0] _tmp_b_639;
-    logic _tmp_arg2_640;
-    logic _tmp_mux_cond_641;
-    logic [7:0] _tmp_mux_then_642;
+    logic [3:0] _tmp_b_420;
+    logic _tmp_arg1_421;
+    logic [3:0] _tmp_b_422;
+    logic _tmp_arg2_423;
+    logic _tmp_mux_cond_424;
+    logic [7:0] _tmp_mux_then_425;
+    logic [3:0] _tmp_b_426;
+    logic _tmp_arg1_427;
+    logic [3:0] _tmp_b_428;
+    logic _tmp_arg2_429;
+    logic _tmp_mux_cond_430;
+    logic [7:0] _tmp_mux_then_431;
+    logic [3:0] _tmp_b_432;
+    logic _tmp_arg1_433;
+    logic [3:0] _tmp_b_434;
+    logic _tmp_arg2_435;
+    logic _tmp_mux_cond_436;
+    logic [7:0] _tmp_mux_then_437;
+    logic [3:0] _tmp_b_438;
+    logic _tmp_arg1_439;
+    logic [3:0] _tmp_b_440;
+    logic _tmp_arg2_441;
+    logic _tmp_mux_cond_442;
+    logic [7:0] _tmp_mux_then_443;
+    logic [3:0] _tmp_b_444;
+    logic _tmp_arg1_445;
+    logic [3:0] _tmp_b_446;
+    logic _tmp_arg2_447;
+    logic _tmp_mux_cond_448;
+    logic [7:0] _tmp_mux_then_449;
+    logic [3:0] _tmp_b_450;
+    logic _tmp_arg1_451;
+    logic [3:0] _tmp_b_452;
+    logic _tmp_arg2_453;
+    logic _tmp_mux_cond_454;
+    logic [7:0] _tmp_mux_then_455;
+    logic [3:0] _tmp_b_456;
+    logic _tmp_arg1_457;
+    logic [3:0] _tmp_b_458;
+    logic _tmp_arg2_459;
+    logic _tmp_mux_cond_460;
+    logic [7:0] _tmp_mux_then_461;
+    logic [3:0] _tmp_b_462;
+    logic _tmp_arg1_463;
+    logic [3:0] _tmp_b_464;
+    logic _tmp_arg2_465;
+    logic _tmp_mux_cond_466;
+    logic [7:0] _tmp_mux_then_467;
+    logic [3:0] _tmp_b_468;
+    logic _tmp_arg1_469;
+    logic [3:0] _tmp_b_470;
+    logic _tmp_arg2_471;
+    logic _tmp_mux_cond_472;
+    logic [7:0] _tmp_mux_then_473;
+    logic [3:0] _tmp_b_474;
+    logic _tmp_arg1_475;
+    logic [3:0] _tmp_b_476;
+    logic _tmp_arg2_477;
+    logic _tmp_mux_cond_478;
+    logic [7:0] _tmp_mux_then_479;
+    logic [3:0] _tmp_b_480;
+    logic _tmp_arg1_481;
+    logic [3:0] _tmp_b_482;
+    logic _tmp_arg2_483;
+    logic _tmp_mux_cond_484;
+    logic [7:0] _tmp_mux_then_485;
+    logic [3:0] _tmp_b_486;
+    logic _tmp_arg1_487;
+    logic [3:0] _tmp_b_488;
+    logic _tmp_arg2_489;
+    logic _tmp_mux_cond_490;
+    logic [7:0] _tmp_mux_then_491;
+    logic [3:0] _tmp_b_492;
+    logic _tmp_arg1_493;
+    logic [3:0] _tmp_b_494;
+    logic _tmp_arg2_495;
+    logic _tmp_mux_cond_496;
+    logic [7:0] _tmp_mux_then_497;
+    logic [3:0] _tmp_b_498;
+    logic _tmp_arg1_499;
+    logic [3:0] _tmp_b_500;
+    logic _tmp_arg2_501;
+    logic _tmp_mux_cond_502;
+    logic [7:0] _tmp_mux_then_503;
+    logic [3:0] _tmp_b_504;
+    logic _tmp_arg1_505;
+    logic [3:0] _tmp_b_506;
+    logic _tmp_arg2_507;
+    logic _tmp_mux_cond_508;
+    logic [7:0] _tmp_mux_then_509;
+    logic [3:0] _tmp_b_510;
+    logic _tmp_arg1_511;
+    logic [3:0] _tmp_b_512;
+    logic _tmp_arg2_513;
+    logic _tmp_mux_cond_514;
+    logic [7:0] _tmp_mux_then_515;
+    logic [3:0] _tmp_b_516;
+    logic _tmp_arg1_517;
+    logic [3:0] _tmp_b_518;
+    logic _tmp_arg2_519;
+    logic _tmp_mux_cond_520;
+    logic [7:0] _tmp_mux_then_521;
+    logic [3:0] _tmp_b_522;
+    logic _tmp_arg1_523;
+    logic [3:0] _tmp_b_524;
+    logic _tmp_arg2_525;
+    logic _tmp_mux_cond_526;
+    logic [7:0] _tmp_mux_then_527;
+    logic [3:0] _tmp_b_528;
+    logic _tmp_arg1_529;
+    logic [3:0] _tmp_b_530;
+    logic _tmp_arg2_531;
+    logic _tmp_mux_cond_532;
+    logic [7:0] _tmp_mux_then_533;
+    logic [3:0] _tmp_b_534;
+    logic _tmp_arg1_535;
+    logic [3:0] _tmp_b_536;
+    logic _tmp_arg2_537;
+    logic _tmp_mux_cond_538;
+    logic [7:0] _tmp_mux_then_539;
+    logic [3:0] _tmp_b_540;
+    logic _tmp_arg1_541;
+    logic [3:0] _tmp_b_542;
+    logic _tmp_arg2_543;
+    logic _tmp_mux_cond_544;
+    logic [7:0] _tmp_mux_then_545;
+    logic [3:0] _tmp_b_546;
+    logic _tmp_arg1_547;
+    logic [3:0] _tmp_b_548;
+    logic _tmp_arg2_549;
+    logic _tmp_mux_cond_550;
+    logic [7:0] _tmp_mux_then_551;
+    logic [3:0] _tmp_b_552;
+    logic _tmp_arg1_553;
+    logic [3:0] _tmp_b_554;
+    logic _tmp_arg2_555;
+    logic _tmp_mux_cond_556;
+    logic [7:0] _tmp_mux_then_557;
+    logic [3:0] _tmp_b_558;
+    logic _tmp_arg1_559;
+    logic [3:0] _tmp_b_560;
+    logic _tmp_arg2_561;
+    logic _tmp_mux_cond_562;
+    logic [7:0] _tmp_mux_then_563;
+    logic [3:0] _tmp_b_564;
+    logic _tmp_arg1_565;
+    logic [3:0] _tmp_b_566;
+    logic _tmp_arg2_567;
+    logic _tmp_mux_cond_568;
+    logic [7:0] _tmp_mux_then_569;
+    logic [3:0] _tmp_b_570;
+    logic _tmp_arg1_571;
+    logic [3:0] _tmp_b_572;
+    logic _tmp_arg2_573;
+    logic _tmp_mux_cond_574;
+    logic [7:0] _tmp_mux_then_575;
+    logic [3:0] _tmp_b_576;
+    logic _tmp_arg1_577;
+    logic [3:0] _tmp_b_578;
+    logic _tmp_arg2_579;
+    logic _tmp_mux_cond_580;
+    logic [7:0] _tmp_mux_then_581;
+    logic [3:0] _tmp_b_582;
+    logic _tmp_arg1_583;
+    logic [3:0] _tmp_b_584;
+    logic _tmp_arg2_585;
+    logic _tmp_mux_cond_586;
+    logic [7:0] _tmp_mux_then_587;
+    logic [3:0] _tmp_b_588;
+    logic _tmp_arg1_589;
+    logic [3:0] _tmp_b_590;
+    logic _tmp_arg2_591;
+    logic _tmp_mux_cond_592;
+    logic [7:0] _tmp_mux_then_593;
+    logic [3:0] _tmp_b_594;
+    logic _tmp_arg1_595;
+    logic [3:0] _tmp_b_596;
+    logic _tmp_arg2_597;
+    logic _tmp_mux_cond_598;
+    logic [7:0] _tmp_mux_then_599;
+    logic [3:0] _tmp_b_600;
+    logic _tmp_arg1_601;
+    logic [3:0] _tmp_b_602;
+    logic _tmp_arg2_603;
+    logic _tmp_mux_cond_604;
+    logic [7:0] _tmp_mux_then_605;
+    logic [3:0] _tmp_b_606;
+    logic _tmp_arg1_607;
+    logic [3:0] _tmp_b_608;
+    logic _tmp_arg2_609;
+    logic _tmp_mux_cond_610;
+    logic [7:0] _tmp_mux_then_611;
+    logic [7:0] _tmp_mux_else_612;
+    logic [7:0] _tmp_mux_else_613;
+    logic [7:0] _tmp_mux_else_614;
+    logic [7:0] _tmp_mux_else_615;
+    logic [7:0] _tmp_mux_else_616;
+    logic [7:0] _tmp_mux_else_617;
+    logic [7:0] _tmp_mux_else_618;
+    logic [7:0] _tmp_mux_else_619;
+    logic [7:0] _tmp_mux_else_620;
+    logic [7:0] _tmp_mux_else_621;
+    logic [7:0] _tmp_mux_else_622;
+    logic [7:0] _tmp_mux_else_623;
+    logic [7:0] _tmp_mux_else_624;
+    logic [7:0] _tmp_mux_else_625;
+    logic [7:0] _tmp_mux_else_626;
+    logic [7:0] _tmp_mux_else_627;
+    logic [7:0] _tmp_mux_else_628;
+    logic [7:0] _tmp_mux_else_629;
+    logic [7:0] _tmp_mux_else_630;
+    logic [7:0] _tmp_mux_else_631;
+    logic [7:0] _tmp_mux_else_632;
+    logic [7:0] _tmp_mux_else_633;
+    logic [7:0] _tmp_mux_else_634;
+    logic [7:0] _tmp_mux_else_635;
+    logic [7:0] _tmp_mux_else_636;
+    logic [7:0] _tmp_mux_else_637;
+    logic [7:0] _tmp_mux_else_638;
+    logic [7:0] _tmp_mux_else_639;
+    logic [7:0] _tmp_mux_else_640;
+    logic [7:0] _tmp_mux_else_641;
+    logic [7:0] _tmp_mux_else_642;
     logic [7:0] _tmp_mux_else_643;
-    logic [7:0] _tmp_mux_else_644;
-    logic [7:0] _tmp_mux_else_645;
-    logic [7:0] _tmp_mux_else_646;
-    logic [7:0] _tmp_mux_else_647;
-    logic [7:0] _tmp_mux_else_648;
-    logic [7:0] _tmp_mux_else_649;
-    logic [7:0] _tmp_mux_else_650;
-    logic [7:0] _tmp_mux_else_651;
-    logic [7:0] _tmp_mux_else_652;
-    logic [7:0] _tmp_mux_else_653;
-    logic [7:0] _tmp_mux_else_654;
-    logic [7:0] _tmp_mux_else_655;
-    logic [7:0] _tmp_mux_else_656;
-    logic [7:0] _tmp_mux_else_657;
-    logic [7:0] _tmp_mux_else_658;
-    logic [7:0] _tmp_mux_else_659;
-    logic [7:0] _tmp_mux_else_660;
-    logic [7:0] _tmp_mux_else_661;
-    logic [7:0] _tmp_mux_else_662;
-    logic [7:0] _tmp_mux_else_663;
-    logic [7:0] _tmp_mux_else_664;
-    logic [7:0] _tmp_mux_else_665;
-    logic [7:0] _tmp_mux_else_666;
-    logic [7:0] _tmp_mux_else_667;
-    logic [7:0] _tmp_mux_else_668;
-    logic [7:0] _tmp_mux_else_669;
-    logic [7:0] _tmp_mux_else_670;
-    logic [7:0] _tmp_mux_else_671;
-    logic [7:0] _tmp_mux_else_672;
-    logic [7:0] _tmp_mux_else_673;
-    logic [7:0] _tmp_mux_else_674;
-    logic [7:0] _tmp_b_675;
+    logic [7:0] _tmp_b_644;
     logic [23:0] _gen_weight24;
     logic [23:0] _gen_product24;
     logic _gen_productSign;
-    logic _tmp_b_676;
-    logic _tmp_mux_cond_677;
-    logic [7:0] _tmp_mux_then_678;
-    logic [7:0] _tmp_mux_else_679;
+    logic _tmp_b_645;
+    logic _tmp_mux_cond_646;
+    logic [7:0] _tmp_mux_then_647;
+    logic [7:0] _tmp_mux_else_648;
     logic [7:0] _gen_productUpper;
-    logic [31:0] _tmp_arg2_680;
+    logic [31:0] _tmp_arg2_649;
     logic [31:0] _gen_hiddenMacAccOut;
     logic _gen_hiddenSign;
-    logic _tmp_b_681;
-    logic _tmp_mux_cond_682;
-    logic [7:0] _tmp_mux_then_683;
-    logic [7:0] _tmp_mux_else_684;
+    logic _tmp_b_650;
+    logic _tmp_mux_cond_651;
+    logic [7:0] _tmp_mux_then_652;
+    logic [7:0] _tmp_mux_else_653;
     logic [7:0] _gen_hiddenUpper;
     logic [23:0] _gen_hidden24;
-    logic [3:0] _tmp_b_685;
-    logic _tmp_mux_cond_686;
-    logic [7:0] _tmp_mux_then_687;
-    logic [3:0] _tmp_b_688;
-    logic _tmp_mux_cond_689;
-    logic [7:0] _tmp_mux_then_690;
+    logic [3:0] _tmp_b_654;
+    logic _tmp_mux_cond_655;
+    logic [7:0] _tmp_mux_then_656;
+    logic [3:0] _tmp_b_657;
+    logic _tmp_mux_cond_658;
+    logic [7:0] _tmp_mux_then_659;
+    logic [3:0] _tmp_b_660;
+    logic _tmp_mux_cond_661;
+    logic [7:0] _tmp_mux_then_662;
+    logic [3:0] _tmp_b_663;
+    logic _tmp_mux_cond_664;
+    logic [7:0] _tmp_mux_then_665;
+    logic [3:0] _tmp_b_666;
+    logic _tmp_mux_cond_667;
+    logic [7:0] _tmp_mux_then_668;
+    logic [3:0] _tmp_b_669;
+    logic _tmp_mux_cond_670;
+    logic [7:0] _tmp_mux_then_671;
+    logic [3:0] _tmp_b_672;
+    logic _tmp_mux_cond_673;
+    logic [7:0] _tmp_mux_then_674;
+    logic [3:0] _tmp_b_675;
+    logic _tmp_mux_cond_676;
+    logic [7:0] _tmp_mux_then_677;
+    logic [7:0] _tmp_mux_else_678;
+    logic [7:0] _tmp_mux_else_679;
+    logic [7:0] _tmp_mux_else_680;
+    logic [7:0] _tmp_mux_else_681;
+    logic [7:0] _tmp_mux_else_682;
+    logic [7:0] _tmp_mux_else_683;
+    logic [7:0] _tmp_mux_else_684;
+    logic [7:0] _tmp_mux_else_685;
+    logic [7:0] _tmp_s_686;
+    logic _gen_weightSign_1;
+    logic _tmp_b_687;
+    logic _tmp_mux_cond_688;
+    logic [15:0] _tmp_mux_then_689;
+    logic [15:0] _tmp_mux_else_690;
+    logic [15:0] _gen_weightUpper16;
     logic [3:0] _tmp_b_691;
     logic _tmp_mux_cond_692;
     logic [7:0] _tmp_mux_then_693;
@@ -784,261 +773,271 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [3:0] _tmp_b_706;
     logic _tmp_mux_cond_707;
     logic [7:0] _tmp_mux_then_708;
-    logic [7:0] _tmp_mux_else_709;
-    logic [7:0] _tmp_mux_else_710;
-    logic [7:0] _tmp_mux_else_711;
-    logic [7:0] _tmp_mux_else_712;
-    logic [7:0] _tmp_mux_else_713;
-    logic [7:0] _tmp_mux_else_714;
+    logic [3:0] _tmp_b_709;
+    logic _tmp_mux_cond_710;
+    logic [7:0] _tmp_mux_then_711;
+    logic [3:0] _tmp_b_712;
+    logic _tmp_mux_cond_713;
+    logic [7:0] _tmp_mux_then_714;
     logic [7:0] _tmp_mux_else_715;
     logic [7:0] _tmp_mux_else_716;
-    logic [7:0] _tmp_s_717;
-    logic _gen_weightSign_1;
-    logic _tmp_b_718;
-    logic _tmp_mux_cond_719;
-    logic [15:0] _tmp_mux_then_720;
-    logic [15:0] _tmp_mux_else_721;
-    logic [15:0] _gen_weightUpper16;
-    logic [3:0] _tmp_b_722;
-    logic _tmp_mux_cond_723;
-    logic [7:0] _tmp_mux_then_724;
-    logic [3:0] _tmp_b_725;
-    logic _tmp_mux_cond_726;
-    logic [7:0] _tmp_mux_then_727;
-    logic [3:0] _tmp_b_728;
-    logic _tmp_mux_cond_729;
-    logic [7:0] _tmp_mux_then_730;
-    logic [3:0] _tmp_b_731;
-    logic _tmp_mux_cond_732;
-    logic [7:0] _tmp_mux_then_733;
-    logic [3:0] _tmp_b_734;
-    logic _tmp_mux_cond_735;
-    logic [7:0] _tmp_mux_then_736;
-    logic [3:0] _tmp_b_737;
-    logic _tmp_mux_cond_738;
-    logic [7:0] _tmp_mux_then_739;
-    logic [3:0] _tmp_b_740;
-    logic _tmp_mux_cond_741;
-    logic [7:0] _tmp_mux_then_742;
-    logic [3:0] _tmp_b_743;
-    logic _tmp_mux_cond_744;
-    logic [7:0] _tmp_mux_then_745;
-    logic [7:0] _tmp_mux_else_746;
-    logic [7:0] _tmp_mux_else_747;
-    logic [7:0] _tmp_mux_else_748;
-    logic [7:0] _tmp_mux_else_749;
-    logic [7:0] _tmp_mux_else_750;
-    logic [7:0] _tmp_mux_else_751;
-    logic [7:0] _tmp_mux_else_752;
-    logic [7:0] _tmp_mux_else_753;
-    logic [7:0] _tmp_b_754;
+    logic [7:0] _tmp_mux_else_717;
+    logic [7:0] _tmp_mux_else_718;
+    logic [7:0] _tmp_mux_else_719;
+    logic [7:0] _tmp_mux_else_720;
+    logic [7:0] _tmp_mux_else_721;
+    logic [7:0] _tmp_mux_else_722;
+    logic [7:0] _tmp_b_723;
     logic [23:0] _gen_weight24_1;
     logic [23:0] _gen_product24_1;
     logic _gen_productSign_1;
-    logic _tmp_b_755;
-    logic _tmp_mux_cond_756;
-    logic [7:0] _tmp_mux_then_757;
-    logic [7:0] _tmp_mux_else_758;
+    logic _tmp_b_724;
+    logic _tmp_mux_cond_725;
+    logic [7:0] _tmp_mux_then_726;
+    logic [7:0] _tmp_mux_else_727;
     logic [7:0] _gen_productUpper_1;
-    logic [31:0] _tmp_arg2_759;
+    logic [31:0] _tmp_arg2_728;
     logic [31:0] _gen_outputMacAccOut;
-    logic [3:0] _tmp_b_760;
-    logic _tmp_mux_cond_761;
-    logic [31:0] _tmp_mux_then_762;
-    logic [3:0] _tmp_b_763;
-    logic _tmp_mux_cond_764;
-    logic [31:0] _tmp_mux_then_765;
-    logic [3:0] _tmp_b_766;
-    logic _tmp_mux_cond_767;
-    logic [31:0] _tmp_mux_then_768;
-    logic [3:0] _tmp_b_769;
-    logic _tmp_mux_cond_770;
-    logic [31:0] _tmp_mux_then_771;
-    logic [3:0] _tmp_b_772;
-    logic _tmp_mux_cond_773;
-    logic [31:0] _tmp_mux_then_774;
-    logic [3:0] _tmp_b_775;
-    logic _tmp_mux_cond_776;
-    logic [31:0] _tmp_mux_then_777;
-    logic [3:0] _tmp_b_778;
-    logic _tmp_mux_cond_779;
-    logic [31:0] _tmp_mux_then_780;
-    logic [3:0] _tmp_b_781;
-    logic _tmp_mux_cond_782;
-    logic [31:0] _tmp_mux_then_783;
-    logic [31:0] _tmp_mux_else_784;
-    logic [31:0] _tmp_mux_else_785;
-    logic [31:0] _tmp_mux_else_786;
-    logic [31:0] _tmp_mux_else_787;
-    logic [31:0] _tmp_mux_else_788;
-    logic [31:0] _tmp_mux_else_789;
-    logic [31:0] _tmp_mux_else_790;
-    logic [31:0] _tmp_mux_else_791;
-    logic [31:0] _tmp_arg2_792;
+    logic [3:0] _tmp_b_729;
+    logic _tmp_mux_cond_730;
+    logic [31:0] _tmp_mux_then_731;
+    logic [3:0] _tmp_b_732;
+    logic _tmp_mux_cond_733;
+    logic [31:0] _tmp_mux_then_734;
+    logic [3:0] _tmp_b_735;
+    logic _tmp_mux_cond_736;
+    logic [31:0] _tmp_mux_then_737;
+    logic [3:0] _tmp_b_738;
+    logic _tmp_mux_cond_739;
+    logic [31:0] _tmp_mux_then_740;
+    logic [3:0] _tmp_b_741;
+    logic _tmp_mux_cond_742;
+    logic [31:0] _tmp_mux_then_743;
+    logic [3:0] _tmp_b_744;
+    logic _tmp_mux_cond_745;
+    logic [31:0] _tmp_mux_then_746;
+    logic [3:0] _tmp_b_747;
+    logic _tmp_mux_cond_748;
+    logic [31:0] _tmp_mux_then_749;
+    logic [3:0] _tmp_b_750;
+    logic _tmp_mux_cond_751;
+    logic [31:0] _tmp_mux_then_752;
+    logic [31:0] _tmp_mux_else_753;
+    logic [31:0] _tmp_mux_else_754;
+    logic [31:0] _tmp_mux_else_755;
+    logic [31:0] _tmp_mux_else_756;
+    logic [31:0] _tmp_mux_else_757;
+    logic [31:0] _tmp_mux_else_758;
+    logic [31:0] _tmp_mux_else_759;
+    logic [31:0] _tmp_mux_else_760;
+    logic [31:0] _tmp_arg2_761;
     logic [31:0] _gen_biasHiddenAccOut;
-    logic [31:0] _tmp_arg2_793;
+    logic [31:0] _tmp_arg2_762;
     logic [31:0] _gen_biasOutputAccOut;
     logic _gen_sign;
     logic [15:0] _gen_narrowed;
-    logic _tmp_b_794;
-    logic _tmp_mux_cond_795;
-    logic [15:0] _tmp_mux_then_796;
+    logic _tmp_b_763;
+    logic _tmp_mux_cond_764;
+    logic [15:0] _tmp_mux_then_765;
     logic [15:0] _gen_reluHidden;
-    logic _tmp_mux_cond_797;
-    logic [3:0] _tmp_mux_then_798;
+    logic [3:0] _tmp_b_766;
+    logic _gen_isIdle_1;
+    logic [3:0] _tmp_b_767;
+    logic _gen_isLoadInput;
+    logic [3:0] _tmp_b_768;
+    logic _gen_isMacHidden;
+    logic [3:0] _tmp_b_769;
+    logic _gen_isBiasHidden;
+    logic [3:0] _tmp_b_770;
+    logic _gen_isActHidden;
+    logic [3:0] _tmp_b_771;
+    logic _gen_isNextHidden;
+    logic [3:0] _tmp_b_772;
+    logic _gen_isMacOutput;
+    logic [3:0] _tmp_b_773;
+    logic _gen_isBiasOutput;
+    logic [3:0] _tmp_b_774;
+    logic _gen_isDone;
+    logic [3:0] _tmp_b_775;
+    logic _gen_inputGuardReached;
+    logic [3:0] _tmp_b_776;
+    logic _gen_outputGuardReached;
+    logic [3:0] _tmp_b_777;
+    logic _gen_hiddenLast;
+    logic _gen_notStart_1;
+    logic _tmp_mux_cond_778;
+    logic [3:0] _tmp_mux_then_779;
+    logic [3:0] _tmp_mux_then_780;
+    logic [3:0] _tmp_mux_then_781;
+    logic _tmp_mux_cond_782;
+    logic [3:0] _tmp_mux_then_783;
+    logic [3:0] _tmp_mux_then_784;
+    logic [3:0] _tmp_mux_then_785;
+    logic [3:0] _tmp_mux_then_786;
+    logic _tmp_mux_cond_787;
+    logic [3:0] _tmp_mux_then_788;
+    logic [3:0] _tmp_mux_then_789;
+    logic _tmp_mux_cond_790;
+    logic [3:0] _tmp_mux_then_791;
+    logic [3:0] _tmp_mux_then_792;
+    logic [3:0] _tmp_mux_then_793;
+    logic _tmp_mux_cond_794;
+    logic [3:0] _tmp_mux_then_795;
+    logic [3:0] _tmp_mux_then_796;
+    logic [3:0] _tmp_mux_else_797;
+    logic [3:0] _tmp_mux_else_798;
     logic [3:0] _tmp_mux_else_799;
     logic [3:0] _tmp_mux_else_800;
     logic [3:0] _tmp_mux_else_801;
     logic [3:0] _tmp_mux_else_802;
-    logic [3:0] _gen_nextHiddenIdx;
-    logic [3:0] _tmp_mux_then_803;
-    logic _tmp_mux_cond_804;
+    logic [3:0] _tmp_mux_else_803;
+    logic [3:0] _tmp_mux_else_804;
     logic [3:0] _tmp_mux_else_805;
     logic [3:0] _tmp_mux_else_806;
     logic [3:0] _tmp_mux_else_807;
     logic [3:0] _tmp_mux_else_808;
     logic [3:0] _tmp_mux_else_809;
+    logic [3:0] _tmp_mux_else_810;
+    logic [3:0] _gen_nextPhase;
+    logic _tmp_mux_cond_811;
+    logic [3:0] _tmp_mux_then_812;
+    logic [3:0] _tmp_mux_else_813;
+    logic [3:0] _tmp_mux_else_814;
+    logic [3:0] _tmp_mux_else_815;
+    logic [3:0] _tmp_mux_else_816;
+    logic [3:0] _gen_nextHiddenIdx;
+    logic [3:0] _tmp_mux_then_817;
+    logic _tmp_mux_cond_818;
+    logic [3:0] _tmp_mux_else_819;
+    logic [3:0] _tmp_mux_else_820;
+    logic [3:0] _tmp_mux_else_821;
+    logic [3:0] _tmp_mux_else_822;
+    logic [3:0] _tmp_mux_else_823;
     logic [3:0] _gen_nextInputIdx;
     logic [7:0] _gen_nextInputReg0;
     logic [7:0] _gen_nextInputReg1;
     logic [7:0] _gen_nextInputReg2;
     logic [7:0] _gen_nextInputReg3;
-    logic [3:0] _tmp_b_810;
-    logic _tmp_mux_cond_811;
-    logic [15:0] _tmp_mux_then_812;
-    logic [15:0] _tmp_mux_else_813;
+    logic [3:0] _tmp_b_824;
+    logic _tmp_mux_cond_825;
+    logic [15:0] _tmp_mux_then_826;
+    logic [15:0] _tmp_mux_else_827;
     logic [15:0] _gen_nextHiddenReg0;
-    logic [3:0] _tmp_b_814;
-    logic _tmp_mux_cond_815;
-    logic [15:0] _tmp_mux_then_816;
-    logic [15:0] _tmp_mux_else_817;
+    logic [3:0] _tmp_b_828;
+    logic _tmp_mux_cond_829;
+    logic [15:0] _tmp_mux_then_830;
+    logic [15:0] _tmp_mux_else_831;
     logic [15:0] _gen_nextHiddenReg1;
-    logic [3:0] _tmp_b_818;
-    logic _tmp_mux_cond_819;
-    logic [15:0] _tmp_mux_then_820;
-    logic [15:0] _tmp_mux_else_821;
+    logic [3:0] _tmp_b_832;
+    logic _tmp_mux_cond_833;
+    logic [15:0] _tmp_mux_then_834;
+    logic [15:0] _tmp_mux_else_835;
     logic [15:0] _gen_nextHiddenReg2;
-    logic [3:0] _tmp_b_822;
-    logic _tmp_mux_cond_823;
-    logic [15:0] _tmp_mux_then_824;
-    logic [15:0] _tmp_mux_else_825;
+    logic [3:0] _tmp_b_836;
+    logic _tmp_mux_cond_837;
+    logic [15:0] _tmp_mux_then_838;
+    logic [15:0] _tmp_mux_else_839;
     logic [15:0] _gen_nextHiddenReg3;
-    logic [3:0] _tmp_b_826;
-    logic _tmp_mux_cond_827;
-    logic [15:0] _tmp_mux_then_828;
-    logic [15:0] _tmp_mux_else_829;
+    logic [3:0] _tmp_b_840;
+    logic _tmp_mux_cond_841;
+    logic [15:0] _tmp_mux_then_842;
+    logic [15:0] _tmp_mux_else_843;
     logic [15:0] _gen_nextHiddenReg4;
-    logic [3:0] _tmp_b_830;
-    logic _tmp_mux_cond_831;
-    logic [15:0] _tmp_mux_then_832;
-    logic [15:0] _tmp_mux_else_833;
+    logic [3:0] _tmp_b_844;
+    logic _tmp_mux_cond_845;
+    logic [15:0] _tmp_mux_then_846;
+    logic [15:0] _tmp_mux_else_847;
     logic [15:0] _gen_nextHiddenReg5;
-    logic [3:0] _tmp_b_834;
-    logic _tmp_mux_cond_835;
-    logic [15:0] _tmp_mux_then_836;
-    logic [15:0] _tmp_mux_else_837;
+    logic [3:0] _tmp_b_848;
+    logic _tmp_mux_cond_849;
+    logic [15:0] _tmp_mux_then_850;
+    logic [15:0] _tmp_mux_else_851;
     logic [15:0] _gen_nextHiddenReg6;
-    logic [3:0] _tmp_b_838;
-    logic _tmp_mux_cond_839;
-    logic [15:0] _tmp_mux_then_840;
-    logic [15:0] _tmp_mux_else_841;
+    logic [3:0] _tmp_b_852;
+    logic _tmp_mux_cond_853;
+    logic [15:0] _tmp_mux_then_854;
+    logic [15:0] _tmp_mux_else_855;
     logic [15:0] _gen_nextHiddenReg7;
-    logic [31:0] _tmp_mux_else_842;
-    logic [31:0] _tmp_mux_else_843;
-    logic [31:0] _tmp_mux_else_844;
-    logic [31:0] _tmp_mux_else_845;
-    logic [31:0] _tmp_mux_else_846;
+    logic [31:0] _tmp_mux_else_856;
+    logic [31:0] _tmp_mux_else_857;
+    logic [31:0] _tmp_mux_else_858;
+    logic [31:0] _tmp_mux_else_859;
+    logic [31:0] _tmp_mux_else_860;
     logic [31:0] _gen_nextAccReg;
-    logic [31:0] _tmp_a_847;
-    logic _tmp_mux_then_848;
-    logic _tmp_mux_else_849;
+    logic [31:0] _tmp_a_861;
+    logic _tmp_mux_then_862;
+    logic _tmp_mux_else_863;
     logic _gen_nextOutReg;
-    logic [3:0] _tmp_a_850;
-    logic [3:0] _tmp_a_851;
-    logic [7:0] _tmp_a_852;
-    logic [7:0] _tmp_a_853;
-    logic [7:0] _tmp_a_854;
-    logic [7:0] _tmp_a_855;
-    logic [15:0] _tmp_a_856;
-    logic [15:0] _tmp_a_857;
-    logic [15:0] _tmp_a_858;
-    logic [15:0] _tmp_a_859;
-    logic [15:0] _tmp_a_860;
-    logic [15:0] _tmp_a_861;
-    logic [15:0] _tmp_a_862;
-    logic [15:0] _tmp_a_863;
-    logic [31:0] _tmp_a_864;
-    logic _tmp_b_865;
-    logic [32:0] _tmp_b_866;
-    logic [48:0] _tmp_b_867;
-    logic [64:0] _tmp_b_868;
-    logic [80:0] _tmp_b_869;
-    logic [96:0] _tmp_b_870;
-    logic [112:0] _tmp_b_871;
-    logic [128:0] _tmp_b_872;
-    logic [144:0] _tmp_b_873;
-    logic [160:0] _tmp_b_874;
-    logic [168:0] _tmp_b_875;
-    logic [176:0] _tmp_b_876;
-    logic [184:0] _tmp_b_877;
-    logic [192:0] _tmp_b_878;
-    logic [196:0] _tmp_b_879;
-    logic [200:0] _tmp_loop_body_880;
+    logic [3:0] _tmp_a_864;
+    logic [3:0] _tmp_a_865;
+    logic [3:0] _tmp_a_866;
+    logic [7:0] _tmp_a_867;
+    logic [7:0] _tmp_a_868;
+    logic [7:0] _tmp_a_869;
+    logic [7:0] _tmp_a_870;
+    logic [15:0] _tmp_a_871;
+    logic [15:0] _tmp_a_872;
+    logic [15:0] _tmp_a_873;
+    logic [15:0] _tmp_a_874;
+    logic [15:0] _tmp_a_875;
+    logic [15:0] _tmp_a_876;
+    logic [15:0] _tmp_a_877;
+    logic [15:0] _tmp_a_878;
+    logic [31:0] _tmp_a_879;
+    logic _tmp_b_880;
+    logic [32:0] _tmp_b_881;
+    logic [48:0] _tmp_b_882;
+    logic [64:0] _tmp_b_883;
+    logic [80:0] _tmp_b_884;
+    logic [96:0] _tmp_b_885;
+    logic [112:0] _tmp_b_886;
+    logic [128:0] _tmp_b_887;
+    logic [144:0] _tmp_b_888;
+    logic [160:0] _tmp_b_889;
+    logic [168:0] _tmp_b_890;
+    logic [176:0] _tmp_b_891;
+    logic [184:0] _tmp_b_892;
+    logic [192:0] _tmp_b_893;
+    logic [196:0] _tmp_b_894;
+    logic [200:0] _tmp_b_895;
+    logic [204:0] _tmp_loop_body_896;
+    logic [3:0] _gen_phase_1;
+    logic [200:0] _tmp_s_897;
     logic [3:0] _gen_hidden_idx_1;
-    logic [196:0] _tmp_s_881;
+    logic [200:0] _tmp_s_898;
+    logic [196:0] _tmp_s_899;
     logic [3:0] _gen_input_idx_1;
-    logic [196:0] _tmp_s_882;
-    logic [192:0] _tmp_s_883;
+    logic [200:0] _tmp_s_900;
+    logic [196:0] _tmp_s_901;
+    logic [192:0] _tmp_s_902;
     logic [7:0] _gen_input_reg0_1;
-    logic [196:0] _tmp_s_884;
-    logic [192:0] _tmp_s_885;
-    logic [184:0] _tmp_s_886;
+    logic [200:0] _tmp_s_903;
+    logic [196:0] _tmp_s_904;
+    logic [192:0] _tmp_s_905;
+    logic [184:0] _tmp_s_906;
     logic [7:0] _gen_input_reg1_1;
-    logic [196:0] _tmp_s_887;
-    logic [192:0] _tmp_s_888;
-    logic [184:0] _tmp_s_889;
-    logic [176:0] _tmp_s_890;
+    logic [200:0] _tmp_s_907;
+    logic [196:0] _tmp_s_908;
+    logic [192:0] _tmp_s_909;
+    logic [184:0] _tmp_s_910;
+    logic [176:0] _tmp_s_911;
     logic [7:0] _gen_input_reg2_1;
-    logic [196:0] _tmp_s_891;
-    logic [192:0] _tmp_s_892;
-    logic [184:0] _tmp_s_893;
-    logic [176:0] _tmp_s_894;
-    logic [168:0] _tmp_s_895;
+    logic [200:0] _tmp_s_912;
+    logic [196:0] _tmp_s_913;
+    logic [192:0] _tmp_s_914;
+    logic [184:0] _tmp_s_915;
+    logic [176:0] _tmp_s_916;
+    logic [168:0] _tmp_s_917;
     logic [7:0] _gen_input_reg3_1;
-    logic [196:0] _tmp_s_896;
-    logic [192:0] _tmp_s_897;
-    logic [184:0] _tmp_s_898;
-    logic [176:0] _tmp_s_899;
-    logic [168:0] _tmp_s_900;
-    logic [160:0] _tmp_s_901;
+    logic [200:0] _tmp_s_918;
+    logic [196:0] _tmp_s_919;
+    logic [192:0] _tmp_s_920;
+    logic [184:0] _tmp_s_921;
+    logic [176:0] _tmp_s_922;
+    logic [168:0] _tmp_s_923;
+    logic [160:0] _tmp_s_924;
     logic [15:0] _gen_hidden_reg0_1;
-    logic [196:0] _tmp_s_902;
-    logic [192:0] _tmp_s_903;
-    logic [184:0] _tmp_s_904;
-    logic [176:0] _tmp_s_905;
-    logic [168:0] _tmp_s_906;
-    logic [160:0] _tmp_s_907;
-    logic [144:0] _tmp_s_908;
-    logic [15:0] _gen_hidden_reg1_1;
-    logic [196:0] _tmp_s_909;
-    logic [192:0] _tmp_s_910;
-    logic [184:0] _tmp_s_911;
-    logic [176:0] _tmp_s_912;
-    logic [168:0] _tmp_s_913;
-    logic [160:0] _tmp_s_914;
-    logic [144:0] _tmp_s_915;
-    logic [128:0] _tmp_s_916;
-    logic [15:0] _gen_hidden_reg2_1;
-    logic [196:0] _tmp_s_917;
-    logic [192:0] _tmp_s_918;
-    logic [184:0] _tmp_s_919;
-    logic [176:0] _tmp_s_920;
-    logic [168:0] _tmp_s_921;
-    logic [160:0] _tmp_s_922;
-    logic [144:0] _tmp_s_923;
-    logic [128:0] _tmp_s_924;
-    logic [112:0] _tmp_s_925;
-    logic [15:0] _gen_hidden_reg3_1;
+    logic [200:0] _tmp_s_925;
     logic [196:0] _tmp_s_926;
     logic [192:0] _tmp_s_927;
     logic [184:0] _tmp_s_928;
@@ -1046,422 +1045,411 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [168:0] _tmp_s_930;
     logic [160:0] _tmp_s_931;
     logic [144:0] _tmp_s_932;
-    logic [128:0] _tmp_s_933;
-    logic [112:0] _tmp_s_934;
-    logic [96:0] _tmp_s_935;
+    logic [15:0] _gen_hidden_reg1_1;
+    logic [200:0] _tmp_s_933;
+    logic [196:0] _tmp_s_934;
+    logic [192:0] _tmp_s_935;
+    logic [184:0] _tmp_s_936;
+    logic [176:0] _tmp_s_937;
+    logic [168:0] _tmp_s_938;
+    logic [160:0] _tmp_s_939;
+    logic [144:0] _tmp_s_940;
+    logic [128:0] _tmp_s_941;
+    logic [15:0] _gen_hidden_reg2_1;
+    logic [200:0] _tmp_s_942;
+    logic [196:0] _tmp_s_943;
+    logic [192:0] _tmp_s_944;
+    logic [184:0] _tmp_s_945;
+    logic [176:0] _tmp_s_946;
+    logic [168:0] _tmp_s_947;
+    logic [160:0] _tmp_s_948;
+    logic [144:0] _tmp_s_949;
+    logic [128:0] _tmp_s_950;
+    logic [112:0] _tmp_s_951;
+    logic [15:0] _gen_hidden_reg3_1;
+    logic [200:0] _tmp_s_952;
+    logic [196:0] _tmp_s_953;
+    logic [192:0] _tmp_s_954;
+    logic [184:0] _tmp_s_955;
+    logic [176:0] _tmp_s_956;
+    logic [168:0] _tmp_s_957;
+    logic [160:0] _tmp_s_958;
+    logic [144:0] _tmp_s_959;
+    logic [128:0] _tmp_s_960;
+    logic [112:0] _tmp_s_961;
+    logic [96:0] _tmp_s_962;
     logic [15:0] _gen_hidden_reg4_1;
-    logic [196:0] _tmp_s_936;
-    logic [192:0] _tmp_s_937;
-    logic [184:0] _tmp_s_938;
-    logic [176:0] _tmp_s_939;
-    logic [168:0] _tmp_s_940;
-    logic [160:0] _tmp_s_941;
-    logic [144:0] _tmp_s_942;
-    logic [128:0] _tmp_s_943;
-    logic [112:0] _tmp_s_944;
-    logic [96:0] _tmp_s_945;
-    logic [80:0] _tmp_s_946;
+    logic [200:0] _tmp_s_963;
+    logic [196:0] _tmp_s_964;
+    logic [192:0] _tmp_s_965;
+    logic [184:0] _tmp_s_966;
+    logic [176:0] _tmp_s_967;
+    logic [168:0] _tmp_s_968;
+    logic [160:0] _tmp_s_969;
+    logic [144:0] _tmp_s_970;
+    logic [128:0] _tmp_s_971;
+    logic [112:0] _tmp_s_972;
+    logic [96:0] _tmp_s_973;
+    logic [80:0] _tmp_s_974;
     logic [15:0] _gen_hidden_reg5_1;
-    logic [196:0] _tmp_s_947;
-    logic [192:0] _tmp_s_948;
-    logic [184:0] _tmp_s_949;
-    logic [176:0] _tmp_s_950;
-    logic [168:0] _tmp_s_951;
-    logic [160:0] _tmp_s_952;
-    logic [144:0] _tmp_s_953;
-    logic [128:0] _tmp_s_954;
-    logic [112:0] _tmp_s_955;
-    logic [96:0] _tmp_s_956;
-    logic [80:0] _tmp_s_957;
-    logic [64:0] _tmp_s_958;
+    logic [200:0] _tmp_s_975;
+    logic [196:0] _tmp_s_976;
+    logic [192:0] _tmp_s_977;
+    logic [184:0] _tmp_s_978;
+    logic [176:0] _tmp_s_979;
+    logic [168:0] _tmp_s_980;
+    logic [160:0] _tmp_s_981;
+    logic [144:0] _tmp_s_982;
+    logic [128:0] _tmp_s_983;
+    logic [112:0] _tmp_s_984;
+    logic [96:0] _tmp_s_985;
+    logic [80:0] _tmp_s_986;
+    logic [64:0] _tmp_s_987;
     logic [15:0] _gen_hidden_reg6_1;
-    logic [196:0] _tmp_s_959;
-    logic [192:0] _tmp_s_960;
-    logic [184:0] _tmp_s_961;
-    logic [176:0] _tmp_s_962;
-    logic [168:0] _tmp_s_963;
-    logic [160:0] _tmp_s_964;
-    logic [144:0] _tmp_s_965;
-    logic [128:0] _tmp_s_966;
-    logic [112:0] _tmp_s_967;
-    logic [96:0] _tmp_s_968;
-    logic [80:0] _tmp_s_969;
-    logic [64:0] _tmp_s_970;
-    logic [48:0] _tmp_s_971;
+    logic [200:0] _tmp_s_988;
+    logic [196:0] _tmp_s_989;
+    logic [192:0] _tmp_s_990;
+    logic [184:0] _tmp_s_991;
+    logic [176:0] _tmp_s_992;
+    logic [168:0] _tmp_s_993;
+    logic [160:0] _tmp_s_994;
+    logic [144:0] _tmp_s_995;
+    logic [128:0] _tmp_s_996;
+    logic [112:0] _tmp_s_997;
+    logic [96:0] _tmp_s_998;
+    logic [80:0] _tmp_s_999;
+    logic [64:0] _tmp_s_1000;
+    logic [48:0] _tmp_s_1001;
     logic [15:0] _gen_hidden_reg7_1;
-    logic [196:0] _tmp_s_972;
-    logic [192:0] _tmp_s_973;
-    logic [184:0] _tmp_s_974;
-    logic [176:0] _tmp_s_975;
-    logic [168:0] _tmp_s_976;
-    logic [160:0] _tmp_s_977;
-    logic [144:0] _tmp_s_978;
-    logic [128:0] _tmp_s_979;
-    logic [112:0] _tmp_s_980;
-    logic [96:0] _tmp_s_981;
-    logic [80:0] _tmp_s_982;
-    logic [64:0] _tmp_s_983;
-    logic [48:0] _tmp_s_984;
-    logic [32:0] _tmp_s_985;
+    logic [200:0] _tmp_s_1002;
+    logic [196:0] _tmp_s_1003;
+    logic [192:0] _tmp_s_1004;
+    logic [184:0] _tmp_s_1005;
+    logic [176:0] _tmp_s_1006;
+    logic [168:0] _tmp_s_1007;
+    logic [160:0] _tmp_s_1008;
+    logic [144:0] _tmp_s_1009;
+    logic [128:0] _tmp_s_1010;
+    logic [112:0] _tmp_s_1011;
+    logic [96:0] _tmp_s_1012;
+    logic [80:0] _tmp_s_1013;
+    logic [64:0] _tmp_s_1014;
+    logic [48:0] _tmp_s_1015;
+    logic [32:0] _tmp_s_1016;
     logic [31:0] _gen_acc_reg_1;
-    logic [196:0] _tmp_s_986;
-    logic [192:0] _tmp_s_987;
-    logic [184:0] _tmp_s_988;
-    logic [176:0] _tmp_s_989;
-    logic [168:0] _tmp_s_990;
-    logic [160:0] _tmp_s_991;
-    logic [144:0] _tmp_s_992;
-    logic [128:0] _tmp_s_993;
-    logic [112:0] _tmp_s_994;
-    logic [96:0] _tmp_s_995;
-    logic [80:0] _tmp_s_996;
-    logic [64:0] _tmp_s_997;
-    logic [48:0] _tmp_s_998;
-    logic [32:0] _tmp_s_999;
+    logic [200:0] _tmp_s_1017;
+    logic [196:0] _tmp_s_1018;
+    logic [192:0] _tmp_s_1019;
+    logic [184:0] _tmp_s_1020;
+    logic [176:0] _tmp_s_1021;
+    logic [168:0] _tmp_s_1022;
+    logic [160:0] _tmp_s_1023;
+    logic [144:0] _tmp_s_1024;
+    logic [128:0] _tmp_s_1025;
+    logic [112:0] _tmp_s_1026;
+    logic [96:0] _tmp_s_1027;
+    logic [80:0] _tmp_s_1028;
+    logic [64:0] _tmp_s_1029;
+    logic [48:0] _tmp_s_1030;
+    logic [32:0] _tmp_s_1031;
     logic _gen_out_reg_1;
-    logic [3:0] _tmp_loop_1000;
-    logic [3:0] _tmp_b_1001;
+    logic [3:0] _tmp_b_1032;
     logic _gen_isIdle_2;
-    logic [3:0] _tmp_b_1002;
-    logic _gen_isLoadInput_1;
-    logic [3:0] _tmp_b_1003;
-    logic _gen_isMacHidden_1;
-    logic [3:0] _tmp_b_1004;
-    logic _gen_isBiasHidden_1;
-    logic [3:0] _tmp_b_1005;
-    logic _gen_isActHidden_1;
-    logic [3:0] _tmp_b_1006;
-    logic _gen_isNextHidden_1;
-    logic [3:0] _tmp_b_1007;
-    logic _gen_isMacOutput_1;
-    logic [3:0] _tmp_b_1008;
-    logic _gen_isBiasOutput_1;
-    logic [3:0] _tmp_b_1009;
-    logic _gen_isDone_1;
-    logic [3:0] _tmp_b_1010;
-    logic _gen_inputGuardReached_1;
-    logic [3:0] _tmp_b_1011;
-    logic _gen_outputGuardReached_1;
-    logic [3:0] _tmp_b_1012;
-    logic _gen_hiddenLast_1;
-    logic _gen_notStart_2;
-    logic _tmp_mux_cond_1013;
-    logic [3:0] _tmp_mux_then_1014;
-    logic [3:0] _tmp_mux_then_1015;
-    logic [3:0] _tmp_mux_then_1016;
-    logic _tmp_mux_cond_1017;
-    logic [3:0] _tmp_mux_then_1018;
-    logic [3:0] _tmp_mux_then_1019;
-    logic [3:0] _tmp_mux_then_1020;
-    logic [3:0] _tmp_mux_then_1021;
-    logic _tmp_mux_cond_1022;
-    logic [3:0] _tmp_mux_then_1023;
-    logic [3:0] _tmp_mux_then_1024;
-    logic _tmp_mux_cond_1025;
-    logic [3:0] _tmp_mux_then_1026;
-    logic [3:0] _tmp_mux_then_1027;
-    logic [3:0] _tmp_mux_then_1028;
-    logic _tmp_mux_cond_1029;
-    logic [3:0] _tmp_mux_then_1030;
-    logic [3:0] _tmp_mux_then_1031;
-    logic [3:0] _tmp_mux_else_1032;
-    logic [3:0] _tmp_mux_else_1033;
-    logic [3:0] _tmp_mux_else_1034;
-    logic [3:0] _tmp_mux_else_1035;
-    logic [3:0] _tmp_mux_else_1036;
-    logic [3:0] _tmp_mux_else_1037;
-    logic [3:0] _tmp_mux_else_1038;
-    logic [3:0] _tmp_mux_else_1039;
-    logic [3:0] _tmp_mux_else_1040;
-    logic [3:0] _tmp_mux_else_1041;
-    logic [3:0] _tmp_mux_else_1042;
-    logic [3:0] _tmp_mux_else_1043;
-    logic [3:0] _tmp_mux_else_1044;
-    logic [3:0] _tmp_mux_else_1045;
-    logic [3:0] _gen_nextState_1;
-    logic [3:0] _tmp_loop_body_1046;
-    logic [3:0] _tmp_b_1047;
-    logic _gen_isIdle_3;
-    logic [3:0] _tmp_b_1048;
+    logic [3:0] _tmp_b_1033;
     logic _gen_load_input_1;
+    logic [3:0] _tmp_b_1034;
+    logic _tmp_arg1_1035;
+    logic [3:0] _tmp_b_1036;
+    logic _tmp_arg2_1037;
+    logic _gen_do_mac_hidden_1;
+    logic [3:0] _tmp_b_1038;
+    logic _gen_do_bias_hidden_1;
+    logic [3:0] _tmp_b_1039;
+    logic _gen_do_act_hidden_1;
+    logic [3:0] _tmp_b_1040;
+    logic _gen_advance_hidden_1;
+    logic [3:0] _tmp_b_1041;
+    logic _tmp_arg1_1042;
+    logic [3:0] _tmp_b_1043;
+    logic _tmp_arg2_1044;
+    logic _gen_do_mac_output_1;
+    logic [3:0] _tmp_b_1045;
+    logic _gen_do_bias_output_1;
+    logic [3:0] _tmp_b_1046;
+    logic _gen_done;
+    logic _tmp_arg1_1047;
+    logic _tmp_arg2_1048;
+    logic _gen_busy;
     logic [3:0] _tmp_b_1049;
+    logic _gen_isMacOutput_1;
     logic _tmp_arg1_1050;
     logic [3:0] _tmp_b_1051;
     logic _tmp_arg2_1052;
-    logic _gen_do_mac_hidden_1;
-    logic [3:0] _tmp_b_1053;
-    logic _gen_do_bias_hidden_1;
-    logic [3:0] _tmp_b_1054;
-    logic _gen_do_act_hidden_1;
-    logic [3:0] _tmp_b_1055;
-    logic _gen_advance_hidden_1;
-    logic [3:0] _tmp_b_1056;
-    logic _tmp_arg1_1057;
-    logic [3:0] _tmp_b_1058;
-    logic _tmp_arg2_1059;
-    logic _gen_do_mac_output_1;
-    logic [3:0] _tmp_b_1060;
-    logic _gen_do_bias_output_1;
-    logic [3:0] _tmp_b_1061;
-    logic _gen_done;
-    logic _tmp_arg1_1062;
-    logic _tmp_arg2_1063;
-    logic _gen_busy;
-    logic [3:0] _tmp_b_1064;
-    logic _gen_isMacOutput_2;
-    logic _tmp_arg1_1065;
-    logic [3:0] _tmp_b_1066;
-    logic _tmp_arg2_1067;
     logic _gen_hidden_input_case_hit;
-    logic [3:0] _tmp_b_1068;
-    logic _tmp_arg2_1069;
+    logic [3:0] _tmp_b_1053;
+    logic _tmp_arg2_1054;
     logic _gen_output_hidden_case_hit;
-    logic [3:0] _tmp_b_1070;
-    logic _tmp_arg1_1071;
-    logic [3:0] _tmp_b_1072;
-    logic _tmp_arg2_1073;
+    logic [3:0] _tmp_b_1055;
+    logic _tmp_arg1_1056;
+    logic [3:0] _tmp_b_1057;
+    logic _tmp_arg2_1058;
     logic _gen_hidden_weight_case_hit;
-    logic [3:0] _tmp_b_1074;
+    logic [3:0] _tmp_b_1059;
     logic _gen_output_weight_case_hit;
-    logic [3:0] _tmp_b_1075;
-    logic _tmp_mux_cond_1076;
-    logic [3:0] _tmp_b_1077;
-    logic _tmp_mux_cond_1078;
-    logic [3:0] _tmp_b_1079;
-    logic _tmp_mux_cond_1080;
-    logic [3:0] _tmp_b_1081;
-    logic _tmp_mux_cond_1082;
-    logic [7:0] _tmp_mux_else_1083;
-    logic [7:0] _tmp_mux_else_1084;
-    logic [7:0] _tmp_mux_else_1085;
-    logic [7:0] _tmp_mux_else_1086;
+    logic [3:0] _tmp_b_1060;
+    logic _tmp_mux_cond_1061;
+    logic [3:0] _tmp_b_1062;
+    logic _tmp_mux_cond_1063;
+    logic [3:0] _tmp_b_1064;
+    logic _tmp_mux_cond_1065;
+    logic [3:0] _tmp_b_1066;
+    logic _tmp_mux_cond_1067;
+    logic [7:0] _tmp_mux_else_1068;
+    logic [7:0] _tmp_mux_else_1069;
+    logic [7:0] _tmp_mux_else_1070;
+    logic [7:0] _tmp_mux_else_1071;
     logic [7:0] _gen_selectedInput_1;
-    logic [3:0] _tmp_b_1087;
-    logic _tmp_mux_cond_1088;
-    logic [3:0] _tmp_b_1089;
-    logic _tmp_mux_cond_1090;
-    logic [3:0] _tmp_b_1091;
-    logic _tmp_mux_cond_1092;
-    logic [3:0] _tmp_b_1093;
-    logic _tmp_mux_cond_1094;
-    logic [3:0] _tmp_b_1095;
-    logic _tmp_mux_cond_1096;
-    logic [3:0] _tmp_b_1097;
-    logic _tmp_mux_cond_1098;
-    logic [3:0] _tmp_b_1099;
-    logic _tmp_mux_cond_1100;
-    logic [3:0] _tmp_b_1101;
-    logic _tmp_mux_cond_1102;
-    logic [15:0] _tmp_mux_else_1103;
-    logic [15:0] _tmp_mux_else_1104;
-    logic [15:0] _tmp_mux_else_1105;
-    logic [15:0] _tmp_mux_else_1106;
-    logic [15:0] _tmp_mux_else_1107;
-    logic [15:0] _tmp_mux_else_1108;
-    logic [15:0] _tmp_mux_else_1109;
-    logic [15:0] _tmp_mux_else_1110;
+    logic [3:0] _tmp_b_1072;
+    logic _tmp_mux_cond_1073;
+    logic [3:0] _tmp_b_1074;
+    logic _tmp_mux_cond_1075;
+    logic [3:0] _tmp_b_1076;
+    logic _tmp_mux_cond_1077;
+    logic [3:0] _tmp_b_1078;
+    logic _tmp_mux_cond_1079;
+    logic [3:0] _tmp_b_1080;
+    logic _tmp_mux_cond_1081;
+    logic [3:0] _tmp_b_1082;
+    logic _tmp_mux_cond_1083;
+    logic [3:0] _tmp_b_1084;
+    logic _tmp_mux_cond_1085;
+    logic [3:0] _tmp_b_1086;
+    logic _tmp_mux_cond_1087;
+    logic [15:0] _tmp_mux_else_1088;
+    logic [15:0] _tmp_mux_else_1089;
+    logic [15:0] _tmp_mux_else_1090;
+    logic [15:0] _tmp_mux_else_1091;
+    logic [15:0] _tmp_mux_else_1092;
+    logic [15:0] _tmp_mux_else_1093;
+    logic [15:0] _tmp_mux_else_1094;
+    logic [15:0] _tmp_mux_else_1095;
     logic [15:0] _gen_selectedHidden_1;
     logic _gen_selectedInputSign;
-    logic _tmp_b_1111;
-    logic _tmp_mux_cond_1112;
-    logic [7:0] _tmp_mux_then_1113;
-    logic [7:0] _tmp_mux_else_1114;
+    logic _tmp_b_1096;
+    logic _tmp_mux_cond_1097;
+    logic [7:0] _tmp_mux_then_1098;
+    logic [7:0] _tmp_mux_else_1099;
     logic [7:0] _gen_selectedInputUpper;
     logic [15:0] _gen_mac_a_hidden;
     logic [15:0] _gen_mac_a;
     logic _gen_inputSign_1;
-    logic [3:0] _tmp_b_1115;
-    logic _tmp_arg1_1116;
-    logic [3:0] _tmp_b_1117;
-    logic _tmp_arg2_1118;
-    logic _tmp_mux_cond_1119;
-    logic [7:0] _tmp_mux_then_1120;
-    logic [3:0] _tmp_b_1121;
-    logic _tmp_arg1_1122;
-    logic [3:0] _tmp_b_1123;
-    logic _tmp_arg2_1124;
-    logic _tmp_mux_cond_1125;
-    logic [7:0] _tmp_mux_then_1126;
-    logic [3:0] _tmp_b_1127;
-    logic _tmp_arg1_1128;
-    logic [3:0] _tmp_b_1129;
-    logic _tmp_arg2_1130;
-    logic _tmp_mux_cond_1131;
-    logic [7:0] _tmp_mux_then_1132;
-    logic [3:0] _tmp_b_1133;
-    logic _tmp_arg1_1134;
-    logic [3:0] _tmp_b_1135;
-    logic _tmp_arg2_1136;
-    logic _tmp_mux_cond_1137;
-    logic [7:0] _tmp_mux_then_1138;
-    logic [3:0] _tmp_b_1139;
-    logic _tmp_arg1_1140;
-    logic [3:0] _tmp_b_1141;
-    logic _tmp_arg2_1142;
-    logic _tmp_mux_cond_1143;
-    logic [7:0] _tmp_mux_then_1144;
-    logic [3:0] _tmp_b_1145;
-    logic _tmp_arg1_1146;
-    logic [3:0] _tmp_b_1147;
-    logic _tmp_arg2_1148;
-    logic _tmp_mux_cond_1149;
-    logic [7:0] _tmp_mux_then_1150;
-    logic [3:0] _tmp_b_1151;
-    logic _tmp_arg1_1152;
-    logic [3:0] _tmp_b_1153;
-    logic _tmp_arg2_1154;
-    logic _tmp_mux_cond_1155;
-    logic [7:0] _tmp_mux_then_1156;
-    logic [3:0] _tmp_b_1157;
-    logic _tmp_arg1_1158;
-    logic [3:0] _tmp_b_1159;
-    logic _tmp_arg2_1160;
-    logic _tmp_mux_cond_1161;
-    logic [7:0] _tmp_mux_then_1162;
-    logic [3:0] _tmp_b_1163;
-    logic _tmp_arg1_1164;
-    logic [3:0] _tmp_b_1165;
-    logic _tmp_arg2_1166;
-    logic _tmp_mux_cond_1167;
-    logic [7:0] _tmp_mux_then_1168;
-    logic [3:0] _tmp_b_1169;
-    logic _tmp_arg1_1170;
-    logic [3:0] _tmp_b_1171;
-    logic _tmp_arg2_1172;
-    logic _tmp_mux_cond_1173;
-    logic [7:0] _tmp_mux_then_1174;
-    logic [3:0] _tmp_b_1175;
-    logic _tmp_arg1_1176;
-    logic [3:0] _tmp_b_1177;
-    logic _tmp_arg2_1178;
-    logic _tmp_mux_cond_1179;
-    logic [7:0] _tmp_mux_then_1180;
-    logic [3:0] _tmp_b_1181;
-    logic _tmp_arg1_1182;
-    logic [3:0] _tmp_b_1183;
-    logic _tmp_arg2_1184;
-    logic _tmp_mux_cond_1185;
-    logic [7:0] _tmp_mux_then_1186;
-    logic [3:0] _tmp_b_1187;
-    logic _tmp_arg1_1188;
-    logic [3:0] _tmp_b_1189;
-    logic _tmp_arg2_1190;
-    logic _tmp_mux_cond_1191;
-    logic [7:0] _tmp_mux_then_1192;
-    logic [3:0] _tmp_b_1193;
-    logic _tmp_arg1_1194;
-    logic [3:0] _tmp_b_1195;
-    logic _tmp_arg2_1196;
-    logic _tmp_mux_cond_1197;
-    logic [7:0] _tmp_mux_then_1198;
-    logic [3:0] _tmp_b_1199;
-    logic _tmp_arg1_1200;
-    logic [3:0] _tmp_b_1201;
-    logic _tmp_arg2_1202;
-    logic _tmp_mux_cond_1203;
-    logic [7:0] _tmp_mux_then_1204;
-    logic [3:0] _tmp_b_1205;
-    logic _tmp_arg1_1206;
-    logic [3:0] _tmp_b_1207;
-    logic _tmp_arg2_1208;
-    logic _tmp_mux_cond_1209;
-    logic [7:0] _tmp_mux_then_1210;
-    logic [3:0] _tmp_b_1211;
-    logic _tmp_arg1_1212;
-    logic [3:0] _tmp_b_1213;
-    logic _tmp_arg2_1214;
-    logic _tmp_mux_cond_1215;
-    logic [7:0] _tmp_mux_then_1216;
-    logic [3:0] _tmp_b_1217;
-    logic _tmp_arg1_1218;
-    logic [3:0] _tmp_b_1219;
-    logic _tmp_arg2_1220;
-    logic _tmp_mux_cond_1221;
-    logic [7:0] _tmp_mux_then_1222;
-    logic [3:0] _tmp_b_1223;
-    logic _tmp_arg1_1224;
-    logic [3:0] _tmp_b_1225;
-    logic _tmp_arg2_1226;
-    logic _tmp_mux_cond_1227;
-    logic [7:0] _tmp_mux_then_1228;
-    logic [3:0] _tmp_b_1229;
-    logic _tmp_arg1_1230;
-    logic [3:0] _tmp_b_1231;
-    logic _tmp_arg2_1232;
-    logic _tmp_mux_cond_1233;
-    logic [7:0] _tmp_mux_then_1234;
-    logic [3:0] _tmp_b_1235;
-    logic _tmp_arg1_1236;
-    logic [3:0] _tmp_b_1237;
-    logic _tmp_arg2_1238;
-    logic _tmp_mux_cond_1239;
-    logic [7:0] _tmp_mux_then_1240;
-    logic [3:0] _tmp_b_1241;
-    logic _tmp_arg1_1242;
-    logic [3:0] _tmp_b_1243;
-    logic _tmp_arg2_1244;
-    logic _tmp_mux_cond_1245;
-    logic [7:0] _tmp_mux_then_1246;
-    logic [3:0] _tmp_b_1247;
-    logic _tmp_arg1_1248;
-    logic [3:0] _tmp_b_1249;
-    logic _tmp_arg2_1250;
-    logic _tmp_mux_cond_1251;
-    logic [7:0] _tmp_mux_then_1252;
-    logic [3:0] _tmp_b_1253;
-    logic _tmp_arg1_1254;
-    logic [3:0] _tmp_b_1255;
-    logic _tmp_arg2_1256;
-    logic _tmp_mux_cond_1257;
-    logic [7:0] _tmp_mux_then_1258;
-    logic [3:0] _tmp_b_1259;
-    logic _tmp_arg1_1260;
-    logic [3:0] _tmp_b_1261;
-    logic _tmp_arg2_1262;
-    logic _tmp_mux_cond_1263;
-    logic [7:0] _tmp_mux_then_1264;
-    logic [3:0] _tmp_b_1265;
-    logic _tmp_arg1_1266;
-    logic [3:0] _tmp_b_1267;
-    logic _tmp_arg2_1268;
-    logic _tmp_mux_cond_1269;
-    logic [7:0] _tmp_mux_then_1270;
-    logic [3:0] _tmp_b_1271;
-    logic _tmp_arg1_1272;
-    logic [3:0] _tmp_b_1273;
-    logic _tmp_arg2_1274;
-    logic _tmp_mux_cond_1275;
-    logic [7:0] _tmp_mux_then_1276;
-    logic [3:0] _tmp_b_1277;
-    logic _tmp_arg1_1278;
-    logic [3:0] _tmp_b_1279;
-    logic _tmp_arg2_1280;
-    logic _tmp_mux_cond_1281;
-    logic [7:0] _tmp_mux_then_1282;
-    logic [3:0] _tmp_b_1283;
-    logic _tmp_arg1_1284;
-    logic [3:0] _tmp_b_1285;
-    logic _tmp_arg2_1286;
-    logic _tmp_mux_cond_1287;
-    logic [7:0] _tmp_mux_then_1288;
-    logic [3:0] _tmp_b_1289;
-    logic _tmp_arg1_1290;
-    logic [3:0] _tmp_b_1291;
-    logic _tmp_arg2_1292;
-    logic _tmp_mux_cond_1293;
-    logic [7:0] _tmp_mux_then_1294;
-    logic [3:0] _tmp_b_1295;
-    logic _tmp_arg1_1296;
-    logic [3:0] _tmp_b_1297;
-    logic _tmp_arg2_1298;
-    logic _tmp_mux_cond_1299;
-    logic [7:0] _tmp_mux_then_1300;
-    logic [3:0] _tmp_b_1301;
-    logic _tmp_arg1_1302;
-    logic [3:0] _tmp_b_1303;
-    logic _tmp_arg2_1304;
-    logic _tmp_mux_cond_1305;
-    logic [7:0] _tmp_mux_then_1306;
+    logic [3:0] _tmp_b_1100;
+    logic _tmp_arg1_1101;
+    logic [3:0] _tmp_b_1102;
+    logic _tmp_arg2_1103;
+    logic _tmp_mux_cond_1104;
+    logic [7:0] _tmp_mux_then_1105;
+    logic [3:0] _tmp_b_1106;
+    logic _tmp_arg1_1107;
+    logic [3:0] _tmp_b_1108;
+    logic _tmp_arg2_1109;
+    logic _tmp_mux_cond_1110;
+    logic [7:0] _tmp_mux_then_1111;
+    logic [3:0] _tmp_b_1112;
+    logic _tmp_arg1_1113;
+    logic [3:0] _tmp_b_1114;
+    logic _tmp_arg2_1115;
+    logic _tmp_mux_cond_1116;
+    logic [7:0] _tmp_mux_then_1117;
+    logic [3:0] _tmp_b_1118;
+    logic _tmp_arg1_1119;
+    logic [3:0] _tmp_b_1120;
+    logic _tmp_arg2_1121;
+    logic _tmp_mux_cond_1122;
+    logic [7:0] _tmp_mux_then_1123;
+    logic [3:0] _tmp_b_1124;
+    logic _tmp_arg1_1125;
+    logic [3:0] _tmp_b_1126;
+    logic _tmp_arg2_1127;
+    logic _tmp_mux_cond_1128;
+    logic [7:0] _tmp_mux_then_1129;
+    logic [3:0] _tmp_b_1130;
+    logic _tmp_arg1_1131;
+    logic [3:0] _tmp_b_1132;
+    logic _tmp_arg2_1133;
+    logic _tmp_mux_cond_1134;
+    logic [7:0] _tmp_mux_then_1135;
+    logic [3:0] _tmp_b_1136;
+    logic _tmp_arg1_1137;
+    logic [3:0] _tmp_b_1138;
+    logic _tmp_arg2_1139;
+    logic _tmp_mux_cond_1140;
+    logic [7:0] _tmp_mux_then_1141;
+    logic [3:0] _tmp_b_1142;
+    logic _tmp_arg1_1143;
+    logic [3:0] _tmp_b_1144;
+    logic _tmp_arg2_1145;
+    logic _tmp_mux_cond_1146;
+    logic [7:0] _tmp_mux_then_1147;
+    logic [3:0] _tmp_b_1148;
+    logic _tmp_arg1_1149;
+    logic [3:0] _tmp_b_1150;
+    logic _tmp_arg2_1151;
+    logic _tmp_mux_cond_1152;
+    logic [7:0] _tmp_mux_then_1153;
+    logic [3:0] _tmp_b_1154;
+    logic _tmp_arg1_1155;
+    logic [3:0] _tmp_b_1156;
+    logic _tmp_arg2_1157;
+    logic _tmp_mux_cond_1158;
+    logic [7:0] _tmp_mux_then_1159;
+    logic [3:0] _tmp_b_1160;
+    logic _tmp_arg1_1161;
+    logic [3:0] _tmp_b_1162;
+    logic _tmp_arg2_1163;
+    logic _tmp_mux_cond_1164;
+    logic [7:0] _tmp_mux_then_1165;
+    logic [3:0] _tmp_b_1166;
+    logic _tmp_arg1_1167;
+    logic [3:0] _tmp_b_1168;
+    logic _tmp_arg2_1169;
+    logic _tmp_mux_cond_1170;
+    logic [7:0] _tmp_mux_then_1171;
+    logic [3:0] _tmp_b_1172;
+    logic _tmp_arg1_1173;
+    logic [3:0] _tmp_b_1174;
+    logic _tmp_arg2_1175;
+    logic _tmp_mux_cond_1176;
+    logic [7:0] _tmp_mux_then_1177;
+    logic [3:0] _tmp_b_1178;
+    logic _tmp_arg1_1179;
+    logic [3:0] _tmp_b_1180;
+    logic _tmp_arg2_1181;
+    logic _tmp_mux_cond_1182;
+    logic [7:0] _tmp_mux_then_1183;
+    logic [3:0] _tmp_b_1184;
+    logic _tmp_arg1_1185;
+    logic [3:0] _tmp_b_1186;
+    logic _tmp_arg2_1187;
+    logic _tmp_mux_cond_1188;
+    logic [7:0] _tmp_mux_then_1189;
+    logic [3:0] _tmp_b_1190;
+    logic _tmp_arg1_1191;
+    logic [3:0] _tmp_b_1192;
+    logic _tmp_arg2_1193;
+    logic _tmp_mux_cond_1194;
+    logic [7:0] _tmp_mux_then_1195;
+    logic [3:0] _tmp_b_1196;
+    logic _tmp_arg1_1197;
+    logic [3:0] _tmp_b_1198;
+    logic _tmp_arg2_1199;
+    logic _tmp_mux_cond_1200;
+    logic [7:0] _tmp_mux_then_1201;
+    logic [3:0] _tmp_b_1202;
+    logic _tmp_arg1_1203;
+    logic [3:0] _tmp_b_1204;
+    logic _tmp_arg2_1205;
+    logic _tmp_mux_cond_1206;
+    logic [7:0] _tmp_mux_then_1207;
+    logic [3:0] _tmp_b_1208;
+    logic _tmp_arg1_1209;
+    logic [3:0] _tmp_b_1210;
+    logic _tmp_arg2_1211;
+    logic _tmp_mux_cond_1212;
+    logic [7:0] _tmp_mux_then_1213;
+    logic [3:0] _tmp_b_1214;
+    logic _tmp_arg1_1215;
+    logic [3:0] _tmp_b_1216;
+    logic _tmp_arg2_1217;
+    logic _tmp_mux_cond_1218;
+    logic [7:0] _tmp_mux_then_1219;
+    logic [3:0] _tmp_b_1220;
+    logic _tmp_arg1_1221;
+    logic [3:0] _tmp_b_1222;
+    logic _tmp_arg2_1223;
+    logic _tmp_mux_cond_1224;
+    logic [7:0] _tmp_mux_then_1225;
+    logic [3:0] _tmp_b_1226;
+    logic _tmp_arg1_1227;
+    logic [3:0] _tmp_b_1228;
+    logic _tmp_arg2_1229;
+    logic _tmp_mux_cond_1230;
+    logic [7:0] _tmp_mux_then_1231;
+    logic [3:0] _tmp_b_1232;
+    logic _tmp_arg1_1233;
+    logic [3:0] _tmp_b_1234;
+    logic _tmp_arg2_1235;
+    logic _tmp_mux_cond_1236;
+    logic [7:0] _tmp_mux_then_1237;
+    logic [3:0] _tmp_b_1238;
+    logic _tmp_arg1_1239;
+    logic [3:0] _tmp_b_1240;
+    logic _tmp_arg2_1241;
+    logic _tmp_mux_cond_1242;
+    logic [7:0] _tmp_mux_then_1243;
+    logic [3:0] _tmp_b_1244;
+    logic _tmp_arg1_1245;
+    logic [3:0] _tmp_b_1246;
+    logic _tmp_arg2_1247;
+    logic _tmp_mux_cond_1248;
+    logic [7:0] _tmp_mux_then_1249;
+    logic [3:0] _tmp_b_1250;
+    logic _tmp_arg1_1251;
+    logic [3:0] _tmp_b_1252;
+    logic _tmp_arg2_1253;
+    logic _tmp_mux_cond_1254;
+    logic [7:0] _tmp_mux_then_1255;
+    logic [3:0] _tmp_b_1256;
+    logic _tmp_arg1_1257;
+    logic [3:0] _tmp_b_1258;
+    logic _tmp_arg2_1259;
+    logic _tmp_mux_cond_1260;
+    logic [7:0] _tmp_mux_then_1261;
+    logic [3:0] _tmp_b_1262;
+    logic _tmp_arg1_1263;
+    logic [3:0] _tmp_b_1264;
+    logic _tmp_arg2_1265;
+    logic _tmp_mux_cond_1266;
+    logic [7:0] _tmp_mux_then_1267;
+    logic [3:0] _tmp_b_1268;
+    logic _tmp_arg1_1269;
+    logic [3:0] _tmp_b_1270;
+    logic _tmp_arg2_1271;
+    logic _tmp_mux_cond_1272;
+    logic [7:0] _tmp_mux_then_1273;
+    logic [3:0] _tmp_b_1274;
+    logic _tmp_arg1_1275;
+    logic [3:0] _tmp_b_1276;
+    logic _tmp_arg2_1277;
+    logic _tmp_mux_cond_1278;
+    logic [7:0] _tmp_mux_then_1279;
+    logic [3:0] _tmp_b_1280;
+    logic _tmp_arg1_1281;
+    logic [3:0] _tmp_b_1282;
+    logic _tmp_arg2_1283;
+    logic _tmp_mux_cond_1284;
+    logic [7:0] _tmp_mux_then_1285;
+    logic [3:0] _tmp_b_1286;
+    logic _tmp_arg1_1287;
+    logic [3:0] _tmp_b_1288;
+    logic _tmp_arg2_1289;
+    logic _tmp_mux_cond_1290;
+    logic [7:0] _tmp_mux_then_1291;
+    logic [7:0] _tmp_mux_else_1292;
+    logic [7:0] _tmp_mux_else_1293;
+    logic [7:0] _tmp_mux_else_1294;
+    logic [7:0] _tmp_mux_else_1295;
+    logic [7:0] _tmp_mux_else_1296;
+    logic [7:0] _tmp_mux_else_1297;
+    logic [7:0] _tmp_mux_else_1298;
+    logic [7:0] _tmp_mux_else_1299;
+    logic [7:0] _tmp_mux_else_1300;
+    logic [7:0] _tmp_mux_else_1301;
+    logic [7:0] _tmp_mux_else_1302;
+    logic [7:0] _tmp_mux_else_1303;
+    logic [7:0] _tmp_mux_else_1304;
+    logic [7:0] _tmp_mux_else_1305;
+    logic [7:0] _tmp_mux_else_1306;
     logic [7:0] _tmp_mux_else_1307;
     logic [7:0] _tmp_mux_else_1308;
     logic [7:0] _tmp_mux_else_1309;
@@ -1479,226 +1467,226 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [7:0] _tmp_mux_else_1321;
     logic [7:0] _tmp_mux_else_1322;
     logic [7:0] _tmp_mux_else_1323;
-    logic [7:0] _tmp_mux_else_1324;
-    logic [7:0] _tmp_mux_else_1325;
-    logic [7:0] _tmp_mux_else_1326;
-    logic [7:0] _tmp_mux_else_1327;
-    logic [7:0] _tmp_mux_else_1328;
-    logic [7:0] _tmp_mux_else_1329;
-    logic [7:0] _tmp_mux_else_1330;
-    logic [7:0] _tmp_mux_else_1331;
-    logic [7:0] _tmp_mux_else_1332;
-    logic [7:0] _tmp_mux_else_1333;
-    logic [7:0] _tmp_mux_else_1334;
-    logic [7:0] _tmp_mux_else_1335;
-    logic [7:0] _tmp_mux_else_1336;
-    logic [7:0] _tmp_mux_else_1337;
-    logic [7:0] _tmp_mux_else_1338;
-    logic [7:0] _tmp_s_1339;
+    logic [7:0] _tmp_s_1324;
     logic _gen_weightSign_2;
-    logic _tmp_b_1340;
-    logic _tmp_mux_cond_1341;
-    logic [15:0] _tmp_mux_then_1342;
-    logic [15:0] _tmp_mux_else_1343;
+    logic _tmp_b_1325;
+    logic _tmp_mux_cond_1326;
+    logic [15:0] _tmp_mux_then_1327;
+    logic [15:0] _tmp_mux_else_1328;
     logic [15:0] _gen_inputUpper_1;
-    logic _tmp_b_1344;
-    logic _tmp_mux_cond_1345;
-    logic [15:0] _tmp_mux_then_1346;
-    logic [15:0] _tmp_mux_else_1347;
+    logic _tmp_b_1329;
+    logic _tmp_mux_cond_1330;
+    logic [15:0] _tmp_mux_then_1331;
+    logic [15:0] _tmp_mux_else_1332;
     logic [15:0] _gen_weightUpper_1;
     logic [23:0] _gen_input24_1;
-    logic [3:0] _tmp_b_1348;
-    logic _tmp_arg1_1349;
-    logic [3:0] _tmp_b_1350;
-    logic _tmp_arg2_1351;
-    logic _tmp_mux_cond_1352;
-    logic [7:0] _tmp_mux_then_1353;
-    logic [3:0] _tmp_b_1354;
-    logic _tmp_arg1_1355;
-    logic [3:0] _tmp_b_1356;
-    logic _tmp_arg2_1357;
-    logic _tmp_mux_cond_1358;
-    logic [7:0] _tmp_mux_then_1359;
-    logic [3:0] _tmp_b_1360;
-    logic _tmp_arg1_1361;
-    logic [3:0] _tmp_b_1362;
-    logic _tmp_arg2_1363;
-    logic _tmp_mux_cond_1364;
-    logic [7:0] _tmp_mux_then_1365;
-    logic [3:0] _tmp_b_1366;
-    logic _tmp_arg1_1367;
-    logic [3:0] _tmp_b_1368;
-    logic _tmp_arg2_1369;
-    logic _tmp_mux_cond_1370;
-    logic [7:0] _tmp_mux_then_1371;
-    logic [3:0] _tmp_b_1372;
-    logic _tmp_arg1_1373;
-    logic [3:0] _tmp_b_1374;
-    logic _tmp_arg2_1375;
-    logic _tmp_mux_cond_1376;
-    logic [7:0] _tmp_mux_then_1377;
-    logic [3:0] _tmp_b_1378;
-    logic _tmp_arg1_1379;
-    logic [3:0] _tmp_b_1380;
-    logic _tmp_arg2_1381;
-    logic _tmp_mux_cond_1382;
-    logic [7:0] _tmp_mux_then_1383;
-    logic [3:0] _tmp_b_1384;
-    logic _tmp_arg1_1385;
-    logic [3:0] _tmp_b_1386;
-    logic _tmp_arg2_1387;
-    logic _tmp_mux_cond_1388;
-    logic [7:0] _tmp_mux_then_1389;
-    logic [3:0] _tmp_b_1390;
-    logic _tmp_arg1_1391;
-    logic [3:0] _tmp_b_1392;
-    logic _tmp_arg2_1393;
-    logic _tmp_mux_cond_1394;
-    logic [7:0] _tmp_mux_then_1395;
-    logic [3:0] _tmp_b_1396;
-    logic _tmp_arg1_1397;
-    logic [3:0] _tmp_b_1398;
-    logic _tmp_arg2_1399;
-    logic _tmp_mux_cond_1400;
-    logic [7:0] _tmp_mux_then_1401;
-    logic [3:0] _tmp_b_1402;
-    logic _tmp_arg1_1403;
-    logic [3:0] _tmp_b_1404;
-    logic _tmp_arg2_1405;
-    logic _tmp_mux_cond_1406;
-    logic [7:0] _tmp_mux_then_1407;
-    logic [3:0] _tmp_b_1408;
-    logic _tmp_arg1_1409;
-    logic [3:0] _tmp_b_1410;
-    logic _tmp_arg2_1411;
-    logic _tmp_mux_cond_1412;
-    logic [7:0] _tmp_mux_then_1413;
-    logic [3:0] _tmp_b_1414;
-    logic _tmp_arg1_1415;
-    logic [3:0] _tmp_b_1416;
-    logic _tmp_arg2_1417;
-    logic _tmp_mux_cond_1418;
-    logic [7:0] _tmp_mux_then_1419;
-    logic [3:0] _tmp_b_1420;
-    logic _tmp_arg1_1421;
-    logic [3:0] _tmp_b_1422;
-    logic _tmp_arg2_1423;
-    logic _tmp_mux_cond_1424;
-    logic [7:0] _tmp_mux_then_1425;
-    logic [3:0] _tmp_b_1426;
-    logic _tmp_arg1_1427;
-    logic [3:0] _tmp_b_1428;
-    logic _tmp_arg2_1429;
-    logic _tmp_mux_cond_1430;
-    logic [7:0] _tmp_mux_then_1431;
-    logic [3:0] _tmp_b_1432;
-    logic _tmp_arg1_1433;
-    logic [3:0] _tmp_b_1434;
-    logic _tmp_arg2_1435;
-    logic _tmp_mux_cond_1436;
-    logic [7:0] _tmp_mux_then_1437;
-    logic [3:0] _tmp_b_1438;
-    logic _tmp_arg1_1439;
-    logic [3:0] _tmp_b_1440;
-    logic _tmp_arg2_1441;
-    logic _tmp_mux_cond_1442;
-    logic [7:0] _tmp_mux_then_1443;
-    logic [3:0] _tmp_b_1444;
-    logic _tmp_arg1_1445;
-    logic [3:0] _tmp_b_1446;
-    logic _tmp_arg2_1447;
-    logic _tmp_mux_cond_1448;
-    logic [7:0] _tmp_mux_then_1449;
-    logic [3:0] _tmp_b_1450;
-    logic _tmp_arg1_1451;
-    logic [3:0] _tmp_b_1452;
-    logic _tmp_arg2_1453;
-    logic _tmp_mux_cond_1454;
-    logic [7:0] _tmp_mux_then_1455;
-    logic [3:0] _tmp_b_1456;
-    logic _tmp_arg1_1457;
-    logic [3:0] _tmp_b_1458;
-    logic _tmp_arg2_1459;
-    logic _tmp_mux_cond_1460;
-    logic [7:0] _tmp_mux_then_1461;
-    logic [3:0] _tmp_b_1462;
-    logic _tmp_arg1_1463;
-    logic [3:0] _tmp_b_1464;
-    logic _tmp_arg2_1465;
-    logic _tmp_mux_cond_1466;
-    logic [7:0] _tmp_mux_then_1467;
-    logic [3:0] _tmp_b_1468;
-    logic _tmp_arg1_1469;
-    logic [3:0] _tmp_b_1470;
-    logic _tmp_arg2_1471;
-    logic _tmp_mux_cond_1472;
-    logic [7:0] _tmp_mux_then_1473;
-    logic [3:0] _tmp_b_1474;
-    logic _tmp_arg1_1475;
-    logic [3:0] _tmp_b_1476;
-    logic _tmp_arg2_1477;
-    logic _tmp_mux_cond_1478;
-    logic [7:0] _tmp_mux_then_1479;
-    logic [3:0] _tmp_b_1480;
-    logic _tmp_arg1_1481;
-    logic [3:0] _tmp_b_1482;
-    logic _tmp_arg2_1483;
-    logic _tmp_mux_cond_1484;
-    logic [7:0] _tmp_mux_then_1485;
-    logic [3:0] _tmp_b_1486;
-    logic _tmp_arg1_1487;
-    logic [3:0] _tmp_b_1488;
-    logic _tmp_arg2_1489;
-    logic _tmp_mux_cond_1490;
-    logic [7:0] _tmp_mux_then_1491;
-    logic [3:0] _tmp_b_1492;
-    logic _tmp_arg1_1493;
-    logic [3:0] _tmp_b_1494;
-    logic _tmp_arg2_1495;
-    logic _tmp_mux_cond_1496;
-    logic [7:0] _tmp_mux_then_1497;
-    logic [3:0] _tmp_b_1498;
-    logic _tmp_arg1_1499;
-    logic [3:0] _tmp_b_1500;
-    logic _tmp_arg2_1501;
-    logic _tmp_mux_cond_1502;
-    logic [7:0] _tmp_mux_then_1503;
-    logic [3:0] _tmp_b_1504;
-    logic _tmp_arg1_1505;
-    logic [3:0] _tmp_b_1506;
-    logic _tmp_arg2_1507;
-    logic _tmp_mux_cond_1508;
-    logic [7:0] _tmp_mux_then_1509;
-    logic [3:0] _tmp_b_1510;
-    logic _tmp_arg1_1511;
-    logic [3:0] _tmp_b_1512;
-    logic _tmp_arg2_1513;
-    logic _tmp_mux_cond_1514;
-    logic [7:0] _tmp_mux_then_1515;
-    logic [3:0] _tmp_b_1516;
-    logic _tmp_arg1_1517;
-    logic [3:0] _tmp_b_1518;
-    logic _tmp_arg2_1519;
-    logic _tmp_mux_cond_1520;
-    logic [7:0] _tmp_mux_then_1521;
-    logic [3:0] _tmp_b_1522;
-    logic _tmp_arg1_1523;
-    logic [3:0] _tmp_b_1524;
-    logic _tmp_arg2_1525;
-    logic _tmp_mux_cond_1526;
-    logic [7:0] _tmp_mux_then_1527;
-    logic [3:0] _tmp_b_1528;
-    logic _tmp_arg1_1529;
-    logic [3:0] _tmp_b_1530;
-    logic _tmp_arg2_1531;
-    logic _tmp_mux_cond_1532;
-    logic [7:0] _tmp_mux_then_1533;
-    logic [3:0] _tmp_b_1534;
-    logic _tmp_arg1_1535;
-    logic [3:0] _tmp_b_1536;
-    logic _tmp_arg2_1537;
-    logic _tmp_mux_cond_1538;
-    logic [7:0] _tmp_mux_then_1539;
+    logic [3:0] _tmp_b_1333;
+    logic _tmp_arg1_1334;
+    logic [3:0] _tmp_b_1335;
+    logic _tmp_arg2_1336;
+    logic _tmp_mux_cond_1337;
+    logic [7:0] _tmp_mux_then_1338;
+    logic [3:0] _tmp_b_1339;
+    logic _tmp_arg1_1340;
+    logic [3:0] _tmp_b_1341;
+    logic _tmp_arg2_1342;
+    logic _tmp_mux_cond_1343;
+    logic [7:0] _tmp_mux_then_1344;
+    logic [3:0] _tmp_b_1345;
+    logic _tmp_arg1_1346;
+    logic [3:0] _tmp_b_1347;
+    logic _tmp_arg2_1348;
+    logic _tmp_mux_cond_1349;
+    logic [7:0] _tmp_mux_then_1350;
+    logic [3:0] _tmp_b_1351;
+    logic _tmp_arg1_1352;
+    logic [3:0] _tmp_b_1353;
+    logic _tmp_arg2_1354;
+    logic _tmp_mux_cond_1355;
+    logic [7:0] _tmp_mux_then_1356;
+    logic [3:0] _tmp_b_1357;
+    logic _tmp_arg1_1358;
+    logic [3:0] _tmp_b_1359;
+    logic _tmp_arg2_1360;
+    logic _tmp_mux_cond_1361;
+    logic [7:0] _tmp_mux_then_1362;
+    logic [3:0] _tmp_b_1363;
+    logic _tmp_arg1_1364;
+    logic [3:0] _tmp_b_1365;
+    logic _tmp_arg2_1366;
+    logic _tmp_mux_cond_1367;
+    logic [7:0] _tmp_mux_then_1368;
+    logic [3:0] _tmp_b_1369;
+    logic _tmp_arg1_1370;
+    logic [3:0] _tmp_b_1371;
+    logic _tmp_arg2_1372;
+    logic _tmp_mux_cond_1373;
+    logic [7:0] _tmp_mux_then_1374;
+    logic [3:0] _tmp_b_1375;
+    logic _tmp_arg1_1376;
+    logic [3:0] _tmp_b_1377;
+    logic _tmp_arg2_1378;
+    logic _tmp_mux_cond_1379;
+    logic [7:0] _tmp_mux_then_1380;
+    logic [3:0] _tmp_b_1381;
+    logic _tmp_arg1_1382;
+    logic [3:0] _tmp_b_1383;
+    logic _tmp_arg2_1384;
+    logic _tmp_mux_cond_1385;
+    logic [7:0] _tmp_mux_then_1386;
+    logic [3:0] _tmp_b_1387;
+    logic _tmp_arg1_1388;
+    logic [3:0] _tmp_b_1389;
+    logic _tmp_arg2_1390;
+    logic _tmp_mux_cond_1391;
+    logic [7:0] _tmp_mux_then_1392;
+    logic [3:0] _tmp_b_1393;
+    logic _tmp_arg1_1394;
+    logic [3:0] _tmp_b_1395;
+    logic _tmp_arg2_1396;
+    logic _tmp_mux_cond_1397;
+    logic [7:0] _tmp_mux_then_1398;
+    logic [3:0] _tmp_b_1399;
+    logic _tmp_arg1_1400;
+    logic [3:0] _tmp_b_1401;
+    logic _tmp_arg2_1402;
+    logic _tmp_mux_cond_1403;
+    logic [7:0] _tmp_mux_then_1404;
+    logic [3:0] _tmp_b_1405;
+    logic _tmp_arg1_1406;
+    logic [3:0] _tmp_b_1407;
+    logic _tmp_arg2_1408;
+    logic _tmp_mux_cond_1409;
+    logic [7:0] _tmp_mux_then_1410;
+    logic [3:0] _tmp_b_1411;
+    logic _tmp_arg1_1412;
+    logic [3:0] _tmp_b_1413;
+    logic _tmp_arg2_1414;
+    logic _tmp_mux_cond_1415;
+    logic [7:0] _tmp_mux_then_1416;
+    logic [3:0] _tmp_b_1417;
+    logic _tmp_arg1_1418;
+    logic [3:0] _tmp_b_1419;
+    logic _tmp_arg2_1420;
+    logic _tmp_mux_cond_1421;
+    logic [7:0] _tmp_mux_then_1422;
+    logic [3:0] _tmp_b_1423;
+    logic _tmp_arg1_1424;
+    logic [3:0] _tmp_b_1425;
+    logic _tmp_arg2_1426;
+    logic _tmp_mux_cond_1427;
+    logic [7:0] _tmp_mux_then_1428;
+    logic [3:0] _tmp_b_1429;
+    logic _tmp_arg1_1430;
+    logic [3:0] _tmp_b_1431;
+    logic _tmp_arg2_1432;
+    logic _tmp_mux_cond_1433;
+    logic [7:0] _tmp_mux_then_1434;
+    logic [3:0] _tmp_b_1435;
+    logic _tmp_arg1_1436;
+    logic [3:0] _tmp_b_1437;
+    logic _tmp_arg2_1438;
+    logic _tmp_mux_cond_1439;
+    logic [7:0] _tmp_mux_then_1440;
+    logic [3:0] _tmp_b_1441;
+    logic _tmp_arg1_1442;
+    logic [3:0] _tmp_b_1443;
+    logic _tmp_arg2_1444;
+    logic _tmp_mux_cond_1445;
+    logic [7:0] _tmp_mux_then_1446;
+    logic [3:0] _tmp_b_1447;
+    logic _tmp_arg1_1448;
+    logic [3:0] _tmp_b_1449;
+    logic _tmp_arg2_1450;
+    logic _tmp_mux_cond_1451;
+    logic [7:0] _tmp_mux_then_1452;
+    logic [3:0] _tmp_b_1453;
+    logic _tmp_arg1_1454;
+    logic [3:0] _tmp_b_1455;
+    logic _tmp_arg2_1456;
+    logic _tmp_mux_cond_1457;
+    logic [7:0] _tmp_mux_then_1458;
+    logic [3:0] _tmp_b_1459;
+    logic _tmp_arg1_1460;
+    logic [3:0] _tmp_b_1461;
+    logic _tmp_arg2_1462;
+    logic _tmp_mux_cond_1463;
+    logic [7:0] _tmp_mux_then_1464;
+    logic [3:0] _tmp_b_1465;
+    logic _tmp_arg1_1466;
+    logic [3:0] _tmp_b_1467;
+    logic _tmp_arg2_1468;
+    logic _tmp_mux_cond_1469;
+    logic [7:0] _tmp_mux_then_1470;
+    logic [3:0] _tmp_b_1471;
+    logic _tmp_arg1_1472;
+    logic [3:0] _tmp_b_1473;
+    logic _tmp_arg2_1474;
+    logic _tmp_mux_cond_1475;
+    logic [7:0] _tmp_mux_then_1476;
+    logic [3:0] _tmp_b_1477;
+    logic _tmp_arg1_1478;
+    logic [3:0] _tmp_b_1479;
+    logic _tmp_arg2_1480;
+    logic _tmp_mux_cond_1481;
+    logic [7:0] _tmp_mux_then_1482;
+    logic [3:0] _tmp_b_1483;
+    logic _tmp_arg1_1484;
+    logic [3:0] _tmp_b_1485;
+    logic _tmp_arg2_1486;
+    logic _tmp_mux_cond_1487;
+    logic [7:0] _tmp_mux_then_1488;
+    logic [3:0] _tmp_b_1489;
+    logic _tmp_arg1_1490;
+    logic [3:0] _tmp_b_1491;
+    logic _tmp_arg2_1492;
+    logic _tmp_mux_cond_1493;
+    logic [7:0] _tmp_mux_then_1494;
+    logic [3:0] _tmp_b_1495;
+    logic _tmp_arg1_1496;
+    logic [3:0] _tmp_b_1497;
+    logic _tmp_arg2_1498;
+    logic _tmp_mux_cond_1499;
+    logic [7:0] _tmp_mux_then_1500;
+    logic [3:0] _tmp_b_1501;
+    logic _tmp_arg1_1502;
+    logic [3:0] _tmp_b_1503;
+    logic _tmp_arg2_1504;
+    logic _tmp_mux_cond_1505;
+    logic [7:0] _tmp_mux_then_1506;
+    logic [3:0] _tmp_b_1507;
+    logic _tmp_arg1_1508;
+    logic [3:0] _tmp_b_1509;
+    logic _tmp_arg2_1510;
+    logic _tmp_mux_cond_1511;
+    logic [7:0] _tmp_mux_then_1512;
+    logic [3:0] _tmp_b_1513;
+    logic _tmp_arg1_1514;
+    logic [3:0] _tmp_b_1515;
+    logic _tmp_arg2_1516;
+    logic _tmp_mux_cond_1517;
+    logic [7:0] _tmp_mux_then_1518;
+    logic [3:0] _tmp_b_1519;
+    logic _tmp_arg1_1520;
+    logic [3:0] _tmp_b_1521;
+    logic _tmp_arg2_1522;
+    logic _tmp_mux_cond_1523;
+    logic [7:0] _tmp_mux_then_1524;
+    logic [7:0] _tmp_mux_else_1525;
+    logic [7:0] _tmp_mux_else_1526;
+    logic [7:0] _tmp_mux_else_1527;
+    logic [7:0] _tmp_mux_else_1528;
+    logic [7:0] _tmp_mux_else_1529;
+    logic [7:0] _tmp_mux_else_1530;
+    logic [7:0] _tmp_mux_else_1531;
+    logic [7:0] _tmp_mux_else_1532;
+    logic [7:0] _tmp_mux_else_1533;
+    logic [7:0] _tmp_mux_else_1534;
+    logic [7:0] _tmp_mux_else_1535;
+    logic [7:0] _tmp_mux_else_1536;
+    logic [7:0] _tmp_mux_else_1537;
+    logic [7:0] _tmp_mux_else_1538;
+    logic [7:0] _tmp_mux_else_1539;
     logic [7:0] _tmp_mux_else_1540;
     logic [7:0] _tmp_mux_else_1541;
     logic [7:0] _tmp_mux_else_1542;
@@ -1716,39 +1704,39 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [7:0] _tmp_mux_else_1554;
     logic [7:0] _tmp_mux_else_1555;
     logic [7:0] _tmp_mux_else_1556;
-    logic [7:0] _tmp_mux_else_1557;
-    logic [7:0] _tmp_mux_else_1558;
-    logic [7:0] _tmp_mux_else_1559;
-    logic [7:0] _tmp_mux_else_1560;
-    logic [7:0] _tmp_mux_else_1561;
-    logic [7:0] _tmp_mux_else_1562;
-    logic [7:0] _tmp_mux_else_1563;
-    logic [7:0] _tmp_mux_else_1564;
-    logic [7:0] _tmp_mux_else_1565;
-    logic [7:0] _tmp_mux_else_1566;
-    logic [7:0] _tmp_mux_else_1567;
-    logic [7:0] _tmp_mux_else_1568;
-    logic [7:0] _tmp_mux_else_1569;
-    logic [7:0] _tmp_mux_else_1570;
-    logic [7:0] _tmp_mux_else_1571;
-    logic [7:0] _tmp_b_1572;
+    logic [7:0] _tmp_b_1557;
     logic [23:0] _gen_weight24_2;
     logic [23:0] _gen_product24_2;
     logic _gen_productSign_2;
-    logic _tmp_b_1573;
-    logic _tmp_mux_cond_1574;
-    logic [7:0] _tmp_mux_then_1575;
-    logic [7:0] _tmp_mux_else_1576;
+    logic _tmp_b_1558;
+    logic _tmp_mux_cond_1559;
+    logic [7:0] _tmp_mux_then_1560;
+    logic [7:0] _tmp_mux_else_1561;
     logic [7:0] _gen_productUpper_2;
-    logic [31:0] _tmp_arg2_1577;
+    logic [31:0] _tmp_arg2_1562;
     logic [31:0] _gen_hiddenMacAccOut_1;
     logic _gen_hiddenSign_1;
-    logic _tmp_b_1578;
-    logic _tmp_mux_cond_1579;
-    logic [7:0] _tmp_mux_then_1580;
-    logic [7:0] _tmp_mux_else_1581;
+    logic _tmp_b_1563;
+    logic _tmp_mux_cond_1564;
+    logic [7:0] _tmp_mux_then_1565;
+    logic [7:0] _tmp_mux_else_1566;
     logic [7:0] _gen_hiddenUpper_1;
     logic [23:0] _gen_hidden24_1;
+    logic [3:0] _tmp_b_1567;
+    logic _tmp_mux_cond_1568;
+    logic [7:0] _tmp_mux_then_1569;
+    logic [3:0] _tmp_b_1570;
+    logic _tmp_mux_cond_1571;
+    logic [7:0] _tmp_mux_then_1572;
+    logic [3:0] _tmp_b_1573;
+    logic _tmp_mux_cond_1574;
+    logic [7:0] _tmp_mux_then_1575;
+    logic [3:0] _tmp_b_1576;
+    logic _tmp_mux_cond_1577;
+    logic [7:0] _tmp_mux_then_1578;
+    logic [3:0] _tmp_b_1579;
+    logic _tmp_mux_cond_1580;
+    logic [7:0] _tmp_mux_then_1581;
     logic [3:0] _tmp_b_1582;
     logic _tmp_mux_cond_1583;
     logic [7:0] _tmp_mux_then_1584;
@@ -1758,36 +1746,36 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [3:0] _tmp_b_1588;
     logic _tmp_mux_cond_1589;
     logic [7:0] _tmp_mux_then_1590;
-    logic [3:0] _tmp_b_1591;
-    logic _tmp_mux_cond_1592;
-    logic [7:0] _tmp_mux_then_1593;
-    logic [3:0] _tmp_b_1594;
-    logic _tmp_mux_cond_1595;
-    logic [7:0] _tmp_mux_then_1596;
-    logic [3:0] _tmp_b_1597;
-    logic _tmp_mux_cond_1598;
-    logic [7:0] _tmp_mux_then_1599;
-    logic [3:0] _tmp_b_1600;
-    logic _tmp_mux_cond_1601;
-    logic [7:0] _tmp_mux_then_1602;
-    logic [3:0] _tmp_b_1603;
-    logic _tmp_mux_cond_1604;
-    logic [7:0] _tmp_mux_then_1605;
-    logic [7:0] _tmp_mux_else_1606;
-    logic [7:0] _tmp_mux_else_1607;
-    logic [7:0] _tmp_mux_else_1608;
-    logic [7:0] _tmp_mux_else_1609;
-    logic [7:0] _tmp_mux_else_1610;
-    logic [7:0] _tmp_mux_else_1611;
-    logic [7:0] _tmp_mux_else_1612;
-    logic [7:0] _tmp_mux_else_1613;
-    logic [7:0] _tmp_s_1614;
+    logic [7:0] _tmp_mux_else_1591;
+    logic [7:0] _tmp_mux_else_1592;
+    logic [7:0] _tmp_mux_else_1593;
+    logic [7:0] _tmp_mux_else_1594;
+    logic [7:0] _tmp_mux_else_1595;
+    logic [7:0] _tmp_mux_else_1596;
+    logic [7:0] _tmp_mux_else_1597;
+    logic [7:0] _tmp_mux_else_1598;
+    logic [7:0] _tmp_s_1599;
     logic _gen_weightSign_3;
-    logic _tmp_b_1615;
-    logic _tmp_mux_cond_1616;
-    logic [15:0] _tmp_mux_then_1617;
-    logic [15:0] _tmp_mux_else_1618;
+    logic _tmp_b_1600;
+    logic _tmp_mux_cond_1601;
+    logic [15:0] _tmp_mux_then_1602;
+    logic [15:0] _tmp_mux_else_1603;
     logic [15:0] _gen_weightUpper16_1;
+    logic [3:0] _tmp_b_1604;
+    logic _tmp_mux_cond_1605;
+    logic [7:0] _tmp_mux_then_1606;
+    logic [3:0] _tmp_b_1607;
+    logic _tmp_mux_cond_1608;
+    logic [7:0] _tmp_mux_then_1609;
+    logic [3:0] _tmp_b_1610;
+    logic _tmp_mux_cond_1611;
+    logic [7:0] _tmp_mux_then_1612;
+    logic [3:0] _tmp_b_1613;
+    logic _tmp_mux_cond_1614;
+    logic [7:0] _tmp_mux_then_1615;
+    logic [3:0] _tmp_b_1616;
+    logic _tmp_mux_cond_1617;
+    logic [7:0] _tmp_mux_then_1618;
     logic [3:0] _tmp_b_1619;
     logic _tmp_mux_cond_1620;
     logic [7:0] _tmp_mux_then_1621;
@@ -1797,76 +1785,365 @@ module TinyMLP_sparkleMlpCorePacked (
     logic [3:0] _tmp_b_1625;
     logic _tmp_mux_cond_1626;
     logic [7:0] _tmp_mux_then_1627;
-    logic [3:0] _tmp_b_1628;
-    logic _tmp_mux_cond_1629;
-    logic [7:0] _tmp_mux_then_1630;
-    logic [3:0] _tmp_b_1631;
-    logic _tmp_mux_cond_1632;
-    logic [7:0] _tmp_mux_then_1633;
-    logic [3:0] _tmp_b_1634;
-    logic _tmp_mux_cond_1635;
-    logic [7:0] _tmp_mux_then_1636;
-    logic [3:0] _tmp_b_1637;
-    logic _tmp_mux_cond_1638;
-    logic [7:0] _tmp_mux_then_1639;
-    logic [3:0] _tmp_b_1640;
-    logic _tmp_mux_cond_1641;
-    logic [7:0] _tmp_mux_then_1642;
-    logic [7:0] _tmp_mux_else_1643;
-    logic [7:0] _tmp_mux_else_1644;
-    logic [7:0] _tmp_mux_else_1645;
-    logic [7:0] _tmp_mux_else_1646;
-    logic [7:0] _tmp_mux_else_1647;
-    logic [7:0] _tmp_mux_else_1648;
-    logic [7:0] _tmp_mux_else_1649;
-    logic [7:0] _tmp_mux_else_1650;
-    logic [7:0] _tmp_b_1651;
+    logic [7:0] _tmp_mux_else_1628;
+    logic [7:0] _tmp_mux_else_1629;
+    logic [7:0] _tmp_mux_else_1630;
+    logic [7:0] _tmp_mux_else_1631;
+    logic [7:0] _tmp_mux_else_1632;
+    logic [7:0] _tmp_mux_else_1633;
+    logic [7:0] _tmp_mux_else_1634;
+    logic [7:0] _tmp_mux_else_1635;
+    logic [7:0] _tmp_b_1636;
     logic [23:0] _gen_weight24_3;
     logic [23:0] _gen_product24_3;
     logic _gen_productSign_3;
-    logic _tmp_b_1652;
-    logic _tmp_mux_cond_1653;
-    logic [7:0] _tmp_mux_then_1654;
-    logic [7:0] _tmp_mux_else_1655;
+    logic _tmp_b_1637;
+    logic _tmp_mux_cond_1638;
+    logic [7:0] _tmp_mux_then_1639;
+    logic [7:0] _tmp_mux_else_1640;
     logic [7:0] _gen_productUpper_3;
-    logic [31:0] _tmp_arg2_1656;
+    logic [31:0] _tmp_arg2_1641;
     logic [31:0] _gen_outputMacAccOut_1;
     logic [31:0] _gen_mac_acc_out;
-    logic [31:0] _tmp_a_1657;
-    logic [1:0] _tmp_b_1658;
-    logic [2:0] _tmp_b_1659;
-    logic [3:0] _tmp_b_1660;
-    logic [19:0] _tmp_b_1661;
-    logic [35:0] _tmp_b_1662;
-    logic [51:0] _tmp_b_1663;
-    logic [67:0] _tmp_b_1664;
-    logic [83:0] _tmp_b_1665;
-    logic [99:0] _tmp_b_1666;
-    logic [115:0] _tmp_b_1667;
-    logic [131:0] _tmp_b_1668;
-    logic [139:0] _tmp_b_1669;
-    logic [147:0] _tmp_b_1670;
-    logic [155:0] _tmp_b_1671;
-    logic [163:0] _tmp_b_1672;
-    logic [195:0] _tmp_b_1673;
-    logic [211:0] _tmp_b_1674;
-    logic [243:0] _tmp_b_1675;
-    logic [275:0] _tmp_b_1676;
-    logic [279:0] _tmp_b_1677;
-    logic [283:0] _tmp_b_1678;
-    logic [284:0] _tmp_b_1679;
-    logic [285:0] _tmp_b_1680;
-    logic [286:0] _tmp_b_1681;
-    logic [287:0] _tmp_b_1682;
-    logic [288:0] _tmp_b_1683;
-    logic [289:0] _tmp_b_1684;
-    logic [290:0] _tmp_b_1685;
-    logic [291:0] _tmp_b_1686;
-    logic [292:0] _tmp_b_1687;
-    logic [293:0] _tmp_b_1688;
-    logic [294:0] _tmp_b_1689;
-    logic [298:0] _tmp_result_1690;
+    logic [31:0] _tmp_a_1642;
+    logic [1:0] _tmp_b_1643;
+    logic [2:0] _tmp_b_1644;
+    logic [3:0] _tmp_b_1645;
+    logic [19:0] _tmp_b_1646;
+    logic [35:0] _tmp_b_1647;
+    logic [51:0] _tmp_b_1648;
+    logic [67:0] _tmp_b_1649;
+    logic [83:0] _tmp_b_1650;
+    logic [99:0] _tmp_b_1651;
+    logic [115:0] _tmp_b_1652;
+    logic [131:0] _tmp_b_1653;
+    logic [139:0] _tmp_b_1654;
+    logic [147:0] _tmp_b_1655;
+    logic [155:0] _tmp_b_1656;
+    logic [163:0] _tmp_b_1657;
+    logic [195:0] _tmp_b_1658;
+    logic [211:0] _tmp_b_1659;
+    logic [243:0] _tmp_b_1660;
+    logic [275:0] _tmp_b_1661;
+    logic [279:0] _tmp_b_1662;
+    logic [283:0] _tmp_b_1663;
+    logic [284:0] _tmp_b_1664;
+    logic [285:0] _tmp_b_1665;
+    logic [286:0] _tmp_b_1666;
+    logic [287:0] _tmp_b_1667;
+    logic [288:0] _tmp_b_1668;
+    logic [289:0] _tmp_b_1669;
+    logic [290:0] _tmp_b_1670;
+    logic [291:0] _tmp_b_1671;
+    logic [292:0] _tmp_b_1672;
+    logic [293:0] _tmp_b_1673;
+    logic [294:0] _tmp_b_1674;
+    logic [298:0] _tmp_result_1675;
 
+
+    assign _gen_phase = _tmp_loop_0[204:201];
+
+    assign _tmp_s_1 = _tmp_loop_0[200:0];
+
+    assign _gen_hidden_idx = _tmp_s_1[200:197];
+
+    assign _tmp_s_2 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_3 = _tmp_s_2[196:0];
+
+    assign _gen_input_idx = _tmp_s_3[196:193];
+
+    assign _tmp_s_4 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_5 = _tmp_s_4[196:0];
+
+    assign _tmp_s_6 = _tmp_s_5[192:0];
+
+    assign _gen_input_reg0 = _tmp_s_6[192:185];
+
+    assign _tmp_s_7 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_8 = _tmp_s_7[196:0];
+
+    assign _tmp_s_9 = _tmp_s_8[192:0];
+
+    assign _tmp_s_10 = _tmp_s_9[184:0];
+
+    assign _gen_input_reg1 = _tmp_s_10[184:177];
+
+    assign _tmp_s_11 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_12 = _tmp_s_11[196:0];
+
+    assign _tmp_s_13 = _tmp_s_12[192:0];
+
+    assign _tmp_s_14 = _tmp_s_13[184:0];
+
+    assign _tmp_s_15 = _tmp_s_14[176:0];
+
+    assign _gen_input_reg2 = _tmp_s_15[176:169];
+
+    assign _tmp_s_16 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_17 = _tmp_s_16[196:0];
+
+    assign _tmp_s_18 = _tmp_s_17[192:0];
+
+    assign _tmp_s_19 = _tmp_s_18[184:0];
+
+    assign _tmp_s_20 = _tmp_s_19[176:0];
+
+    assign _tmp_s_21 = _tmp_s_20[168:0];
+
+    assign _gen_input_reg3 = _tmp_s_21[168:161];
+
+    assign _tmp_s_22 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_23 = _tmp_s_22[196:0];
+
+    assign _tmp_s_24 = _tmp_s_23[192:0];
+
+    assign _tmp_s_25 = _tmp_s_24[184:0];
+
+    assign _tmp_s_26 = _tmp_s_25[176:0];
+
+    assign _tmp_s_27 = _tmp_s_26[168:0];
+
+    assign _tmp_s_28 = _tmp_s_27[160:0];
+
+    assign _gen_hidden_reg0 = _tmp_s_28[160:145];
+
+    assign _tmp_s_29 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_30 = _tmp_s_29[196:0];
+
+    assign _tmp_s_31 = _tmp_s_30[192:0];
+
+    assign _tmp_s_32 = _tmp_s_31[184:0];
+
+    assign _tmp_s_33 = _tmp_s_32[176:0];
+
+    assign _tmp_s_34 = _tmp_s_33[168:0];
+
+    assign _tmp_s_35 = _tmp_s_34[160:0];
+
+    assign _tmp_s_36 = _tmp_s_35[144:0];
+
+    assign _gen_hidden_reg1 = _tmp_s_36[144:129];
+
+    assign _tmp_s_37 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_38 = _tmp_s_37[196:0];
+
+    assign _tmp_s_39 = _tmp_s_38[192:0];
+
+    assign _tmp_s_40 = _tmp_s_39[184:0];
+
+    assign _tmp_s_41 = _tmp_s_40[176:0];
+
+    assign _tmp_s_42 = _tmp_s_41[168:0];
+
+    assign _tmp_s_43 = _tmp_s_42[160:0];
+
+    assign _tmp_s_44 = _tmp_s_43[144:0];
+
+    assign _tmp_s_45 = _tmp_s_44[128:0];
+
+    assign _gen_hidden_reg2 = _tmp_s_45[128:113];
+
+    assign _tmp_s_46 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_47 = _tmp_s_46[196:0];
+
+    assign _tmp_s_48 = _tmp_s_47[192:0];
+
+    assign _tmp_s_49 = _tmp_s_48[184:0];
+
+    assign _tmp_s_50 = _tmp_s_49[176:0];
+
+    assign _tmp_s_51 = _tmp_s_50[168:0];
+
+    assign _tmp_s_52 = _tmp_s_51[160:0];
+
+    assign _tmp_s_53 = _tmp_s_52[144:0];
+
+    assign _tmp_s_54 = _tmp_s_53[128:0];
+
+    assign _tmp_s_55 = _tmp_s_54[112:0];
+
+    assign _gen_hidden_reg3 = _tmp_s_55[112:97];
+
+    assign _tmp_s_56 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_57 = _tmp_s_56[196:0];
+
+    assign _tmp_s_58 = _tmp_s_57[192:0];
+
+    assign _tmp_s_59 = _tmp_s_58[184:0];
+
+    assign _tmp_s_60 = _tmp_s_59[176:0];
+
+    assign _tmp_s_61 = _tmp_s_60[168:0];
+
+    assign _tmp_s_62 = _tmp_s_61[160:0];
+
+    assign _tmp_s_63 = _tmp_s_62[144:0];
+
+    assign _tmp_s_64 = _tmp_s_63[128:0];
+
+    assign _tmp_s_65 = _tmp_s_64[112:0];
+
+    assign _tmp_s_66 = _tmp_s_65[96:0];
+
+    assign _gen_hidden_reg4 = _tmp_s_66[96:81];
+
+    assign _tmp_s_67 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_68 = _tmp_s_67[196:0];
+
+    assign _tmp_s_69 = _tmp_s_68[192:0];
+
+    assign _tmp_s_70 = _tmp_s_69[184:0];
+
+    assign _tmp_s_71 = _tmp_s_70[176:0];
+
+    assign _tmp_s_72 = _tmp_s_71[168:0];
+
+    assign _tmp_s_73 = _tmp_s_72[160:0];
+
+    assign _tmp_s_74 = _tmp_s_73[144:0];
+
+    assign _tmp_s_75 = _tmp_s_74[128:0];
+
+    assign _tmp_s_76 = _tmp_s_75[112:0];
+
+    assign _tmp_s_77 = _tmp_s_76[96:0];
+
+    assign _tmp_s_78 = _tmp_s_77[80:0];
+
+    assign _gen_hidden_reg5 = _tmp_s_78[80:65];
+
+    assign _tmp_s_79 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_80 = _tmp_s_79[196:0];
+
+    assign _tmp_s_81 = _tmp_s_80[192:0];
+
+    assign _tmp_s_82 = _tmp_s_81[184:0];
+
+    assign _tmp_s_83 = _tmp_s_82[176:0];
+
+    assign _tmp_s_84 = _tmp_s_83[168:0];
+
+    assign _tmp_s_85 = _tmp_s_84[160:0];
+
+    assign _tmp_s_86 = _tmp_s_85[144:0];
+
+    assign _tmp_s_87 = _tmp_s_86[128:0];
+
+    assign _tmp_s_88 = _tmp_s_87[112:0];
+
+    assign _tmp_s_89 = _tmp_s_88[96:0];
+
+    assign _tmp_s_90 = _tmp_s_89[80:0];
+
+    assign _tmp_s_91 = _tmp_s_90[64:0];
+
+    assign _gen_hidden_reg6 = _tmp_s_91[64:49];
+
+    assign _tmp_s_92 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_93 = _tmp_s_92[196:0];
+
+    assign _tmp_s_94 = _tmp_s_93[192:0];
+
+    assign _tmp_s_95 = _tmp_s_94[184:0];
+
+    assign _tmp_s_96 = _tmp_s_95[176:0];
+
+    assign _tmp_s_97 = _tmp_s_96[168:0];
+
+    assign _tmp_s_98 = _tmp_s_97[160:0];
+
+    assign _tmp_s_99 = _tmp_s_98[144:0];
+
+    assign _tmp_s_100 = _tmp_s_99[128:0];
+
+    assign _tmp_s_101 = _tmp_s_100[112:0];
+
+    assign _tmp_s_102 = _tmp_s_101[96:0];
+
+    assign _tmp_s_103 = _tmp_s_102[80:0];
+
+    assign _tmp_s_104 = _tmp_s_103[64:0];
+
+    assign _tmp_s_105 = _tmp_s_104[48:0];
+
+    assign _gen_hidden_reg7 = _tmp_s_105[48:33];
+
+    assign _tmp_s_106 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_107 = _tmp_s_106[196:0];
+
+    assign _tmp_s_108 = _tmp_s_107[192:0];
+
+    assign _tmp_s_109 = _tmp_s_108[184:0];
+
+    assign _tmp_s_110 = _tmp_s_109[176:0];
+
+    assign _tmp_s_111 = _tmp_s_110[168:0];
+
+    assign _tmp_s_112 = _tmp_s_111[160:0];
+
+    assign _tmp_s_113 = _tmp_s_112[144:0];
+
+    assign _tmp_s_114 = _tmp_s_113[128:0];
+
+    assign _tmp_s_115 = _tmp_s_114[112:0];
+
+    assign _tmp_s_116 = _tmp_s_115[96:0];
+
+    assign _tmp_s_117 = _tmp_s_116[80:0];
+
+    assign _tmp_s_118 = _tmp_s_117[64:0];
+
+    assign _tmp_s_119 = _tmp_s_118[48:0];
+
+    assign _tmp_s_120 = _tmp_s_119[32:0];
+
+    assign _gen_acc_reg = _tmp_s_120[32:1];
+
+    assign _tmp_s_121 = _tmp_loop_0[200:0];
+
+    assign _tmp_s_122 = _tmp_s_121[196:0];
+
+    assign _tmp_s_123 = _tmp_s_122[192:0];
+
+    assign _tmp_s_124 = _tmp_s_123[184:0];
+
+    assign _tmp_s_125 = _tmp_s_124[176:0];
+
+    assign _tmp_s_126 = _tmp_s_125[168:0];
+
+    assign _tmp_s_127 = _tmp_s_126[160:0];
+
+    assign _tmp_s_128 = _tmp_s_127[144:0];
+
+    assign _tmp_s_129 = _tmp_s_128[128:0];
+
+    assign _tmp_s_130 = _tmp_s_129[112:0];
+
+    assign _tmp_s_131 = _tmp_s_130[96:0];
+
+    assign _tmp_s_132 = _tmp_s_131[80:0];
+
+    assign _tmp_s_133 = _tmp_s_132[64:0];
+
+    assign _tmp_s_134 = _tmp_s_133[48:0];
+
+    assign _tmp_s_135 = _tmp_s_134[32:0];
+
+    assign _gen_out_reg = _tmp_s_135[0:0];
 
     assign _gen_zero4 = 4'd0;
 
@@ -1880,1770 +2157,1491 @@ module TinyMLP_sparkleMlpCorePacked (
 
     assign _gen_falseSig = 1'd0;
 
-    assign _gen_hidden_idx = _tmp_loop_0[200:197];
+    assign _tmp_b_136 = 4'd0;
 
-    assign _tmp_s_1 = _tmp_loop_0[196:0];
+    assign _gen_isIdle = (_gen_phase == _tmp_b_136);
 
-    assign _gen_input_idx = _tmp_s_1[196:193];
+    assign _tmp_b_137 = 4'd1;
 
-    assign _tmp_s_2 = _tmp_loop_0[196:0];
+    assign _gen_load_input = (_gen_phase == _tmp_b_137);
 
-    assign _tmp_s_3 = _tmp_s_2[192:0];
+    assign _tmp_b_138 = 4'd2;
 
-    assign _gen_input_reg0 = _tmp_s_3[192:185];
+    assign _tmp_arg1_139 = (_gen_phase == _tmp_b_138);
 
-    assign _tmp_s_4 = _tmp_loop_0[196:0];
+    assign _tmp_b_140 = 4'd4;
 
-    assign _tmp_s_5 = _tmp_s_4[192:0];
+    assign _tmp_arg2_141 = (_gen_input_idx < _tmp_b_140);
 
-    assign _tmp_s_6 = _tmp_s_5[184:0];
+    assign _gen_do_mac_hidden = (_tmp_arg1_139 & _tmp_arg2_141);
 
-    assign _gen_input_reg1 = _tmp_s_6[184:177];
+    assign _tmp_b_142 = 4'd3;
 
-    assign _tmp_s_7 = _tmp_loop_0[196:0];
+    assign _gen_do_bias_hidden = (_gen_phase == _tmp_b_142);
 
-    assign _tmp_s_8 = _tmp_s_7[192:0];
+    assign _tmp_b_143 = 4'd4;
 
-    assign _tmp_s_9 = _tmp_s_8[184:0];
+    assign _gen_do_act_hidden = (_gen_phase == _tmp_b_143);
 
-    assign _tmp_s_10 = _tmp_s_9[176:0];
+    assign _tmp_b_144 = 4'd5;
 
-    assign _gen_input_reg2 = _tmp_s_10[176:169];
+    assign _gen_advance_hidden = (_gen_phase == _tmp_b_144);
 
-    assign _tmp_s_11 = _tmp_loop_0[196:0];
+    assign _tmp_b_145 = 4'd6;
 
-    assign _tmp_s_12 = _tmp_s_11[192:0];
+    assign _tmp_arg1_146 = (_gen_phase == _tmp_b_145);
 
-    assign _tmp_s_13 = _tmp_s_12[184:0];
+    assign _tmp_b_147 = 4'd8;
 
-    assign _tmp_s_14 = _tmp_s_13[176:0];
+    assign _tmp_arg2_148 = (_gen_input_idx < _tmp_b_147);
 
-    assign _tmp_s_15 = _tmp_s_14[168:0];
+    assign _gen_do_mac_output = (_tmp_arg1_146 & _tmp_arg2_148);
 
-    assign _gen_input_reg3 = _tmp_s_15[168:161];
+    assign _tmp_b_149 = 4'd7;
 
-    assign _tmp_s_16 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_17 = _tmp_s_16[192:0];
-
-    assign _tmp_s_18 = _tmp_s_17[184:0];
-
-    assign _tmp_s_19 = _tmp_s_18[176:0];
-
-    assign _tmp_s_20 = _tmp_s_19[168:0];
-
-    assign _tmp_s_21 = _tmp_s_20[160:0];
-
-    assign _gen_hidden_reg0 = _tmp_s_21[160:145];
-
-    assign _tmp_s_22 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_23 = _tmp_s_22[192:0];
-
-    assign _tmp_s_24 = _tmp_s_23[184:0];
-
-    assign _tmp_s_25 = _tmp_s_24[176:0];
-
-    assign _tmp_s_26 = _tmp_s_25[168:0];
-
-    assign _tmp_s_27 = _tmp_s_26[160:0];
-
-    assign _tmp_s_28 = _tmp_s_27[144:0];
-
-    assign _gen_hidden_reg1 = _tmp_s_28[144:129];
-
-    assign _tmp_s_29 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_30 = _tmp_s_29[192:0];
-
-    assign _tmp_s_31 = _tmp_s_30[184:0];
-
-    assign _tmp_s_32 = _tmp_s_31[176:0];
-
-    assign _tmp_s_33 = _tmp_s_32[168:0];
-
-    assign _tmp_s_34 = _tmp_s_33[160:0];
-
-    assign _tmp_s_35 = _tmp_s_34[144:0];
-
-    assign _tmp_s_36 = _tmp_s_35[128:0];
-
-    assign _gen_hidden_reg2 = _tmp_s_36[128:113];
-
-    assign _tmp_s_37 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_38 = _tmp_s_37[192:0];
-
-    assign _tmp_s_39 = _tmp_s_38[184:0];
-
-    assign _tmp_s_40 = _tmp_s_39[176:0];
-
-    assign _tmp_s_41 = _tmp_s_40[168:0];
-
-    assign _tmp_s_42 = _tmp_s_41[160:0];
-
-    assign _tmp_s_43 = _tmp_s_42[144:0];
-
-    assign _tmp_s_44 = _tmp_s_43[128:0];
-
-    assign _tmp_s_45 = _tmp_s_44[112:0];
-
-    assign _gen_hidden_reg3 = _tmp_s_45[112:97];
-
-    assign _tmp_s_46 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_47 = _tmp_s_46[192:0];
-
-    assign _tmp_s_48 = _tmp_s_47[184:0];
-
-    assign _tmp_s_49 = _tmp_s_48[176:0];
-
-    assign _tmp_s_50 = _tmp_s_49[168:0];
-
-    assign _tmp_s_51 = _tmp_s_50[160:0];
-
-    assign _tmp_s_52 = _tmp_s_51[144:0];
-
-    assign _tmp_s_53 = _tmp_s_52[128:0];
-
-    assign _tmp_s_54 = _tmp_s_53[112:0];
-
-    assign _tmp_s_55 = _tmp_s_54[96:0];
-
-    assign _gen_hidden_reg4 = _tmp_s_55[96:81];
-
-    assign _tmp_s_56 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_57 = _tmp_s_56[192:0];
-
-    assign _tmp_s_58 = _tmp_s_57[184:0];
-
-    assign _tmp_s_59 = _tmp_s_58[176:0];
-
-    assign _tmp_s_60 = _tmp_s_59[168:0];
-
-    assign _tmp_s_61 = _tmp_s_60[160:0];
-
-    assign _tmp_s_62 = _tmp_s_61[144:0];
-
-    assign _tmp_s_63 = _tmp_s_62[128:0];
-
-    assign _tmp_s_64 = _tmp_s_63[112:0];
-
-    assign _tmp_s_65 = _tmp_s_64[96:0];
-
-    assign _tmp_s_66 = _tmp_s_65[80:0];
-
-    assign _gen_hidden_reg5 = _tmp_s_66[80:65];
-
-    assign _tmp_s_67 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_68 = _tmp_s_67[192:0];
-
-    assign _tmp_s_69 = _tmp_s_68[184:0];
-
-    assign _tmp_s_70 = _tmp_s_69[176:0];
-
-    assign _tmp_s_71 = _tmp_s_70[168:0];
-
-    assign _tmp_s_72 = _tmp_s_71[160:0];
-
-    assign _tmp_s_73 = _tmp_s_72[144:0];
-
-    assign _tmp_s_74 = _tmp_s_73[128:0];
-
-    assign _tmp_s_75 = _tmp_s_74[112:0];
-
-    assign _tmp_s_76 = _tmp_s_75[96:0];
-
-    assign _tmp_s_77 = _tmp_s_76[80:0];
-
-    assign _tmp_s_78 = _tmp_s_77[64:0];
-
-    assign _gen_hidden_reg6 = _tmp_s_78[64:49];
-
-    assign _tmp_s_79 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_80 = _tmp_s_79[192:0];
-
-    assign _tmp_s_81 = _tmp_s_80[184:0];
-
-    assign _tmp_s_82 = _tmp_s_81[176:0];
-
-    assign _tmp_s_83 = _tmp_s_82[168:0];
-
-    assign _tmp_s_84 = _tmp_s_83[160:0];
-
-    assign _tmp_s_85 = _tmp_s_84[144:0];
-
-    assign _tmp_s_86 = _tmp_s_85[128:0];
-
-    assign _tmp_s_87 = _tmp_s_86[112:0];
-
-    assign _tmp_s_88 = _tmp_s_87[96:0];
-
-    assign _tmp_s_89 = _tmp_s_88[80:0];
-
-    assign _tmp_s_90 = _tmp_s_89[64:0];
-
-    assign _tmp_s_91 = _tmp_s_90[48:0];
-
-    assign _gen_hidden_reg7 = _tmp_s_91[48:33];
-
-    assign _tmp_s_92 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_93 = _tmp_s_92[192:0];
-
-    assign _tmp_s_94 = _tmp_s_93[184:0];
-
-    assign _tmp_s_95 = _tmp_s_94[176:0];
-
-    assign _tmp_s_96 = _tmp_s_95[168:0];
-
-    assign _tmp_s_97 = _tmp_s_96[160:0];
-
-    assign _tmp_s_98 = _tmp_s_97[144:0];
-
-    assign _tmp_s_99 = _tmp_s_98[128:0];
-
-    assign _tmp_s_100 = _tmp_s_99[112:0];
-
-    assign _tmp_s_101 = _tmp_s_100[96:0];
-
-    assign _tmp_s_102 = _tmp_s_101[80:0];
-
-    assign _tmp_s_103 = _tmp_s_102[64:0];
-
-    assign _tmp_s_104 = _tmp_s_103[48:0];
-
-    assign _tmp_s_105 = _tmp_s_104[32:0];
-
-    assign _gen_acc_reg = _tmp_s_105[32:1];
-
-    assign _tmp_s_106 = _tmp_loop_0[196:0];
-
-    assign _tmp_s_107 = _tmp_s_106[192:0];
-
-    assign _tmp_s_108 = _tmp_s_107[184:0];
-
-    assign _tmp_s_109 = _tmp_s_108[176:0];
-
-    assign _tmp_s_110 = _tmp_s_109[168:0];
-
-    assign _tmp_s_111 = _tmp_s_110[160:0];
-
-    assign _tmp_s_112 = _tmp_s_111[144:0];
-
-    assign _tmp_s_113 = _tmp_s_112[128:0];
-
-    assign _tmp_s_114 = _tmp_s_113[112:0];
-
-    assign _tmp_s_115 = _tmp_s_114[96:0];
-
-    assign _tmp_s_116 = _tmp_s_115[80:0];
-
-    assign _tmp_s_117 = _tmp_s_116[64:0];
-
-    assign _tmp_s_118 = _tmp_s_117[48:0];
-
-    assign _tmp_s_119 = _tmp_s_118[32:0];
-
-    assign _gen_out_reg = _tmp_s_119[0:0];
-
-    assign _tmp_b_121 = 4'd0;
-
-    assign _gen_isIdle = (_tmp_loop_120 == _tmp_b_121);
-
-    assign _tmp_b_122 = 4'd1;
-
-    assign _gen_isLoadInput = (_tmp_loop_120 == _tmp_b_122);
-
-    assign _tmp_b_123 = 4'd2;
-
-    assign _gen_isMacHidden = (_tmp_loop_120 == _tmp_b_123);
-
-    assign _tmp_b_124 = 4'd3;
-
-    assign _gen_isBiasHidden = (_tmp_loop_120 == _tmp_b_124);
-
-    assign _tmp_b_125 = 4'd4;
-
-    assign _gen_isActHidden = (_tmp_loop_120 == _tmp_b_125);
-
-    assign _tmp_b_126 = 4'd5;
-
-    assign _gen_isNextHidden = (_tmp_loop_120 == _tmp_b_126);
-
-    assign _tmp_b_127 = 4'd6;
-
-    assign _gen_isMacOutput = (_tmp_loop_120 == _tmp_b_127);
-
-    assign _tmp_b_128 = 4'd7;
-
-    assign _gen_isBiasOutput = (_tmp_loop_120 == _tmp_b_128);
-
-    assign _tmp_b_129 = 4'd8;
-
-    assign _gen_isDone = (_tmp_loop_120 == _tmp_b_129);
-
-    assign _tmp_b_130 = 4'd4;
-
-    assign _gen_inputGuardReached = (_gen_input_idx == _tmp_b_130);
-
-    assign _tmp_b_131 = 4'd8;
-
-    assign _gen_outputGuardReached = (_gen_input_idx == _tmp_b_131);
-
-    assign _tmp_b_132 = 4'd7;
-
-    assign _gen_hiddenLast = (_gen_hidden_idx == _tmp_b_132);
+    assign _gen_do_bias_output = (_gen_phase == _tmp_b_149);
 
     assign _gen_notStart = ~_gen_start;
 
-    assign _tmp_mux_cond_133 = (_gen_isIdle & _gen_start);
+    assign _gen_idleCleanup = (_gen_isIdle & _gen_notStart);
 
-    assign _tmp_mux_then_134 = 4'd1;
+    assign _tmp_b_150 = 4'd7;
 
-    assign _tmp_mux_then_135 = 4'd0;
-
-    assign _tmp_mux_then_136 = 4'd2;
-
-    assign _tmp_mux_cond_137 = (_gen_isMacHidden & _gen_inputGuardReached);
-
-    assign _tmp_mux_then_138 = 4'd3;
-
-    assign _tmp_mux_then_139 = 4'd2;
-
-    assign _tmp_mux_then_140 = 4'd4;
-
-    assign _tmp_mux_then_141 = 4'd5;
-
-    assign _tmp_mux_cond_142 = (_gen_isNextHidden & _gen_hiddenLast);
-
-    assign _tmp_mux_then_143 = 4'd6;
-
-    assign _tmp_mux_then_144 = 4'd2;
-
-    assign _tmp_mux_cond_145 = (_gen_isMacOutput & _gen_outputGuardReached);
-
-    assign _tmp_mux_then_146 = 4'd7;
-
-    assign _tmp_mux_then_147 = 4'd6;
-
-    assign _tmp_mux_then_148 = 4'd8;
-
-    assign _tmp_mux_cond_149 = (_gen_isDone & _gen_notStart);
-
-    assign _tmp_mux_then_150 = 4'd0;
-
-    assign _tmp_mux_then_151 = 4'd8;
-
-    assign _tmp_mux_else_152 = 4'd0;
-
-    assign _tmp_mux_else_153 = (_gen_isDone ? _tmp_mux_then_151 : _tmp_mux_else_152);
-
-    assign _tmp_mux_else_154 = (_tmp_mux_cond_149 ? _tmp_mux_then_150 : _tmp_mux_else_153);
-
-    assign _tmp_mux_else_155 = (_gen_isBiasOutput ? _tmp_mux_then_148 : _tmp_mux_else_154);
-
-    assign _tmp_mux_else_156 = (_gen_isMacOutput ? _tmp_mux_then_147 : _tmp_mux_else_155);
-
-    assign _tmp_mux_else_157 = (_tmp_mux_cond_145 ? _tmp_mux_then_146 : _tmp_mux_else_156);
-
-    assign _tmp_mux_else_158 = (_gen_isNextHidden ? _tmp_mux_then_144 : _tmp_mux_else_157);
-
-    assign _tmp_mux_else_159 = (_tmp_mux_cond_142 ? _tmp_mux_then_143 : _tmp_mux_else_158);
-
-    assign _tmp_mux_else_160 = (_gen_isActHidden ? _tmp_mux_then_141 : _tmp_mux_else_159);
-
-    assign _tmp_mux_else_161 = (_gen_isBiasHidden ? _tmp_mux_then_140 : _tmp_mux_else_160);
-
-    assign _tmp_mux_else_162 = (_gen_isMacHidden ? _tmp_mux_then_139 : _tmp_mux_else_161);
-
-    assign _tmp_mux_else_163 = (_tmp_mux_cond_137 ? _tmp_mux_then_138 : _tmp_mux_else_162);
-
-    assign _tmp_mux_else_164 = (_gen_isLoadInput ? _tmp_mux_then_136 : _tmp_mux_else_163);
-
-    assign _tmp_mux_else_165 = (_gen_isIdle ? _tmp_mux_then_135 : _tmp_mux_else_164);
-
-    assign _gen_nextState = (_tmp_mux_cond_133 ? _tmp_mux_then_134 : _tmp_mux_else_165);
-
-    always_ff @(posedge clk or posedge rst) begin
-        if (rst)
-            _tmp_loop_body_166 <= 4'd0;
-        else
-            _tmp_loop_body_166 <= _gen_nextState;
-    end
-
-    assign _tmp_loop_120 = _tmp_loop_body_166;
-
-    assign _tmp_b_167 = 4'd0;
-
-    assign _gen_isIdle_1 = (_tmp_loop_body_166 == _tmp_b_167);
-
-    assign _tmp_b_168 = 4'd1;
-
-    assign _gen_load_input = (_tmp_loop_body_166 == _tmp_b_168);
-
-    assign _tmp_b_169 = 4'd2;
-
-    assign _tmp_arg1_170 = (_tmp_loop_body_166 == _tmp_b_169);
-
-    assign _tmp_b_171 = 4'd4;
-
-    assign _tmp_arg2_172 = (_gen_input_idx < _tmp_b_171);
-
-    assign _gen_do_mac_hidden = (_tmp_arg1_170 & _tmp_arg2_172);
-
-    assign _tmp_b_173 = 4'd3;
-
-    assign _gen_do_bias_hidden = (_tmp_loop_body_166 == _tmp_b_173);
-
-    assign _tmp_b_174 = 4'd4;
-
-    assign _gen_do_act_hidden = (_tmp_loop_body_166 == _tmp_b_174);
-
-    assign _tmp_b_175 = 4'd5;
-
-    assign _gen_advance_hidden = (_tmp_loop_body_166 == _tmp_b_175);
-
-    assign _tmp_b_176 = 4'd6;
-
-    assign _tmp_arg1_177 = (_tmp_loop_body_166 == _tmp_b_176);
-
-    assign _tmp_b_178 = 4'd8;
-
-    assign _tmp_arg2_179 = (_gen_input_idx < _tmp_b_178);
-
-    assign _gen_do_mac_output = (_tmp_arg1_177 & _tmp_arg2_179);
-
-    assign _tmp_b_180 = 4'd7;
-
-    assign _gen_do_bias_output = (_tmp_loop_body_166 == _tmp_b_180);
-
-    assign _gen_notStart_1 = ~_gen_start;
-
-    assign _gen_idleCleanup = (_gen_isIdle_1 & _gen_notStart_1);
-
-    assign _tmp_b_181 = 4'd7;
-
-    assign _gen_hiddenIsLast = (_gen_hidden_idx == _tmp_b_181);
+    assign _gen_hiddenIsLast = (_gen_hidden_idx == _tmp_b_150);
 
     assign _gen_anyMac = (_gen_do_mac_hidden | _gen_do_mac_output);
 
-    assign _tmp_b_182 = 4'd0;
+    assign _tmp_b_151 = 4'd0;
 
-    assign _tmp_mux_cond_183 = (_gen_input_idx == _tmp_b_182);
+    assign _tmp_mux_cond_152 = (_gen_input_idx == _tmp_b_151);
 
-    assign _tmp_b_184 = 4'd1;
+    assign _tmp_b_153 = 4'd1;
 
-    assign _tmp_mux_cond_185 = (_gen_input_idx == _tmp_b_184);
+    assign _tmp_mux_cond_154 = (_gen_input_idx == _tmp_b_153);
 
-    assign _tmp_b_186 = 4'd2;
+    assign _tmp_b_155 = 4'd2;
 
-    assign _tmp_mux_cond_187 = (_gen_input_idx == _tmp_b_186);
+    assign _tmp_mux_cond_156 = (_gen_input_idx == _tmp_b_155);
 
-    assign _tmp_b_188 = 4'd3;
+    assign _tmp_b_157 = 4'd3;
 
-    assign _tmp_mux_cond_189 = (_gen_input_idx == _tmp_b_188);
+    assign _tmp_mux_cond_158 = (_gen_input_idx == _tmp_b_157);
 
-    assign _tmp_mux_else_190 = 8'd0;
+    assign _tmp_mux_else_159 = 8'd0;
 
-    assign _tmp_mux_else_191 = (_tmp_mux_cond_189 ? _gen_input_reg3 : _tmp_mux_else_190);
+    assign _tmp_mux_else_160 = (_tmp_mux_cond_158 ? _gen_input_reg3 : _tmp_mux_else_159);
 
-    assign _tmp_mux_else_192 = (_tmp_mux_cond_187 ? _gen_input_reg2 : _tmp_mux_else_191);
+    assign _tmp_mux_else_161 = (_tmp_mux_cond_156 ? _gen_input_reg2 : _tmp_mux_else_160);
 
-    assign _tmp_mux_else_193 = (_tmp_mux_cond_185 ? _gen_input_reg1 : _tmp_mux_else_192);
+    assign _tmp_mux_else_162 = (_tmp_mux_cond_154 ? _gen_input_reg1 : _tmp_mux_else_161);
 
-    assign _gen_selectedInput = (_tmp_mux_cond_183 ? _gen_input_reg0 : _tmp_mux_else_193);
+    assign _gen_selectedInput = (_tmp_mux_cond_152 ? _gen_input_reg0 : _tmp_mux_else_162);
 
-    assign _tmp_b_194 = 4'd0;
+    assign _tmp_b_163 = 4'd0;
 
-    assign _tmp_mux_cond_195 = (_gen_input_idx == _tmp_b_194);
+    assign _tmp_mux_cond_164 = (_gen_input_idx == _tmp_b_163);
 
-    assign _tmp_b_196 = 4'd1;
+    assign _tmp_b_165 = 4'd1;
 
-    assign _tmp_mux_cond_197 = (_gen_input_idx == _tmp_b_196);
+    assign _tmp_mux_cond_166 = (_gen_input_idx == _tmp_b_165);
 
-    assign _tmp_b_198 = 4'd2;
+    assign _tmp_b_167 = 4'd2;
 
-    assign _tmp_mux_cond_199 = (_gen_input_idx == _tmp_b_198);
+    assign _tmp_mux_cond_168 = (_gen_input_idx == _tmp_b_167);
 
-    assign _tmp_b_200 = 4'd3;
+    assign _tmp_b_169 = 4'd3;
 
-    assign _tmp_mux_cond_201 = (_gen_input_idx == _tmp_b_200);
+    assign _tmp_mux_cond_170 = (_gen_input_idx == _tmp_b_169);
 
-    assign _tmp_b_202 = 4'd4;
+    assign _tmp_b_171 = 4'd4;
 
-    assign _tmp_mux_cond_203 = (_gen_input_idx == _tmp_b_202);
+    assign _tmp_mux_cond_172 = (_gen_input_idx == _tmp_b_171);
 
-    assign _tmp_b_204 = 4'd5;
+    assign _tmp_b_173 = 4'd5;
 
-    assign _tmp_mux_cond_205 = (_gen_input_idx == _tmp_b_204);
+    assign _tmp_mux_cond_174 = (_gen_input_idx == _tmp_b_173);
 
-    assign _tmp_b_206 = 4'd6;
+    assign _tmp_b_175 = 4'd6;
 
-    assign _tmp_mux_cond_207 = (_gen_input_idx == _tmp_b_206);
+    assign _tmp_mux_cond_176 = (_gen_input_idx == _tmp_b_175);
 
-    assign _tmp_b_208 = 4'd7;
+    assign _tmp_b_177 = 4'd7;
 
-    assign _tmp_mux_cond_209 = (_gen_input_idx == _tmp_b_208);
+    assign _tmp_mux_cond_178 = (_gen_input_idx == _tmp_b_177);
 
-    assign _tmp_mux_else_210 = 16'd0;
+    assign _tmp_mux_else_179 = 16'd0;
 
-    assign _tmp_mux_else_211 = (_tmp_mux_cond_209 ? _gen_hidden_reg7 : _tmp_mux_else_210);
+    assign _tmp_mux_else_180 = (_tmp_mux_cond_178 ? _gen_hidden_reg7 : _tmp_mux_else_179);
 
-    assign _tmp_mux_else_212 = (_tmp_mux_cond_207 ? _gen_hidden_reg6 : _tmp_mux_else_211);
+    assign _tmp_mux_else_181 = (_tmp_mux_cond_176 ? _gen_hidden_reg6 : _tmp_mux_else_180);
 
-    assign _tmp_mux_else_213 = (_tmp_mux_cond_205 ? _gen_hidden_reg5 : _tmp_mux_else_212);
+    assign _tmp_mux_else_182 = (_tmp_mux_cond_174 ? _gen_hidden_reg5 : _tmp_mux_else_181);
 
-    assign _tmp_mux_else_214 = (_tmp_mux_cond_203 ? _gen_hidden_reg4 : _tmp_mux_else_213);
+    assign _tmp_mux_else_183 = (_tmp_mux_cond_172 ? _gen_hidden_reg4 : _tmp_mux_else_182);
 
-    assign _tmp_mux_else_215 = (_tmp_mux_cond_201 ? _gen_hidden_reg3 : _tmp_mux_else_214);
+    assign _tmp_mux_else_184 = (_tmp_mux_cond_170 ? _gen_hidden_reg3 : _tmp_mux_else_183);
 
-    assign _tmp_mux_else_216 = (_tmp_mux_cond_199 ? _gen_hidden_reg2 : _tmp_mux_else_215);
+    assign _tmp_mux_else_185 = (_tmp_mux_cond_168 ? _gen_hidden_reg2 : _tmp_mux_else_184);
 
-    assign _tmp_mux_else_217 = (_tmp_mux_cond_197 ? _gen_hidden_reg1 : _tmp_mux_else_216);
+    assign _tmp_mux_else_186 = (_tmp_mux_cond_166 ? _gen_hidden_reg1 : _tmp_mux_else_185);
 
-    assign _gen_selectedHidden = (_tmp_mux_cond_195 ? _gen_hidden_reg0 : _tmp_mux_else_217);
+    assign _gen_selectedHidden = (_tmp_mux_cond_164 ? _gen_hidden_reg0 : _tmp_mux_else_186);
 
     assign _gen_inputSign = _gen_selectedInput[7:7];
 
-    assign _tmp_b_218 = 4'd0;
+    assign _tmp_b_187 = 4'd0;
 
-    assign _tmp_arg1_219 = (_gen_hidden_idx == _tmp_b_218);
+    assign _tmp_arg1_188 = (_gen_hidden_idx == _tmp_b_187);
 
-    assign _tmp_b_220 = 4'd0;
+    assign _tmp_b_189 = 4'd0;
 
-    assign _tmp_arg2_221 = (_gen_input_idx == _tmp_b_220);
+    assign _tmp_arg2_190 = (_gen_input_idx == _tmp_b_189);
 
-    assign _tmp_mux_cond_222 = (_tmp_arg1_219 & _tmp_arg2_221);
+    assign _tmp_mux_cond_191 = (_tmp_arg1_188 & _tmp_arg2_190);
 
-    assign _tmp_mux_then_223 = 8'd0;
+    assign _tmp_mux_then_192 = 8'd0;
 
-    assign _tmp_b_224 = 4'd0;
+    assign _tmp_b_193 = 4'd0;
 
-    assign _tmp_arg1_225 = (_gen_hidden_idx == _tmp_b_224);
+    assign _tmp_arg1_194 = (_gen_hidden_idx == _tmp_b_193);
 
-    assign _tmp_b_226 = 4'd1;
+    assign _tmp_b_195 = 4'd1;
 
-    assign _tmp_arg2_227 = (_gen_input_idx == _tmp_b_226);
+    assign _tmp_arg2_196 = (_gen_input_idx == _tmp_b_195);
 
-    assign _tmp_mux_cond_228 = (_tmp_arg1_225 & _tmp_arg2_227);
+    assign _tmp_mux_cond_197 = (_tmp_arg1_194 & _tmp_arg2_196);
 
-    assign _tmp_mux_then_229 = 8'd0;
+    assign _tmp_mux_then_198 = 8'd0;
 
-    assign _tmp_b_230 = 4'd0;
+    assign _tmp_b_199 = 4'd0;
 
-    assign _tmp_arg1_231 = (_gen_hidden_idx == _tmp_b_230);
+    assign _tmp_arg1_200 = (_gen_hidden_idx == _tmp_b_199);
 
-    assign _tmp_b_232 = 4'd2;
+    assign _tmp_b_201 = 4'd2;
 
-    assign _tmp_arg2_233 = (_gen_input_idx == _tmp_b_232);
+    assign _tmp_arg2_202 = (_gen_input_idx == _tmp_b_201);
 
-    assign _tmp_mux_cond_234 = (_tmp_arg1_231 & _tmp_arg2_233);
+    assign _tmp_mux_cond_203 = (_tmp_arg1_200 & _tmp_arg2_202);
 
-    assign _tmp_mux_then_235 = 8'd0;
+    assign _tmp_mux_then_204 = 8'd0;
 
-    assign _tmp_b_236 = 4'd0;
+    assign _tmp_b_205 = 4'd0;
 
-    assign _tmp_arg1_237 = (_gen_hidden_idx == _tmp_b_236);
+    assign _tmp_arg1_206 = (_gen_hidden_idx == _tmp_b_205);
 
-    assign _tmp_b_238 = 4'd3;
+    assign _tmp_b_207 = 4'd3;
 
-    assign _tmp_arg2_239 = (_gen_input_idx == _tmp_b_238);
+    assign _tmp_arg2_208 = (_gen_input_idx == _tmp_b_207);
 
-    assign _tmp_mux_cond_240 = (_tmp_arg1_237 & _tmp_arg2_239);
+    assign _tmp_mux_cond_209 = (_tmp_arg1_206 & _tmp_arg2_208);
 
-    assign _tmp_mux_then_241 = 8'd0;
+    assign _tmp_mux_then_210 = 8'd0;
 
-    assign _tmp_b_242 = 4'd1;
+    assign _tmp_b_211 = 4'd1;
 
-    assign _tmp_arg1_243 = (_gen_hidden_idx == _tmp_b_242);
+    assign _tmp_arg1_212 = (_gen_hidden_idx == _tmp_b_211);
 
-    assign _tmp_b_244 = 4'd0;
+    assign _tmp_b_213 = 4'd0;
 
-    assign _tmp_arg2_245 = (_gen_input_idx == _tmp_b_244);
+    assign _tmp_arg2_214 = (_gen_input_idx == _tmp_b_213);
 
-    assign _tmp_mux_cond_246 = (_tmp_arg1_243 & _tmp_arg2_245);
+    assign _tmp_mux_cond_215 = (_tmp_arg1_212 & _tmp_arg2_214);
 
-    assign _tmp_mux_then_247 = 8'd0;
+    assign _tmp_mux_then_216 = 8'd0;
 
-    assign _tmp_b_248 = 4'd1;
+    assign _tmp_b_217 = 4'd1;
 
-    assign _tmp_arg1_249 = (_gen_hidden_idx == _tmp_b_248);
+    assign _tmp_arg1_218 = (_gen_hidden_idx == _tmp_b_217);
 
-    assign _tmp_b_250 = 4'd1;
+    assign _tmp_b_219 = 4'd1;
 
-    assign _tmp_arg2_251 = (_gen_input_idx == _tmp_b_250);
+    assign _tmp_arg2_220 = (_gen_input_idx == _tmp_b_219);
 
-    assign _tmp_mux_cond_252 = (_tmp_arg1_249 & _tmp_arg2_251);
+    assign _tmp_mux_cond_221 = (_tmp_arg1_218 & _tmp_arg2_220);
 
-    assign _tmp_mux_then_253 = 8'd0;
+    assign _tmp_mux_then_222 = 8'd0;
 
-    assign _tmp_b_254 = 4'd1;
+    assign _tmp_b_223 = 4'd1;
 
-    assign _tmp_arg1_255 = (_gen_hidden_idx == _tmp_b_254);
+    assign _tmp_arg1_224 = (_gen_hidden_idx == _tmp_b_223);
 
-    assign _tmp_b_256 = 4'd2;
+    assign _tmp_b_225 = 4'd2;
 
-    assign _tmp_arg2_257 = (_gen_input_idx == _tmp_b_256);
+    assign _tmp_arg2_226 = (_gen_input_idx == _tmp_b_225);
 
-    assign _tmp_mux_cond_258 = (_tmp_arg1_255 & _tmp_arg2_257);
+    assign _tmp_mux_cond_227 = (_tmp_arg1_224 & _tmp_arg2_226);
 
-    assign _tmp_mux_then_259 = 8'd0;
+    assign _tmp_mux_then_228 = 8'd0;
 
-    assign _tmp_b_260 = 4'd1;
+    assign _tmp_b_229 = 4'd1;
 
-    assign _tmp_arg1_261 = (_gen_hidden_idx == _tmp_b_260);
+    assign _tmp_arg1_230 = (_gen_hidden_idx == _tmp_b_229);
 
-    assign _tmp_b_262 = 4'd3;
+    assign _tmp_b_231 = 4'd3;
 
-    assign _tmp_arg2_263 = (_gen_input_idx == _tmp_b_262);
+    assign _tmp_arg2_232 = (_gen_input_idx == _tmp_b_231);
 
-    assign _tmp_mux_cond_264 = (_tmp_arg1_261 & _tmp_arg2_263);
+    assign _tmp_mux_cond_233 = (_tmp_arg1_230 & _tmp_arg2_232);
 
-    assign _tmp_mux_then_265 = 8'd255;
+    assign _tmp_mux_then_234 = 8'd255;
 
-    assign _tmp_b_266 = 4'd2;
+    assign _tmp_b_235 = 4'd2;
 
-    assign _tmp_arg1_267 = (_gen_hidden_idx == _tmp_b_266);
+    assign _tmp_arg1_236 = (_gen_hidden_idx == _tmp_b_235);
 
-    assign _tmp_b_268 = 4'd0;
+    assign _tmp_b_237 = 4'd0;
 
-    assign _tmp_arg2_269 = (_gen_input_idx == _tmp_b_268);
+    assign _tmp_arg2_238 = (_gen_input_idx == _tmp_b_237);
 
-    assign _tmp_mux_cond_270 = (_tmp_arg1_267 & _tmp_arg2_269);
+    assign _tmp_mux_cond_239 = (_tmp_arg1_236 & _tmp_arg2_238);
 
-    assign _tmp_mux_then_271 = 8'd2;
+    assign _tmp_mux_then_240 = 8'd2;
 
-    assign _tmp_b_272 = 4'd2;
+    assign _tmp_b_241 = 4'd2;
 
-    assign _tmp_arg1_273 = (_gen_hidden_idx == _tmp_b_272);
+    assign _tmp_arg1_242 = (_gen_hidden_idx == _tmp_b_241);
 
-    assign _tmp_b_274 = 4'd1;
+    assign _tmp_b_243 = 4'd1;
 
-    assign _tmp_arg2_275 = (_gen_input_idx == _tmp_b_274);
+    assign _tmp_arg2_244 = (_gen_input_idx == _tmp_b_243);
 
-    assign _tmp_mux_cond_276 = (_tmp_arg1_273 & _tmp_arg2_275);
+    assign _tmp_mux_cond_245 = (_tmp_arg1_242 & _tmp_arg2_244);
 
-    assign _tmp_mux_then_277 = 8'd1;
+    assign _tmp_mux_then_246 = 8'd1;
 
-    assign _tmp_b_278 = 4'd2;
+    assign _tmp_b_247 = 4'd2;
 
-    assign _tmp_arg1_279 = (_gen_hidden_idx == _tmp_b_278);
+    assign _tmp_arg1_248 = (_gen_hidden_idx == _tmp_b_247);
 
-    assign _tmp_b_280 = 4'd2;
+    assign _tmp_b_249 = 4'd2;
 
-    assign _tmp_arg2_281 = (_gen_input_idx == _tmp_b_280);
+    assign _tmp_arg2_250 = (_gen_input_idx == _tmp_b_249);
 
-    assign _tmp_mux_cond_282 = (_tmp_arg1_279 & _tmp_arg2_281);
+    assign _tmp_mux_cond_251 = (_tmp_arg1_248 & _tmp_arg2_250);
 
-    assign _tmp_mux_then_283 = 8'd1;
+    assign _tmp_mux_then_252 = 8'd1;
 
-    assign _tmp_b_284 = 4'd2;
+    assign _tmp_b_253 = 4'd2;
 
-    assign _tmp_arg1_285 = (_gen_hidden_idx == _tmp_b_284);
+    assign _tmp_arg1_254 = (_gen_hidden_idx == _tmp_b_253);
 
-    assign _tmp_b_286 = 4'd3;
+    assign _tmp_b_255 = 4'd3;
 
-    assign _tmp_arg2_287 = (_gen_input_idx == _tmp_b_286);
+    assign _tmp_arg2_256 = (_gen_input_idx == _tmp_b_255);
 
-    assign _tmp_mux_cond_288 = (_tmp_arg1_285 & _tmp_arg2_287);
+    assign _tmp_mux_cond_257 = (_tmp_arg1_254 & _tmp_arg2_256);
 
-    assign _tmp_mux_then_289 = 8'd255;
+    assign _tmp_mux_then_258 = 8'd255;
 
-    assign _tmp_b_290 = 4'd3;
+    assign _tmp_b_259 = 4'd3;
 
-    assign _tmp_arg1_291 = (_gen_hidden_idx == _tmp_b_290);
+    assign _tmp_arg1_260 = (_gen_hidden_idx == _tmp_b_259);
 
-    assign _tmp_b_292 = 4'd0;
+    assign _tmp_b_261 = 4'd0;
 
-    assign _tmp_arg2_293 = (_gen_input_idx == _tmp_b_292);
+    assign _tmp_arg2_262 = (_gen_input_idx == _tmp_b_261);
 
-    assign _tmp_mux_cond_294 = (_tmp_arg1_291 & _tmp_arg2_293);
+    assign _tmp_mux_cond_263 = (_tmp_arg1_260 & _tmp_arg2_262);
 
-    assign _tmp_mux_then_295 = 8'd0;
+    assign _tmp_mux_then_264 = 8'd0;
 
-    assign _tmp_b_296 = 4'd3;
+    assign _tmp_b_265 = 4'd3;
 
-    assign _tmp_arg1_297 = (_gen_hidden_idx == _tmp_b_296);
+    assign _tmp_arg1_266 = (_gen_hidden_idx == _tmp_b_265);
 
-    assign _tmp_b_298 = 4'd1;
+    assign _tmp_b_267 = 4'd1;
 
-    assign _tmp_arg2_299 = (_gen_input_idx == _tmp_b_298);
+    assign _tmp_arg2_268 = (_gen_input_idx == _tmp_b_267);
 
-    assign _tmp_mux_cond_300 = (_tmp_arg1_297 & _tmp_arg2_299);
+    assign _tmp_mux_cond_269 = (_tmp_arg1_266 & _tmp_arg2_268);
 
-    assign _tmp_mux_then_301 = 8'd0;
+    assign _tmp_mux_then_270 = 8'd0;
 
-    assign _tmp_b_302 = 4'd3;
+    assign _tmp_b_271 = 4'd3;
 
-    assign _tmp_arg1_303 = (_gen_hidden_idx == _tmp_b_302);
+    assign _tmp_arg1_272 = (_gen_hidden_idx == _tmp_b_271);
 
-    assign _tmp_b_304 = 4'd2;
+    assign _tmp_b_273 = 4'd2;
 
-    assign _tmp_arg2_305 = (_gen_input_idx == _tmp_b_304);
+    assign _tmp_arg2_274 = (_gen_input_idx == _tmp_b_273);
 
-    assign _tmp_mux_cond_306 = (_tmp_arg1_303 & _tmp_arg2_305);
+    assign _tmp_mux_cond_275 = (_tmp_arg1_272 & _tmp_arg2_274);
 
-    assign _tmp_mux_then_307 = 8'd0;
+    assign _tmp_mux_then_276 = 8'd0;
 
-    assign _tmp_b_308 = 4'd3;
+    assign _tmp_b_277 = 4'd3;
 
-    assign _tmp_arg1_309 = (_gen_hidden_idx == _tmp_b_308);
+    assign _tmp_arg1_278 = (_gen_hidden_idx == _tmp_b_277);
 
-    assign _tmp_b_310 = 4'd3;
+    assign _tmp_b_279 = 4'd3;
 
-    assign _tmp_arg2_311 = (_gen_input_idx == _tmp_b_310);
+    assign _tmp_arg2_280 = (_gen_input_idx == _tmp_b_279);
 
-    assign _tmp_mux_cond_312 = (_tmp_arg1_309 & _tmp_arg2_311);
+    assign _tmp_mux_cond_281 = (_tmp_arg1_278 & _tmp_arg2_280);
 
-    assign _tmp_mux_then_313 = 8'd255;
+    assign _tmp_mux_then_282 = 8'd255;
 
-    assign _tmp_b_314 = 4'd4;
+    assign _tmp_b_283 = 4'd4;
 
-    assign _tmp_arg1_315 = (_gen_hidden_idx == _tmp_b_314);
+    assign _tmp_arg1_284 = (_gen_hidden_idx == _tmp_b_283);
 
-    assign _tmp_b_316 = 4'd0;
+    assign _tmp_b_285 = 4'd0;
 
-    assign _tmp_arg2_317 = (_gen_input_idx == _tmp_b_316);
+    assign _tmp_arg2_286 = (_gen_input_idx == _tmp_b_285);
 
-    assign _tmp_mux_cond_318 = (_tmp_arg1_315 & _tmp_arg2_317);
+    assign _tmp_mux_cond_287 = (_tmp_arg1_284 & _tmp_arg2_286);
 
-    assign _tmp_mux_then_319 = 8'd255;
+    assign _tmp_mux_then_288 = 8'd255;
 
-    assign _tmp_b_320 = 4'd4;
+    assign _tmp_b_289 = 4'd4;
 
-    assign _tmp_arg1_321 = (_gen_hidden_idx == _tmp_b_320);
+    assign _tmp_arg1_290 = (_gen_hidden_idx == _tmp_b_289);
 
-    assign _tmp_b_322 = 4'd1;
+    assign _tmp_b_291 = 4'd1;
 
-    assign _tmp_arg2_323 = (_gen_input_idx == _tmp_b_322);
+    assign _tmp_arg2_292 = (_gen_input_idx == _tmp_b_291);
 
-    assign _tmp_mux_cond_324 = (_tmp_arg1_321 & _tmp_arg2_323);
+    assign _tmp_mux_cond_293 = (_tmp_arg1_290 & _tmp_arg2_292);
 
-    assign _tmp_mux_then_325 = 8'd0;
+    assign _tmp_mux_then_294 = 8'd0;
 
-    assign _tmp_b_326 = 4'd4;
+    assign _tmp_b_295 = 4'd4;
 
-    assign _tmp_arg1_327 = (_gen_hidden_idx == _tmp_b_326);
+    assign _tmp_arg1_296 = (_gen_hidden_idx == _tmp_b_295);
 
-    assign _tmp_b_328 = 4'd2;
+    assign _tmp_b_297 = 4'd2;
 
-    assign _tmp_arg2_329 = (_gen_input_idx == _tmp_b_328);
+    assign _tmp_arg2_298 = (_gen_input_idx == _tmp_b_297);
 
-    assign _tmp_mux_cond_330 = (_tmp_arg1_327 & _tmp_arg2_329);
+    assign _tmp_mux_cond_299 = (_tmp_arg1_296 & _tmp_arg2_298);
 
-    assign _tmp_mux_then_331 = 8'd0;
+    assign _tmp_mux_then_300 = 8'd0;
 
-    assign _tmp_b_332 = 4'd4;
+    assign _tmp_b_301 = 4'd4;
 
-    assign _tmp_arg1_333 = (_gen_hidden_idx == _tmp_b_332);
+    assign _tmp_arg1_302 = (_gen_hidden_idx == _tmp_b_301);
 
-    assign _tmp_b_334 = 4'd3;
+    assign _tmp_b_303 = 4'd3;
 
-    assign _tmp_arg2_335 = (_gen_input_idx == _tmp_b_334);
+    assign _tmp_arg2_304 = (_gen_input_idx == _tmp_b_303);
 
-    assign _tmp_mux_cond_336 = (_tmp_arg1_333 & _tmp_arg2_335);
+    assign _tmp_mux_cond_305 = (_tmp_arg1_302 & _tmp_arg2_304);
 
-    assign _tmp_mux_then_337 = 8'd0;
+    assign _tmp_mux_then_306 = 8'd0;
 
-    assign _tmp_b_338 = 4'd5;
+    assign _tmp_b_307 = 4'd5;
 
-    assign _tmp_arg1_339 = (_gen_hidden_idx == _tmp_b_338);
+    assign _tmp_arg1_308 = (_gen_hidden_idx == _tmp_b_307);
 
-    assign _tmp_b_340 = 4'd0;
+    assign _tmp_b_309 = 4'd0;
 
-    assign _tmp_arg2_341 = (_gen_input_idx == _tmp_b_340);
+    assign _tmp_arg2_310 = (_gen_input_idx == _tmp_b_309);
 
-    assign _tmp_mux_cond_342 = (_tmp_arg1_339 & _tmp_arg2_341);
+    assign _tmp_mux_cond_311 = (_tmp_arg1_308 & _tmp_arg2_310);
 
-    assign _tmp_mux_then_343 = 8'd255;
+    assign _tmp_mux_then_312 = 8'd255;
 
-    assign _tmp_b_344 = 4'd5;
+    assign _tmp_b_313 = 4'd5;
 
-    assign _tmp_arg1_345 = (_gen_hidden_idx == _tmp_b_344);
+    assign _tmp_arg1_314 = (_gen_hidden_idx == _tmp_b_313);
 
-    assign _tmp_b_346 = 4'd1;
+    assign _tmp_b_315 = 4'd1;
 
-    assign _tmp_arg2_347 = (_gen_input_idx == _tmp_b_346);
+    assign _tmp_arg2_316 = (_gen_input_idx == _tmp_b_315);
 
-    assign _tmp_mux_cond_348 = (_tmp_arg1_345 & _tmp_arg2_347);
+    assign _tmp_mux_cond_317 = (_tmp_arg1_314 & _tmp_arg2_316);
 
-    assign _tmp_mux_then_349 = 8'd1;
+    assign _tmp_mux_then_318 = 8'd1;
 
-    assign _tmp_b_350 = 4'd5;
+    assign _tmp_b_319 = 4'd5;
 
-    assign _tmp_arg1_351 = (_gen_hidden_idx == _tmp_b_350);
+    assign _tmp_arg1_320 = (_gen_hidden_idx == _tmp_b_319);
 
-    assign _tmp_b_352 = 4'd2;
+    assign _tmp_b_321 = 4'd2;
 
-    assign _tmp_arg2_353 = (_gen_input_idx == _tmp_b_352);
+    assign _tmp_arg2_322 = (_gen_input_idx == _tmp_b_321);
 
-    assign _tmp_mux_cond_354 = (_tmp_arg1_351 & _tmp_arg2_353);
+    assign _tmp_mux_cond_323 = (_tmp_arg1_320 & _tmp_arg2_322);
 
-    assign _tmp_mux_then_355 = 8'd255;
+    assign _tmp_mux_then_324 = 8'd255;
 
-    assign _tmp_b_356 = 4'd5;
+    assign _tmp_b_325 = 4'd5;
 
-    assign _tmp_arg1_357 = (_gen_hidden_idx == _tmp_b_356);
+    assign _tmp_arg1_326 = (_gen_hidden_idx == _tmp_b_325);
 
-    assign _tmp_b_358 = 4'd3;
+    assign _tmp_b_327 = 4'd3;
 
-    assign _tmp_arg2_359 = (_gen_input_idx == _tmp_b_358);
+    assign _tmp_arg2_328 = (_gen_input_idx == _tmp_b_327);
 
-    assign _tmp_mux_cond_360 = (_tmp_arg1_357 & _tmp_arg2_359);
+    assign _tmp_mux_cond_329 = (_tmp_arg1_326 & _tmp_arg2_328);
 
-    assign _tmp_mux_then_361 = 8'd1;
+    assign _tmp_mux_then_330 = 8'd1;
 
-    assign _tmp_b_362 = 4'd6;
+    assign _tmp_b_331 = 4'd6;
 
-    assign _tmp_arg1_363 = (_gen_hidden_idx == _tmp_b_362);
+    assign _tmp_arg1_332 = (_gen_hidden_idx == _tmp_b_331);
 
-    assign _tmp_b_364 = 4'd0;
+    assign _tmp_b_333 = 4'd0;
 
-    assign _tmp_arg2_365 = (_gen_input_idx == _tmp_b_364);
+    assign _tmp_arg2_334 = (_gen_input_idx == _tmp_b_333);
 
-    assign _tmp_mux_cond_366 = (_tmp_arg1_363 & _tmp_arg2_365);
+    assign _tmp_mux_cond_335 = (_tmp_arg1_332 & _tmp_arg2_334);
 
-    assign _tmp_mux_then_367 = 8'd0;
+    assign _tmp_mux_then_336 = 8'd0;
 
-    assign _tmp_b_368 = 4'd6;
+    assign _tmp_b_337 = 4'd6;
 
-    assign _tmp_arg1_369 = (_gen_hidden_idx == _tmp_b_368);
+    assign _tmp_arg1_338 = (_gen_hidden_idx == _tmp_b_337);
 
-    assign _tmp_b_370 = 4'd1;
+    assign _tmp_b_339 = 4'd1;
 
-    assign _tmp_arg2_371 = (_gen_input_idx == _tmp_b_370);
+    assign _tmp_arg2_340 = (_gen_input_idx == _tmp_b_339);
 
-    assign _tmp_mux_cond_372 = (_tmp_arg1_369 & _tmp_arg2_371);
+    assign _tmp_mux_cond_341 = (_tmp_arg1_338 & _tmp_arg2_340);
 
-    assign _tmp_mux_then_373 = 8'd255;
+    assign _tmp_mux_then_342 = 8'd255;
 
-    assign _tmp_b_374 = 4'd6;
+    assign _tmp_b_343 = 4'd6;
 
-    assign _tmp_arg1_375 = (_gen_hidden_idx == _tmp_b_374);
+    assign _tmp_arg1_344 = (_gen_hidden_idx == _tmp_b_343);
 
-    assign _tmp_b_376 = 4'd2;
+    assign _tmp_b_345 = 4'd2;
 
-    assign _tmp_arg2_377 = (_gen_input_idx == _tmp_b_376);
+    assign _tmp_arg2_346 = (_gen_input_idx == _tmp_b_345);
 
-    assign _tmp_mux_cond_378 = (_tmp_arg1_375 & _tmp_arg2_377);
+    assign _tmp_mux_cond_347 = (_tmp_arg1_344 & _tmp_arg2_346);
 
-    assign _tmp_mux_then_379 = 8'd1;
+    assign _tmp_mux_then_348 = 8'd1;
 
-    assign _tmp_b_380 = 4'd6;
+    assign _tmp_b_349 = 4'd6;
 
-    assign _tmp_arg1_381 = (_gen_hidden_idx == _tmp_b_380);
+    assign _tmp_arg1_350 = (_gen_hidden_idx == _tmp_b_349);
 
-    assign _tmp_b_382 = 4'd3;
+    assign _tmp_b_351 = 4'd3;
 
-    assign _tmp_arg2_383 = (_gen_input_idx == _tmp_b_382);
+    assign _tmp_arg2_352 = (_gen_input_idx == _tmp_b_351);
 
-    assign _tmp_mux_cond_384 = (_tmp_arg1_381 & _tmp_arg2_383);
+    assign _tmp_mux_cond_353 = (_tmp_arg1_350 & _tmp_arg2_352);
 
-    assign _tmp_mux_then_385 = 8'd255;
+    assign _tmp_mux_then_354 = 8'd255;
 
-    assign _tmp_b_386 = 4'd7;
+    assign _tmp_b_355 = 4'd7;
 
-    assign _tmp_arg1_387 = (_gen_hidden_idx == _tmp_b_386);
+    assign _tmp_arg1_356 = (_gen_hidden_idx == _tmp_b_355);
 
-    assign _tmp_b_388 = 4'd0;
+    assign _tmp_b_357 = 4'd0;
 
-    assign _tmp_arg2_389 = (_gen_input_idx == _tmp_b_388);
+    assign _tmp_arg2_358 = (_gen_input_idx == _tmp_b_357);
 
-    assign _tmp_mux_cond_390 = (_tmp_arg1_387 & _tmp_arg2_389);
+    assign _tmp_mux_cond_359 = (_tmp_arg1_356 & _tmp_arg2_358);
 
-    assign _tmp_mux_then_391 = 8'd1;
+    assign _tmp_mux_then_360 = 8'd1;
 
-    assign _tmp_b_392 = 4'd7;
+    assign _tmp_b_361 = 4'd7;
 
-    assign _tmp_arg1_393 = (_gen_hidden_idx == _tmp_b_392);
+    assign _tmp_arg1_362 = (_gen_hidden_idx == _tmp_b_361);
 
-    assign _tmp_b_394 = 4'd1;
+    assign _tmp_b_363 = 4'd1;
 
-    assign _tmp_arg2_395 = (_gen_input_idx == _tmp_b_394);
+    assign _tmp_arg2_364 = (_gen_input_idx == _tmp_b_363);
 
-    assign _tmp_mux_cond_396 = (_tmp_arg1_393 & _tmp_arg2_395);
+    assign _tmp_mux_cond_365 = (_tmp_arg1_362 & _tmp_arg2_364);
 
-    assign _tmp_mux_then_397 = 8'd2;
+    assign _tmp_mux_then_366 = 8'd2;
 
-    assign _tmp_b_398 = 4'd7;
+    assign _tmp_b_367 = 4'd7;
 
-    assign _tmp_arg1_399 = (_gen_hidden_idx == _tmp_b_398);
+    assign _tmp_arg1_368 = (_gen_hidden_idx == _tmp_b_367);
 
-    assign _tmp_b_400 = 4'd2;
+    assign _tmp_b_369 = 4'd2;
 
-    assign _tmp_arg2_401 = (_gen_input_idx == _tmp_b_400);
+    assign _tmp_arg2_370 = (_gen_input_idx == _tmp_b_369);
 
-    assign _tmp_mux_cond_402 = (_tmp_arg1_399 & _tmp_arg2_401);
+    assign _tmp_mux_cond_371 = (_tmp_arg1_368 & _tmp_arg2_370);
 
-    assign _tmp_mux_then_403 = 8'd0;
+    assign _tmp_mux_then_372 = 8'd0;
 
-    assign _tmp_b_404 = 4'd7;
+    assign _tmp_b_373 = 4'd7;
 
-    assign _tmp_arg1_405 = (_gen_hidden_idx == _tmp_b_404);
+    assign _tmp_arg1_374 = (_gen_hidden_idx == _tmp_b_373);
 
-    assign _tmp_b_406 = 4'd3;
+    assign _tmp_b_375 = 4'd3;
 
-    assign _tmp_arg2_407 = (_gen_input_idx == _tmp_b_406);
+    assign _tmp_arg2_376 = (_gen_input_idx == _tmp_b_375);
 
-    assign _tmp_mux_cond_408 = (_tmp_arg1_405 & _tmp_arg2_407);
+    assign _tmp_mux_cond_377 = (_tmp_arg1_374 & _tmp_arg2_376);
 
-    assign _tmp_mux_then_409 = 8'd0;
+    assign _tmp_mux_then_378 = 8'd0;
 
-    assign _tmp_mux_else_410 = 8'd0;
+    assign _tmp_mux_else_379 = 8'd0;
 
-    assign _tmp_mux_else_411 = (_tmp_mux_cond_408 ? _tmp_mux_then_409 : _tmp_mux_else_410);
+    assign _tmp_mux_else_380 = (_tmp_mux_cond_377 ? _tmp_mux_then_378 : _tmp_mux_else_379);
 
-    assign _tmp_mux_else_412 = (_tmp_mux_cond_402 ? _tmp_mux_then_403 : _tmp_mux_else_411);
+    assign _tmp_mux_else_381 = (_tmp_mux_cond_371 ? _tmp_mux_then_372 : _tmp_mux_else_380);
 
-    assign _tmp_mux_else_413 = (_tmp_mux_cond_396 ? _tmp_mux_then_397 : _tmp_mux_else_412);
+    assign _tmp_mux_else_382 = (_tmp_mux_cond_365 ? _tmp_mux_then_366 : _tmp_mux_else_381);
 
-    assign _tmp_mux_else_414 = (_tmp_mux_cond_390 ? _tmp_mux_then_391 : _tmp_mux_else_413);
+    assign _tmp_mux_else_383 = (_tmp_mux_cond_359 ? _tmp_mux_then_360 : _tmp_mux_else_382);
 
-    assign _tmp_mux_else_415 = (_tmp_mux_cond_384 ? _tmp_mux_then_385 : _tmp_mux_else_414);
+    assign _tmp_mux_else_384 = (_tmp_mux_cond_353 ? _tmp_mux_then_354 : _tmp_mux_else_383);
 
-    assign _tmp_mux_else_416 = (_tmp_mux_cond_378 ? _tmp_mux_then_379 : _tmp_mux_else_415);
+    assign _tmp_mux_else_385 = (_tmp_mux_cond_347 ? _tmp_mux_then_348 : _tmp_mux_else_384);
 
-    assign _tmp_mux_else_417 = (_tmp_mux_cond_372 ? _tmp_mux_then_373 : _tmp_mux_else_416);
+    assign _tmp_mux_else_386 = (_tmp_mux_cond_341 ? _tmp_mux_then_342 : _tmp_mux_else_385);
 
-    assign _tmp_mux_else_418 = (_tmp_mux_cond_366 ? _tmp_mux_then_367 : _tmp_mux_else_417);
+    assign _tmp_mux_else_387 = (_tmp_mux_cond_335 ? _tmp_mux_then_336 : _tmp_mux_else_386);
 
-    assign _tmp_mux_else_419 = (_tmp_mux_cond_360 ? _tmp_mux_then_361 : _tmp_mux_else_418);
+    assign _tmp_mux_else_388 = (_tmp_mux_cond_329 ? _tmp_mux_then_330 : _tmp_mux_else_387);
 
-    assign _tmp_mux_else_420 = (_tmp_mux_cond_354 ? _tmp_mux_then_355 : _tmp_mux_else_419);
+    assign _tmp_mux_else_389 = (_tmp_mux_cond_323 ? _tmp_mux_then_324 : _tmp_mux_else_388);
 
-    assign _tmp_mux_else_421 = (_tmp_mux_cond_348 ? _tmp_mux_then_349 : _tmp_mux_else_420);
+    assign _tmp_mux_else_390 = (_tmp_mux_cond_317 ? _tmp_mux_then_318 : _tmp_mux_else_389);
 
-    assign _tmp_mux_else_422 = (_tmp_mux_cond_342 ? _tmp_mux_then_343 : _tmp_mux_else_421);
+    assign _tmp_mux_else_391 = (_tmp_mux_cond_311 ? _tmp_mux_then_312 : _tmp_mux_else_390);
 
-    assign _tmp_mux_else_423 = (_tmp_mux_cond_336 ? _tmp_mux_then_337 : _tmp_mux_else_422);
+    assign _tmp_mux_else_392 = (_tmp_mux_cond_305 ? _tmp_mux_then_306 : _tmp_mux_else_391);
 
-    assign _tmp_mux_else_424 = (_tmp_mux_cond_330 ? _tmp_mux_then_331 : _tmp_mux_else_423);
+    assign _tmp_mux_else_393 = (_tmp_mux_cond_299 ? _tmp_mux_then_300 : _tmp_mux_else_392);
 
-    assign _tmp_mux_else_425 = (_tmp_mux_cond_324 ? _tmp_mux_then_325 : _tmp_mux_else_424);
+    assign _tmp_mux_else_394 = (_tmp_mux_cond_293 ? _tmp_mux_then_294 : _tmp_mux_else_393);
 
-    assign _tmp_mux_else_426 = (_tmp_mux_cond_318 ? _tmp_mux_then_319 : _tmp_mux_else_425);
+    assign _tmp_mux_else_395 = (_tmp_mux_cond_287 ? _tmp_mux_then_288 : _tmp_mux_else_394);
 
-    assign _tmp_mux_else_427 = (_tmp_mux_cond_312 ? _tmp_mux_then_313 : _tmp_mux_else_426);
+    assign _tmp_mux_else_396 = (_tmp_mux_cond_281 ? _tmp_mux_then_282 : _tmp_mux_else_395);
 
-    assign _tmp_mux_else_428 = (_tmp_mux_cond_306 ? _tmp_mux_then_307 : _tmp_mux_else_427);
+    assign _tmp_mux_else_397 = (_tmp_mux_cond_275 ? _tmp_mux_then_276 : _tmp_mux_else_396);
 
-    assign _tmp_mux_else_429 = (_tmp_mux_cond_300 ? _tmp_mux_then_301 : _tmp_mux_else_428);
+    assign _tmp_mux_else_398 = (_tmp_mux_cond_269 ? _tmp_mux_then_270 : _tmp_mux_else_397);
 
-    assign _tmp_mux_else_430 = (_tmp_mux_cond_294 ? _tmp_mux_then_295 : _tmp_mux_else_429);
+    assign _tmp_mux_else_399 = (_tmp_mux_cond_263 ? _tmp_mux_then_264 : _tmp_mux_else_398);
 
-    assign _tmp_mux_else_431 = (_tmp_mux_cond_288 ? _tmp_mux_then_289 : _tmp_mux_else_430);
+    assign _tmp_mux_else_400 = (_tmp_mux_cond_257 ? _tmp_mux_then_258 : _tmp_mux_else_399);
 
-    assign _tmp_mux_else_432 = (_tmp_mux_cond_282 ? _tmp_mux_then_283 : _tmp_mux_else_431);
+    assign _tmp_mux_else_401 = (_tmp_mux_cond_251 ? _tmp_mux_then_252 : _tmp_mux_else_400);
 
-    assign _tmp_mux_else_433 = (_tmp_mux_cond_276 ? _tmp_mux_then_277 : _tmp_mux_else_432);
+    assign _tmp_mux_else_402 = (_tmp_mux_cond_245 ? _tmp_mux_then_246 : _tmp_mux_else_401);
 
-    assign _tmp_mux_else_434 = (_tmp_mux_cond_270 ? _tmp_mux_then_271 : _tmp_mux_else_433);
+    assign _tmp_mux_else_403 = (_tmp_mux_cond_239 ? _tmp_mux_then_240 : _tmp_mux_else_402);
 
-    assign _tmp_mux_else_435 = (_tmp_mux_cond_264 ? _tmp_mux_then_265 : _tmp_mux_else_434);
+    assign _tmp_mux_else_404 = (_tmp_mux_cond_233 ? _tmp_mux_then_234 : _tmp_mux_else_403);
 
-    assign _tmp_mux_else_436 = (_tmp_mux_cond_258 ? _tmp_mux_then_259 : _tmp_mux_else_435);
+    assign _tmp_mux_else_405 = (_tmp_mux_cond_227 ? _tmp_mux_then_228 : _tmp_mux_else_404);
 
-    assign _tmp_mux_else_437 = (_tmp_mux_cond_252 ? _tmp_mux_then_253 : _tmp_mux_else_436);
+    assign _tmp_mux_else_406 = (_tmp_mux_cond_221 ? _tmp_mux_then_222 : _tmp_mux_else_405);
 
-    assign _tmp_mux_else_438 = (_tmp_mux_cond_246 ? _tmp_mux_then_247 : _tmp_mux_else_437);
+    assign _tmp_mux_else_407 = (_tmp_mux_cond_215 ? _tmp_mux_then_216 : _tmp_mux_else_406);
 
-    assign _tmp_mux_else_439 = (_tmp_mux_cond_240 ? _tmp_mux_then_241 : _tmp_mux_else_438);
+    assign _tmp_mux_else_408 = (_tmp_mux_cond_209 ? _tmp_mux_then_210 : _tmp_mux_else_407);
 
-    assign _tmp_mux_else_440 = (_tmp_mux_cond_234 ? _tmp_mux_then_235 : _tmp_mux_else_439);
+    assign _tmp_mux_else_409 = (_tmp_mux_cond_203 ? _tmp_mux_then_204 : _tmp_mux_else_408);
 
-    assign _tmp_mux_else_441 = (_tmp_mux_cond_228 ? _tmp_mux_then_229 : _tmp_mux_else_440);
+    assign _tmp_mux_else_410 = (_tmp_mux_cond_197 ? _tmp_mux_then_198 : _tmp_mux_else_409);
 
-    assign _tmp_s_442 = (_tmp_mux_cond_222 ? _tmp_mux_then_223 : _tmp_mux_else_441);
+    assign _tmp_s_411 = (_tmp_mux_cond_191 ? _tmp_mux_then_192 : _tmp_mux_else_410);
 
-    assign _gen_weightSign = _tmp_s_442[7:7];
+    assign _gen_weightSign = _tmp_s_411[7:7];
 
-    assign _tmp_b_443 = 1'd1;
+    assign _tmp_b_412 = 1'd1;
 
-    assign _tmp_mux_cond_444 = (_gen_inputSign == _tmp_b_443);
+    assign _tmp_mux_cond_413 = (_gen_inputSign == _tmp_b_412);
 
-    assign _tmp_mux_then_445 = 16'd65535;
+    assign _tmp_mux_then_414 = 16'd65535;
 
-    assign _tmp_mux_else_446 = 16'd0;
+    assign _tmp_mux_else_415 = 16'd0;
 
-    assign _gen_inputUpper = (_tmp_mux_cond_444 ? _tmp_mux_then_445 : _tmp_mux_else_446);
+    assign _gen_inputUpper = (_tmp_mux_cond_413 ? _tmp_mux_then_414 : _tmp_mux_else_415);
 
-    assign _tmp_b_447 = 1'd1;
+    assign _tmp_b_416 = 1'd1;
 
-    assign _tmp_mux_cond_448 = (_gen_weightSign == _tmp_b_447);
+    assign _tmp_mux_cond_417 = (_gen_weightSign == _tmp_b_416);
 
-    assign _tmp_mux_then_449 = 16'd65535;
+    assign _tmp_mux_then_418 = 16'd65535;
 
-    assign _tmp_mux_else_450 = 16'd0;
+    assign _tmp_mux_else_419 = 16'd0;
 
-    assign _gen_weightUpper = (_tmp_mux_cond_448 ? _tmp_mux_then_449 : _tmp_mux_else_450);
+    assign _gen_weightUpper = (_tmp_mux_cond_417 ? _tmp_mux_then_418 : _tmp_mux_else_419);
 
     assign _gen_input24 = {_gen_inputUpper, _gen_selectedInput};
 
-    assign _tmp_b_451 = 4'd0;
+    assign _tmp_b_420 = 4'd0;
 
-    assign _tmp_arg1_452 = (_gen_hidden_idx == _tmp_b_451);
+    assign _tmp_arg1_421 = (_gen_hidden_idx == _tmp_b_420);
 
-    assign _tmp_b_453 = 4'd0;
+    assign _tmp_b_422 = 4'd0;
 
-    assign _tmp_arg2_454 = (_gen_input_idx == _tmp_b_453);
+    assign _tmp_arg2_423 = (_gen_input_idx == _tmp_b_422);
 
-    assign _tmp_mux_cond_455 = (_tmp_arg1_452 & _tmp_arg2_454);
+    assign _tmp_mux_cond_424 = (_tmp_arg1_421 & _tmp_arg2_423);
 
-    assign _tmp_mux_then_456 = 8'd0;
+    assign _tmp_mux_then_425 = 8'd0;
 
-    assign _tmp_b_457 = 4'd0;
+    assign _tmp_b_426 = 4'd0;
 
-    assign _tmp_arg1_458 = (_gen_hidden_idx == _tmp_b_457);
+    assign _tmp_arg1_427 = (_gen_hidden_idx == _tmp_b_426);
 
-    assign _tmp_b_459 = 4'd1;
+    assign _tmp_b_428 = 4'd1;
 
-    assign _tmp_arg2_460 = (_gen_input_idx == _tmp_b_459);
+    assign _tmp_arg2_429 = (_gen_input_idx == _tmp_b_428);
 
-    assign _tmp_mux_cond_461 = (_tmp_arg1_458 & _tmp_arg2_460);
+    assign _tmp_mux_cond_430 = (_tmp_arg1_427 & _tmp_arg2_429);
 
-    assign _tmp_mux_then_462 = 8'd0;
+    assign _tmp_mux_then_431 = 8'd0;
 
-    assign _tmp_b_463 = 4'd0;
+    assign _tmp_b_432 = 4'd0;
 
-    assign _tmp_arg1_464 = (_gen_hidden_idx == _tmp_b_463);
+    assign _tmp_arg1_433 = (_gen_hidden_idx == _tmp_b_432);
 
-    assign _tmp_b_465 = 4'd2;
+    assign _tmp_b_434 = 4'd2;
 
-    assign _tmp_arg2_466 = (_gen_input_idx == _tmp_b_465);
+    assign _tmp_arg2_435 = (_gen_input_idx == _tmp_b_434);
 
-    assign _tmp_mux_cond_467 = (_tmp_arg1_464 & _tmp_arg2_466);
+    assign _tmp_mux_cond_436 = (_tmp_arg1_433 & _tmp_arg2_435);
 
-    assign _tmp_mux_then_468 = 8'd0;
+    assign _tmp_mux_then_437 = 8'd0;
 
-    assign _tmp_b_469 = 4'd0;
+    assign _tmp_b_438 = 4'd0;
 
-    assign _tmp_arg1_470 = (_gen_hidden_idx == _tmp_b_469);
+    assign _tmp_arg1_439 = (_gen_hidden_idx == _tmp_b_438);
 
-    assign _tmp_b_471 = 4'd3;
+    assign _tmp_b_440 = 4'd3;
 
-    assign _tmp_arg2_472 = (_gen_input_idx == _tmp_b_471);
+    assign _tmp_arg2_441 = (_gen_input_idx == _tmp_b_440);
 
-    assign _tmp_mux_cond_473 = (_tmp_arg1_470 & _tmp_arg2_472);
+    assign _tmp_mux_cond_442 = (_tmp_arg1_439 & _tmp_arg2_441);
 
-    assign _tmp_mux_then_474 = 8'd0;
+    assign _tmp_mux_then_443 = 8'd0;
 
-    assign _tmp_b_475 = 4'd1;
+    assign _tmp_b_444 = 4'd1;
 
-    assign _tmp_arg1_476 = (_gen_hidden_idx == _tmp_b_475);
+    assign _tmp_arg1_445 = (_gen_hidden_idx == _tmp_b_444);
 
-    assign _tmp_b_477 = 4'd0;
+    assign _tmp_b_446 = 4'd0;
 
-    assign _tmp_arg2_478 = (_gen_input_idx == _tmp_b_477);
+    assign _tmp_arg2_447 = (_gen_input_idx == _tmp_b_446);
 
-    assign _tmp_mux_cond_479 = (_tmp_arg1_476 & _tmp_arg2_478);
+    assign _tmp_mux_cond_448 = (_tmp_arg1_445 & _tmp_arg2_447);
 
-    assign _tmp_mux_then_480 = 8'd0;
+    assign _tmp_mux_then_449 = 8'd0;
 
-    assign _tmp_b_481 = 4'd1;
+    assign _tmp_b_450 = 4'd1;
 
-    assign _tmp_arg1_482 = (_gen_hidden_idx == _tmp_b_481);
+    assign _tmp_arg1_451 = (_gen_hidden_idx == _tmp_b_450);
 
-    assign _tmp_b_483 = 4'd1;
+    assign _tmp_b_452 = 4'd1;
 
-    assign _tmp_arg2_484 = (_gen_input_idx == _tmp_b_483);
+    assign _tmp_arg2_453 = (_gen_input_idx == _tmp_b_452);
 
-    assign _tmp_mux_cond_485 = (_tmp_arg1_482 & _tmp_arg2_484);
+    assign _tmp_mux_cond_454 = (_tmp_arg1_451 & _tmp_arg2_453);
 
-    assign _tmp_mux_then_486 = 8'd0;
+    assign _tmp_mux_then_455 = 8'd0;
 
-    assign _tmp_b_487 = 4'd1;
+    assign _tmp_b_456 = 4'd1;
 
-    assign _tmp_arg1_488 = (_gen_hidden_idx == _tmp_b_487);
+    assign _tmp_arg1_457 = (_gen_hidden_idx == _tmp_b_456);
 
-    assign _tmp_b_489 = 4'd2;
+    assign _tmp_b_458 = 4'd2;
 
-    assign _tmp_arg2_490 = (_gen_input_idx == _tmp_b_489);
+    assign _tmp_arg2_459 = (_gen_input_idx == _tmp_b_458);
 
-    assign _tmp_mux_cond_491 = (_tmp_arg1_488 & _tmp_arg2_490);
+    assign _tmp_mux_cond_460 = (_tmp_arg1_457 & _tmp_arg2_459);
 
-    assign _tmp_mux_then_492 = 8'd0;
+    assign _tmp_mux_then_461 = 8'd0;
 
-    assign _tmp_b_493 = 4'd1;
+    assign _tmp_b_462 = 4'd1;
 
-    assign _tmp_arg1_494 = (_gen_hidden_idx == _tmp_b_493);
+    assign _tmp_arg1_463 = (_gen_hidden_idx == _tmp_b_462);
 
-    assign _tmp_b_495 = 4'd3;
+    assign _tmp_b_464 = 4'd3;
 
-    assign _tmp_arg2_496 = (_gen_input_idx == _tmp_b_495);
+    assign _tmp_arg2_465 = (_gen_input_idx == _tmp_b_464);
 
-    assign _tmp_mux_cond_497 = (_tmp_arg1_494 & _tmp_arg2_496);
+    assign _tmp_mux_cond_466 = (_tmp_arg1_463 & _tmp_arg2_465);
 
-    assign _tmp_mux_then_498 = 8'd255;
+    assign _tmp_mux_then_467 = 8'd255;
 
-    assign _tmp_b_499 = 4'd2;
+    assign _tmp_b_468 = 4'd2;
 
-    assign _tmp_arg1_500 = (_gen_hidden_idx == _tmp_b_499);
+    assign _tmp_arg1_469 = (_gen_hidden_idx == _tmp_b_468);
 
-    assign _tmp_b_501 = 4'd0;
+    assign _tmp_b_470 = 4'd0;
 
-    assign _tmp_arg2_502 = (_gen_input_idx == _tmp_b_501);
+    assign _tmp_arg2_471 = (_gen_input_idx == _tmp_b_470);
 
-    assign _tmp_mux_cond_503 = (_tmp_arg1_500 & _tmp_arg2_502);
+    assign _tmp_mux_cond_472 = (_tmp_arg1_469 & _tmp_arg2_471);
 
-    assign _tmp_mux_then_504 = 8'd2;
+    assign _tmp_mux_then_473 = 8'd2;
 
-    assign _tmp_b_505 = 4'd2;
+    assign _tmp_b_474 = 4'd2;
 
-    assign _tmp_arg1_506 = (_gen_hidden_idx == _tmp_b_505);
+    assign _tmp_arg1_475 = (_gen_hidden_idx == _tmp_b_474);
 
-    assign _tmp_b_507 = 4'd1;
+    assign _tmp_b_476 = 4'd1;
 
-    assign _tmp_arg2_508 = (_gen_input_idx == _tmp_b_507);
+    assign _tmp_arg2_477 = (_gen_input_idx == _tmp_b_476);
 
-    assign _tmp_mux_cond_509 = (_tmp_arg1_506 & _tmp_arg2_508);
+    assign _tmp_mux_cond_478 = (_tmp_arg1_475 & _tmp_arg2_477);
 
-    assign _tmp_mux_then_510 = 8'd1;
+    assign _tmp_mux_then_479 = 8'd1;
 
-    assign _tmp_b_511 = 4'd2;
+    assign _tmp_b_480 = 4'd2;
 
-    assign _tmp_arg1_512 = (_gen_hidden_idx == _tmp_b_511);
+    assign _tmp_arg1_481 = (_gen_hidden_idx == _tmp_b_480);
 
-    assign _tmp_b_513 = 4'd2;
+    assign _tmp_b_482 = 4'd2;
 
-    assign _tmp_arg2_514 = (_gen_input_idx == _tmp_b_513);
+    assign _tmp_arg2_483 = (_gen_input_idx == _tmp_b_482);
 
-    assign _tmp_mux_cond_515 = (_tmp_arg1_512 & _tmp_arg2_514);
+    assign _tmp_mux_cond_484 = (_tmp_arg1_481 & _tmp_arg2_483);
 
-    assign _tmp_mux_then_516 = 8'd1;
+    assign _tmp_mux_then_485 = 8'd1;
 
-    assign _tmp_b_517 = 4'd2;
+    assign _tmp_b_486 = 4'd2;
 
-    assign _tmp_arg1_518 = (_gen_hidden_idx == _tmp_b_517);
+    assign _tmp_arg1_487 = (_gen_hidden_idx == _tmp_b_486);
 
-    assign _tmp_b_519 = 4'd3;
+    assign _tmp_b_488 = 4'd3;
 
-    assign _tmp_arg2_520 = (_gen_input_idx == _tmp_b_519);
+    assign _tmp_arg2_489 = (_gen_input_idx == _tmp_b_488);
 
-    assign _tmp_mux_cond_521 = (_tmp_arg1_518 & _tmp_arg2_520);
+    assign _tmp_mux_cond_490 = (_tmp_arg1_487 & _tmp_arg2_489);
 
-    assign _tmp_mux_then_522 = 8'd255;
+    assign _tmp_mux_then_491 = 8'd255;
 
-    assign _tmp_b_523 = 4'd3;
+    assign _tmp_b_492 = 4'd3;
 
-    assign _tmp_arg1_524 = (_gen_hidden_idx == _tmp_b_523);
+    assign _tmp_arg1_493 = (_gen_hidden_idx == _tmp_b_492);
 
-    assign _tmp_b_525 = 4'd0;
+    assign _tmp_b_494 = 4'd0;
 
-    assign _tmp_arg2_526 = (_gen_input_idx == _tmp_b_525);
+    assign _tmp_arg2_495 = (_gen_input_idx == _tmp_b_494);
 
-    assign _tmp_mux_cond_527 = (_tmp_arg1_524 & _tmp_arg2_526);
+    assign _tmp_mux_cond_496 = (_tmp_arg1_493 & _tmp_arg2_495);
 
-    assign _tmp_mux_then_528 = 8'd0;
+    assign _tmp_mux_then_497 = 8'd0;
 
-    assign _tmp_b_529 = 4'd3;
+    assign _tmp_b_498 = 4'd3;
 
-    assign _tmp_arg1_530 = (_gen_hidden_idx == _tmp_b_529);
+    assign _tmp_arg1_499 = (_gen_hidden_idx == _tmp_b_498);
 
-    assign _tmp_b_531 = 4'd1;
+    assign _tmp_b_500 = 4'd1;
 
-    assign _tmp_arg2_532 = (_gen_input_idx == _tmp_b_531);
+    assign _tmp_arg2_501 = (_gen_input_idx == _tmp_b_500);
 
-    assign _tmp_mux_cond_533 = (_tmp_arg1_530 & _tmp_arg2_532);
+    assign _tmp_mux_cond_502 = (_tmp_arg1_499 & _tmp_arg2_501);
 
-    assign _tmp_mux_then_534 = 8'd0;
+    assign _tmp_mux_then_503 = 8'd0;
 
-    assign _tmp_b_535 = 4'd3;
+    assign _tmp_b_504 = 4'd3;
 
-    assign _tmp_arg1_536 = (_gen_hidden_idx == _tmp_b_535);
+    assign _tmp_arg1_505 = (_gen_hidden_idx == _tmp_b_504);
 
-    assign _tmp_b_537 = 4'd2;
+    assign _tmp_b_506 = 4'd2;
 
-    assign _tmp_arg2_538 = (_gen_input_idx == _tmp_b_537);
+    assign _tmp_arg2_507 = (_gen_input_idx == _tmp_b_506);
 
-    assign _tmp_mux_cond_539 = (_tmp_arg1_536 & _tmp_arg2_538);
+    assign _tmp_mux_cond_508 = (_tmp_arg1_505 & _tmp_arg2_507);
 
-    assign _tmp_mux_then_540 = 8'd0;
+    assign _tmp_mux_then_509 = 8'd0;
 
-    assign _tmp_b_541 = 4'd3;
+    assign _tmp_b_510 = 4'd3;
 
-    assign _tmp_arg1_542 = (_gen_hidden_idx == _tmp_b_541);
+    assign _tmp_arg1_511 = (_gen_hidden_idx == _tmp_b_510);
 
-    assign _tmp_b_543 = 4'd3;
+    assign _tmp_b_512 = 4'd3;
 
-    assign _tmp_arg2_544 = (_gen_input_idx == _tmp_b_543);
+    assign _tmp_arg2_513 = (_gen_input_idx == _tmp_b_512);
 
-    assign _tmp_mux_cond_545 = (_tmp_arg1_542 & _tmp_arg2_544);
+    assign _tmp_mux_cond_514 = (_tmp_arg1_511 & _tmp_arg2_513);
 
-    assign _tmp_mux_then_546 = 8'd255;
+    assign _tmp_mux_then_515 = 8'd255;
 
-    assign _tmp_b_547 = 4'd4;
+    assign _tmp_b_516 = 4'd4;
 
-    assign _tmp_arg1_548 = (_gen_hidden_idx == _tmp_b_547);
+    assign _tmp_arg1_517 = (_gen_hidden_idx == _tmp_b_516);
 
-    assign _tmp_b_549 = 4'd0;
+    assign _tmp_b_518 = 4'd0;
 
-    assign _tmp_arg2_550 = (_gen_input_idx == _tmp_b_549);
+    assign _tmp_arg2_519 = (_gen_input_idx == _tmp_b_518);
 
-    assign _tmp_mux_cond_551 = (_tmp_arg1_548 & _tmp_arg2_550);
+    assign _tmp_mux_cond_520 = (_tmp_arg1_517 & _tmp_arg2_519);
 
-    assign _tmp_mux_then_552 = 8'd255;
+    assign _tmp_mux_then_521 = 8'd255;
 
-    assign _tmp_b_553 = 4'd4;
+    assign _tmp_b_522 = 4'd4;
 
-    assign _tmp_arg1_554 = (_gen_hidden_idx == _tmp_b_553);
+    assign _tmp_arg1_523 = (_gen_hidden_idx == _tmp_b_522);
 
-    assign _tmp_b_555 = 4'd1;
+    assign _tmp_b_524 = 4'd1;
 
-    assign _tmp_arg2_556 = (_gen_input_idx == _tmp_b_555);
+    assign _tmp_arg2_525 = (_gen_input_idx == _tmp_b_524);
 
-    assign _tmp_mux_cond_557 = (_tmp_arg1_554 & _tmp_arg2_556);
+    assign _tmp_mux_cond_526 = (_tmp_arg1_523 & _tmp_arg2_525);
 
-    assign _tmp_mux_then_558 = 8'd0;
+    assign _tmp_mux_then_527 = 8'd0;
 
-    assign _tmp_b_559 = 4'd4;
+    assign _tmp_b_528 = 4'd4;
 
-    assign _tmp_arg1_560 = (_gen_hidden_idx == _tmp_b_559);
+    assign _tmp_arg1_529 = (_gen_hidden_idx == _tmp_b_528);
 
-    assign _tmp_b_561 = 4'd2;
+    assign _tmp_b_530 = 4'd2;
 
-    assign _tmp_arg2_562 = (_gen_input_idx == _tmp_b_561);
+    assign _tmp_arg2_531 = (_gen_input_idx == _tmp_b_530);
 
-    assign _tmp_mux_cond_563 = (_tmp_arg1_560 & _tmp_arg2_562);
+    assign _tmp_mux_cond_532 = (_tmp_arg1_529 & _tmp_arg2_531);
 
-    assign _tmp_mux_then_564 = 8'd0;
+    assign _tmp_mux_then_533 = 8'd0;
 
-    assign _tmp_b_565 = 4'd4;
+    assign _tmp_b_534 = 4'd4;
 
-    assign _tmp_arg1_566 = (_gen_hidden_idx == _tmp_b_565);
+    assign _tmp_arg1_535 = (_gen_hidden_idx == _tmp_b_534);
 
-    assign _tmp_b_567 = 4'd3;
+    assign _tmp_b_536 = 4'd3;
 
-    assign _tmp_arg2_568 = (_gen_input_idx == _tmp_b_567);
+    assign _tmp_arg2_537 = (_gen_input_idx == _tmp_b_536);
 
-    assign _tmp_mux_cond_569 = (_tmp_arg1_566 & _tmp_arg2_568);
+    assign _tmp_mux_cond_538 = (_tmp_arg1_535 & _tmp_arg2_537);
 
-    assign _tmp_mux_then_570 = 8'd0;
+    assign _tmp_mux_then_539 = 8'd0;
 
-    assign _tmp_b_571 = 4'd5;
+    assign _tmp_b_540 = 4'd5;
 
-    assign _tmp_arg1_572 = (_gen_hidden_idx == _tmp_b_571);
+    assign _tmp_arg1_541 = (_gen_hidden_idx == _tmp_b_540);
 
-    assign _tmp_b_573 = 4'd0;
+    assign _tmp_b_542 = 4'd0;
 
-    assign _tmp_arg2_574 = (_gen_input_idx == _tmp_b_573);
+    assign _tmp_arg2_543 = (_gen_input_idx == _tmp_b_542);
 
-    assign _tmp_mux_cond_575 = (_tmp_arg1_572 & _tmp_arg2_574);
+    assign _tmp_mux_cond_544 = (_tmp_arg1_541 & _tmp_arg2_543);
 
-    assign _tmp_mux_then_576 = 8'd255;
+    assign _tmp_mux_then_545 = 8'd255;
 
-    assign _tmp_b_577 = 4'd5;
+    assign _tmp_b_546 = 4'd5;
 
-    assign _tmp_arg1_578 = (_gen_hidden_idx == _tmp_b_577);
+    assign _tmp_arg1_547 = (_gen_hidden_idx == _tmp_b_546);
 
-    assign _tmp_b_579 = 4'd1;
+    assign _tmp_b_548 = 4'd1;
 
-    assign _tmp_arg2_580 = (_gen_input_idx == _tmp_b_579);
+    assign _tmp_arg2_549 = (_gen_input_idx == _tmp_b_548);
 
-    assign _tmp_mux_cond_581 = (_tmp_arg1_578 & _tmp_arg2_580);
+    assign _tmp_mux_cond_550 = (_tmp_arg1_547 & _tmp_arg2_549);
 
-    assign _tmp_mux_then_582 = 8'd1;
+    assign _tmp_mux_then_551 = 8'd1;
 
-    assign _tmp_b_583 = 4'd5;
+    assign _tmp_b_552 = 4'd5;
 
-    assign _tmp_arg1_584 = (_gen_hidden_idx == _tmp_b_583);
+    assign _tmp_arg1_553 = (_gen_hidden_idx == _tmp_b_552);
 
-    assign _tmp_b_585 = 4'd2;
+    assign _tmp_b_554 = 4'd2;
 
-    assign _tmp_arg2_586 = (_gen_input_idx == _tmp_b_585);
+    assign _tmp_arg2_555 = (_gen_input_idx == _tmp_b_554);
 
-    assign _tmp_mux_cond_587 = (_tmp_arg1_584 & _tmp_arg2_586);
+    assign _tmp_mux_cond_556 = (_tmp_arg1_553 & _tmp_arg2_555);
 
-    assign _tmp_mux_then_588 = 8'd255;
+    assign _tmp_mux_then_557 = 8'd255;
 
-    assign _tmp_b_589 = 4'd5;
+    assign _tmp_b_558 = 4'd5;
 
-    assign _tmp_arg1_590 = (_gen_hidden_idx == _tmp_b_589);
+    assign _tmp_arg1_559 = (_gen_hidden_idx == _tmp_b_558);
 
-    assign _tmp_b_591 = 4'd3;
+    assign _tmp_b_560 = 4'd3;
 
-    assign _tmp_arg2_592 = (_gen_input_idx == _tmp_b_591);
+    assign _tmp_arg2_561 = (_gen_input_idx == _tmp_b_560);
 
-    assign _tmp_mux_cond_593 = (_tmp_arg1_590 & _tmp_arg2_592);
+    assign _tmp_mux_cond_562 = (_tmp_arg1_559 & _tmp_arg2_561);
 
-    assign _tmp_mux_then_594 = 8'd1;
+    assign _tmp_mux_then_563 = 8'd1;
 
-    assign _tmp_b_595 = 4'd6;
+    assign _tmp_b_564 = 4'd6;
 
-    assign _tmp_arg1_596 = (_gen_hidden_idx == _tmp_b_595);
+    assign _tmp_arg1_565 = (_gen_hidden_idx == _tmp_b_564);
 
-    assign _tmp_b_597 = 4'd0;
+    assign _tmp_b_566 = 4'd0;
 
-    assign _tmp_arg2_598 = (_gen_input_idx == _tmp_b_597);
+    assign _tmp_arg2_567 = (_gen_input_idx == _tmp_b_566);
 
-    assign _tmp_mux_cond_599 = (_tmp_arg1_596 & _tmp_arg2_598);
+    assign _tmp_mux_cond_568 = (_tmp_arg1_565 & _tmp_arg2_567);
 
-    assign _tmp_mux_then_600 = 8'd0;
+    assign _tmp_mux_then_569 = 8'd0;
 
-    assign _tmp_b_601 = 4'd6;
+    assign _tmp_b_570 = 4'd6;
 
-    assign _tmp_arg1_602 = (_gen_hidden_idx == _tmp_b_601);
+    assign _tmp_arg1_571 = (_gen_hidden_idx == _tmp_b_570);
 
-    assign _tmp_b_603 = 4'd1;
+    assign _tmp_b_572 = 4'd1;
 
-    assign _tmp_arg2_604 = (_gen_input_idx == _tmp_b_603);
+    assign _tmp_arg2_573 = (_gen_input_idx == _tmp_b_572);
 
-    assign _tmp_mux_cond_605 = (_tmp_arg1_602 & _tmp_arg2_604);
+    assign _tmp_mux_cond_574 = (_tmp_arg1_571 & _tmp_arg2_573);
 
-    assign _tmp_mux_then_606 = 8'd255;
+    assign _tmp_mux_then_575 = 8'd255;
 
-    assign _tmp_b_607 = 4'd6;
+    assign _tmp_b_576 = 4'd6;
 
-    assign _tmp_arg1_608 = (_gen_hidden_idx == _tmp_b_607);
+    assign _tmp_arg1_577 = (_gen_hidden_idx == _tmp_b_576);
 
-    assign _tmp_b_609 = 4'd2;
+    assign _tmp_b_578 = 4'd2;
 
-    assign _tmp_arg2_610 = (_gen_input_idx == _tmp_b_609);
+    assign _tmp_arg2_579 = (_gen_input_idx == _tmp_b_578);
 
-    assign _tmp_mux_cond_611 = (_tmp_arg1_608 & _tmp_arg2_610);
+    assign _tmp_mux_cond_580 = (_tmp_arg1_577 & _tmp_arg2_579);
 
-    assign _tmp_mux_then_612 = 8'd1;
+    assign _tmp_mux_then_581 = 8'd1;
 
-    assign _tmp_b_613 = 4'd6;
+    assign _tmp_b_582 = 4'd6;
 
-    assign _tmp_arg1_614 = (_gen_hidden_idx == _tmp_b_613);
+    assign _tmp_arg1_583 = (_gen_hidden_idx == _tmp_b_582);
 
-    assign _tmp_b_615 = 4'd3;
+    assign _tmp_b_584 = 4'd3;
 
-    assign _tmp_arg2_616 = (_gen_input_idx == _tmp_b_615);
+    assign _tmp_arg2_585 = (_gen_input_idx == _tmp_b_584);
 
-    assign _tmp_mux_cond_617 = (_tmp_arg1_614 & _tmp_arg2_616);
+    assign _tmp_mux_cond_586 = (_tmp_arg1_583 & _tmp_arg2_585);
 
-    assign _tmp_mux_then_618 = 8'd255;
+    assign _tmp_mux_then_587 = 8'd255;
 
-    assign _tmp_b_619 = 4'd7;
+    assign _tmp_b_588 = 4'd7;
 
-    assign _tmp_arg1_620 = (_gen_hidden_idx == _tmp_b_619);
+    assign _tmp_arg1_589 = (_gen_hidden_idx == _tmp_b_588);
 
-    assign _tmp_b_621 = 4'd0;
+    assign _tmp_b_590 = 4'd0;
 
-    assign _tmp_arg2_622 = (_gen_input_idx == _tmp_b_621);
+    assign _tmp_arg2_591 = (_gen_input_idx == _tmp_b_590);
 
-    assign _tmp_mux_cond_623 = (_tmp_arg1_620 & _tmp_arg2_622);
+    assign _tmp_mux_cond_592 = (_tmp_arg1_589 & _tmp_arg2_591);
 
-    assign _tmp_mux_then_624 = 8'd1;
+    assign _tmp_mux_then_593 = 8'd1;
 
-    assign _tmp_b_625 = 4'd7;
+    assign _tmp_b_594 = 4'd7;
 
-    assign _tmp_arg1_626 = (_gen_hidden_idx == _tmp_b_625);
+    assign _tmp_arg1_595 = (_gen_hidden_idx == _tmp_b_594);
 
-    assign _tmp_b_627 = 4'd1;
+    assign _tmp_b_596 = 4'd1;
 
-    assign _tmp_arg2_628 = (_gen_input_idx == _tmp_b_627);
+    assign _tmp_arg2_597 = (_gen_input_idx == _tmp_b_596);
 
-    assign _tmp_mux_cond_629 = (_tmp_arg1_626 & _tmp_arg2_628);
+    assign _tmp_mux_cond_598 = (_tmp_arg1_595 & _tmp_arg2_597);
 
-    assign _tmp_mux_then_630 = 8'd2;
+    assign _tmp_mux_then_599 = 8'd2;
 
-    assign _tmp_b_631 = 4'd7;
+    assign _tmp_b_600 = 4'd7;
 
-    assign _tmp_arg1_632 = (_gen_hidden_idx == _tmp_b_631);
+    assign _tmp_arg1_601 = (_gen_hidden_idx == _tmp_b_600);
 
-    assign _tmp_b_633 = 4'd2;
+    assign _tmp_b_602 = 4'd2;
 
-    assign _tmp_arg2_634 = (_gen_input_idx == _tmp_b_633);
+    assign _tmp_arg2_603 = (_gen_input_idx == _tmp_b_602);
 
-    assign _tmp_mux_cond_635 = (_tmp_arg1_632 & _tmp_arg2_634);
+    assign _tmp_mux_cond_604 = (_tmp_arg1_601 & _tmp_arg2_603);
 
-    assign _tmp_mux_then_636 = 8'd0;
+    assign _tmp_mux_then_605 = 8'd0;
 
-    assign _tmp_b_637 = 4'd7;
+    assign _tmp_b_606 = 4'd7;
 
-    assign _tmp_arg1_638 = (_gen_hidden_idx == _tmp_b_637);
+    assign _tmp_arg1_607 = (_gen_hidden_idx == _tmp_b_606);
 
-    assign _tmp_b_639 = 4'd3;
+    assign _tmp_b_608 = 4'd3;
 
-    assign _tmp_arg2_640 = (_gen_input_idx == _tmp_b_639);
+    assign _tmp_arg2_609 = (_gen_input_idx == _tmp_b_608);
 
-    assign _tmp_mux_cond_641 = (_tmp_arg1_638 & _tmp_arg2_640);
+    assign _tmp_mux_cond_610 = (_tmp_arg1_607 & _tmp_arg2_609);
 
-    assign _tmp_mux_then_642 = 8'd0;
+    assign _tmp_mux_then_611 = 8'd0;
 
-    assign _tmp_mux_else_643 = 8'd0;
+    assign _tmp_mux_else_612 = 8'd0;
 
-    assign _tmp_mux_else_644 = (_tmp_mux_cond_641 ? _tmp_mux_then_642 : _tmp_mux_else_643);
+    assign _tmp_mux_else_613 = (_tmp_mux_cond_610 ? _tmp_mux_then_611 : _tmp_mux_else_612);
 
-    assign _tmp_mux_else_645 = (_tmp_mux_cond_635 ? _tmp_mux_then_636 : _tmp_mux_else_644);
+    assign _tmp_mux_else_614 = (_tmp_mux_cond_604 ? _tmp_mux_then_605 : _tmp_mux_else_613);
 
-    assign _tmp_mux_else_646 = (_tmp_mux_cond_629 ? _tmp_mux_then_630 : _tmp_mux_else_645);
+    assign _tmp_mux_else_615 = (_tmp_mux_cond_598 ? _tmp_mux_then_599 : _tmp_mux_else_614);
 
-    assign _tmp_mux_else_647 = (_tmp_mux_cond_623 ? _tmp_mux_then_624 : _tmp_mux_else_646);
+    assign _tmp_mux_else_616 = (_tmp_mux_cond_592 ? _tmp_mux_then_593 : _tmp_mux_else_615);
 
-    assign _tmp_mux_else_648 = (_tmp_mux_cond_617 ? _tmp_mux_then_618 : _tmp_mux_else_647);
+    assign _tmp_mux_else_617 = (_tmp_mux_cond_586 ? _tmp_mux_then_587 : _tmp_mux_else_616);
 
-    assign _tmp_mux_else_649 = (_tmp_mux_cond_611 ? _tmp_mux_then_612 : _tmp_mux_else_648);
+    assign _tmp_mux_else_618 = (_tmp_mux_cond_580 ? _tmp_mux_then_581 : _tmp_mux_else_617);
 
-    assign _tmp_mux_else_650 = (_tmp_mux_cond_605 ? _tmp_mux_then_606 : _tmp_mux_else_649);
+    assign _tmp_mux_else_619 = (_tmp_mux_cond_574 ? _tmp_mux_then_575 : _tmp_mux_else_618);
 
-    assign _tmp_mux_else_651 = (_tmp_mux_cond_599 ? _tmp_mux_then_600 : _tmp_mux_else_650);
+    assign _tmp_mux_else_620 = (_tmp_mux_cond_568 ? _tmp_mux_then_569 : _tmp_mux_else_619);
 
-    assign _tmp_mux_else_652 = (_tmp_mux_cond_593 ? _tmp_mux_then_594 : _tmp_mux_else_651);
+    assign _tmp_mux_else_621 = (_tmp_mux_cond_562 ? _tmp_mux_then_563 : _tmp_mux_else_620);
 
-    assign _tmp_mux_else_653 = (_tmp_mux_cond_587 ? _tmp_mux_then_588 : _tmp_mux_else_652);
+    assign _tmp_mux_else_622 = (_tmp_mux_cond_556 ? _tmp_mux_then_557 : _tmp_mux_else_621);
 
-    assign _tmp_mux_else_654 = (_tmp_mux_cond_581 ? _tmp_mux_then_582 : _tmp_mux_else_653);
+    assign _tmp_mux_else_623 = (_tmp_mux_cond_550 ? _tmp_mux_then_551 : _tmp_mux_else_622);
 
-    assign _tmp_mux_else_655 = (_tmp_mux_cond_575 ? _tmp_mux_then_576 : _tmp_mux_else_654);
+    assign _tmp_mux_else_624 = (_tmp_mux_cond_544 ? _tmp_mux_then_545 : _tmp_mux_else_623);
 
-    assign _tmp_mux_else_656 = (_tmp_mux_cond_569 ? _tmp_mux_then_570 : _tmp_mux_else_655);
+    assign _tmp_mux_else_625 = (_tmp_mux_cond_538 ? _tmp_mux_then_539 : _tmp_mux_else_624);
 
-    assign _tmp_mux_else_657 = (_tmp_mux_cond_563 ? _tmp_mux_then_564 : _tmp_mux_else_656);
+    assign _tmp_mux_else_626 = (_tmp_mux_cond_532 ? _tmp_mux_then_533 : _tmp_mux_else_625);
 
-    assign _tmp_mux_else_658 = (_tmp_mux_cond_557 ? _tmp_mux_then_558 : _tmp_mux_else_657);
+    assign _tmp_mux_else_627 = (_tmp_mux_cond_526 ? _tmp_mux_then_527 : _tmp_mux_else_626);
 
-    assign _tmp_mux_else_659 = (_tmp_mux_cond_551 ? _tmp_mux_then_552 : _tmp_mux_else_658);
+    assign _tmp_mux_else_628 = (_tmp_mux_cond_520 ? _tmp_mux_then_521 : _tmp_mux_else_627);
 
-    assign _tmp_mux_else_660 = (_tmp_mux_cond_545 ? _tmp_mux_then_546 : _tmp_mux_else_659);
+    assign _tmp_mux_else_629 = (_tmp_mux_cond_514 ? _tmp_mux_then_515 : _tmp_mux_else_628);
 
-    assign _tmp_mux_else_661 = (_tmp_mux_cond_539 ? _tmp_mux_then_540 : _tmp_mux_else_660);
+    assign _tmp_mux_else_630 = (_tmp_mux_cond_508 ? _tmp_mux_then_509 : _tmp_mux_else_629);
 
-    assign _tmp_mux_else_662 = (_tmp_mux_cond_533 ? _tmp_mux_then_534 : _tmp_mux_else_661);
+    assign _tmp_mux_else_631 = (_tmp_mux_cond_502 ? _tmp_mux_then_503 : _tmp_mux_else_630);
 
-    assign _tmp_mux_else_663 = (_tmp_mux_cond_527 ? _tmp_mux_then_528 : _tmp_mux_else_662);
+    assign _tmp_mux_else_632 = (_tmp_mux_cond_496 ? _tmp_mux_then_497 : _tmp_mux_else_631);
 
-    assign _tmp_mux_else_664 = (_tmp_mux_cond_521 ? _tmp_mux_then_522 : _tmp_mux_else_663);
+    assign _tmp_mux_else_633 = (_tmp_mux_cond_490 ? _tmp_mux_then_491 : _tmp_mux_else_632);
 
-    assign _tmp_mux_else_665 = (_tmp_mux_cond_515 ? _tmp_mux_then_516 : _tmp_mux_else_664);
+    assign _tmp_mux_else_634 = (_tmp_mux_cond_484 ? _tmp_mux_then_485 : _tmp_mux_else_633);
 
-    assign _tmp_mux_else_666 = (_tmp_mux_cond_509 ? _tmp_mux_then_510 : _tmp_mux_else_665);
+    assign _tmp_mux_else_635 = (_tmp_mux_cond_478 ? _tmp_mux_then_479 : _tmp_mux_else_634);
 
-    assign _tmp_mux_else_667 = (_tmp_mux_cond_503 ? _tmp_mux_then_504 : _tmp_mux_else_666);
+    assign _tmp_mux_else_636 = (_tmp_mux_cond_472 ? _tmp_mux_then_473 : _tmp_mux_else_635);
 
-    assign _tmp_mux_else_668 = (_tmp_mux_cond_497 ? _tmp_mux_then_498 : _tmp_mux_else_667);
+    assign _tmp_mux_else_637 = (_tmp_mux_cond_466 ? _tmp_mux_then_467 : _tmp_mux_else_636);
 
-    assign _tmp_mux_else_669 = (_tmp_mux_cond_491 ? _tmp_mux_then_492 : _tmp_mux_else_668);
+    assign _tmp_mux_else_638 = (_tmp_mux_cond_460 ? _tmp_mux_then_461 : _tmp_mux_else_637);
 
-    assign _tmp_mux_else_670 = (_tmp_mux_cond_485 ? _tmp_mux_then_486 : _tmp_mux_else_669);
+    assign _tmp_mux_else_639 = (_tmp_mux_cond_454 ? _tmp_mux_then_455 : _tmp_mux_else_638);
 
-    assign _tmp_mux_else_671 = (_tmp_mux_cond_479 ? _tmp_mux_then_480 : _tmp_mux_else_670);
+    assign _tmp_mux_else_640 = (_tmp_mux_cond_448 ? _tmp_mux_then_449 : _tmp_mux_else_639);
 
-    assign _tmp_mux_else_672 = (_tmp_mux_cond_473 ? _tmp_mux_then_474 : _tmp_mux_else_671);
+    assign _tmp_mux_else_641 = (_tmp_mux_cond_442 ? _tmp_mux_then_443 : _tmp_mux_else_640);
 
-    assign _tmp_mux_else_673 = (_tmp_mux_cond_467 ? _tmp_mux_then_468 : _tmp_mux_else_672);
+    assign _tmp_mux_else_642 = (_tmp_mux_cond_436 ? _tmp_mux_then_437 : _tmp_mux_else_641);
 
-    assign _tmp_mux_else_674 = (_tmp_mux_cond_461 ? _tmp_mux_then_462 : _tmp_mux_else_673);
+    assign _tmp_mux_else_643 = (_tmp_mux_cond_430 ? _tmp_mux_then_431 : _tmp_mux_else_642);
 
-    assign _tmp_b_675 = (_tmp_mux_cond_455 ? _tmp_mux_then_456 : _tmp_mux_else_674);
+    assign _tmp_b_644 = (_tmp_mux_cond_424 ? _tmp_mux_then_425 : _tmp_mux_else_643);
 
-    assign _gen_weight24 = {_gen_weightUpper, _tmp_b_675};
+    assign _gen_weight24 = {_gen_weightUpper, _tmp_b_644};
 
     assign _gen_product24 = (_gen_input24 * _gen_weight24);
 
     assign _gen_productSign = _gen_product24[23:23];
 
-    assign _tmp_b_676 = 1'd1;
+    assign _tmp_b_645 = 1'd1;
 
-    assign _tmp_mux_cond_677 = (_gen_productSign == _tmp_b_676);
+    assign _tmp_mux_cond_646 = (_gen_productSign == _tmp_b_645);
 
-    assign _tmp_mux_then_678 = 8'd255;
+    assign _tmp_mux_then_647 = 8'd255;
 
-    assign _tmp_mux_else_679 = 8'd0;
+    assign _tmp_mux_else_648 = 8'd0;
 
-    assign _gen_productUpper = (_tmp_mux_cond_677 ? _tmp_mux_then_678 : _tmp_mux_else_679);
+    assign _gen_productUpper = (_tmp_mux_cond_646 ? _tmp_mux_then_647 : _tmp_mux_else_648);
 
-    assign _tmp_arg2_680 = {_gen_productUpper, _gen_product24};
+    assign _tmp_arg2_649 = {_gen_productUpper, _gen_product24};
 
-    assign _gen_hiddenMacAccOut = (_gen_acc_reg + _tmp_arg2_680);
+    assign _gen_hiddenMacAccOut = (_gen_acc_reg + _tmp_arg2_649);
 
     assign _gen_hiddenSign = _gen_selectedHidden[15:15];
 
-    assign _tmp_b_681 = 1'd1;
+    assign _tmp_b_650 = 1'd1;
 
-    assign _tmp_mux_cond_682 = (_gen_hiddenSign == _tmp_b_681);
+    assign _tmp_mux_cond_651 = (_gen_hiddenSign == _tmp_b_650);
 
-    assign _tmp_mux_then_683 = 8'd255;
+    assign _tmp_mux_then_652 = 8'd255;
 
-    assign _tmp_mux_else_684 = 8'd0;
+    assign _tmp_mux_else_653 = 8'd0;
 
-    assign _gen_hiddenUpper = (_tmp_mux_cond_682 ? _tmp_mux_then_683 : _tmp_mux_else_684);
+    assign _gen_hiddenUpper = (_tmp_mux_cond_651 ? _tmp_mux_then_652 : _tmp_mux_else_653);
 
     assign _gen_hidden24 = {_gen_hiddenUpper, _gen_selectedHidden};
 
-    assign _tmp_b_685 = 4'd0;
+    assign _tmp_b_654 = 4'd0;
 
-    assign _tmp_mux_cond_686 = (_gen_input_idx == _tmp_b_685);
+    assign _tmp_mux_cond_655 = (_gen_input_idx == _tmp_b_654);
 
-    assign _tmp_mux_then_687 = 8'd0;
+    assign _tmp_mux_then_656 = 8'd0;
 
-    assign _tmp_b_688 = 4'd1;
+    assign _tmp_b_657 = 4'd1;
 
-    assign _tmp_mux_cond_689 = (_gen_input_idx == _tmp_b_688);
+    assign _tmp_mux_cond_658 = (_gen_input_idx == _tmp_b_657);
 
-    assign _tmp_mux_then_690 = 8'd0;
+    assign _tmp_mux_then_659 = 8'd0;
 
-    assign _tmp_b_691 = 4'd2;
+    assign _tmp_b_660 = 4'd2;
+
+    assign _tmp_mux_cond_661 = (_gen_input_idx == _tmp_b_660);
+
+    assign _tmp_mux_then_662 = 8'd1;
+
+    assign _tmp_b_663 = 4'd3;
+
+    assign _tmp_mux_cond_664 = (_gen_input_idx == _tmp_b_663);
+
+    assign _tmp_mux_then_665 = 8'd0;
+
+    assign _tmp_b_666 = 4'd4;
+
+    assign _tmp_mux_cond_667 = (_gen_input_idx == _tmp_b_666);
+
+    assign _tmp_mux_then_668 = 8'd255;
+
+    assign _tmp_b_669 = 4'd5;
+
+    assign _tmp_mux_cond_670 = (_gen_input_idx == _tmp_b_669);
+
+    assign _tmp_mux_then_671 = 8'd255;
+
+    assign _tmp_b_672 = 4'd6;
+
+    assign _tmp_mux_cond_673 = (_gen_input_idx == _tmp_b_672);
+
+    assign _tmp_mux_then_674 = 8'd1;
+
+    assign _tmp_b_675 = 4'd7;
+
+    assign _tmp_mux_cond_676 = (_gen_input_idx == _tmp_b_675);
+
+    assign _tmp_mux_then_677 = 8'd255;
+
+    assign _tmp_mux_else_678 = 8'd0;
+
+    assign _tmp_mux_else_679 = (_tmp_mux_cond_676 ? _tmp_mux_then_677 : _tmp_mux_else_678);
+
+    assign _tmp_mux_else_680 = (_tmp_mux_cond_673 ? _tmp_mux_then_674 : _tmp_mux_else_679);
+
+    assign _tmp_mux_else_681 = (_tmp_mux_cond_670 ? _tmp_mux_then_671 : _tmp_mux_else_680);
+
+    assign _tmp_mux_else_682 = (_tmp_mux_cond_667 ? _tmp_mux_then_668 : _tmp_mux_else_681);
+
+    assign _tmp_mux_else_683 = (_tmp_mux_cond_664 ? _tmp_mux_then_665 : _tmp_mux_else_682);
+
+    assign _tmp_mux_else_684 = (_tmp_mux_cond_661 ? _tmp_mux_then_662 : _tmp_mux_else_683);
+
+    assign _tmp_mux_else_685 = (_tmp_mux_cond_658 ? _tmp_mux_then_659 : _tmp_mux_else_684);
+
+    assign _tmp_s_686 = (_tmp_mux_cond_655 ? _tmp_mux_then_656 : _tmp_mux_else_685);
+
+    assign _gen_weightSign_1 = _tmp_s_686[7:7];
+
+    assign _tmp_b_687 = 1'd1;
+
+    assign _tmp_mux_cond_688 = (_gen_weightSign_1 == _tmp_b_687);
+
+    assign _tmp_mux_then_689 = 16'd65535;
+
+    assign _tmp_mux_else_690 = 16'd0;
+
+    assign _gen_weightUpper16 = (_tmp_mux_cond_688 ? _tmp_mux_then_689 : _tmp_mux_else_690);
+
+    assign _tmp_b_691 = 4'd0;
 
     assign _tmp_mux_cond_692 = (_gen_input_idx == _tmp_b_691);
 
-    assign _tmp_mux_then_693 = 8'd1;
+    assign _tmp_mux_then_693 = 8'd0;
 
-    assign _tmp_b_694 = 4'd3;
+    assign _tmp_b_694 = 4'd1;
 
     assign _tmp_mux_cond_695 = (_gen_input_idx == _tmp_b_694);
 
     assign _tmp_mux_then_696 = 8'd0;
 
-    assign _tmp_b_697 = 4'd4;
+    assign _tmp_b_697 = 4'd2;
 
     assign _tmp_mux_cond_698 = (_gen_input_idx == _tmp_b_697);
 
-    assign _tmp_mux_then_699 = 8'd255;
+    assign _tmp_mux_then_699 = 8'd1;
 
-    assign _tmp_b_700 = 4'd5;
+    assign _tmp_b_700 = 4'd3;
 
     assign _tmp_mux_cond_701 = (_gen_input_idx == _tmp_b_700);
 
-    assign _tmp_mux_then_702 = 8'd255;
+    assign _tmp_mux_then_702 = 8'd0;
 
-    assign _tmp_b_703 = 4'd6;
+    assign _tmp_b_703 = 4'd4;
 
     assign _tmp_mux_cond_704 = (_gen_input_idx == _tmp_b_703);
 
-    assign _tmp_mux_then_705 = 8'd1;
+    assign _tmp_mux_then_705 = 8'd255;
 
-    assign _tmp_b_706 = 4'd7;
+    assign _tmp_b_706 = 4'd5;
 
     assign _tmp_mux_cond_707 = (_gen_input_idx == _tmp_b_706);
 
     assign _tmp_mux_then_708 = 8'd255;
 
-    assign _tmp_mux_else_709 = 8'd0;
+    assign _tmp_b_709 = 4'd6;
 
-    assign _tmp_mux_else_710 = (_tmp_mux_cond_707 ? _tmp_mux_then_708 : _tmp_mux_else_709);
+    assign _tmp_mux_cond_710 = (_gen_input_idx == _tmp_b_709);
 
-    assign _tmp_mux_else_711 = (_tmp_mux_cond_704 ? _tmp_mux_then_705 : _tmp_mux_else_710);
+    assign _tmp_mux_then_711 = 8'd1;
 
-    assign _tmp_mux_else_712 = (_tmp_mux_cond_701 ? _tmp_mux_then_702 : _tmp_mux_else_711);
+    assign _tmp_b_712 = 4'd7;
 
-    assign _tmp_mux_else_713 = (_tmp_mux_cond_698 ? _tmp_mux_then_699 : _tmp_mux_else_712);
+    assign _tmp_mux_cond_713 = (_gen_input_idx == _tmp_b_712);
 
-    assign _tmp_mux_else_714 = (_tmp_mux_cond_695 ? _tmp_mux_then_696 : _tmp_mux_else_713);
+    assign _tmp_mux_then_714 = 8'd255;
 
-    assign _tmp_mux_else_715 = (_tmp_mux_cond_692 ? _tmp_mux_then_693 : _tmp_mux_else_714);
+    assign _tmp_mux_else_715 = 8'd0;
 
-    assign _tmp_mux_else_716 = (_tmp_mux_cond_689 ? _tmp_mux_then_690 : _tmp_mux_else_715);
+    assign _tmp_mux_else_716 = (_tmp_mux_cond_713 ? _tmp_mux_then_714 : _tmp_mux_else_715);
 
-    assign _tmp_s_717 = (_tmp_mux_cond_686 ? _tmp_mux_then_687 : _tmp_mux_else_716);
+    assign _tmp_mux_else_717 = (_tmp_mux_cond_710 ? _tmp_mux_then_711 : _tmp_mux_else_716);
 
-    assign _gen_weightSign_1 = _tmp_s_717[7:7];
+    assign _tmp_mux_else_718 = (_tmp_mux_cond_707 ? _tmp_mux_then_708 : _tmp_mux_else_717);
 
-    assign _tmp_b_718 = 1'd1;
+    assign _tmp_mux_else_719 = (_tmp_mux_cond_704 ? _tmp_mux_then_705 : _tmp_mux_else_718);
 
-    assign _tmp_mux_cond_719 = (_gen_weightSign_1 == _tmp_b_718);
+    assign _tmp_mux_else_720 = (_tmp_mux_cond_701 ? _tmp_mux_then_702 : _tmp_mux_else_719);
 
-    assign _tmp_mux_then_720 = 16'd65535;
+    assign _tmp_mux_else_721 = (_tmp_mux_cond_698 ? _tmp_mux_then_699 : _tmp_mux_else_720);
 
-    assign _tmp_mux_else_721 = 16'd0;
+    assign _tmp_mux_else_722 = (_tmp_mux_cond_695 ? _tmp_mux_then_696 : _tmp_mux_else_721);
 
-    assign _gen_weightUpper16 = (_tmp_mux_cond_719 ? _tmp_mux_then_720 : _tmp_mux_else_721);
+    assign _tmp_b_723 = (_tmp_mux_cond_692 ? _tmp_mux_then_693 : _tmp_mux_else_722);
 
-    assign _tmp_b_722 = 4'd0;
-
-    assign _tmp_mux_cond_723 = (_gen_input_idx == _tmp_b_722);
-
-    assign _tmp_mux_then_724 = 8'd0;
-
-    assign _tmp_b_725 = 4'd1;
-
-    assign _tmp_mux_cond_726 = (_gen_input_idx == _tmp_b_725);
-
-    assign _tmp_mux_then_727 = 8'd0;
-
-    assign _tmp_b_728 = 4'd2;
-
-    assign _tmp_mux_cond_729 = (_gen_input_idx == _tmp_b_728);
-
-    assign _tmp_mux_then_730 = 8'd1;
-
-    assign _tmp_b_731 = 4'd3;
-
-    assign _tmp_mux_cond_732 = (_gen_input_idx == _tmp_b_731);
-
-    assign _tmp_mux_then_733 = 8'd0;
-
-    assign _tmp_b_734 = 4'd4;
-
-    assign _tmp_mux_cond_735 = (_gen_input_idx == _tmp_b_734);
-
-    assign _tmp_mux_then_736 = 8'd255;
-
-    assign _tmp_b_737 = 4'd5;
-
-    assign _tmp_mux_cond_738 = (_gen_input_idx == _tmp_b_737);
-
-    assign _tmp_mux_then_739 = 8'd255;
-
-    assign _tmp_b_740 = 4'd6;
-
-    assign _tmp_mux_cond_741 = (_gen_input_idx == _tmp_b_740);
-
-    assign _tmp_mux_then_742 = 8'd1;
-
-    assign _tmp_b_743 = 4'd7;
-
-    assign _tmp_mux_cond_744 = (_gen_input_idx == _tmp_b_743);
-
-    assign _tmp_mux_then_745 = 8'd255;
-
-    assign _tmp_mux_else_746 = 8'd0;
-
-    assign _tmp_mux_else_747 = (_tmp_mux_cond_744 ? _tmp_mux_then_745 : _tmp_mux_else_746);
-
-    assign _tmp_mux_else_748 = (_tmp_mux_cond_741 ? _tmp_mux_then_742 : _tmp_mux_else_747);
-
-    assign _tmp_mux_else_749 = (_tmp_mux_cond_738 ? _tmp_mux_then_739 : _tmp_mux_else_748);
-
-    assign _tmp_mux_else_750 = (_tmp_mux_cond_735 ? _tmp_mux_then_736 : _tmp_mux_else_749);
-
-    assign _tmp_mux_else_751 = (_tmp_mux_cond_732 ? _tmp_mux_then_733 : _tmp_mux_else_750);
-
-    assign _tmp_mux_else_752 = (_tmp_mux_cond_729 ? _tmp_mux_then_730 : _tmp_mux_else_751);
-
-    assign _tmp_mux_else_753 = (_tmp_mux_cond_726 ? _tmp_mux_then_727 : _tmp_mux_else_752);
-
-    assign _tmp_b_754 = (_tmp_mux_cond_723 ? _tmp_mux_then_724 : _tmp_mux_else_753);
-
-    assign _gen_weight24_1 = {_gen_weightUpper16, _tmp_b_754};
+    assign _gen_weight24_1 = {_gen_weightUpper16, _tmp_b_723};
 
     assign _gen_product24_1 = (_gen_hidden24 * _gen_weight24_1);
 
     assign _gen_productSign_1 = _gen_product24_1[23:23];
 
-    assign _tmp_b_755 = 1'd1;
+    assign _tmp_b_724 = 1'd1;
 
-    assign _tmp_mux_cond_756 = (_gen_productSign_1 == _tmp_b_755);
+    assign _tmp_mux_cond_725 = (_gen_productSign_1 == _tmp_b_724);
 
-    assign _tmp_mux_then_757 = 8'd255;
+    assign _tmp_mux_then_726 = 8'd255;
 
-    assign _tmp_mux_else_758 = 8'd0;
+    assign _tmp_mux_else_727 = 8'd0;
 
-    assign _gen_productUpper_1 = (_tmp_mux_cond_756 ? _tmp_mux_then_757 : _tmp_mux_else_758);
+    assign _gen_productUpper_1 = (_tmp_mux_cond_725 ? _tmp_mux_then_726 : _tmp_mux_else_727);
 
-    assign _tmp_arg2_759 = {_gen_productUpper_1, _gen_product24_1};
+    assign _tmp_arg2_728 = {_gen_productUpper_1, _gen_product24_1};
 
-    assign _gen_outputMacAccOut = (_gen_acc_reg + _tmp_arg2_759);
+    assign _gen_outputMacAccOut = (_gen_acc_reg + _tmp_arg2_728);
 
-    assign _tmp_b_760 = 4'd0;
+    assign _tmp_b_729 = 4'd0;
 
-    assign _tmp_mux_cond_761 = (_gen_hidden_idx == _tmp_b_760);
+    assign _tmp_mux_cond_730 = (_gen_hidden_idx == _tmp_b_729);
 
-    assign _tmp_mux_then_762 = 32'd0;
+    assign _tmp_mux_then_731 = 32'd0;
 
-    assign _tmp_b_763 = 4'd1;
+    assign _tmp_b_732 = 4'd1;
 
-    assign _tmp_mux_cond_764 = (_gen_hidden_idx == _tmp_b_763);
+    assign _tmp_mux_cond_733 = (_gen_hidden_idx == _tmp_b_732);
 
-    assign _tmp_mux_then_765 = 32'd0;
+    assign _tmp_mux_then_734 = 32'd0;
 
-    assign _tmp_b_766 = 4'd2;
+    assign _tmp_b_735 = 4'd2;
 
-    assign _tmp_mux_cond_767 = (_gen_hidden_idx == _tmp_b_766);
+    assign _tmp_mux_cond_736 = (_gen_hidden_idx == _tmp_b_735);
 
-    assign _tmp_mux_then_768 = 32'd1;
+    assign _tmp_mux_then_737 = 32'd1;
 
-    assign _tmp_b_769 = 4'd3;
+    assign _tmp_b_738 = 4'd3;
 
-    assign _tmp_mux_cond_770 = (_gen_hidden_idx == _tmp_b_769);
+    assign _tmp_mux_cond_739 = (_gen_hidden_idx == _tmp_b_738);
 
-    assign _tmp_mux_then_771 = 32'd1;
+    assign _tmp_mux_then_740 = 32'd1;
 
-    assign _tmp_b_772 = 4'd4;
+    assign _tmp_b_741 = 4'd4;
 
-    assign _tmp_mux_cond_773 = (_gen_hidden_idx == _tmp_b_772);
+    assign _tmp_mux_cond_742 = (_gen_hidden_idx == _tmp_b_741);
 
-    assign _tmp_mux_then_774 = 32'd0;
+    assign _tmp_mux_then_743 = 32'd0;
 
-    assign _tmp_b_775 = 4'd5;
+    assign _tmp_b_744 = 4'd5;
 
-    assign _tmp_mux_cond_776 = (_gen_hidden_idx == _tmp_b_775);
+    assign _tmp_mux_cond_745 = (_gen_hidden_idx == _tmp_b_744);
 
-    assign _tmp_mux_then_777 = 32'd2;
+    assign _tmp_mux_then_746 = 32'd2;
 
-    assign _tmp_b_778 = 4'd6;
+    assign _tmp_b_747 = 4'd6;
 
-    assign _tmp_mux_cond_779 = (_gen_hidden_idx == _tmp_b_778);
+    assign _tmp_mux_cond_748 = (_gen_hidden_idx == _tmp_b_747);
 
-    assign _tmp_mux_then_780 = 32'd1;
+    assign _tmp_mux_then_749 = 32'd1;
 
-    assign _tmp_b_781 = 4'd7;
+    assign _tmp_b_750 = 4'd7;
 
-    assign _tmp_mux_cond_782 = (_gen_hidden_idx == _tmp_b_781);
+    assign _tmp_mux_cond_751 = (_gen_hidden_idx == _tmp_b_750);
 
-    assign _tmp_mux_then_783 = 32'd4294967295;
+    assign _tmp_mux_then_752 = 32'd4294967295;
 
-    assign _tmp_mux_else_784 = 32'd0;
+    assign _tmp_mux_else_753 = 32'd0;
 
-    assign _tmp_mux_else_785 = (_tmp_mux_cond_782 ? _tmp_mux_then_783 : _tmp_mux_else_784);
+    assign _tmp_mux_else_754 = (_tmp_mux_cond_751 ? _tmp_mux_then_752 : _tmp_mux_else_753);
 
-    assign _tmp_mux_else_786 = (_tmp_mux_cond_779 ? _tmp_mux_then_780 : _tmp_mux_else_785);
+    assign _tmp_mux_else_755 = (_tmp_mux_cond_748 ? _tmp_mux_then_749 : _tmp_mux_else_754);
 
-    assign _tmp_mux_else_787 = (_tmp_mux_cond_776 ? _tmp_mux_then_777 : _tmp_mux_else_786);
+    assign _tmp_mux_else_756 = (_tmp_mux_cond_745 ? _tmp_mux_then_746 : _tmp_mux_else_755);
 
-    assign _tmp_mux_else_788 = (_tmp_mux_cond_773 ? _tmp_mux_then_774 : _tmp_mux_else_787);
+    assign _tmp_mux_else_757 = (_tmp_mux_cond_742 ? _tmp_mux_then_743 : _tmp_mux_else_756);
 
-    assign _tmp_mux_else_789 = (_tmp_mux_cond_770 ? _tmp_mux_then_771 : _tmp_mux_else_788);
+    assign _tmp_mux_else_758 = (_tmp_mux_cond_739 ? _tmp_mux_then_740 : _tmp_mux_else_757);
 
-    assign _tmp_mux_else_790 = (_tmp_mux_cond_767 ? _tmp_mux_then_768 : _tmp_mux_else_789);
+    assign _tmp_mux_else_759 = (_tmp_mux_cond_736 ? _tmp_mux_then_737 : _tmp_mux_else_758);
 
-    assign _tmp_mux_else_791 = (_tmp_mux_cond_764 ? _tmp_mux_then_765 : _tmp_mux_else_790);
+    assign _tmp_mux_else_760 = (_tmp_mux_cond_733 ? _tmp_mux_then_734 : _tmp_mux_else_759);
 
-    assign _tmp_arg2_792 = (_tmp_mux_cond_761 ? _tmp_mux_then_762 : _tmp_mux_else_791);
+    assign _tmp_arg2_761 = (_tmp_mux_cond_730 ? _tmp_mux_then_731 : _tmp_mux_else_760);
 
-    assign _gen_biasHiddenAccOut = (_gen_acc_reg + _tmp_arg2_792);
+    assign _gen_biasHiddenAccOut = (_gen_acc_reg + _tmp_arg2_761);
 
-    assign _tmp_arg2_793 = 32'd4294967295;
+    assign _tmp_arg2_762 = 32'd4294967295;
 
-    assign _gen_biasOutputAccOut = (_gen_acc_reg + _tmp_arg2_793);
+    assign _gen_biasOutputAccOut = (_gen_acc_reg + _tmp_arg2_762);
 
     assign _gen_sign = _gen_acc_reg[31:31];
 
     assign _gen_narrowed = _gen_acc_reg[15:0];
 
-    assign _tmp_b_794 = 1'd1;
+    assign _tmp_b_763 = 1'd1;
 
-    assign _tmp_mux_cond_795 = (_gen_sign == _tmp_b_794);
+    assign _tmp_mux_cond_764 = (_gen_sign == _tmp_b_763);
 
-    assign _tmp_mux_then_796 = 16'd0;
+    assign _tmp_mux_then_765 = 16'd0;
 
-    assign _gen_reluHidden = (_tmp_mux_cond_795 ? _tmp_mux_then_796 : _gen_narrowed);
+    assign _gen_reluHidden = (_tmp_mux_cond_764 ? _tmp_mux_then_765 : _gen_narrowed);
 
-    assign _tmp_mux_cond_797 = (_gen_advance_hidden & _gen_hiddenIsLast);
+    assign _tmp_b_766 = 4'd0;
 
-    assign _tmp_mux_then_798 = (_gen_hidden_idx + _gen_one4);
+    assign _gen_isIdle_1 = (_gen_phase == _tmp_b_766);
 
-    assign _tmp_mux_else_799 = (_gen_idleCleanup ? _gen_zero4 : _gen_hidden_idx);
+    assign _tmp_b_767 = 4'd1;
 
-    assign _tmp_mux_else_800 = (_gen_do_bias_output ? _gen_zero4 : _tmp_mux_else_799);
+    assign _gen_isLoadInput = (_gen_phase == _tmp_b_767);
 
-    assign _tmp_mux_else_801 = (_gen_advance_hidden ? _tmp_mux_then_798 : _tmp_mux_else_800);
+    assign _tmp_b_768 = 4'd2;
 
-    assign _tmp_mux_else_802 = (_tmp_mux_cond_797 ? _gen_zero4 : _tmp_mux_else_801);
+    assign _gen_isMacHidden = (_gen_phase == _tmp_b_768);
 
-    assign _gen_nextHiddenIdx = (_gen_load_input ? _gen_zero4 : _tmp_mux_else_802);
+    assign _tmp_b_769 = 4'd3;
 
-    assign _tmp_mux_then_803 = (_gen_input_idx + _gen_one4);
+    assign _gen_isBiasHidden = (_gen_phase == _tmp_b_769);
 
-    assign _tmp_mux_cond_804 = (_gen_advance_hidden & _gen_hiddenIsLast);
+    assign _tmp_b_770 = 4'd4;
 
-    assign _tmp_mux_else_805 = (_gen_idleCleanup ? _gen_zero4 : _gen_input_idx);
+    assign _gen_isActHidden = (_gen_phase == _tmp_b_770);
 
-    assign _tmp_mux_else_806 = (_gen_do_bias_output ? _gen_eight4 : _tmp_mux_else_805);
+    assign _tmp_b_771 = 4'd5;
 
-    assign _tmp_mux_else_807 = (_tmp_mux_cond_804 ? _gen_zero4 : _tmp_mux_else_806);
+    assign _gen_isNextHidden = (_gen_phase == _tmp_b_771);
 
-    assign _tmp_mux_else_808 = (_gen_do_act_hidden ? _gen_zero4 : _tmp_mux_else_807);
+    assign _tmp_b_772 = 4'd6;
 
-    assign _tmp_mux_else_809 = (_gen_anyMac ? _tmp_mux_then_803 : _tmp_mux_else_808);
+    assign _gen_isMacOutput = (_gen_phase == _tmp_b_772);
 
-    assign _gen_nextInputIdx = (_gen_load_input ? _gen_zero4 : _tmp_mux_else_809);
+    assign _tmp_b_773 = 4'd7;
+
+    assign _gen_isBiasOutput = (_gen_phase == _tmp_b_773);
+
+    assign _tmp_b_774 = 4'd8;
+
+    assign _gen_isDone = (_gen_phase == _tmp_b_774);
+
+    assign _tmp_b_775 = 4'd4;
+
+    assign _gen_inputGuardReached = (_gen_input_idx == _tmp_b_775);
+
+    assign _tmp_b_776 = 4'd8;
+
+    assign _gen_outputGuardReached = (_gen_input_idx == _tmp_b_776);
+
+    assign _tmp_b_777 = 4'd7;
+
+    assign _gen_hiddenLast = (_gen_hidden_idx == _tmp_b_777);
+
+    assign _gen_notStart_1 = ~_gen_start;
+
+    assign _tmp_mux_cond_778 = (_gen_isIdle_1 & _gen_start);
+
+    assign _tmp_mux_then_779 = 4'd1;
+
+    assign _tmp_mux_then_780 = 4'd0;
+
+    assign _tmp_mux_then_781 = 4'd2;
+
+    assign _tmp_mux_cond_782 = (_gen_isMacHidden & _gen_inputGuardReached);
+
+    assign _tmp_mux_then_783 = 4'd3;
+
+    assign _tmp_mux_then_784 = 4'd2;
+
+    assign _tmp_mux_then_785 = 4'd4;
+
+    assign _tmp_mux_then_786 = 4'd5;
+
+    assign _tmp_mux_cond_787 = (_gen_isNextHidden & _gen_hiddenLast);
+
+    assign _tmp_mux_then_788 = 4'd6;
+
+    assign _tmp_mux_then_789 = 4'd2;
+
+    assign _tmp_mux_cond_790 = (_gen_isMacOutput & _gen_outputGuardReached);
+
+    assign _tmp_mux_then_791 = 4'd7;
+
+    assign _tmp_mux_then_792 = 4'd6;
+
+    assign _tmp_mux_then_793 = 4'd8;
+
+    assign _tmp_mux_cond_794 = (_gen_isDone & _gen_notStart_1);
+
+    assign _tmp_mux_then_795 = 4'd0;
+
+    assign _tmp_mux_then_796 = 4'd8;
+
+    assign _tmp_mux_else_797 = 4'd0;
+
+    assign _tmp_mux_else_798 = (_gen_isDone ? _tmp_mux_then_796 : _tmp_mux_else_797);
+
+    assign _tmp_mux_else_799 = (_tmp_mux_cond_794 ? _tmp_mux_then_795 : _tmp_mux_else_798);
+
+    assign _tmp_mux_else_800 = (_gen_isBiasOutput ? _tmp_mux_then_793 : _tmp_mux_else_799);
+
+    assign _tmp_mux_else_801 = (_gen_isMacOutput ? _tmp_mux_then_792 : _tmp_mux_else_800);
+
+    assign _tmp_mux_else_802 = (_tmp_mux_cond_790 ? _tmp_mux_then_791 : _tmp_mux_else_801);
+
+    assign _tmp_mux_else_803 = (_gen_isNextHidden ? _tmp_mux_then_789 : _tmp_mux_else_802);
+
+    assign _tmp_mux_else_804 = (_tmp_mux_cond_787 ? _tmp_mux_then_788 : _tmp_mux_else_803);
+
+    assign _tmp_mux_else_805 = (_gen_isActHidden ? _tmp_mux_then_786 : _tmp_mux_else_804);
+
+    assign _tmp_mux_else_806 = (_gen_isBiasHidden ? _tmp_mux_then_785 : _tmp_mux_else_805);
+
+    assign _tmp_mux_else_807 = (_gen_isMacHidden ? _tmp_mux_then_784 : _tmp_mux_else_806);
+
+    assign _tmp_mux_else_808 = (_tmp_mux_cond_782 ? _tmp_mux_then_783 : _tmp_mux_else_807);
+
+    assign _tmp_mux_else_809 = (_gen_isLoadInput ? _tmp_mux_then_781 : _tmp_mux_else_808);
+
+    assign _tmp_mux_else_810 = (_gen_isIdle_1 ? _tmp_mux_then_780 : _tmp_mux_else_809);
+
+    assign _gen_nextPhase = (_tmp_mux_cond_778 ? _tmp_mux_then_779 : _tmp_mux_else_810);
+
+    assign _tmp_mux_cond_811 = (_gen_advance_hidden & _gen_hiddenIsLast);
+
+    assign _tmp_mux_then_812 = (_gen_hidden_idx + _gen_one4);
+
+    assign _tmp_mux_else_813 = (_gen_idleCleanup ? _gen_zero4 : _gen_hidden_idx);
+
+    assign _tmp_mux_else_814 = (_gen_do_bias_output ? _gen_zero4 : _tmp_mux_else_813);
+
+    assign _tmp_mux_else_815 = (_gen_advance_hidden ? _tmp_mux_then_812 : _tmp_mux_else_814);
+
+    assign _tmp_mux_else_816 = (_tmp_mux_cond_811 ? _gen_zero4 : _tmp_mux_else_815);
+
+    assign _gen_nextHiddenIdx = (_gen_load_input ? _gen_zero4 : _tmp_mux_else_816);
+
+    assign _tmp_mux_then_817 = (_gen_input_idx + _gen_one4);
+
+    assign _tmp_mux_cond_818 = (_gen_advance_hidden & _gen_hiddenIsLast);
+
+    assign _tmp_mux_else_819 = (_gen_idleCleanup ? _gen_zero4 : _gen_input_idx);
+
+    assign _tmp_mux_else_820 = (_gen_do_bias_output ? _gen_eight4 : _tmp_mux_else_819);
+
+    assign _tmp_mux_else_821 = (_tmp_mux_cond_818 ? _gen_zero4 : _tmp_mux_else_820);
+
+    assign _tmp_mux_else_822 = (_gen_do_act_hidden ? _gen_zero4 : _tmp_mux_else_821);
+
+    assign _tmp_mux_else_823 = (_gen_anyMac ? _tmp_mux_then_817 : _tmp_mux_else_822);
+
+    assign _gen_nextInputIdx = (_gen_load_input ? _gen_zero4 : _tmp_mux_else_823);
 
     assign _gen_nextInputReg0 = (_gen_load_input ? _gen_in0 : _gen_input_reg0);
 
@@ -3653,361 +3651,334 @@ module TinyMLP_sparkleMlpCorePacked (
 
     assign _gen_nextInputReg3 = (_gen_load_input ? _gen_in3 : _gen_input_reg3);
 
-    assign _tmp_b_810 = 4'd0;
+    assign _tmp_b_824 = 4'd0;
 
-    assign _tmp_mux_cond_811 = (_gen_hidden_idx == _tmp_b_810);
+    assign _tmp_mux_cond_825 = (_gen_hidden_idx == _tmp_b_824);
 
-    assign _tmp_mux_then_812 = (_tmp_mux_cond_811 ? _gen_reluHidden : _gen_hidden_reg0);
+    assign _tmp_mux_then_826 = (_tmp_mux_cond_825 ? _gen_reluHidden : _gen_hidden_reg0);
 
-    assign _tmp_mux_else_813 = (_gen_do_act_hidden ? _tmp_mux_then_812 : _gen_hidden_reg0);
+    assign _tmp_mux_else_827 = (_gen_do_act_hidden ? _tmp_mux_then_826 : _gen_hidden_reg0);
 
-    assign _gen_nextHiddenReg0 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_813);
+    assign _gen_nextHiddenReg0 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_827);
 
-    assign _tmp_b_814 = 4'd1;
+    assign _tmp_b_828 = 4'd1;
 
-    assign _tmp_mux_cond_815 = (_gen_hidden_idx == _tmp_b_814);
+    assign _tmp_mux_cond_829 = (_gen_hidden_idx == _tmp_b_828);
 
-    assign _tmp_mux_then_816 = (_tmp_mux_cond_815 ? _gen_reluHidden : _gen_hidden_reg1);
+    assign _tmp_mux_then_830 = (_tmp_mux_cond_829 ? _gen_reluHidden : _gen_hidden_reg1);
 
-    assign _tmp_mux_else_817 = (_gen_do_act_hidden ? _tmp_mux_then_816 : _gen_hidden_reg1);
+    assign _tmp_mux_else_831 = (_gen_do_act_hidden ? _tmp_mux_then_830 : _gen_hidden_reg1);
 
-    assign _gen_nextHiddenReg1 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_817);
+    assign _gen_nextHiddenReg1 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_831);
 
-    assign _tmp_b_818 = 4'd2;
+    assign _tmp_b_832 = 4'd2;
 
-    assign _tmp_mux_cond_819 = (_gen_hidden_idx == _tmp_b_818);
+    assign _tmp_mux_cond_833 = (_gen_hidden_idx == _tmp_b_832);
 
-    assign _tmp_mux_then_820 = (_tmp_mux_cond_819 ? _gen_reluHidden : _gen_hidden_reg2);
+    assign _tmp_mux_then_834 = (_tmp_mux_cond_833 ? _gen_reluHidden : _gen_hidden_reg2);
 
-    assign _tmp_mux_else_821 = (_gen_do_act_hidden ? _tmp_mux_then_820 : _gen_hidden_reg2);
+    assign _tmp_mux_else_835 = (_gen_do_act_hidden ? _tmp_mux_then_834 : _gen_hidden_reg2);
 
-    assign _gen_nextHiddenReg2 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_821);
+    assign _gen_nextHiddenReg2 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_835);
 
-    assign _tmp_b_822 = 4'd3;
+    assign _tmp_b_836 = 4'd3;
 
-    assign _tmp_mux_cond_823 = (_gen_hidden_idx == _tmp_b_822);
+    assign _tmp_mux_cond_837 = (_gen_hidden_idx == _tmp_b_836);
 
-    assign _tmp_mux_then_824 = (_tmp_mux_cond_823 ? _gen_reluHidden : _gen_hidden_reg3);
+    assign _tmp_mux_then_838 = (_tmp_mux_cond_837 ? _gen_reluHidden : _gen_hidden_reg3);
 
-    assign _tmp_mux_else_825 = (_gen_do_act_hidden ? _tmp_mux_then_824 : _gen_hidden_reg3);
+    assign _tmp_mux_else_839 = (_gen_do_act_hidden ? _tmp_mux_then_838 : _gen_hidden_reg3);
 
-    assign _gen_nextHiddenReg3 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_825);
+    assign _gen_nextHiddenReg3 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_839);
 
-    assign _tmp_b_826 = 4'd4;
+    assign _tmp_b_840 = 4'd4;
 
-    assign _tmp_mux_cond_827 = (_gen_hidden_idx == _tmp_b_826);
+    assign _tmp_mux_cond_841 = (_gen_hidden_idx == _tmp_b_840);
 
-    assign _tmp_mux_then_828 = (_tmp_mux_cond_827 ? _gen_reluHidden : _gen_hidden_reg4);
+    assign _tmp_mux_then_842 = (_tmp_mux_cond_841 ? _gen_reluHidden : _gen_hidden_reg4);
 
-    assign _tmp_mux_else_829 = (_gen_do_act_hidden ? _tmp_mux_then_828 : _gen_hidden_reg4);
+    assign _tmp_mux_else_843 = (_gen_do_act_hidden ? _tmp_mux_then_842 : _gen_hidden_reg4);
 
-    assign _gen_nextHiddenReg4 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_829);
+    assign _gen_nextHiddenReg4 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_843);
 
-    assign _tmp_b_830 = 4'd5;
+    assign _tmp_b_844 = 4'd5;
 
-    assign _tmp_mux_cond_831 = (_gen_hidden_idx == _tmp_b_830);
+    assign _tmp_mux_cond_845 = (_gen_hidden_idx == _tmp_b_844);
 
-    assign _tmp_mux_then_832 = (_tmp_mux_cond_831 ? _gen_reluHidden : _gen_hidden_reg5);
+    assign _tmp_mux_then_846 = (_tmp_mux_cond_845 ? _gen_reluHidden : _gen_hidden_reg5);
 
-    assign _tmp_mux_else_833 = (_gen_do_act_hidden ? _tmp_mux_then_832 : _gen_hidden_reg5);
+    assign _tmp_mux_else_847 = (_gen_do_act_hidden ? _tmp_mux_then_846 : _gen_hidden_reg5);
 
-    assign _gen_nextHiddenReg5 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_833);
+    assign _gen_nextHiddenReg5 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_847);
 
-    assign _tmp_b_834 = 4'd6;
+    assign _tmp_b_848 = 4'd6;
 
-    assign _tmp_mux_cond_835 = (_gen_hidden_idx == _tmp_b_834);
+    assign _tmp_mux_cond_849 = (_gen_hidden_idx == _tmp_b_848);
 
-    assign _tmp_mux_then_836 = (_tmp_mux_cond_835 ? _gen_reluHidden : _gen_hidden_reg6);
+    assign _tmp_mux_then_850 = (_tmp_mux_cond_849 ? _gen_reluHidden : _gen_hidden_reg6);
 
-    assign _tmp_mux_else_837 = (_gen_do_act_hidden ? _tmp_mux_then_836 : _gen_hidden_reg6);
+    assign _tmp_mux_else_851 = (_gen_do_act_hidden ? _tmp_mux_then_850 : _gen_hidden_reg6);
 
-    assign _gen_nextHiddenReg6 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_837);
+    assign _gen_nextHiddenReg6 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_851);
 
-    assign _tmp_b_838 = 4'd7;
+    assign _tmp_b_852 = 4'd7;
 
-    assign _tmp_mux_cond_839 = (_gen_hidden_idx == _tmp_b_838);
+    assign _tmp_mux_cond_853 = (_gen_hidden_idx == _tmp_b_852);
 
-    assign _tmp_mux_then_840 = (_tmp_mux_cond_839 ? _gen_reluHidden : _gen_hidden_reg7);
+    assign _tmp_mux_then_854 = (_tmp_mux_cond_853 ? _gen_reluHidden : _gen_hidden_reg7);
 
-    assign _tmp_mux_else_841 = (_gen_do_act_hidden ? _tmp_mux_then_840 : _gen_hidden_reg7);
+    assign _tmp_mux_else_855 = (_gen_do_act_hidden ? _tmp_mux_then_854 : _gen_hidden_reg7);
 
-    assign _gen_nextHiddenReg7 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_841);
+    assign _gen_nextHiddenReg7 = (_gen_load_input ? _gen_zero16 : _tmp_mux_else_855);
 
-    assign _tmp_mux_else_842 = (_gen_do_bias_output ? _gen_biasOutputAccOut : _gen_acc_reg);
+    assign _tmp_mux_else_856 = (_gen_do_bias_output ? _gen_biasOutputAccOut : _gen_acc_reg);
 
-    assign _tmp_mux_else_843 = (_gen_do_act_hidden ? _gen_zero32 : _tmp_mux_else_842);
+    assign _tmp_mux_else_857 = (_gen_do_act_hidden ? _gen_zero32 : _tmp_mux_else_856);
 
-    assign _tmp_mux_else_844 = (_gen_do_bias_hidden ? _gen_biasHiddenAccOut : _tmp_mux_else_843);
+    assign _tmp_mux_else_858 = (_gen_do_bias_hidden ? _gen_biasHiddenAccOut : _tmp_mux_else_857);
 
-    assign _tmp_mux_else_845 = (_gen_do_mac_output ? _gen_outputMacAccOut : _tmp_mux_else_844);
+    assign _tmp_mux_else_859 = (_gen_do_mac_output ? _gen_outputMacAccOut : _tmp_mux_else_858);
 
-    assign _tmp_mux_else_846 = (_gen_do_mac_hidden ? _gen_hiddenMacAccOut : _tmp_mux_else_845);
+    assign _tmp_mux_else_860 = (_gen_do_mac_hidden ? _gen_hiddenMacAccOut : _tmp_mux_else_859);
 
-    assign _gen_nextAccReg = (_gen_load_input ? _gen_zero32 : _tmp_mux_else_846);
+    assign _gen_nextAccReg = (_gen_load_input ? _gen_zero32 : _tmp_mux_else_860);
 
-    assign _tmp_a_847 = 32'd0;
+    assign _tmp_a_861 = 32'd0;
 
-    assign _tmp_mux_then_848 = ($signed(_tmp_a_847) < $signed(_gen_biasOutputAccOut));
+    assign _tmp_mux_then_862 = ($signed(_tmp_a_861) < $signed(_gen_biasOutputAccOut));
 
-    assign _tmp_mux_else_849 = (_gen_do_bias_output ? _tmp_mux_then_848 : _gen_out_reg);
+    assign _tmp_mux_else_863 = (_gen_do_bias_output ? _tmp_mux_then_862 : _gen_out_reg);
 
-    assign _gen_nextOutReg = (_gen_load_input ? _gen_falseSig : _tmp_mux_else_849);
+    assign _gen_nextOutReg = (_gen_load_input ? _gen_falseSig : _tmp_mux_else_863);
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_850 <= 4'd0;
+            _tmp_a_864 <= 4'd0;
         else
-            _tmp_a_850 <= _gen_nextHiddenIdx;
+            _tmp_a_864 <= _gen_nextPhase;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_851 <= 4'd0;
+            _tmp_a_865 <= 4'd0;
         else
-            _tmp_a_851 <= _gen_nextInputIdx;
+            _tmp_a_865 <= _gen_nextHiddenIdx;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_852 <= 8'd0;
+            _tmp_a_866 <= 4'd0;
         else
-            _tmp_a_852 <= _gen_nextInputReg0;
+            _tmp_a_866 <= _gen_nextInputIdx;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_853 <= 8'd0;
+            _tmp_a_867 <= 8'd0;
         else
-            _tmp_a_853 <= _gen_nextInputReg1;
+            _tmp_a_867 <= _gen_nextInputReg0;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_854 <= 8'd0;
+            _tmp_a_868 <= 8'd0;
         else
-            _tmp_a_854 <= _gen_nextInputReg2;
+            _tmp_a_868 <= _gen_nextInputReg1;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_855 <= 8'd0;
+            _tmp_a_869 <= 8'd0;
         else
-            _tmp_a_855 <= _gen_nextInputReg3;
+            _tmp_a_869 <= _gen_nextInputReg2;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_856 <= 16'd0;
+            _tmp_a_870 <= 8'd0;
         else
-            _tmp_a_856 <= _gen_nextHiddenReg0;
+            _tmp_a_870 <= _gen_nextInputReg3;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_857 <= 16'd0;
+            _tmp_a_871 <= 16'd0;
         else
-            _tmp_a_857 <= _gen_nextHiddenReg1;
+            _tmp_a_871 <= _gen_nextHiddenReg0;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_858 <= 16'd0;
+            _tmp_a_872 <= 16'd0;
         else
-            _tmp_a_858 <= _gen_nextHiddenReg2;
+            _tmp_a_872 <= _gen_nextHiddenReg1;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_859 <= 16'd0;
+            _tmp_a_873 <= 16'd0;
         else
-            _tmp_a_859 <= _gen_nextHiddenReg3;
+            _tmp_a_873 <= _gen_nextHiddenReg2;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_860 <= 16'd0;
+            _tmp_a_874 <= 16'd0;
         else
-            _tmp_a_860 <= _gen_nextHiddenReg4;
+            _tmp_a_874 <= _gen_nextHiddenReg3;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_861 <= 16'd0;
+            _tmp_a_875 <= 16'd0;
         else
-            _tmp_a_861 <= _gen_nextHiddenReg5;
+            _tmp_a_875 <= _gen_nextHiddenReg4;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_862 <= 16'd0;
+            _tmp_a_876 <= 16'd0;
         else
-            _tmp_a_862 <= _gen_nextHiddenReg6;
+            _tmp_a_876 <= _gen_nextHiddenReg5;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_863 <= 16'd0;
+            _tmp_a_877 <= 16'd0;
         else
-            _tmp_a_863 <= _gen_nextHiddenReg7;
+            _tmp_a_877 <= _gen_nextHiddenReg6;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_a_864 <= 32'd0;
+            _tmp_a_878 <= 16'd0;
         else
-            _tmp_a_864 <= _gen_nextAccReg;
+            _tmp_a_878 <= _gen_nextHiddenReg7;
     end
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst)
-            _tmp_b_865 <= 1'd0;
+            _tmp_a_879 <= 32'd0;
         else
-            _tmp_b_865 <= _gen_nextOutReg;
+            _tmp_a_879 <= _gen_nextAccReg;
     end
 
-    assign _tmp_b_866 = {_tmp_a_864, _tmp_b_865};
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst)
+            _tmp_b_880 <= 1'd0;
+        else
+            _tmp_b_880 <= _gen_nextOutReg;
+    end
 
-    assign _tmp_b_867 = {_tmp_a_863, _tmp_b_866};
+    assign _tmp_b_881 = {_tmp_a_879, _tmp_b_880};
 
-    assign _tmp_b_868 = {_tmp_a_862, _tmp_b_867};
+    assign _tmp_b_882 = {_tmp_a_878, _tmp_b_881};
 
-    assign _tmp_b_869 = {_tmp_a_861, _tmp_b_868};
+    assign _tmp_b_883 = {_tmp_a_877, _tmp_b_882};
 
-    assign _tmp_b_870 = {_tmp_a_860, _tmp_b_869};
+    assign _tmp_b_884 = {_tmp_a_876, _tmp_b_883};
 
-    assign _tmp_b_871 = {_tmp_a_859, _tmp_b_870};
+    assign _tmp_b_885 = {_tmp_a_875, _tmp_b_884};
 
-    assign _tmp_b_872 = {_tmp_a_858, _tmp_b_871};
+    assign _tmp_b_886 = {_tmp_a_874, _tmp_b_885};
 
-    assign _tmp_b_873 = {_tmp_a_857, _tmp_b_872};
+    assign _tmp_b_887 = {_tmp_a_873, _tmp_b_886};
 
-    assign _tmp_b_874 = {_tmp_a_856, _tmp_b_873};
+    assign _tmp_b_888 = {_tmp_a_872, _tmp_b_887};
 
-    assign _tmp_b_875 = {_tmp_a_855, _tmp_b_874};
+    assign _tmp_b_889 = {_tmp_a_871, _tmp_b_888};
 
-    assign _tmp_b_876 = {_tmp_a_854, _tmp_b_875};
+    assign _tmp_b_890 = {_tmp_a_870, _tmp_b_889};
 
-    assign _tmp_b_877 = {_tmp_a_853, _tmp_b_876};
+    assign _tmp_b_891 = {_tmp_a_869, _tmp_b_890};
 
-    assign _tmp_b_878 = {_tmp_a_852, _tmp_b_877};
+    assign _tmp_b_892 = {_tmp_a_868, _tmp_b_891};
 
-    assign _tmp_b_879 = {_tmp_a_851, _tmp_b_878};
+    assign _tmp_b_893 = {_tmp_a_867, _tmp_b_892};
 
-    assign _tmp_loop_body_880 = {_tmp_a_850, _tmp_b_879};
+    assign _tmp_b_894 = {_tmp_a_866, _tmp_b_893};
 
-    assign _tmp_loop_0 = _tmp_loop_body_880;
+    assign _tmp_b_895 = {_tmp_a_865, _tmp_b_894};
 
-    assign _gen_hidden_idx_1 = _tmp_loop_body_880[200:197];
+    assign _tmp_loop_body_896 = {_tmp_a_864, _tmp_b_895};
 
-    assign _tmp_s_881 = _tmp_loop_body_880[196:0];
+    assign _tmp_loop_0 = _tmp_loop_body_896;
 
-    assign _gen_input_idx_1 = _tmp_s_881[196:193];
+    assign _gen_phase_1 = _tmp_loop_body_896[204:201];
 
-    assign _tmp_s_882 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_897 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_883 = _tmp_s_882[192:0];
+    assign _gen_hidden_idx_1 = _tmp_s_897[200:197];
 
-    assign _gen_input_reg0_1 = _tmp_s_883[192:185];
+    assign _tmp_s_898 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_884 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_899 = _tmp_s_898[196:0];
 
-    assign _tmp_s_885 = _tmp_s_884[192:0];
+    assign _gen_input_idx_1 = _tmp_s_899[196:193];
 
-    assign _tmp_s_886 = _tmp_s_885[184:0];
+    assign _tmp_s_900 = _tmp_loop_body_896[200:0];
 
-    assign _gen_input_reg1_1 = _tmp_s_886[184:177];
+    assign _tmp_s_901 = _tmp_s_900[196:0];
 
-    assign _tmp_s_887 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_902 = _tmp_s_901[192:0];
 
-    assign _tmp_s_888 = _tmp_s_887[192:0];
+    assign _gen_input_reg0_1 = _tmp_s_902[192:185];
 
-    assign _tmp_s_889 = _tmp_s_888[184:0];
+    assign _tmp_s_903 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_890 = _tmp_s_889[176:0];
+    assign _tmp_s_904 = _tmp_s_903[196:0];
 
-    assign _gen_input_reg2_1 = _tmp_s_890[176:169];
+    assign _tmp_s_905 = _tmp_s_904[192:0];
 
-    assign _tmp_s_891 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_906 = _tmp_s_905[184:0];
 
-    assign _tmp_s_892 = _tmp_s_891[192:0];
+    assign _gen_input_reg1_1 = _tmp_s_906[184:177];
 
-    assign _tmp_s_893 = _tmp_s_892[184:0];
+    assign _tmp_s_907 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_894 = _tmp_s_893[176:0];
+    assign _tmp_s_908 = _tmp_s_907[196:0];
 
-    assign _tmp_s_895 = _tmp_s_894[168:0];
+    assign _tmp_s_909 = _tmp_s_908[192:0];
 
-    assign _gen_input_reg3_1 = _tmp_s_895[168:161];
+    assign _tmp_s_910 = _tmp_s_909[184:0];
 
-    assign _tmp_s_896 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_911 = _tmp_s_910[176:0];
 
-    assign _tmp_s_897 = _tmp_s_896[192:0];
+    assign _gen_input_reg2_1 = _tmp_s_911[176:169];
 
-    assign _tmp_s_898 = _tmp_s_897[184:0];
+    assign _tmp_s_912 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_899 = _tmp_s_898[176:0];
+    assign _tmp_s_913 = _tmp_s_912[196:0];
 
-    assign _tmp_s_900 = _tmp_s_899[168:0];
+    assign _tmp_s_914 = _tmp_s_913[192:0];
 
-    assign _tmp_s_901 = _tmp_s_900[160:0];
+    assign _tmp_s_915 = _tmp_s_914[184:0];
 
-    assign _gen_hidden_reg0_1 = _tmp_s_901[160:145];
+    assign _tmp_s_916 = _tmp_s_915[176:0];
 
-    assign _tmp_s_902 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_917 = _tmp_s_916[168:0];
 
-    assign _tmp_s_903 = _tmp_s_902[192:0];
+    assign _gen_input_reg3_1 = _tmp_s_917[168:161];
 
-    assign _tmp_s_904 = _tmp_s_903[184:0];
+    assign _tmp_s_918 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_905 = _tmp_s_904[176:0];
+    assign _tmp_s_919 = _tmp_s_918[196:0];
 
-    assign _tmp_s_906 = _tmp_s_905[168:0];
+    assign _tmp_s_920 = _tmp_s_919[192:0];
 
-    assign _tmp_s_907 = _tmp_s_906[160:0];
+    assign _tmp_s_921 = _tmp_s_920[184:0];
 
-    assign _tmp_s_908 = _tmp_s_907[144:0];
+    assign _tmp_s_922 = _tmp_s_921[176:0];
 
-    assign _gen_hidden_reg1_1 = _tmp_s_908[144:129];
+    assign _tmp_s_923 = _tmp_s_922[168:0];
 
-    assign _tmp_s_909 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_924 = _tmp_s_923[160:0];
 
-    assign _tmp_s_910 = _tmp_s_909[192:0];
+    assign _gen_hidden_reg0_1 = _tmp_s_924[160:145];
 
-    assign _tmp_s_911 = _tmp_s_910[184:0];
+    assign _tmp_s_925 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_912 = _tmp_s_911[176:0];
-
-    assign _tmp_s_913 = _tmp_s_912[168:0];
-
-    assign _tmp_s_914 = _tmp_s_913[160:0];
-
-    assign _tmp_s_915 = _tmp_s_914[144:0];
-
-    assign _tmp_s_916 = _tmp_s_915[128:0];
-
-    assign _gen_hidden_reg2_1 = _tmp_s_916[128:113];
-
-    assign _tmp_s_917 = _tmp_loop_body_880[196:0];
-
-    assign _tmp_s_918 = _tmp_s_917[192:0];
-
-    assign _tmp_s_919 = _tmp_s_918[184:0];
-
-    assign _tmp_s_920 = _tmp_s_919[176:0];
-
-    assign _tmp_s_921 = _tmp_s_920[168:0];
-
-    assign _tmp_s_922 = _tmp_s_921[160:0];
-
-    assign _tmp_s_923 = _tmp_s_922[144:0];
-
-    assign _tmp_s_924 = _tmp_s_923[128:0];
-
-    assign _tmp_s_925 = _tmp_s_924[112:0];
-
-    assign _gen_hidden_reg3_1 = _tmp_s_925[112:97];
-
-    assign _tmp_s_926 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_926 = _tmp_s_925[196:0];
 
     assign _tmp_s_927 = _tmp_s_926[192:0];
 
@@ -4021,1651 +3992,1594 @@ module TinyMLP_sparkleMlpCorePacked (
 
     assign _tmp_s_932 = _tmp_s_931[144:0];
 
-    assign _tmp_s_933 = _tmp_s_932[128:0];
+    assign _gen_hidden_reg1_1 = _tmp_s_932[144:129];
 
-    assign _tmp_s_934 = _tmp_s_933[112:0];
+    assign _tmp_s_933 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_935 = _tmp_s_934[96:0];
+    assign _tmp_s_934 = _tmp_s_933[196:0];
 
-    assign _gen_hidden_reg4_1 = _tmp_s_935[96:81];
+    assign _tmp_s_935 = _tmp_s_934[192:0];
 
-    assign _tmp_s_936 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_936 = _tmp_s_935[184:0];
 
-    assign _tmp_s_937 = _tmp_s_936[192:0];
+    assign _tmp_s_937 = _tmp_s_936[176:0];
 
-    assign _tmp_s_938 = _tmp_s_937[184:0];
+    assign _tmp_s_938 = _tmp_s_937[168:0];
 
-    assign _tmp_s_939 = _tmp_s_938[176:0];
+    assign _tmp_s_939 = _tmp_s_938[160:0];
 
-    assign _tmp_s_940 = _tmp_s_939[168:0];
+    assign _tmp_s_940 = _tmp_s_939[144:0];
 
-    assign _tmp_s_941 = _tmp_s_940[160:0];
+    assign _tmp_s_941 = _tmp_s_940[128:0];
 
-    assign _tmp_s_942 = _tmp_s_941[144:0];
+    assign _gen_hidden_reg2_1 = _tmp_s_941[128:113];
 
-    assign _tmp_s_943 = _tmp_s_942[128:0];
+    assign _tmp_s_942 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_944 = _tmp_s_943[112:0];
+    assign _tmp_s_943 = _tmp_s_942[196:0];
 
-    assign _tmp_s_945 = _tmp_s_944[96:0];
+    assign _tmp_s_944 = _tmp_s_943[192:0];
 
-    assign _tmp_s_946 = _tmp_s_945[80:0];
+    assign _tmp_s_945 = _tmp_s_944[184:0];
 
-    assign _gen_hidden_reg5_1 = _tmp_s_946[80:65];
+    assign _tmp_s_946 = _tmp_s_945[176:0];
 
-    assign _tmp_s_947 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_947 = _tmp_s_946[168:0];
 
-    assign _tmp_s_948 = _tmp_s_947[192:0];
+    assign _tmp_s_948 = _tmp_s_947[160:0];
 
-    assign _tmp_s_949 = _tmp_s_948[184:0];
+    assign _tmp_s_949 = _tmp_s_948[144:0];
 
-    assign _tmp_s_950 = _tmp_s_949[176:0];
+    assign _tmp_s_950 = _tmp_s_949[128:0];
 
-    assign _tmp_s_951 = _tmp_s_950[168:0];
+    assign _tmp_s_951 = _tmp_s_950[112:0];
 
-    assign _tmp_s_952 = _tmp_s_951[160:0];
+    assign _gen_hidden_reg3_1 = _tmp_s_951[112:97];
 
-    assign _tmp_s_953 = _tmp_s_952[144:0];
+    assign _tmp_s_952 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_954 = _tmp_s_953[128:0];
+    assign _tmp_s_953 = _tmp_s_952[196:0];
 
-    assign _tmp_s_955 = _tmp_s_954[112:0];
+    assign _tmp_s_954 = _tmp_s_953[192:0];
 
-    assign _tmp_s_956 = _tmp_s_955[96:0];
+    assign _tmp_s_955 = _tmp_s_954[184:0];
 
-    assign _tmp_s_957 = _tmp_s_956[80:0];
+    assign _tmp_s_956 = _tmp_s_955[176:0];
 
-    assign _tmp_s_958 = _tmp_s_957[64:0];
+    assign _tmp_s_957 = _tmp_s_956[168:0];
 
-    assign _gen_hidden_reg6_1 = _tmp_s_958[64:49];
+    assign _tmp_s_958 = _tmp_s_957[160:0];
 
-    assign _tmp_s_959 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_959 = _tmp_s_958[144:0];
 
-    assign _tmp_s_960 = _tmp_s_959[192:0];
+    assign _tmp_s_960 = _tmp_s_959[128:0];
 
-    assign _tmp_s_961 = _tmp_s_960[184:0];
+    assign _tmp_s_961 = _tmp_s_960[112:0];
 
-    assign _tmp_s_962 = _tmp_s_961[176:0];
+    assign _tmp_s_962 = _tmp_s_961[96:0];
 
-    assign _tmp_s_963 = _tmp_s_962[168:0];
+    assign _gen_hidden_reg4_1 = _tmp_s_962[96:81];
 
-    assign _tmp_s_964 = _tmp_s_963[160:0];
+    assign _tmp_s_963 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_965 = _tmp_s_964[144:0];
+    assign _tmp_s_964 = _tmp_s_963[196:0];
 
-    assign _tmp_s_966 = _tmp_s_965[128:0];
+    assign _tmp_s_965 = _tmp_s_964[192:0];
 
-    assign _tmp_s_967 = _tmp_s_966[112:0];
+    assign _tmp_s_966 = _tmp_s_965[184:0];
 
-    assign _tmp_s_968 = _tmp_s_967[96:0];
+    assign _tmp_s_967 = _tmp_s_966[176:0];
 
-    assign _tmp_s_969 = _tmp_s_968[80:0];
+    assign _tmp_s_968 = _tmp_s_967[168:0];
 
-    assign _tmp_s_970 = _tmp_s_969[64:0];
+    assign _tmp_s_969 = _tmp_s_968[160:0];
 
-    assign _tmp_s_971 = _tmp_s_970[48:0];
+    assign _tmp_s_970 = _tmp_s_969[144:0];
 
-    assign _gen_hidden_reg7_1 = _tmp_s_971[48:33];
+    assign _tmp_s_971 = _tmp_s_970[128:0];
 
-    assign _tmp_s_972 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_972 = _tmp_s_971[112:0];
 
-    assign _tmp_s_973 = _tmp_s_972[192:0];
+    assign _tmp_s_973 = _tmp_s_972[96:0];
 
-    assign _tmp_s_974 = _tmp_s_973[184:0];
+    assign _tmp_s_974 = _tmp_s_973[80:0];
 
-    assign _tmp_s_975 = _tmp_s_974[176:0];
+    assign _gen_hidden_reg5_1 = _tmp_s_974[80:65];
 
-    assign _tmp_s_976 = _tmp_s_975[168:0];
+    assign _tmp_s_975 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_977 = _tmp_s_976[160:0];
+    assign _tmp_s_976 = _tmp_s_975[196:0];
 
-    assign _tmp_s_978 = _tmp_s_977[144:0];
+    assign _tmp_s_977 = _tmp_s_976[192:0];
 
-    assign _tmp_s_979 = _tmp_s_978[128:0];
+    assign _tmp_s_978 = _tmp_s_977[184:0];
 
-    assign _tmp_s_980 = _tmp_s_979[112:0];
+    assign _tmp_s_979 = _tmp_s_978[176:0];
 
-    assign _tmp_s_981 = _tmp_s_980[96:0];
+    assign _tmp_s_980 = _tmp_s_979[168:0];
 
-    assign _tmp_s_982 = _tmp_s_981[80:0];
+    assign _tmp_s_981 = _tmp_s_980[160:0];
 
-    assign _tmp_s_983 = _tmp_s_982[64:0];
+    assign _tmp_s_982 = _tmp_s_981[144:0];
 
-    assign _tmp_s_984 = _tmp_s_983[48:0];
+    assign _tmp_s_983 = _tmp_s_982[128:0];
 
-    assign _tmp_s_985 = _tmp_s_984[32:0];
+    assign _tmp_s_984 = _tmp_s_983[112:0];
 
-    assign _gen_acc_reg_1 = _tmp_s_985[32:1];
+    assign _tmp_s_985 = _tmp_s_984[96:0];
 
-    assign _tmp_s_986 = _tmp_loop_body_880[196:0];
+    assign _tmp_s_986 = _tmp_s_985[80:0];
 
-    assign _tmp_s_987 = _tmp_s_986[192:0];
+    assign _tmp_s_987 = _tmp_s_986[64:0];
 
-    assign _tmp_s_988 = _tmp_s_987[184:0];
+    assign _gen_hidden_reg6_1 = _tmp_s_987[64:49];
 
-    assign _tmp_s_989 = _tmp_s_988[176:0];
+    assign _tmp_s_988 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_s_990 = _tmp_s_989[168:0];
+    assign _tmp_s_989 = _tmp_s_988[196:0];
 
-    assign _tmp_s_991 = _tmp_s_990[160:0];
+    assign _tmp_s_990 = _tmp_s_989[192:0];
 
-    assign _tmp_s_992 = _tmp_s_991[144:0];
+    assign _tmp_s_991 = _tmp_s_990[184:0];
 
-    assign _tmp_s_993 = _tmp_s_992[128:0];
+    assign _tmp_s_992 = _tmp_s_991[176:0];
 
-    assign _tmp_s_994 = _tmp_s_993[112:0];
+    assign _tmp_s_993 = _tmp_s_992[168:0];
 
-    assign _tmp_s_995 = _tmp_s_994[96:0];
+    assign _tmp_s_994 = _tmp_s_993[160:0];
 
-    assign _tmp_s_996 = _tmp_s_995[80:0];
+    assign _tmp_s_995 = _tmp_s_994[144:0];
 
-    assign _tmp_s_997 = _tmp_s_996[64:0];
+    assign _tmp_s_996 = _tmp_s_995[128:0];
 
-    assign _tmp_s_998 = _tmp_s_997[48:0];
+    assign _tmp_s_997 = _tmp_s_996[112:0];
 
-    assign _tmp_s_999 = _tmp_s_998[32:0];
+    assign _tmp_s_998 = _tmp_s_997[96:0];
 
-    assign _gen_out_reg_1 = _tmp_s_999[0:0];
+    assign _tmp_s_999 = _tmp_s_998[80:0];
 
-    assign _tmp_b_1001 = 4'd0;
+    assign _tmp_s_1000 = _tmp_s_999[64:0];
 
-    assign _gen_isIdle_2 = (_tmp_loop_1000 == _tmp_b_1001);
+    assign _tmp_s_1001 = _tmp_s_1000[48:0];
 
-    assign _tmp_b_1002 = 4'd1;
+    assign _gen_hidden_reg7_1 = _tmp_s_1001[48:33];
 
-    assign _gen_isLoadInput_1 = (_tmp_loop_1000 == _tmp_b_1002);
+    assign _tmp_s_1002 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_b_1003 = 4'd2;
+    assign _tmp_s_1003 = _tmp_s_1002[196:0];
 
-    assign _gen_isMacHidden_1 = (_tmp_loop_1000 == _tmp_b_1003);
+    assign _tmp_s_1004 = _tmp_s_1003[192:0];
 
-    assign _tmp_b_1004 = 4'd3;
+    assign _tmp_s_1005 = _tmp_s_1004[184:0];
 
-    assign _gen_isBiasHidden_1 = (_tmp_loop_1000 == _tmp_b_1004);
+    assign _tmp_s_1006 = _tmp_s_1005[176:0];
 
-    assign _tmp_b_1005 = 4'd4;
+    assign _tmp_s_1007 = _tmp_s_1006[168:0];
 
-    assign _gen_isActHidden_1 = (_tmp_loop_1000 == _tmp_b_1005);
+    assign _tmp_s_1008 = _tmp_s_1007[160:0];
 
-    assign _tmp_b_1006 = 4'd5;
+    assign _tmp_s_1009 = _tmp_s_1008[144:0];
 
-    assign _gen_isNextHidden_1 = (_tmp_loop_1000 == _tmp_b_1006);
+    assign _tmp_s_1010 = _tmp_s_1009[128:0];
 
-    assign _tmp_b_1007 = 4'd6;
+    assign _tmp_s_1011 = _tmp_s_1010[112:0];
 
-    assign _gen_isMacOutput_1 = (_tmp_loop_1000 == _tmp_b_1007);
+    assign _tmp_s_1012 = _tmp_s_1011[96:0];
 
-    assign _tmp_b_1008 = 4'd7;
+    assign _tmp_s_1013 = _tmp_s_1012[80:0];
 
-    assign _gen_isBiasOutput_1 = (_tmp_loop_1000 == _tmp_b_1008);
+    assign _tmp_s_1014 = _tmp_s_1013[64:0];
 
-    assign _tmp_b_1009 = 4'd8;
+    assign _tmp_s_1015 = _tmp_s_1014[48:0];
 
-    assign _gen_isDone_1 = (_tmp_loop_1000 == _tmp_b_1009);
+    assign _tmp_s_1016 = _tmp_s_1015[32:0];
 
-    assign _tmp_b_1010 = 4'd4;
+    assign _gen_acc_reg_1 = _tmp_s_1016[32:1];
 
-    assign _gen_inputGuardReached_1 = (_gen_input_idx_1 == _tmp_b_1010);
+    assign _tmp_s_1017 = _tmp_loop_body_896[200:0];
 
-    assign _tmp_b_1011 = 4'd8;
+    assign _tmp_s_1018 = _tmp_s_1017[196:0];
 
-    assign _gen_outputGuardReached_1 = (_gen_input_idx_1 == _tmp_b_1011);
+    assign _tmp_s_1019 = _tmp_s_1018[192:0];
 
-    assign _tmp_b_1012 = 4'd7;
+    assign _tmp_s_1020 = _tmp_s_1019[184:0];
 
-    assign _gen_hiddenLast_1 = (_gen_hidden_idx_1 == _tmp_b_1012);
+    assign _tmp_s_1021 = _tmp_s_1020[176:0];
 
-    assign _gen_notStart_2 = ~_gen_start;
+    assign _tmp_s_1022 = _tmp_s_1021[168:0];
 
-    assign _tmp_mux_cond_1013 = (_gen_isIdle_2 & _gen_start);
+    assign _tmp_s_1023 = _tmp_s_1022[160:0];
 
-    assign _tmp_mux_then_1014 = 4'd1;
+    assign _tmp_s_1024 = _tmp_s_1023[144:0];
 
-    assign _tmp_mux_then_1015 = 4'd0;
+    assign _tmp_s_1025 = _tmp_s_1024[128:0];
 
-    assign _tmp_mux_then_1016 = 4'd2;
+    assign _tmp_s_1026 = _tmp_s_1025[112:0];
 
-    assign _tmp_mux_cond_1017 = (_gen_isMacHidden_1 & _gen_inputGuardReached_1);
+    assign _tmp_s_1027 = _tmp_s_1026[96:0];
 
-    assign _tmp_mux_then_1018 = 4'd3;
+    assign _tmp_s_1028 = _tmp_s_1027[80:0];
 
-    assign _tmp_mux_then_1019 = 4'd2;
+    assign _tmp_s_1029 = _tmp_s_1028[64:0];
 
-    assign _tmp_mux_then_1020 = 4'd4;
+    assign _tmp_s_1030 = _tmp_s_1029[48:0];
 
-    assign _tmp_mux_then_1021 = 4'd5;
+    assign _tmp_s_1031 = _tmp_s_1030[32:0];
 
-    assign _tmp_mux_cond_1022 = (_gen_isNextHidden_1 & _gen_hiddenLast_1);
+    assign _gen_out_reg_1 = _tmp_s_1031[0:0];
 
-    assign _tmp_mux_then_1023 = 4'd6;
+    assign _tmp_b_1032 = 4'd0;
 
-    assign _tmp_mux_then_1024 = 4'd2;
+    assign _gen_isIdle_2 = (_gen_phase_1 == _tmp_b_1032);
 
-    assign _tmp_mux_cond_1025 = (_gen_isMacOutput_1 & _gen_outputGuardReached_1);
+    assign _tmp_b_1033 = 4'd1;
 
-    assign _tmp_mux_then_1026 = 4'd7;
+    assign _gen_load_input_1 = (_gen_phase_1 == _tmp_b_1033);
 
-    assign _tmp_mux_then_1027 = 4'd6;
+    assign _tmp_b_1034 = 4'd2;
 
-    assign _tmp_mux_then_1028 = 4'd8;
+    assign _tmp_arg1_1035 = (_gen_phase_1 == _tmp_b_1034);
 
-    assign _tmp_mux_cond_1029 = (_gen_isDone_1 & _gen_notStart_2);
+    assign _tmp_b_1036 = 4'd4;
 
-    assign _tmp_mux_then_1030 = 4'd0;
+    assign _tmp_arg2_1037 = (_gen_input_idx_1 < _tmp_b_1036);
 
-    assign _tmp_mux_then_1031 = 4'd8;
+    assign _gen_do_mac_hidden_1 = (_tmp_arg1_1035 & _tmp_arg2_1037);
 
-    assign _tmp_mux_else_1032 = 4'd0;
+    assign _tmp_b_1038 = 4'd3;
 
-    assign _tmp_mux_else_1033 = (_gen_isDone_1 ? _tmp_mux_then_1031 : _tmp_mux_else_1032);
+    assign _gen_do_bias_hidden_1 = (_gen_phase_1 == _tmp_b_1038);
 
-    assign _tmp_mux_else_1034 = (_tmp_mux_cond_1029 ? _tmp_mux_then_1030 : _tmp_mux_else_1033);
+    assign _tmp_b_1039 = 4'd4;
 
-    assign _tmp_mux_else_1035 = (_gen_isBiasOutput_1 ? _tmp_mux_then_1028 : _tmp_mux_else_1034);
+    assign _gen_do_act_hidden_1 = (_gen_phase_1 == _tmp_b_1039);
 
-    assign _tmp_mux_else_1036 = (_gen_isMacOutput_1 ? _tmp_mux_then_1027 : _tmp_mux_else_1035);
+    assign _tmp_b_1040 = 4'd5;
 
-    assign _tmp_mux_else_1037 = (_tmp_mux_cond_1025 ? _tmp_mux_then_1026 : _tmp_mux_else_1036);
+    assign _gen_advance_hidden_1 = (_gen_phase_1 == _tmp_b_1040);
 
-    assign _tmp_mux_else_1038 = (_gen_isNextHidden_1 ? _tmp_mux_then_1024 : _tmp_mux_else_1037);
+    assign _tmp_b_1041 = 4'd6;
 
-    assign _tmp_mux_else_1039 = (_tmp_mux_cond_1022 ? _tmp_mux_then_1023 : _tmp_mux_else_1038);
+    assign _tmp_arg1_1042 = (_gen_phase_1 == _tmp_b_1041);
 
-    assign _tmp_mux_else_1040 = (_gen_isActHidden_1 ? _tmp_mux_then_1021 : _tmp_mux_else_1039);
+    assign _tmp_b_1043 = 4'd8;
 
-    assign _tmp_mux_else_1041 = (_gen_isBiasHidden_1 ? _tmp_mux_then_1020 : _tmp_mux_else_1040);
+    assign _tmp_arg2_1044 = (_gen_input_idx_1 < _tmp_b_1043);
 
-    assign _tmp_mux_else_1042 = (_gen_isMacHidden_1 ? _tmp_mux_then_1019 : _tmp_mux_else_1041);
+    assign _gen_do_mac_output_1 = (_tmp_arg1_1042 & _tmp_arg2_1044);
 
-    assign _tmp_mux_else_1043 = (_tmp_mux_cond_1017 ? _tmp_mux_then_1018 : _tmp_mux_else_1042);
+    assign _tmp_b_1045 = 4'd7;
 
-    assign _tmp_mux_else_1044 = (_gen_isLoadInput_1 ? _tmp_mux_then_1016 : _tmp_mux_else_1043);
+    assign _gen_do_bias_output_1 = (_gen_phase_1 == _tmp_b_1045);
 
-    assign _tmp_mux_else_1045 = (_gen_isIdle_2 ? _tmp_mux_then_1015 : _tmp_mux_else_1044);
+    assign _tmp_b_1046 = 4'd8;
 
-    assign _gen_nextState_1 = (_tmp_mux_cond_1013 ? _tmp_mux_then_1014 : _tmp_mux_else_1045);
+    assign _gen_done = (_gen_phase_1 == _tmp_b_1046);
 
-    always_ff @(posedge clk or posedge rst) begin
-        if (rst)
-            _tmp_loop_body_1046 <= 4'd0;
-        else
-            _tmp_loop_body_1046 <= _gen_nextState_1;
-    end
+    assign _tmp_arg1_1047 = ~_gen_isIdle_2;
 
-    assign _tmp_loop_1000 = _tmp_loop_body_1046;
+    assign _tmp_arg2_1048 = ~_gen_done;
 
-    assign _tmp_b_1047 = 4'd0;
+    assign _gen_busy = (_tmp_arg1_1047 & _tmp_arg2_1048);
 
-    assign _gen_isIdle_3 = (_tmp_loop_body_1046 == _tmp_b_1047);
+    assign _tmp_b_1049 = 4'd6;
 
-    assign _tmp_b_1048 = 4'd1;
+    assign _gen_isMacOutput_1 = (_gen_phase_1 == _tmp_b_1049);
 
-    assign _gen_load_input_1 = (_tmp_loop_body_1046 == _tmp_b_1048);
-
-    assign _tmp_b_1049 = 4'd2;
-
-    assign _tmp_arg1_1050 = (_tmp_loop_body_1046 == _tmp_b_1049);
+    assign _tmp_arg1_1050 = ~_gen_isMacOutput_1;
 
     assign _tmp_b_1051 = 4'd4;
 
     assign _tmp_arg2_1052 = (_gen_input_idx_1 < _tmp_b_1051);
 
-    assign _gen_do_mac_hidden_1 = (_tmp_arg1_1050 & _tmp_arg2_1052);
+    assign _gen_hidden_input_case_hit = (_tmp_arg1_1050 & _tmp_arg2_1052);
 
-    assign _tmp_b_1053 = 4'd3;
+    assign _tmp_b_1053 = 4'd8;
 
-    assign _gen_do_bias_hidden_1 = (_tmp_loop_body_1046 == _tmp_b_1053);
+    assign _tmp_arg2_1054 = (_gen_input_idx_1 < _tmp_b_1053);
 
-    assign _tmp_b_1054 = 4'd4;
+    assign _gen_output_hidden_case_hit = (_gen_isMacOutput_1 & _tmp_arg2_1054);
 
-    assign _gen_do_act_hidden_1 = (_tmp_loop_body_1046 == _tmp_b_1054);
+    assign _tmp_b_1055 = 4'd8;
 
-    assign _tmp_b_1055 = 4'd5;
+    assign _tmp_arg1_1056 = (_gen_hidden_idx_1 < _tmp_b_1055);
 
-    assign _gen_advance_hidden_1 = (_tmp_loop_body_1046 == _tmp_b_1055);
+    assign _tmp_b_1057 = 4'd4;
 
-    assign _tmp_b_1056 = 4'd6;
+    assign _tmp_arg2_1058 = (_gen_input_idx_1 < _tmp_b_1057);
 
-    assign _tmp_arg1_1057 = (_tmp_loop_body_1046 == _tmp_b_1056);
+    assign _gen_hidden_weight_case_hit = (_tmp_arg1_1056 & _tmp_arg2_1058);
 
-    assign _tmp_b_1058 = 4'd8;
+    assign _tmp_b_1059 = 4'd8;
 
-    assign _tmp_arg2_1059 = (_gen_input_idx_1 < _tmp_b_1058);
+    assign _gen_output_weight_case_hit = (_gen_input_idx_1 < _tmp_b_1059);
 
-    assign _gen_do_mac_output_1 = (_tmp_arg1_1057 & _tmp_arg2_1059);
+    assign _tmp_b_1060 = 4'd0;
 
-    assign _tmp_b_1060 = 4'd7;
+    assign _tmp_mux_cond_1061 = (_gen_input_idx_1 == _tmp_b_1060);
 
-    assign _gen_do_bias_output_1 = (_tmp_loop_body_1046 == _tmp_b_1060);
+    assign _tmp_b_1062 = 4'd1;
 
-    assign _tmp_b_1061 = 4'd8;
+    assign _tmp_mux_cond_1063 = (_gen_input_idx_1 == _tmp_b_1062);
 
-    assign _gen_done = (_tmp_loop_body_1046 == _tmp_b_1061);
+    assign _tmp_b_1064 = 4'd2;
 
-    assign _tmp_arg1_1062 = ~_gen_isIdle_3;
+    assign _tmp_mux_cond_1065 = (_gen_input_idx_1 == _tmp_b_1064);
 
-    assign _tmp_arg2_1063 = ~_gen_done;
+    assign _tmp_b_1066 = 4'd3;
 
-    assign _gen_busy = (_tmp_arg1_1062 & _tmp_arg2_1063);
+    assign _tmp_mux_cond_1067 = (_gen_input_idx_1 == _tmp_b_1066);
 
-    assign _tmp_b_1064 = 4'd6;
+    assign _tmp_mux_else_1068 = 8'd0;
 
-    assign _gen_isMacOutput_2 = (_tmp_loop_body_1046 == _tmp_b_1064);
+    assign _tmp_mux_else_1069 = (_tmp_mux_cond_1067 ? _gen_input_reg3_1 : _tmp_mux_else_1068);
 
-    assign _tmp_arg1_1065 = ~_gen_isMacOutput_2;
+    assign _tmp_mux_else_1070 = (_tmp_mux_cond_1065 ? _gen_input_reg2_1 : _tmp_mux_else_1069);
 
-    assign _tmp_b_1066 = 4'd4;
+    assign _tmp_mux_else_1071 = (_tmp_mux_cond_1063 ? _gen_input_reg1_1 : _tmp_mux_else_1070);
 
-    assign _tmp_arg2_1067 = (_gen_input_idx_1 < _tmp_b_1066);
+    assign _gen_selectedInput_1 = (_tmp_mux_cond_1061 ? _gen_input_reg0_1 : _tmp_mux_else_1071);
 
-    assign _gen_hidden_input_case_hit = (_tmp_arg1_1065 & _tmp_arg2_1067);
+    assign _tmp_b_1072 = 4'd0;
 
-    assign _tmp_b_1068 = 4'd8;
+    assign _tmp_mux_cond_1073 = (_gen_input_idx_1 == _tmp_b_1072);
 
-    assign _tmp_arg2_1069 = (_gen_input_idx_1 < _tmp_b_1068);
+    assign _tmp_b_1074 = 4'd1;
 
-    assign _gen_output_hidden_case_hit = (_gen_isMacOutput_2 & _tmp_arg2_1069);
+    assign _tmp_mux_cond_1075 = (_gen_input_idx_1 == _tmp_b_1074);
 
-    assign _tmp_b_1070 = 4'd8;
+    assign _tmp_b_1076 = 4'd2;
 
-    assign _tmp_arg1_1071 = (_gen_hidden_idx_1 < _tmp_b_1070);
+    assign _tmp_mux_cond_1077 = (_gen_input_idx_1 == _tmp_b_1076);
 
-    assign _tmp_b_1072 = 4'd4;
+    assign _tmp_b_1078 = 4'd3;
 
-    assign _tmp_arg2_1073 = (_gen_input_idx_1 < _tmp_b_1072);
+    assign _tmp_mux_cond_1079 = (_gen_input_idx_1 == _tmp_b_1078);
 
-    assign _gen_hidden_weight_case_hit = (_tmp_arg1_1071 & _tmp_arg2_1073);
+    assign _tmp_b_1080 = 4'd4;
 
-    assign _tmp_b_1074 = 4'd8;
+    assign _tmp_mux_cond_1081 = (_gen_input_idx_1 == _tmp_b_1080);
 
-    assign _gen_output_weight_case_hit = (_gen_input_idx_1 < _tmp_b_1074);
+    assign _tmp_b_1082 = 4'd5;
 
-    assign _tmp_b_1075 = 4'd0;
+    assign _tmp_mux_cond_1083 = (_gen_input_idx_1 == _tmp_b_1082);
 
-    assign _tmp_mux_cond_1076 = (_gen_input_idx_1 == _tmp_b_1075);
+    assign _tmp_b_1084 = 4'd6;
 
-    assign _tmp_b_1077 = 4'd1;
+    assign _tmp_mux_cond_1085 = (_gen_input_idx_1 == _tmp_b_1084);
 
-    assign _tmp_mux_cond_1078 = (_gen_input_idx_1 == _tmp_b_1077);
+    assign _tmp_b_1086 = 4'd7;
 
-    assign _tmp_b_1079 = 4'd2;
+    assign _tmp_mux_cond_1087 = (_gen_input_idx_1 == _tmp_b_1086);
 
-    assign _tmp_mux_cond_1080 = (_gen_input_idx_1 == _tmp_b_1079);
+    assign _tmp_mux_else_1088 = 16'd0;
 
-    assign _tmp_b_1081 = 4'd3;
+    assign _tmp_mux_else_1089 = (_tmp_mux_cond_1087 ? _gen_hidden_reg7_1 : _tmp_mux_else_1088);
 
-    assign _tmp_mux_cond_1082 = (_gen_input_idx_1 == _tmp_b_1081);
+    assign _tmp_mux_else_1090 = (_tmp_mux_cond_1085 ? _gen_hidden_reg6_1 : _tmp_mux_else_1089);
 
-    assign _tmp_mux_else_1083 = 8'd0;
+    assign _tmp_mux_else_1091 = (_tmp_mux_cond_1083 ? _gen_hidden_reg5_1 : _tmp_mux_else_1090);
 
-    assign _tmp_mux_else_1084 = (_tmp_mux_cond_1082 ? _gen_input_reg3_1 : _tmp_mux_else_1083);
+    assign _tmp_mux_else_1092 = (_tmp_mux_cond_1081 ? _gen_hidden_reg4_1 : _tmp_mux_else_1091);
 
-    assign _tmp_mux_else_1085 = (_tmp_mux_cond_1080 ? _gen_input_reg2_1 : _tmp_mux_else_1084);
+    assign _tmp_mux_else_1093 = (_tmp_mux_cond_1079 ? _gen_hidden_reg3_1 : _tmp_mux_else_1092);
 
-    assign _tmp_mux_else_1086 = (_tmp_mux_cond_1078 ? _gen_input_reg1_1 : _tmp_mux_else_1085);
+    assign _tmp_mux_else_1094 = (_tmp_mux_cond_1077 ? _gen_hidden_reg2_1 : _tmp_mux_else_1093);
 
-    assign _gen_selectedInput_1 = (_tmp_mux_cond_1076 ? _gen_input_reg0_1 : _tmp_mux_else_1086);
+    assign _tmp_mux_else_1095 = (_tmp_mux_cond_1075 ? _gen_hidden_reg1_1 : _tmp_mux_else_1094);
 
-    assign _tmp_b_1087 = 4'd0;
-
-    assign _tmp_mux_cond_1088 = (_gen_input_idx_1 == _tmp_b_1087);
-
-    assign _tmp_b_1089 = 4'd1;
-
-    assign _tmp_mux_cond_1090 = (_gen_input_idx_1 == _tmp_b_1089);
-
-    assign _tmp_b_1091 = 4'd2;
-
-    assign _tmp_mux_cond_1092 = (_gen_input_idx_1 == _tmp_b_1091);
-
-    assign _tmp_b_1093 = 4'd3;
-
-    assign _tmp_mux_cond_1094 = (_gen_input_idx_1 == _tmp_b_1093);
-
-    assign _tmp_b_1095 = 4'd4;
-
-    assign _tmp_mux_cond_1096 = (_gen_input_idx_1 == _tmp_b_1095);
-
-    assign _tmp_b_1097 = 4'd5;
-
-    assign _tmp_mux_cond_1098 = (_gen_input_idx_1 == _tmp_b_1097);
-
-    assign _tmp_b_1099 = 4'd6;
-
-    assign _tmp_mux_cond_1100 = (_gen_input_idx_1 == _tmp_b_1099);
-
-    assign _tmp_b_1101 = 4'd7;
-
-    assign _tmp_mux_cond_1102 = (_gen_input_idx_1 == _tmp_b_1101);
-
-    assign _tmp_mux_else_1103 = 16'd0;
-
-    assign _tmp_mux_else_1104 = (_tmp_mux_cond_1102 ? _gen_hidden_reg7_1 : _tmp_mux_else_1103);
-
-    assign _tmp_mux_else_1105 = (_tmp_mux_cond_1100 ? _gen_hidden_reg6_1 : _tmp_mux_else_1104);
-
-    assign _tmp_mux_else_1106 = (_tmp_mux_cond_1098 ? _gen_hidden_reg5_1 : _tmp_mux_else_1105);
-
-    assign _tmp_mux_else_1107 = (_tmp_mux_cond_1096 ? _gen_hidden_reg4_1 : _tmp_mux_else_1106);
-
-    assign _tmp_mux_else_1108 = (_tmp_mux_cond_1094 ? _gen_hidden_reg3_1 : _tmp_mux_else_1107);
-
-    assign _tmp_mux_else_1109 = (_tmp_mux_cond_1092 ? _gen_hidden_reg2_1 : _tmp_mux_else_1108);
-
-    assign _tmp_mux_else_1110 = (_tmp_mux_cond_1090 ? _gen_hidden_reg1_1 : _tmp_mux_else_1109);
-
-    assign _gen_selectedHidden_1 = (_tmp_mux_cond_1088 ? _gen_hidden_reg0_1 : _tmp_mux_else_1110);
+    assign _gen_selectedHidden_1 = (_tmp_mux_cond_1073 ? _gen_hidden_reg0_1 : _tmp_mux_else_1095);
 
     assign _gen_selectedInputSign = _gen_selectedInput_1[7:7];
 
-    assign _tmp_b_1111 = 1'd1;
+    assign _tmp_b_1096 = 1'd1;
 
-    assign _tmp_mux_cond_1112 = (_gen_selectedInputSign == _tmp_b_1111);
+    assign _tmp_mux_cond_1097 = (_gen_selectedInputSign == _tmp_b_1096);
 
-    assign _tmp_mux_then_1113 = 8'd255;
+    assign _tmp_mux_then_1098 = 8'd255;
 
-    assign _tmp_mux_else_1114 = 8'd0;
+    assign _tmp_mux_else_1099 = 8'd0;
 
-    assign _gen_selectedInputUpper = (_tmp_mux_cond_1112 ? _tmp_mux_then_1113 : _tmp_mux_else_1114);
+    assign _gen_selectedInputUpper = (_tmp_mux_cond_1097 ? _tmp_mux_then_1098 : _tmp_mux_else_1099);
 
     assign _gen_mac_a_hidden = {_gen_selectedInputUpper, _gen_selectedInput_1};
 
-    assign _gen_mac_a = (_gen_isMacOutput_2 ? _gen_selectedHidden_1 : _gen_mac_a_hidden);
+    assign _gen_mac_a = (_gen_isMacOutput_1 ? _gen_selectedHidden_1 : _gen_mac_a_hidden);
 
     assign _gen_inputSign_1 = _gen_selectedInput_1[7:7];
 
-    assign _tmp_b_1115 = 4'd0;
+    assign _tmp_b_1100 = 4'd0;
 
-    assign _tmp_arg1_1116 = (_gen_hidden_idx_1 == _tmp_b_1115);
+    assign _tmp_arg1_1101 = (_gen_hidden_idx_1 == _tmp_b_1100);
 
-    assign _tmp_b_1117 = 4'd0;
+    assign _tmp_b_1102 = 4'd0;
 
-    assign _tmp_arg2_1118 = (_gen_input_idx_1 == _tmp_b_1117);
+    assign _tmp_arg2_1103 = (_gen_input_idx_1 == _tmp_b_1102);
 
-    assign _tmp_mux_cond_1119 = (_tmp_arg1_1116 & _tmp_arg2_1118);
+    assign _tmp_mux_cond_1104 = (_tmp_arg1_1101 & _tmp_arg2_1103);
 
-    assign _tmp_mux_then_1120 = 8'd0;
+    assign _tmp_mux_then_1105 = 8'd0;
 
-    assign _tmp_b_1121 = 4'd0;
+    assign _tmp_b_1106 = 4'd0;
 
-    assign _tmp_arg1_1122 = (_gen_hidden_idx_1 == _tmp_b_1121);
+    assign _tmp_arg1_1107 = (_gen_hidden_idx_1 == _tmp_b_1106);
 
-    assign _tmp_b_1123 = 4'd1;
+    assign _tmp_b_1108 = 4'd1;
 
-    assign _tmp_arg2_1124 = (_gen_input_idx_1 == _tmp_b_1123);
+    assign _tmp_arg2_1109 = (_gen_input_idx_1 == _tmp_b_1108);
 
-    assign _tmp_mux_cond_1125 = (_tmp_arg1_1122 & _tmp_arg2_1124);
+    assign _tmp_mux_cond_1110 = (_tmp_arg1_1107 & _tmp_arg2_1109);
 
-    assign _tmp_mux_then_1126 = 8'd0;
+    assign _tmp_mux_then_1111 = 8'd0;
 
-    assign _tmp_b_1127 = 4'd0;
+    assign _tmp_b_1112 = 4'd0;
 
-    assign _tmp_arg1_1128 = (_gen_hidden_idx_1 == _tmp_b_1127);
+    assign _tmp_arg1_1113 = (_gen_hidden_idx_1 == _tmp_b_1112);
 
-    assign _tmp_b_1129 = 4'd2;
+    assign _tmp_b_1114 = 4'd2;
 
-    assign _tmp_arg2_1130 = (_gen_input_idx_1 == _tmp_b_1129);
+    assign _tmp_arg2_1115 = (_gen_input_idx_1 == _tmp_b_1114);
 
-    assign _tmp_mux_cond_1131 = (_tmp_arg1_1128 & _tmp_arg2_1130);
+    assign _tmp_mux_cond_1116 = (_tmp_arg1_1113 & _tmp_arg2_1115);
 
-    assign _tmp_mux_then_1132 = 8'd0;
+    assign _tmp_mux_then_1117 = 8'd0;
 
-    assign _tmp_b_1133 = 4'd0;
+    assign _tmp_b_1118 = 4'd0;
 
-    assign _tmp_arg1_1134 = (_gen_hidden_idx_1 == _tmp_b_1133);
+    assign _tmp_arg1_1119 = (_gen_hidden_idx_1 == _tmp_b_1118);
 
-    assign _tmp_b_1135 = 4'd3;
+    assign _tmp_b_1120 = 4'd3;
 
-    assign _tmp_arg2_1136 = (_gen_input_idx_1 == _tmp_b_1135);
+    assign _tmp_arg2_1121 = (_gen_input_idx_1 == _tmp_b_1120);
 
-    assign _tmp_mux_cond_1137 = (_tmp_arg1_1134 & _tmp_arg2_1136);
+    assign _tmp_mux_cond_1122 = (_tmp_arg1_1119 & _tmp_arg2_1121);
 
-    assign _tmp_mux_then_1138 = 8'd0;
+    assign _tmp_mux_then_1123 = 8'd0;
 
-    assign _tmp_b_1139 = 4'd1;
+    assign _tmp_b_1124 = 4'd1;
 
-    assign _tmp_arg1_1140 = (_gen_hidden_idx_1 == _tmp_b_1139);
+    assign _tmp_arg1_1125 = (_gen_hidden_idx_1 == _tmp_b_1124);
 
-    assign _tmp_b_1141 = 4'd0;
+    assign _tmp_b_1126 = 4'd0;
 
-    assign _tmp_arg2_1142 = (_gen_input_idx_1 == _tmp_b_1141);
+    assign _tmp_arg2_1127 = (_gen_input_idx_1 == _tmp_b_1126);
 
-    assign _tmp_mux_cond_1143 = (_tmp_arg1_1140 & _tmp_arg2_1142);
+    assign _tmp_mux_cond_1128 = (_tmp_arg1_1125 & _tmp_arg2_1127);
 
-    assign _tmp_mux_then_1144 = 8'd0;
+    assign _tmp_mux_then_1129 = 8'd0;
 
-    assign _tmp_b_1145 = 4'd1;
+    assign _tmp_b_1130 = 4'd1;
 
-    assign _tmp_arg1_1146 = (_gen_hidden_idx_1 == _tmp_b_1145);
+    assign _tmp_arg1_1131 = (_gen_hidden_idx_1 == _tmp_b_1130);
 
-    assign _tmp_b_1147 = 4'd1;
+    assign _tmp_b_1132 = 4'd1;
 
-    assign _tmp_arg2_1148 = (_gen_input_idx_1 == _tmp_b_1147);
+    assign _tmp_arg2_1133 = (_gen_input_idx_1 == _tmp_b_1132);
 
-    assign _tmp_mux_cond_1149 = (_tmp_arg1_1146 & _tmp_arg2_1148);
+    assign _tmp_mux_cond_1134 = (_tmp_arg1_1131 & _tmp_arg2_1133);
 
-    assign _tmp_mux_then_1150 = 8'd0;
+    assign _tmp_mux_then_1135 = 8'd0;
 
-    assign _tmp_b_1151 = 4'd1;
+    assign _tmp_b_1136 = 4'd1;
 
-    assign _tmp_arg1_1152 = (_gen_hidden_idx_1 == _tmp_b_1151);
+    assign _tmp_arg1_1137 = (_gen_hidden_idx_1 == _tmp_b_1136);
 
-    assign _tmp_b_1153 = 4'd2;
+    assign _tmp_b_1138 = 4'd2;
 
-    assign _tmp_arg2_1154 = (_gen_input_idx_1 == _tmp_b_1153);
+    assign _tmp_arg2_1139 = (_gen_input_idx_1 == _tmp_b_1138);
 
-    assign _tmp_mux_cond_1155 = (_tmp_arg1_1152 & _tmp_arg2_1154);
+    assign _tmp_mux_cond_1140 = (_tmp_arg1_1137 & _tmp_arg2_1139);
 
-    assign _tmp_mux_then_1156 = 8'd0;
+    assign _tmp_mux_then_1141 = 8'd0;
 
-    assign _tmp_b_1157 = 4'd1;
+    assign _tmp_b_1142 = 4'd1;
 
-    assign _tmp_arg1_1158 = (_gen_hidden_idx_1 == _tmp_b_1157);
+    assign _tmp_arg1_1143 = (_gen_hidden_idx_1 == _tmp_b_1142);
 
-    assign _tmp_b_1159 = 4'd3;
+    assign _tmp_b_1144 = 4'd3;
 
-    assign _tmp_arg2_1160 = (_gen_input_idx_1 == _tmp_b_1159);
+    assign _tmp_arg2_1145 = (_gen_input_idx_1 == _tmp_b_1144);
 
-    assign _tmp_mux_cond_1161 = (_tmp_arg1_1158 & _tmp_arg2_1160);
+    assign _tmp_mux_cond_1146 = (_tmp_arg1_1143 & _tmp_arg2_1145);
 
-    assign _tmp_mux_then_1162 = 8'd255;
+    assign _tmp_mux_then_1147 = 8'd255;
 
-    assign _tmp_b_1163 = 4'd2;
+    assign _tmp_b_1148 = 4'd2;
 
-    assign _tmp_arg1_1164 = (_gen_hidden_idx_1 == _tmp_b_1163);
+    assign _tmp_arg1_1149 = (_gen_hidden_idx_1 == _tmp_b_1148);
 
-    assign _tmp_b_1165 = 4'd0;
+    assign _tmp_b_1150 = 4'd0;
 
-    assign _tmp_arg2_1166 = (_gen_input_idx_1 == _tmp_b_1165);
+    assign _tmp_arg2_1151 = (_gen_input_idx_1 == _tmp_b_1150);
 
-    assign _tmp_mux_cond_1167 = (_tmp_arg1_1164 & _tmp_arg2_1166);
+    assign _tmp_mux_cond_1152 = (_tmp_arg1_1149 & _tmp_arg2_1151);
 
-    assign _tmp_mux_then_1168 = 8'd2;
+    assign _tmp_mux_then_1153 = 8'd2;
 
-    assign _tmp_b_1169 = 4'd2;
+    assign _tmp_b_1154 = 4'd2;
 
-    assign _tmp_arg1_1170 = (_gen_hidden_idx_1 == _tmp_b_1169);
+    assign _tmp_arg1_1155 = (_gen_hidden_idx_1 == _tmp_b_1154);
 
-    assign _tmp_b_1171 = 4'd1;
+    assign _tmp_b_1156 = 4'd1;
 
-    assign _tmp_arg2_1172 = (_gen_input_idx_1 == _tmp_b_1171);
+    assign _tmp_arg2_1157 = (_gen_input_idx_1 == _tmp_b_1156);
 
-    assign _tmp_mux_cond_1173 = (_tmp_arg1_1170 & _tmp_arg2_1172);
+    assign _tmp_mux_cond_1158 = (_tmp_arg1_1155 & _tmp_arg2_1157);
 
-    assign _tmp_mux_then_1174 = 8'd1;
+    assign _tmp_mux_then_1159 = 8'd1;
 
-    assign _tmp_b_1175 = 4'd2;
+    assign _tmp_b_1160 = 4'd2;
 
-    assign _tmp_arg1_1176 = (_gen_hidden_idx_1 == _tmp_b_1175);
+    assign _tmp_arg1_1161 = (_gen_hidden_idx_1 == _tmp_b_1160);
 
-    assign _tmp_b_1177 = 4'd2;
+    assign _tmp_b_1162 = 4'd2;
 
-    assign _tmp_arg2_1178 = (_gen_input_idx_1 == _tmp_b_1177);
+    assign _tmp_arg2_1163 = (_gen_input_idx_1 == _tmp_b_1162);
 
-    assign _tmp_mux_cond_1179 = (_tmp_arg1_1176 & _tmp_arg2_1178);
+    assign _tmp_mux_cond_1164 = (_tmp_arg1_1161 & _tmp_arg2_1163);
 
-    assign _tmp_mux_then_1180 = 8'd1;
+    assign _tmp_mux_then_1165 = 8'd1;
 
-    assign _tmp_b_1181 = 4'd2;
+    assign _tmp_b_1166 = 4'd2;
 
-    assign _tmp_arg1_1182 = (_gen_hidden_idx_1 == _tmp_b_1181);
+    assign _tmp_arg1_1167 = (_gen_hidden_idx_1 == _tmp_b_1166);
 
-    assign _tmp_b_1183 = 4'd3;
+    assign _tmp_b_1168 = 4'd3;
 
-    assign _tmp_arg2_1184 = (_gen_input_idx_1 == _tmp_b_1183);
+    assign _tmp_arg2_1169 = (_gen_input_idx_1 == _tmp_b_1168);
 
-    assign _tmp_mux_cond_1185 = (_tmp_arg1_1182 & _tmp_arg2_1184);
+    assign _tmp_mux_cond_1170 = (_tmp_arg1_1167 & _tmp_arg2_1169);
 
-    assign _tmp_mux_then_1186 = 8'd255;
+    assign _tmp_mux_then_1171 = 8'd255;
 
-    assign _tmp_b_1187 = 4'd3;
+    assign _tmp_b_1172 = 4'd3;
 
-    assign _tmp_arg1_1188 = (_gen_hidden_idx_1 == _tmp_b_1187);
+    assign _tmp_arg1_1173 = (_gen_hidden_idx_1 == _tmp_b_1172);
 
-    assign _tmp_b_1189 = 4'd0;
+    assign _tmp_b_1174 = 4'd0;
 
-    assign _tmp_arg2_1190 = (_gen_input_idx_1 == _tmp_b_1189);
+    assign _tmp_arg2_1175 = (_gen_input_idx_1 == _tmp_b_1174);
 
-    assign _tmp_mux_cond_1191 = (_tmp_arg1_1188 & _tmp_arg2_1190);
+    assign _tmp_mux_cond_1176 = (_tmp_arg1_1173 & _tmp_arg2_1175);
 
-    assign _tmp_mux_then_1192 = 8'd0;
+    assign _tmp_mux_then_1177 = 8'd0;
 
-    assign _tmp_b_1193 = 4'd3;
+    assign _tmp_b_1178 = 4'd3;
 
-    assign _tmp_arg1_1194 = (_gen_hidden_idx_1 == _tmp_b_1193);
+    assign _tmp_arg1_1179 = (_gen_hidden_idx_1 == _tmp_b_1178);
 
-    assign _tmp_b_1195 = 4'd1;
+    assign _tmp_b_1180 = 4'd1;
 
-    assign _tmp_arg2_1196 = (_gen_input_idx_1 == _tmp_b_1195);
+    assign _tmp_arg2_1181 = (_gen_input_idx_1 == _tmp_b_1180);
 
-    assign _tmp_mux_cond_1197 = (_tmp_arg1_1194 & _tmp_arg2_1196);
+    assign _tmp_mux_cond_1182 = (_tmp_arg1_1179 & _tmp_arg2_1181);
 
-    assign _tmp_mux_then_1198 = 8'd0;
+    assign _tmp_mux_then_1183 = 8'd0;
 
-    assign _tmp_b_1199 = 4'd3;
+    assign _tmp_b_1184 = 4'd3;
 
-    assign _tmp_arg1_1200 = (_gen_hidden_idx_1 == _tmp_b_1199);
+    assign _tmp_arg1_1185 = (_gen_hidden_idx_1 == _tmp_b_1184);
 
-    assign _tmp_b_1201 = 4'd2;
+    assign _tmp_b_1186 = 4'd2;
 
-    assign _tmp_arg2_1202 = (_gen_input_idx_1 == _tmp_b_1201);
+    assign _tmp_arg2_1187 = (_gen_input_idx_1 == _tmp_b_1186);
 
-    assign _tmp_mux_cond_1203 = (_tmp_arg1_1200 & _tmp_arg2_1202);
+    assign _tmp_mux_cond_1188 = (_tmp_arg1_1185 & _tmp_arg2_1187);
 
-    assign _tmp_mux_then_1204 = 8'd0;
+    assign _tmp_mux_then_1189 = 8'd0;
 
-    assign _tmp_b_1205 = 4'd3;
+    assign _tmp_b_1190 = 4'd3;
 
-    assign _tmp_arg1_1206 = (_gen_hidden_idx_1 == _tmp_b_1205);
+    assign _tmp_arg1_1191 = (_gen_hidden_idx_1 == _tmp_b_1190);
 
-    assign _tmp_b_1207 = 4'd3;
+    assign _tmp_b_1192 = 4'd3;
 
-    assign _tmp_arg2_1208 = (_gen_input_idx_1 == _tmp_b_1207);
+    assign _tmp_arg2_1193 = (_gen_input_idx_1 == _tmp_b_1192);
 
-    assign _tmp_mux_cond_1209 = (_tmp_arg1_1206 & _tmp_arg2_1208);
+    assign _tmp_mux_cond_1194 = (_tmp_arg1_1191 & _tmp_arg2_1193);
 
-    assign _tmp_mux_then_1210 = 8'd255;
+    assign _tmp_mux_then_1195 = 8'd255;
 
-    assign _tmp_b_1211 = 4'd4;
+    assign _tmp_b_1196 = 4'd4;
 
-    assign _tmp_arg1_1212 = (_gen_hidden_idx_1 == _tmp_b_1211);
+    assign _tmp_arg1_1197 = (_gen_hidden_idx_1 == _tmp_b_1196);
 
-    assign _tmp_b_1213 = 4'd0;
+    assign _tmp_b_1198 = 4'd0;
 
-    assign _tmp_arg2_1214 = (_gen_input_idx_1 == _tmp_b_1213);
+    assign _tmp_arg2_1199 = (_gen_input_idx_1 == _tmp_b_1198);
 
-    assign _tmp_mux_cond_1215 = (_tmp_arg1_1212 & _tmp_arg2_1214);
+    assign _tmp_mux_cond_1200 = (_tmp_arg1_1197 & _tmp_arg2_1199);
 
-    assign _tmp_mux_then_1216 = 8'd255;
+    assign _tmp_mux_then_1201 = 8'd255;
 
-    assign _tmp_b_1217 = 4'd4;
+    assign _tmp_b_1202 = 4'd4;
 
-    assign _tmp_arg1_1218 = (_gen_hidden_idx_1 == _tmp_b_1217);
+    assign _tmp_arg1_1203 = (_gen_hidden_idx_1 == _tmp_b_1202);
 
-    assign _tmp_b_1219 = 4'd1;
+    assign _tmp_b_1204 = 4'd1;
 
-    assign _tmp_arg2_1220 = (_gen_input_idx_1 == _tmp_b_1219);
+    assign _tmp_arg2_1205 = (_gen_input_idx_1 == _tmp_b_1204);
 
-    assign _tmp_mux_cond_1221 = (_tmp_arg1_1218 & _tmp_arg2_1220);
+    assign _tmp_mux_cond_1206 = (_tmp_arg1_1203 & _tmp_arg2_1205);
 
-    assign _tmp_mux_then_1222 = 8'd0;
+    assign _tmp_mux_then_1207 = 8'd0;
 
-    assign _tmp_b_1223 = 4'd4;
+    assign _tmp_b_1208 = 4'd4;
 
-    assign _tmp_arg1_1224 = (_gen_hidden_idx_1 == _tmp_b_1223);
+    assign _tmp_arg1_1209 = (_gen_hidden_idx_1 == _tmp_b_1208);
 
-    assign _tmp_b_1225 = 4'd2;
+    assign _tmp_b_1210 = 4'd2;
 
-    assign _tmp_arg2_1226 = (_gen_input_idx_1 == _tmp_b_1225);
+    assign _tmp_arg2_1211 = (_gen_input_idx_1 == _tmp_b_1210);
 
-    assign _tmp_mux_cond_1227 = (_tmp_arg1_1224 & _tmp_arg2_1226);
+    assign _tmp_mux_cond_1212 = (_tmp_arg1_1209 & _tmp_arg2_1211);
 
-    assign _tmp_mux_then_1228 = 8'd0;
+    assign _tmp_mux_then_1213 = 8'd0;
 
-    assign _tmp_b_1229 = 4'd4;
+    assign _tmp_b_1214 = 4'd4;
 
-    assign _tmp_arg1_1230 = (_gen_hidden_idx_1 == _tmp_b_1229);
+    assign _tmp_arg1_1215 = (_gen_hidden_idx_1 == _tmp_b_1214);
 
-    assign _tmp_b_1231 = 4'd3;
+    assign _tmp_b_1216 = 4'd3;
 
-    assign _tmp_arg2_1232 = (_gen_input_idx_1 == _tmp_b_1231);
+    assign _tmp_arg2_1217 = (_gen_input_idx_1 == _tmp_b_1216);
 
-    assign _tmp_mux_cond_1233 = (_tmp_arg1_1230 & _tmp_arg2_1232);
+    assign _tmp_mux_cond_1218 = (_tmp_arg1_1215 & _tmp_arg2_1217);
 
-    assign _tmp_mux_then_1234 = 8'd0;
+    assign _tmp_mux_then_1219 = 8'd0;
 
-    assign _tmp_b_1235 = 4'd5;
+    assign _tmp_b_1220 = 4'd5;
 
-    assign _tmp_arg1_1236 = (_gen_hidden_idx_1 == _tmp_b_1235);
+    assign _tmp_arg1_1221 = (_gen_hidden_idx_1 == _tmp_b_1220);
 
-    assign _tmp_b_1237 = 4'd0;
+    assign _tmp_b_1222 = 4'd0;
 
-    assign _tmp_arg2_1238 = (_gen_input_idx_1 == _tmp_b_1237);
+    assign _tmp_arg2_1223 = (_gen_input_idx_1 == _tmp_b_1222);
 
-    assign _tmp_mux_cond_1239 = (_tmp_arg1_1236 & _tmp_arg2_1238);
+    assign _tmp_mux_cond_1224 = (_tmp_arg1_1221 & _tmp_arg2_1223);
 
-    assign _tmp_mux_then_1240 = 8'd255;
+    assign _tmp_mux_then_1225 = 8'd255;
 
-    assign _tmp_b_1241 = 4'd5;
+    assign _tmp_b_1226 = 4'd5;
 
-    assign _tmp_arg1_1242 = (_gen_hidden_idx_1 == _tmp_b_1241);
+    assign _tmp_arg1_1227 = (_gen_hidden_idx_1 == _tmp_b_1226);
 
-    assign _tmp_b_1243 = 4'd1;
+    assign _tmp_b_1228 = 4'd1;
 
-    assign _tmp_arg2_1244 = (_gen_input_idx_1 == _tmp_b_1243);
+    assign _tmp_arg2_1229 = (_gen_input_idx_1 == _tmp_b_1228);
 
-    assign _tmp_mux_cond_1245 = (_tmp_arg1_1242 & _tmp_arg2_1244);
+    assign _tmp_mux_cond_1230 = (_tmp_arg1_1227 & _tmp_arg2_1229);
 
-    assign _tmp_mux_then_1246 = 8'd1;
+    assign _tmp_mux_then_1231 = 8'd1;
 
-    assign _tmp_b_1247 = 4'd5;
+    assign _tmp_b_1232 = 4'd5;
 
-    assign _tmp_arg1_1248 = (_gen_hidden_idx_1 == _tmp_b_1247);
+    assign _tmp_arg1_1233 = (_gen_hidden_idx_1 == _tmp_b_1232);
 
-    assign _tmp_b_1249 = 4'd2;
+    assign _tmp_b_1234 = 4'd2;
 
-    assign _tmp_arg2_1250 = (_gen_input_idx_1 == _tmp_b_1249);
+    assign _tmp_arg2_1235 = (_gen_input_idx_1 == _tmp_b_1234);
 
-    assign _tmp_mux_cond_1251 = (_tmp_arg1_1248 & _tmp_arg2_1250);
+    assign _tmp_mux_cond_1236 = (_tmp_arg1_1233 & _tmp_arg2_1235);
 
-    assign _tmp_mux_then_1252 = 8'd255;
+    assign _tmp_mux_then_1237 = 8'd255;
 
-    assign _tmp_b_1253 = 4'd5;
+    assign _tmp_b_1238 = 4'd5;
 
-    assign _tmp_arg1_1254 = (_gen_hidden_idx_1 == _tmp_b_1253);
+    assign _tmp_arg1_1239 = (_gen_hidden_idx_1 == _tmp_b_1238);
 
-    assign _tmp_b_1255 = 4'd3;
+    assign _tmp_b_1240 = 4'd3;
 
-    assign _tmp_arg2_1256 = (_gen_input_idx_1 == _tmp_b_1255);
+    assign _tmp_arg2_1241 = (_gen_input_idx_1 == _tmp_b_1240);
 
-    assign _tmp_mux_cond_1257 = (_tmp_arg1_1254 & _tmp_arg2_1256);
+    assign _tmp_mux_cond_1242 = (_tmp_arg1_1239 & _tmp_arg2_1241);
 
-    assign _tmp_mux_then_1258 = 8'd1;
+    assign _tmp_mux_then_1243 = 8'd1;
 
-    assign _tmp_b_1259 = 4'd6;
+    assign _tmp_b_1244 = 4'd6;
 
-    assign _tmp_arg1_1260 = (_gen_hidden_idx_1 == _tmp_b_1259);
+    assign _tmp_arg1_1245 = (_gen_hidden_idx_1 == _tmp_b_1244);
 
-    assign _tmp_b_1261 = 4'd0;
+    assign _tmp_b_1246 = 4'd0;
 
-    assign _tmp_arg2_1262 = (_gen_input_idx_1 == _tmp_b_1261);
+    assign _tmp_arg2_1247 = (_gen_input_idx_1 == _tmp_b_1246);
 
-    assign _tmp_mux_cond_1263 = (_tmp_arg1_1260 & _tmp_arg2_1262);
+    assign _tmp_mux_cond_1248 = (_tmp_arg1_1245 & _tmp_arg2_1247);
 
-    assign _tmp_mux_then_1264 = 8'd0;
+    assign _tmp_mux_then_1249 = 8'd0;
 
-    assign _tmp_b_1265 = 4'd6;
+    assign _tmp_b_1250 = 4'd6;
 
-    assign _tmp_arg1_1266 = (_gen_hidden_idx_1 == _tmp_b_1265);
+    assign _tmp_arg1_1251 = (_gen_hidden_idx_1 == _tmp_b_1250);
 
-    assign _tmp_b_1267 = 4'd1;
+    assign _tmp_b_1252 = 4'd1;
 
-    assign _tmp_arg2_1268 = (_gen_input_idx_1 == _tmp_b_1267);
+    assign _tmp_arg2_1253 = (_gen_input_idx_1 == _tmp_b_1252);
 
-    assign _tmp_mux_cond_1269 = (_tmp_arg1_1266 & _tmp_arg2_1268);
+    assign _tmp_mux_cond_1254 = (_tmp_arg1_1251 & _tmp_arg2_1253);
 
-    assign _tmp_mux_then_1270 = 8'd255;
+    assign _tmp_mux_then_1255 = 8'd255;
 
-    assign _tmp_b_1271 = 4'd6;
+    assign _tmp_b_1256 = 4'd6;
 
-    assign _tmp_arg1_1272 = (_gen_hidden_idx_1 == _tmp_b_1271);
+    assign _tmp_arg1_1257 = (_gen_hidden_idx_1 == _tmp_b_1256);
 
-    assign _tmp_b_1273 = 4'd2;
+    assign _tmp_b_1258 = 4'd2;
 
-    assign _tmp_arg2_1274 = (_gen_input_idx_1 == _tmp_b_1273);
+    assign _tmp_arg2_1259 = (_gen_input_idx_1 == _tmp_b_1258);
 
-    assign _tmp_mux_cond_1275 = (_tmp_arg1_1272 & _tmp_arg2_1274);
+    assign _tmp_mux_cond_1260 = (_tmp_arg1_1257 & _tmp_arg2_1259);
 
-    assign _tmp_mux_then_1276 = 8'd1;
+    assign _tmp_mux_then_1261 = 8'd1;
 
-    assign _tmp_b_1277 = 4'd6;
+    assign _tmp_b_1262 = 4'd6;
 
-    assign _tmp_arg1_1278 = (_gen_hidden_idx_1 == _tmp_b_1277);
+    assign _tmp_arg1_1263 = (_gen_hidden_idx_1 == _tmp_b_1262);
 
-    assign _tmp_b_1279 = 4'd3;
+    assign _tmp_b_1264 = 4'd3;
 
-    assign _tmp_arg2_1280 = (_gen_input_idx_1 == _tmp_b_1279);
+    assign _tmp_arg2_1265 = (_gen_input_idx_1 == _tmp_b_1264);
 
-    assign _tmp_mux_cond_1281 = (_tmp_arg1_1278 & _tmp_arg2_1280);
+    assign _tmp_mux_cond_1266 = (_tmp_arg1_1263 & _tmp_arg2_1265);
 
-    assign _tmp_mux_then_1282 = 8'd255;
+    assign _tmp_mux_then_1267 = 8'd255;
 
-    assign _tmp_b_1283 = 4'd7;
+    assign _tmp_b_1268 = 4'd7;
 
-    assign _tmp_arg1_1284 = (_gen_hidden_idx_1 == _tmp_b_1283);
+    assign _tmp_arg1_1269 = (_gen_hidden_idx_1 == _tmp_b_1268);
 
-    assign _tmp_b_1285 = 4'd0;
+    assign _tmp_b_1270 = 4'd0;
 
-    assign _tmp_arg2_1286 = (_gen_input_idx_1 == _tmp_b_1285);
+    assign _tmp_arg2_1271 = (_gen_input_idx_1 == _tmp_b_1270);
 
-    assign _tmp_mux_cond_1287 = (_tmp_arg1_1284 & _tmp_arg2_1286);
+    assign _tmp_mux_cond_1272 = (_tmp_arg1_1269 & _tmp_arg2_1271);
 
-    assign _tmp_mux_then_1288 = 8'd1;
+    assign _tmp_mux_then_1273 = 8'd1;
 
-    assign _tmp_b_1289 = 4'd7;
+    assign _tmp_b_1274 = 4'd7;
 
-    assign _tmp_arg1_1290 = (_gen_hidden_idx_1 == _tmp_b_1289);
+    assign _tmp_arg1_1275 = (_gen_hidden_idx_1 == _tmp_b_1274);
 
-    assign _tmp_b_1291 = 4'd1;
+    assign _tmp_b_1276 = 4'd1;
 
-    assign _tmp_arg2_1292 = (_gen_input_idx_1 == _tmp_b_1291);
+    assign _tmp_arg2_1277 = (_gen_input_idx_1 == _tmp_b_1276);
 
-    assign _tmp_mux_cond_1293 = (_tmp_arg1_1290 & _tmp_arg2_1292);
+    assign _tmp_mux_cond_1278 = (_tmp_arg1_1275 & _tmp_arg2_1277);
 
-    assign _tmp_mux_then_1294 = 8'd2;
+    assign _tmp_mux_then_1279 = 8'd2;
 
-    assign _tmp_b_1295 = 4'd7;
+    assign _tmp_b_1280 = 4'd7;
 
-    assign _tmp_arg1_1296 = (_gen_hidden_idx_1 == _tmp_b_1295);
+    assign _tmp_arg1_1281 = (_gen_hidden_idx_1 == _tmp_b_1280);
 
-    assign _tmp_b_1297 = 4'd2;
+    assign _tmp_b_1282 = 4'd2;
 
-    assign _tmp_arg2_1298 = (_gen_input_idx_1 == _tmp_b_1297);
+    assign _tmp_arg2_1283 = (_gen_input_idx_1 == _tmp_b_1282);
 
-    assign _tmp_mux_cond_1299 = (_tmp_arg1_1296 & _tmp_arg2_1298);
+    assign _tmp_mux_cond_1284 = (_tmp_arg1_1281 & _tmp_arg2_1283);
 
-    assign _tmp_mux_then_1300 = 8'd0;
+    assign _tmp_mux_then_1285 = 8'd0;
 
-    assign _tmp_b_1301 = 4'd7;
+    assign _tmp_b_1286 = 4'd7;
 
-    assign _tmp_arg1_1302 = (_gen_hidden_idx_1 == _tmp_b_1301);
+    assign _tmp_arg1_1287 = (_gen_hidden_idx_1 == _tmp_b_1286);
 
-    assign _tmp_b_1303 = 4'd3;
+    assign _tmp_b_1288 = 4'd3;
 
-    assign _tmp_arg2_1304 = (_gen_input_idx_1 == _tmp_b_1303);
+    assign _tmp_arg2_1289 = (_gen_input_idx_1 == _tmp_b_1288);
 
-    assign _tmp_mux_cond_1305 = (_tmp_arg1_1302 & _tmp_arg2_1304);
+    assign _tmp_mux_cond_1290 = (_tmp_arg1_1287 & _tmp_arg2_1289);
 
-    assign _tmp_mux_then_1306 = 8'd0;
+    assign _tmp_mux_then_1291 = 8'd0;
 
-    assign _tmp_mux_else_1307 = 8'd0;
+    assign _tmp_mux_else_1292 = 8'd0;
 
-    assign _tmp_mux_else_1308 = (_tmp_mux_cond_1305 ? _tmp_mux_then_1306 : _tmp_mux_else_1307);
+    assign _tmp_mux_else_1293 = (_tmp_mux_cond_1290 ? _tmp_mux_then_1291 : _tmp_mux_else_1292);
 
-    assign _tmp_mux_else_1309 = (_tmp_mux_cond_1299 ? _tmp_mux_then_1300 : _tmp_mux_else_1308);
+    assign _tmp_mux_else_1294 = (_tmp_mux_cond_1284 ? _tmp_mux_then_1285 : _tmp_mux_else_1293);
 
-    assign _tmp_mux_else_1310 = (_tmp_mux_cond_1293 ? _tmp_mux_then_1294 : _tmp_mux_else_1309);
+    assign _tmp_mux_else_1295 = (_tmp_mux_cond_1278 ? _tmp_mux_then_1279 : _tmp_mux_else_1294);
 
-    assign _tmp_mux_else_1311 = (_tmp_mux_cond_1287 ? _tmp_mux_then_1288 : _tmp_mux_else_1310);
+    assign _tmp_mux_else_1296 = (_tmp_mux_cond_1272 ? _tmp_mux_then_1273 : _tmp_mux_else_1295);
 
-    assign _tmp_mux_else_1312 = (_tmp_mux_cond_1281 ? _tmp_mux_then_1282 : _tmp_mux_else_1311);
+    assign _tmp_mux_else_1297 = (_tmp_mux_cond_1266 ? _tmp_mux_then_1267 : _tmp_mux_else_1296);
 
-    assign _tmp_mux_else_1313 = (_tmp_mux_cond_1275 ? _tmp_mux_then_1276 : _tmp_mux_else_1312);
+    assign _tmp_mux_else_1298 = (_tmp_mux_cond_1260 ? _tmp_mux_then_1261 : _tmp_mux_else_1297);
 
-    assign _tmp_mux_else_1314 = (_tmp_mux_cond_1269 ? _tmp_mux_then_1270 : _tmp_mux_else_1313);
+    assign _tmp_mux_else_1299 = (_tmp_mux_cond_1254 ? _tmp_mux_then_1255 : _tmp_mux_else_1298);
 
-    assign _tmp_mux_else_1315 = (_tmp_mux_cond_1263 ? _tmp_mux_then_1264 : _tmp_mux_else_1314);
+    assign _tmp_mux_else_1300 = (_tmp_mux_cond_1248 ? _tmp_mux_then_1249 : _tmp_mux_else_1299);
 
-    assign _tmp_mux_else_1316 = (_tmp_mux_cond_1257 ? _tmp_mux_then_1258 : _tmp_mux_else_1315);
+    assign _tmp_mux_else_1301 = (_tmp_mux_cond_1242 ? _tmp_mux_then_1243 : _tmp_mux_else_1300);
 
-    assign _tmp_mux_else_1317 = (_tmp_mux_cond_1251 ? _tmp_mux_then_1252 : _tmp_mux_else_1316);
+    assign _tmp_mux_else_1302 = (_tmp_mux_cond_1236 ? _tmp_mux_then_1237 : _tmp_mux_else_1301);
 
-    assign _tmp_mux_else_1318 = (_tmp_mux_cond_1245 ? _tmp_mux_then_1246 : _tmp_mux_else_1317);
+    assign _tmp_mux_else_1303 = (_tmp_mux_cond_1230 ? _tmp_mux_then_1231 : _tmp_mux_else_1302);
 
-    assign _tmp_mux_else_1319 = (_tmp_mux_cond_1239 ? _tmp_mux_then_1240 : _tmp_mux_else_1318);
+    assign _tmp_mux_else_1304 = (_tmp_mux_cond_1224 ? _tmp_mux_then_1225 : _tmp_mux_else_1303);
 
-    assign _tmp_mux_else_1320 = (_tmp_mux_cond_1233 ? _tmp_mux_then_1234 : _tmp_mux_else_1319);
+    assign _tmp_mux_else_1305 = (_tmp_mux_cond_1218 ? _tmp_mux_then_1219 : _tmp_mux_else_1304);
 
-    assign _tmp_mux_else_1321 = (_tmp_mux_cond_1227 ? _tmp_mux_then_1228 : _tmp_mux_else_1320);
+    assign _tmp_mux_else_1306 = (_tmp_mux_cond_1212 ? _tmp_mux_then_1213 : _tmp_mux_else_1305);
 
-    assign _tmp_mux_else_1322 = (_tmp_mux_cond_1221 ? _tmp_mux_then_1222 : _tmp_mux_else_1321);
+    assign _tmp_mux_else_1307 = (_tmp_mux_cond_1206 ? _tmp_mux_then_1207 : _tmp_mux_else_1306);
 
-    assign _tmp_mux_else_1323 = (_tmp_mux_cond_1215 ? _tmp_mux_then_1216 : _tmp_mux_else_1322);
+    assign _tmp_mux_else_1308 = (_tmp_mux_cond_1200 ? _tmp_mux_then_1201 : _tmp_mux_else_1307);
 
-    assign _tmp_mux_else_1324 = (_tmp_mux_cond_1209 ? _tmp_mux_then_1210 : _tmp_mux_else_1323);
+    assign _tmp_mux_else_1309 = (_tmp_mux_cond_1194 ? _tmp_mux_then_1195 : _tmp_mux_else_1308);
 
-    assign _tmp_mux_else_1325 = (_tmp_mux_cond_1203 ? _tmp_mux_then_1204 : _tmp_mux_else_1324);
+    assign _tmp_mux_else_1310 = (_tmp_mux_cond_1188 ? _tmp_mux_then_1189 : _tmp_mux_else_1309);
 
-    assign _tmp_mux_else_1326 = (_tmp_mux_cond_1197 ? _tmp_mux_then_1198 : _tmp_mux_else_1325);
+    assign _tmp_mux_else_1311 = (_tmp_mux_cond_1182 ? _tmp_mux_then_1183 : _tmp_mux_else_1310);
 
-    assign _tmp_mux_else_1327 = (_tmp_mux_cond_1191 ? _tmp_mux_then_1192 : _tmp_mux_else_1326);
+    assign _tmp_mux_else_1312 = (_tmp_mux_cond_1176 ? _tmp_mux_then_1177 : _tmp_mux_else_1311);
 
-    assign _tmp_mux_else_1328 = (_tmp_mux_cond_1185 ? _tmp_mux_then_1186 : _tmp_mux_else_1327);
+    assign _tmp_mux_else_1313 = (_tmp_mux_cond_1170 ? _tmp_mux_then_1171 : _tmp_mux_else_1312);
 
-    assign _tmp_mux_else_1329 = (_tmp_mux_cond_1179 ? _tmp_mux_then_1180 : _tmp_mux_else_1328);
+    assign _tmp_mux_else_1314 = (_tmp_mux_cond_1164 ? _tmp_mux_then_1165 : _tmp_mux_else_1313);
 
-    assign _tmp_mux_else_1330 = (_tmp_mux_cond_1173 ? _tmp_mux_then_1174 : _tmp_mux_else_1329);
+    assign _tmp_mux_else_1315 = (_tmp_mux_cond_1158 ? _tmp_mux_then_1159 : _tmp_mux_else_1314);
 
-    assign _tmp_mux_else_1331 = (_tmp_mux_cond_1167 ? _tmp_mux_then_1168 : _tmp_mux_else_1330);
+    assign _tmp_mux_else_1316 = (_tmp_mux_cond_1152 ? _tmp_mux_then_1153 : _tmp_mux_else_1315);
 
-    assign _tmp_mux_else_1332 = (_tmp_mux_cond_1161 ? _tmp_mux_then_1162 : _tmp_mux_else_1331);
+    assign _tmp_mux_else_1317 = (_tmp_mux_cond_1146 ? _tmp_mux_then_1147 : _tmp_mux_else_1316);
 
-    assign _tmp_mux_else_1333 = (_tmp_mux_cond_1155 ? _tmp_mux_then_1156 : _tmp_mux_else_1332);
+    assign _tmp_mux_else_1318 = (_tmp_mux_cond_1140 ? _tmp_mux_then_1141 : _tmp_mux_else_1317);
 
-    assign _tmp_mux_else_1334 = (_tmp_mux_cond_1149 ? _tmp_mux_then_1150 : _tmp_mux_else_1333);
+    assign _tmp_mux_else_1319 = (_tmp_mux_cond_1134 ? _tmp_mux_then_1135 : _tmp_mux_else_1318);
 
-    assign _tmp_mux_else_1335 = (_tmp_mux_cond_1143 ? _tmp_mux_then_1144 : _tmp_mux_else_1334);
+    assign _tmp_mux_else_1320 = (_tmp_mux_cond_1128 ? _tmp_mux_then_1129 : _tmp_mux_else_1319);
 
-    assign _tmp_mux_else_1336 = (_tmp_mux_cond_1137 ? _tmp_mux_then_1138 : _tmp_mux_else_1335);
+    assign _tmp_mux_else_1321 = (_tmp_mux_cond_1122 ? _tmp_mux_then_1123 : _tmp_mux_else_1320);
 
-    assign _tmp_mux_else_1337 = (_tmp_mux_cond_1131 ? _tmp_mux_then_1132 : _tmp_mux_else_1336);
+    assign _tmp_mux_else_1322 = (_tmp_mux_cond_1116 ? _tmp_mux_then_1117 : _tmp_mux_else_1321);
 
-    assign _tmp_mux_else_1338 = (_tmp_mux_cond_1125 ? _tmp_mux_then_1126 : _tmp_mux_else_1337);
+    assign _tmp_mux_else_1323 = (_tmp_mux_cond_1110 ? _tmp_mux_then_1111 : _tmp_mux_else_1322);
 
-    assign _tmp_s_1339 = (_tmp_mux_cond_1119 ? _tmp_mux_then_1120 : _tmp_mux_else_1338);
+    assign _tmp_s_1324 = (_tmp_mux_cond_1104 ? _tmp_mux_then_1105 : _tmp_mux_else_1323);
 
-    assign _gen_weightSign_2 = _tmp_s_1339[7:7];
+    assign _gen_weightSign_2 = _tmp_s_1324[7:7];
 
-    assign _tmp_b_1340 = 1'd1;
+    assign _tmp_b_1325 = 1'd1;
 
-    assign _tmp_mux_cond_1341 = (_gen_inputSign_1 == _tmp_b_1340);
+    assign _tmp_mux_cond_1326 = (_gen_inputSign_1 == _tmp_b_1325);
 
-    assign _tmp_mux_then_1342 = 16'd65535;
+    assign _tmp_mux_then_1327 = 16'd65535;
 
-    assign _tmp_mux_else_1343 = 16'd0;
+    assign _tmp_mux_else_1328 = 16'd0;
 
-    assign _gen_inputUpper_1 = (_tmp_mux_cond_1341 ? _tmp_mux_then_1342 : _tmp_mux_else_1343);
+    assign _gen_inputUpper_1 = (_tmp_mux_cond_1326 ? _tmp_mux_then_1327 : _tmp_mux_else_1328);
 
-    assign _tmp_b_1344 = 1'd1;
+    assign _tmp_b_1329 = 1'd1;
 
-    assign _tmp_mux_cond_1345 = (_gen_weightSign_2 == _tmp_b_1344);
+    assign _tmp_mux_cond_1330 = (_gen_weightSign_2 == _tmp_b_1329);
 
-    assign _tmp_mux_then_1346 = 16'd65535;
+    assign _tmp_mux_then_1331 = 16'd65535;
 
-    assign _tmp_mux_else_1347 = 16'd0;
+    assign _tmp_mux_else_1332 = 16'd0;
 
-    assign _gen_weightUpper_1 = (_tmp_mux_cond_1345 ? _tmp_mux_then_1346 : _tmp_mux_else_1347);
+    assign _gen_weightUpper_1 = (_tmp_mux_cond_1330 ? _tmp_mux_then_1331 : _tmp_mux_else_1332);
 
     assign _gen_input24_1 = {_gen_inputUpper_1, _gen_selectedInput_1};
 
-    assign _tmp_b_1348 = 4'd0;
+    assign _tmp_b_1333 = 4'd0;
 
-    assign _tmp_arg1_1349 = (_gen_hidden_idx_1 == _tmp_b_1348);
+    assign _tmp_arg1_1334 = (_gen_hidden_idx_1 == _tmp_b_1333);
 
-    assign _tmp_b_1350 = 4'd0;
+    assign _tmp_b_1335 = 4'd0;
 
-    assign _tmp_arg2_1351 = (_gen_input_idx_1 == _tmp_b_1350);
+    assign _tmp_arg2_1336 = (_gen_input_idx_1 == _tmp_b_1335);
 
-    assign _tmp_mux_cond_1352 = (_tmp_arg1_1349 & _tmp_arg2_1351);
+    assign _tmp_mux_cond_1337 = (_tmp_arg1_1334 & _tmp_arg2_1336);
 
-    assign _tmp_mux_then_1353 = 8'd0;
+    assign _tmp_mux_then_1338 = 8'd0;
 
-    assign _tmp_b_1354 = 4'd0;
+    assign _tmp_b_1339 = 4'd0;
 
-    assign _tmp_arg1_1355 = (_gen_hidden_idx_1 == _tmp_b_1354);
+    assign _tmp_arg1_1340 = (_gen_hidden_idx_1 == _tmp_b_1339);
 
-    assign _tmp_b_1356 = 4'd1;
+    assign _tmp_b_1341 = 4'd1;
 
-    assign _tmp_arg2_1357 = (_gen_input_idx_1 == _tmp_b_1356);
+    assign _tmp_arg2_1342 = (_gen_input_idx_1 == _tmp_b_1341);
 
-    assign _tmp_mux_cond_1358 = (_tmp_arg1_1355 & _tmp_arg2_1357);
+    assign _tmp_mux_cond_1343 = (_tmp_arg1_1340 & _tmp_arg2_1342);
 
-    assign _tmp_mux_then_1359 = 8'd0;
+    assign _tmp_mux_then_1344 = 8'd0;
 
-    assign _tmp_b_1360 = 4'd0;
+    assign _tmp_b_1345 = 4'd0;
 
-    assign _tmp_arg1_1361 = (_gen_hidden_idx_1 == _tmp_b_1360);
+    assign _tmp_arg1_1346 = (_gen_hidden_idx_1 == _tmp_b_1345);
 
-    assign _tmp_b_1362 = 4'd2;
+    assign _tmp_b_1347 = 4'd2;
 
-    assign _tmp_arg2_1363 = (_gen_input_idx_1 == _tmp_b_1362);
+    assign _tmp_arg2_1348 = (_gen_input_idx_1 == _tmp_b_1347);
 
-    assign _tmp_mux_cond_1364 = (_tmp_arg1_1361 & _tmp_arg2_1363);
+    assign _tmp_mux_cond_1349 = (_tmp_arg1_1346 & _tmp_arg2_1348);
 
-    assign _tmp_mux_then_1365 = 8'd0;
+    assign _tmp_mux_then_1350 = 8'd0;
 
-    assign _tmp_b_1366 = 4'd0;
+    assign _tmp_b_1351 = 4'd0;
 
-    assign _tmp_arg1_1367 = (_gen_hidden_idx_1 == _tmp_b_1366);
+    assign _tmp_arg1_1352 = (_gen_hidden_idx_1 == _tmp_b_1351);
 
-    assign _tmp_b_1368 = 4'd3;
+    assign _tmp_b_1353 = 4'd3;
 
-    assign _tmp_arg2_1369 = (_gen_input_idx_1 == _tmp_b_1368);
+    assign _tmp_arg2_1354 = (_gen_input_idx_1 == _tmp_b_1353);
 
-    assign _tmp_mux_cond_1370 = (_tmp_arg1_1367 & _tmp_arg2_1369);
+    assign _tmp_mux_cond_1355 = (_tmp_arg1_1352 & _tmp_arg2_1354);
 
-    assign _tmp_mux_then_1371 = 8'd0;
+    assign _tmp_mux_then_1356 = 8'd0;
 
-    assign _tmp_b_1372 = 4'd1;
+    assign _tmp_b_1357 = 4'd1;
 
-    assign _tmp_arg1_1373 = (_gen_hidden_idx_1 == _tmp_b_1372);
+    assign _tmp_arg1_1358 = (_gen_hidden_idx_1 == _tmp_b_1357);
 
-    assign _tmp_b_1374 = 4'd0;
+    assign _tmp_b_1359 = 4'd0;
 
-    assign _tmp_arg2_1375 = (_gen_input_idx_1 == _tmp_b_1374);
+    assign _tmp_arg2_1360 = (_gen_input_idx_1 == _tmp_b_1359);
 
-    assign _tmp_mux_cond_1376 = (_tmp_arg1_1373 & _tmp_arg2_1375);
+    assign _tmp_mux_cond_1361 = (_tmp_arg1_1358 & _tmp_arg2_1360);
 
-    assign _tmp_mux_then_1377 = 8'd0;
+    assign _tmp_mux_then_1362 = 8'd0;
 
-    assign _tmp_b_1378 = 4'd1;
+    assign _tmp_b_1363 = 4'd1;
 
-    assign _tmp_arg1_1379 = (_gen_hidden_idx_1 == _tmp_b_1378);
+    assign _tmp_arg1_1364 = (_gen_hidden_idx_1 == _tmp_b_1363);
 
-    assign _tmp_b_1380 = 4'd1;
+    assign _tmp_b_1365 = 4'd1;
 
-    assign _tmp_arg2_1381 = (_gen_input_idx_1 == _tmp_b_1380);
+    assign _tmp_arg2_1366 = (_gen_input_idx_1 == _tmp_b_1365);
 
-    assign _tmp_mux_cond_1382 = (_tmp_arg1_1379 & _tmp_arg2_1381);
+    assign _tmp_mux_cond_1367 = (_tmp_arg1_1364 & _tmp_arg2_1366);
 
-    assign _tmp_mux_then_1383 = 8'd0;
+    assign _tmp_mux_then_1368 = 8'd0;
 
-    assign _tmp_b_1384 = 4'd1;
+    assign _tmp_b_1369 = 4'd1;
 
-    assign _tmp_arg1_1385 = (_gen_hidden_idx_1 == _tmp_b_1384);
+    assign _tmp_arg1_1370 = (_gen_hidden_idx_1 == _tmp_b_1369);
 
-    assign _tmp_b_1386 = 4'd2;
+    assign _tmp_b_1371 = 4'd2;
 
-    assign _tmp_arg2_1387 = (_gen_input_idx_1 == _tmp_b_1386);
+    assign _tmp_arg2_1372 = (_gen_input_idx_1 == _tmp_b_1371);
 
-    assign _tmp_mux_cond_1388 = (_tmp_arg1_1385 & _tmp_arg2_1387);
+    assign _tmp_mux_cond_1373 = (_tmp_arg1_1370 & _tmp_arg2_1372);
 
-    assign _tmp_mux_then_1389 = 8'd0;
+    assign _tmp_mux_then_1374 = 8'd0;
 
-    assign _tmp_b_1390 = 4'd1;
+    assign _tmp_b_1375 = 4'd1;
 
-    assign _tmp_arg1_1391 = (_gen_hidden_idx_1 == _tmp_b_1390);
+    assign _tmp_arg1_1376 = (_gen_hidden_idx_1 == _tmp_b_1375);
 
-    assign _tmp_b_1392 = 4'd3;
+    assign _tmp_b_1377 = 4'd3;
 
-    assign _tmp_arg2_1393 = (_gen_input_idx_1 == _tmp_b_1392);
+    assign _tmp_arg2_1378 = (_gen_input_idx_1 == _tmp_b_1377);
 
-    assign _tmp_mux_cond_1394 = (_tmp_arg1_1391 & _tmp_arg2_1393);
+    assign _tmp_mux_cond_1379 = (_tmp_arg1_1376 & _tmp_arg2_1378);
 
-    assign _tmp_mux_then_1395 = 8'd255;
+    assign _tmp_mux_then_1380 = 8'd255;
 
-    assign _tmp_b_1396 = 4'd2;
+    assign _tmp_b_1381 = 4'd2;
 
-    assign _tmp_arg1_1397 = (_gen_hidden_idx_1 == _tmp_b_1396);
+    assign _tmp_arg1_1382 = (_gen_hidden_idx_1 == _tmp_b_1381);
 
-    assign _tmp_b_1398 = 4'd0;
+    assign _tmp_b_1383 = 4'd0;
 
-    assign _tmp_arg2_1399 = (_gen_input_idx_1 == _tmp_b_1398);
+    assign _tmp_arg2_1384 = (_gen_input_idx_1 == _tmp_b_1383);
 
-    assign _tmp_mux_cond_1400 = (_tmp_arg1_1397 & _tmp_arg2_1399);
+    assign _tmp_mux_cond_1385 = (_tmp_arg1_1382 & _tmp_arg2_1384);
 
-    assign _tmp_mux_then_1401 = 8'd2;
+    assign _tmp_mux_then_1386 = 8'd2;
 
-    assign _tmp_b_1402 = 4'd2;
+    assign _tmp_b_1387 = 4'd2;
 
-    assign _tmp_arg1_1403 = (_gen_hidden_idx_1 == _tmp_b_1402);
+    assign _tmp_arg1_1388 = (_gen_hidden_idx_1 == _tmp_b_1387);
 
-    assign _tmp_b_1404 = 4'd1;
+    assign _tmp_b_1389 = 4'd1;
 
-    assign _tmp_arg2_1405 = (_gen_input_idx_1 == _tmp_b_1404);
+    assign _tmp_arg2_1390 = (_gen_input_idx_1 == _tmp_b_1389);
 
-    assign _tmp_mux_cond_1406 = (_tmp_arg1_1403 & _tmp_arg2_1405);
+    assign _tmp_mux_cond_1391 = (_tmp_arg1_1388 & _tmp_arg2_1390);
 
-    assign _tmp_mux_then_1407 = 8'd1;
+    assign _tmp_mux_then_1392 = 8'd1;
 
-    assign _tmp_b_1408 = 4'd2;
+    assign _tmp_b_1393 = 4'd2;
 
-    assign _tmp_arg1_1409 = (_gen_hidden_idx_1 == _tmp_b_1408);
+    assign _tmp_arg1_1394 = (_gen_hidden_idx_1 == _tmp_b_1393);
 
-    assign _tmp_b_1410 = 4'd2;
+    assign _tmp_b_1395 = 4'd2;
 
-    assign _tmp_arg2_1411 = (_gen_input_idx_1 == _tmp_b_1410);
+    assign _tmp_arg2_1396 = (_gen_input_idx_1 == _tmp_b_1395);
 
-    assign _tmp_mux_cond_1412 = (_tmp_arg1_1409 & _tmp_arg2_1411);
+    assign _tmp_mux_cond_1397 = (_tmp_arg1_1394 & _tmp_arg2_1396);
 
-    assign _tmp_mux_then_1413 = 8'd1;
+    assign _tmp_mux_then_1398 = 8'd1;
 
-    assign _tmp_b_1414 = 4'd2;
+    assign _tmp_b_1399 = 4'd2;
 
-    assign _tmp_arg1_1415 = (_gen_hidden_idx_1 == _tmp_b_1414);
+    assign _tmp_arg1_1400 = (_gen_hidden_idx_1 == _tmp_b_1399);
 
-    assign _tmp_b_1416 = 4'd3;
+    assign _tmp_b_1401 = 4'd3;
 
-    assign _tmp_arg2_1417 = (_gen_input_idx_1 == _tmp_b_1416);
+    assign _tmp_arg2_1402 = (_gen_input_idx_1 == _tmp_b_1401);
 
-    assign _tmp_mux_cond_1418 = (_tmp_arg1_1415 & _tmp_arg2_1417);
+    assign _tmp_mux_cond_1403 = (_tmp_arg1_1400 & _tmp_arg2_1402);
 
-    assign _tmp_mux_then_1419 = 8'd255;
+    assign _tmp_mux_then_1404 = 8'd255;
 
-    assign _tmp_b_1420 = 4'd3;
+    assign _tmp_b_1405 = 4'd3;
 
-    assign _tmp_arg1_1421 = (_gen_hidden_idx_1 == _tmp_b_1420);
+    assign _tmp_arg1_1406 = (_gen_hidden_idx_1 == _tmp_b_1405);
 
-    assign _tmp_b_1422 = 4'd0;
+    assign _tmp_b_1407 = 4'd0;
 
-    assign _tmp_arg2_1423 = (_gen_input_idx_1 == _tmp_b_1422);
+    assign _tmp_arg2_1408 = (_gen_input_idx_1 == _tmp_b_1407);
 
-    assign _tmp_mux_cond_1424 = (_tmp_arg1_1421 & _tmp_arg2_1423);
+    assign _tmp_mux_cond_1409 = (_tmp_arg1_1406 & _tmp_arg2_1408);
 
-    assign _tmp_mux_then_1425 = 8'd0;
+    assign _tmp_mux_then_1410 = 8'd0;
 
-    assign _tmp_b_1426 = 4'd3;
+    assign _tmp_b_1411 = 4'd3;
 
-    assign _tmp_arg1_1427 = (_gen_hidden_idx_1 == _tmp_b_1426);
+    assign _tmp_arg1_1412 = (_gen_hidden_idx_1 == _tmp_b_1411);
 
-    assign _tmp_b_1428 = 4'd1;
+    assign _tmp_b_1413 = 4'd1;
 
-    assign _tmp_arg2_1429 = (_gen_input_idx_1 == _tmp_b_1428);
+    assign _tmp_arg2_1414 = (_gen_input_idx_1 == _tmp_b_1413);
 
-    assign _tmp_mux_cond_1430 = (_tmp_arg1_1427 & _tmp_arg2_1429);
+    assign _tmp_mux_cond_1415 = (_tmp_arg1_1412 & _tmp_arg2_1414);
 
-    assign _tmp_mux_then_1431 = 8'd0;
+    assign _tmp_mux_then_1416 = 8'd0;
 
-    assign _tmp_b_1432 = 4'd3;
+    assign _tmp_b_1417 = 4'd3;
 
-    assign _tmp_arg1_1433 = (_gen_hidden_idx_1 == _tmp_b_1432);
+    assign _tmp_arg1_1418 = (_gen_hidden_idx_1 == _tmp_b_1417);
 
-    assign _tmp_b_1434 = 4'd2;
+    assign _tmp_b_1419 = 4'd2;
 
-    assign _tmp_arg2_1435 = (_gen_input_idx_1 == _tmp_b_1434);
+    assign _tmp_arg2_1420 = (_gen_input_idx_1 == _tmp_b_1419);
 
-    assign _tmp_mux_cond_1436 = (_tmp_arg1_1433 & _tmp_arg2_1435);
+    assign _tmp_mux_cond_1421 = (_tmp_arg1_1418 & _tmp_arg2_1420);
 
-    assign _tmp_mux_then_1437 = 8'd0;
+    assign _tmp_mux_then_1422 = 8'd0;
 
-    assign _tmp_b_1438 = 4'd3;
+    assign _tmp_b_1423 = 4'd3;
 
-    assign _tmp_arg1_1439 = (_gen_hidden_idx_1 == _tmp_b_1438);
+    assign _tmp_arg1_1424 = (_gen_hidden_idx_1 == _tmp_b_1423);
 
-    assign _tmp_b_1440 = 4'd3;
+    assign _tmp_b_1425 = 4'd3;
 
-    assign _tmp_arg2_1441 = (_gen_input_idx_1 == _tmp_b_1440);
+    assign _tmp_arg2_1426 = (_gen_input_idx_1 == _tmp_b_1425);
 
-    assign _tmp_mux_cond_1442 = (_tmp_arg1_1439 & _tmp_arg2_1441);
+    assign _tmp_mux_cond_1427 = (_tmp_arg1_1424 & _tmp_arg2_1426);
 
-    assign _tmp_mux_then_1443 = 8'd255;
+    assign _tmp_mux_then_1428 = 8'd255;
 
-    assign _tmp_b_1444 = 4'd4;
+    assign _tmp_b_1429 = 4'd4;
 
-    assign _tmp_arg1_1445 = (_gen_hidden_idx_1 == _tmp_b_1444);
+    assign _tmp_arg1_1430 = (_gen_hidden_idx_1 == _tmp_b_1429);
 
-    assign _tmp_b_1446 = 4'd0;
+    assign _tmp_b_1431 = 4'd0;
 
-    assign _tmp_arg2_1447 = (_gen_input_idx_1 == _tmp_b_1446);
+    assign _tmp_arg2_1432 = (_gen_input_idx_1 == _tmp_b_1431);
 
-    assign _tmp_mux_cond_1448 = (_tmp_arg1_1445 & _tmp_arg2_1447);
+    assign _tmp_mux_cond_1433 = (_tmp_arg1_1430 & _tmp_arg2_1432);
 
-    assign _tmp_mux_then_1449 = 8'd255;
+    assign _tmp_mux_then_1434 = 8'd255;
 
-    assign _tmp_b_1450 = 4'd4;
+    assign _tmp_b_1435 = 4'd4;
 
-    assign _tmp_arg1_1451 = (_gen_hidden_idx_1 == _tmp_b_1450);
+    assign _tmp_arg1_1436 = (_gen_hidden_idx_1 == _tmp_b_1435);
 
-    assign _tmp_b_1452 = 4'd1;
+    assign _tmp_b_1437 = 4'd1;
 
-    assign _tmp_arg2_1453 = (_gen_input_idx_1 == _tmp_b_1452);
+    assign _tmp_arg2_1438 = (_gen_input_idx_1 == _tmp_b_1437);
 
-    assign _tmp_mux_cond_1454 = (_tmp_arg1_1451 & _tmp_arg2_1453);
+    assign _tmp_mux_cond_1439 = (_tmp_arg1_1436 & _tmp_arg2_1438);
 
-    assign _tmp_mux_then_1455 = 8'd0;
+    assign _tmp_mux_then_1440 = 8'd0;
 
-    assign _tmp_b_1456 = 4'd4;
+    assign _tmp_b_1441 = 4'd4;
 
-    assign _tmp_arg1_1457 = (_gen_hidden_idx_1 == _tmp_b_1456);
+    assign _tmp_arg1_1442 = (_gen_hidden_idx_1 == _tmp_b_1441);
 
-    assign _tmp_b_1458 = 4'd2;
+    assign _tmp_b_1443 = 4'd2;
 
-    assign _tmp_arg2_1459 = (_gen_input_idx_1 == _tmp_b_1458);
+    assign _tmp_arg2_1444 = (_gen_input_idx_1 == _tmp_b_1443);
 
-    assign _tmp_mux_cond_1460 = (_tmp_arg1_1457 & _tmp_arg2_1459);
+    assign _tmp_mux_cond_1445 = (_tmp_arg1_1442 & _tmp_arg2_1444);
 
-    assign _tmp_mux_then_1461 = 8'd0;
+    assign _tmp_mux_then_1446 = 8'd0;
 
-    assign _tmp_b_1462 = 4'd4;
+    assign _tmp_b_1447 = 4'd4;
 
-    assign _tmp_arg1_1463 = (_gen_hidden_idx_1 == _tmp_b_1462);
+    assign _tmp_arg1_1448 = (_gen_hidden_idx_1 == _tmp_b_1447);
 
-    assign _tmp_b_1464 = 4'd3;
+    assign _tmp_b_1449 = 4'd3;
 
-    assign _tmp_arg2_1465 = (_gen_input_idx_1 == _tmp_b_1464);
+    assign _tmp_arg2_1450 = (_gen_input_idx_1 == _tmp_b_1449);
 
-    assign _tmp_mux_cond_1466 = (_tmp_arg1_1463 & _tmp_arg2_1465);
+    assign _tmp_mux_cond_1451 = (_tmp_arg1_1448 & _tmp_arg2_1450);
 
-    assign _tmp_mux_then_1467 = 8'd0;
+    assign _tmp_mux_then_1452 = 8'd0;
 
-    assign _tmp_b_1468 = 4'd5;
+    assign _tmp_b_1453 = 4'd5;
 
-    assign _tmp_arg1_1469 = (_gen_hidden_idx_1 == _tmp_b_1468);
+    assign _tmp_arg1_1454 = (_gen_hidden_idx_1 == _tmp_b_1453);
 
-    assign _tmp_b_1470 = 4'd0;
+    assign _tmp_b_1455 = 4'd0;
 
-    assign _tmp_arg2_1471 = (_gen_input_idx_1 == _tmp_b_1470);
+    assign _tmp_arg2_1456 = (_gen_input_idx_1 == _tmp_b_1455);
 
-    assign _tmp_mux_cond_1472 = (_tmp_arg1_1469 & _tmp_arg2_1471);
+    assign _tmp_mux_cond_1457 = (_tmp_arg1_1454 & _tmp_arg2_1456);
 
-    assign _tmp_mux_then_1473 = 8'd255;
+    assign _tmp_mux_then_1458 = 8'd255;
 
-    assign _tmp_b_1474 = 4'd5;
+    assign _tmp_b_1459 = 4'd5;
 
-    assign _tmp_arg1_1475 = (_gen_hidden_idx_1 == _tmp_b_1474);
+    assign _tmp_arg1_1460 = (_gen_hidden_idx_1 == _tmp_b_1459);
 
-    assign _tmp_b_1476 = 4'd1;
+    assign _tmp_b_1461 = 4'd1;
 
-    assign _tmp_arg2_1477 = (_gen_input_idx_1 == _tmp_b_1476);
+    assign _tmp_arg2_1462 = (_gen_input_idx_1 == _tmp_b_1461);
 
-    assign _tmp_mux_cond_1478 = (_tmp_arg1_1475 & _tmp_arg2_1477);
+    assign _tmp_mux_cond_1463 = (_tmp_arg1_1460 & _tmp_arg2_1462);
 
-    assign _tmp_mux_then_1479 = 8'd1;
+    assign _tmp_mux_then_1464 = 8'd1;
 
-    assign _tmp_b_1480 = 4'd5;
+    assign _tmp_b_1465 = 4'd5;
 
-    assign _tmp_arg1_1481 = (_gen_hidden_idx_1 == _tmp_b_1480);
+    assign _tmp_arg1_1466 = (_gen_hidden_idx_1 == _tmp_b_1465);
 
-    assign _tmp_b_1482 = 4'd2;
+    assign _tmp_b_1467 = 4'd2;
 
-    assign _tmp_arg2_1483 = (_gen_input_idx_1 == _tmp_b_1482);
+    assign _tmp_arg2_1468 = (_gen_input_idx_1 == _tmp_b_1467);
 
-    assign _tmp_mux_cond_1484 = (_tmp_arg1_1481 & _tmp_arg2_1483);
+    assign _tmp_mux_cond_1469 = (_tmp_arg1_1466 & _tmp_arg2_1468);
 
-    assign _tmp_mux_then_1485 = 8'd255;
+    assign _tmp_mux_then_1470 = 8'd255;
 
-    assign _tmp_b_1486 = 4'd5;
+    assign _tmp_b_1471 = 4'd5;
 
-    assign _tmp_arg1_1487 = (_gen_hidden_idx_1 == _tmp_b_1486);
+    assign _tmp_arg1_1472 = (_gen_hidden_idx_1 == _tmp_b_1471);
 
-    assign _tmp_b_1488 = 4'd3;
+    assign _tmp_b_1473 = 4'd3;
 
-    assign _tmp_arg2_1489 = (_gen_input_idx_1 == _tmp_b_1488);
+    assign _tmp_arg2_1474 = (_gen_input_idx_1 == _tmp_b_1473);
 
-    assign _tmp_mux_cond_1490 = (_tmp_arg1_1487 & _tmp_arg2_1489);
+    assign _tmp_mux_cond_1475 = (_tmp_arg1_1472 & _tmp_arg2_1474);
 
-    assign _tmp_mux_then_1491 = 8'd1;
+    assign _tmp_mux_then_1476 = 8'd1;
 
-    assign _tmp_b_1492 = 4'd6;
+    assign _tmp_b_1477 = 4'd6;
 
-    assign _tmp_arg1_1493 = (_gen_hidden_idx_1 == _tmp_b_1492);
+    assign _tmp_arg1_1478 = (_gen_hidden_idx_1 == _tmp_b_1477);
 
-    assign _tmp_b_1494 = 4'd0;
+    assign _tmp_b_1479 = 4'd0;
 
-    assign _tmp_arg2_1495 = (_gen_input_idx_1 == _tmp_b_1494);
+    assign _tmp_arg2_1480 = (_gen_input_idx_1 == _tmp_b_1479);
 
-    assign _tmp_mux_cond_1496 = (_tmp_arg1_1493 & _tmp_arg2_1495);
+    assign _tmp_mux_cond_1481 = (_tmp_arg1_1478 & _tmp_arg2_1480);
 
-    assign _tmp_mux_then_1497 = 8'd0;
+    assign _tmp_mux_then_1482 = 8'd0;
 
-    assign _tmp_b_1498 = 4'd6;
+    assign _tmp_b_1483 = 4'd6;
 
-    assign _tmp_arg1_1499 = (_gen_hidden_idx_1 == _tmp_b_1498);
+    assign _tmp_arg1_1484 = (_gen_hidden_idx_1 == _tmp_b_1483);
 
-    assign _tmp_b_1500 = 4'd1;
+    assign _tmp_b_1485 = 4'd1;
 
-    assign _tmp_arg2_1501 = (_gen_input_idx_1 == _tmp_b_1500);
+    assign _tmp_arg2_1486 = (_gen_input_idx_1 == _tmp_b_1485);
 
-    assign _tmp_mux_cond_1502 = (_tmp_arg1_1499 & _tmp_arg2_1501);
+    assign _tmp_mux_cond_1487 = (_tmp_arg1_1484 & _tmp_arg2_1486);
 
-    assign _tmp_mux_then_1503 = 8'd255;
+    assign _tmp_mux_then_1488 = 8'd255;
 
-    assign _tmp_b_1504 = 4'd6;
+    assign _tmp_b_1489 = 4'd6;
 
-    assign _tmp_arg1_1505 = (_gen_hidden_idx_1 == _tmp_b_1504);
+    assign _tmp_arg1_1490 = (_gen_hidden_idx_1 == _tmp_b_1489);
 
-    assign _tmp_b_1506 = 4'd2;
+    assign _tmp_b_1491 = 4'd2;
 
-    assign _tmp_arg2_1507 = (_gen_input_idx_1 == _tmp_b_1506);
+    assign _tmp_arg2_1492 = (_gen_input_idx_1 == _tmp_b_1491);
 
-    assign _tmp_mux_cond_1508 = (_tmp_arg1_1505 & _tmp_arg2_1507);
+    assign _tmp_mux_cond_1493 = (_tmp_arg1_1490 & _tmp_arg2_1492);
 
-    assign _tmp_mux_then_1509 = 8'd1;
+    assign _tmp_mux_then_1494 = 8'd1;
 
-    assign _tmp_b_1510 = 4'd6;
+    assign _tmp_b_1495 = 4'd6;
 
-    assign _tmp_arg1_1511 = (_gen_hidden_idx_1 == _tmp_b_1510);
+    assign _tmp_arg1_1496 = (_gen_hidden_idx_1 == _tmp_b_1495);
 
-    assign _tmp_b_1512 = 4'd3;
+    assign _tmp_b_1497 = 4'd3;
 
-    assign _tmp_arg2_1513 = (_gen_input_idx_1 == _tmp_b_1512);
+    assign _tmp_arg2_1498 = (_gen_input_idx_1 == _tmp_b_1497);
 
-    assign _tmp_mux_cond_1514 = (_tmp_arg1_1511 & _tmp_arg2_1513);
+    assign _tmp_mux_cond_1499 = (_tmp_arg1_1496 & _tmp_arg2_1498);
 
-    assign _tmp_mux_then_1515 = 8'd255;
+    assign _tmp_mux_then_1500 = 8'd255;
 
-    assign _tmp_b_1516 = 4'd7;
+    assign _tmp_b_1501 = 4'd7;
 
-    assign _tmp_arg1_1517 = (_gen_hidden_idx_1 == _tmp_b_1516);
+    assign _tmp_arg1_1502 = (_gen_hidden_idx_1 == _tmp_b_1501);
 
-    assign _tmp_b_1518 = 4'd0;
+    assign _tmp_b_1503 = 4'd0;
 
-    assign _tmp_arg2_1519 = (_gen_input_idx_1 == _tmp_b_1518);
+    assign _tmp_arg2_1504 = (_gen_input_idx_1 == _tmp_b_1503);
 
-    assign _tmp_mux_cond_1520 = (_tmp_arg1_1517 & _tmp_arg2_1519);
+    assign _tmp_mux_cond_1505 = (_tmp_arg1_1502 & _tmp_arg2_1504);
 
-    assign _tmp_mux_then_1521 = 8'd1;
+    assign _tmp_mux_then_1506 = 8'd1;
 
-    assign _tmp_b_1522 = 4'd7;
+    assign _tmp_b_1507 = 4'd7;
 
-    assign _tmp_arg1_1523 = (_gen_hidden_idx_1 == _tmp_b_1522);
+    assign _tmp_arg1_1508 = (_gen_hidden_idx_1 == _tmp_b_1507);
 
-    assign _tmp_b_1524 = 4'd1;
+    assign _tmp_b_1509 = 4'd1;
 
-    assign _tmp_arg2_1525 = (_gen_input_idx_1 == _tmp_b_1524);
+    assign _tmp_arg2_1510 = (_gen_input_idx_1 == _tmp_b_1509);
 
-    assign _tmp_mux_cond_1526 = (_tmp_arg1_1523 & _tmp_arg2_1525);
+    assign _tmp_mux_cond_1511 = (_tmp_arg1_1508 & _tmp_arg2_1510);
 
-    assign _tmp_mux_then_1527 = 8'd2;
+    assign _tmp_mux_then_1512 = 8'd2;
 
-    assign _tmp_b_1528 = 4'd7;
+    assign _tmp_b_1513 = 4'd7;
 
-    assign _tmp_arg1_1529 = (_gen_hidden_idx_1 == _tmp_b_1528);
+    assign _tmp_arg1_1514 = (_gen_hidden_idx_1 == _tmp_b_1513);
 
-    assign _tmp_b_1530 = 4'd2;
+    assign _tmp_b_1515 = 4'd2;
 
-    assign _tmp_arg2_1531 = (_gen_input_idx_1 == _tmp_b_1530);
+    assign _tmp_arg2_1516 = (_gen_input_idx_1 == _tmp_b_1515);
 
-    assign _tmp_mux_cond_1532 = (_tmp_arg1_1529 & _tmp_arg2_1531);
+    assign _tmp_mux_cond_1517 = (_tmp_arg1_1514 & _tmp_arg2_1516);
 
-    assign _tmp_mux_then_1533 = 8'd0;
+    assign _tmp_mux_then_1518 = 8'd0;
 
-    assign _tmp_b_1534 = 4'd7;
+    assign _tmp_b_1519 = 4'd7;
 
-    assign _tmp_arg1_1535 = (_gen_hidden_idx_1 == _tmp_b_1534);
+    assign _tmp_arg1_1520 = (_gen_hidden_idx_1 == _tmp_b_1519);
 
-    assign _tmp_b_1536 = 4'd3;
+    assign _tmp_b_1521 = 4'd3;
 
-    assign _tmp_arg2_1537 = (_gen_input_idx_1 == _tmp_b_1536);
+    assign _tmp_arg2_1522 = (_gen_input_idx_1 == _tmp_b_1521);
 
-    assign _tmp_mux_cond_1538 = (_tmp_arg1_1535 & _tmp_arg2_1537);
+    assign _tmp_mux_cond_1523 = (_tmp_arg1_1520 & _tmp_arg2_1522);
 
-    assign _tmp_mux_then_1539 = 8'd0;
+    assign _tmp_mux_then_1524 = 8'd0;
 
-    assign _tmp_mux_else_1540 = 8'd0;
+    assign _tmp_mux_else_1525 = 8'd0;
 
-    assign _tmp_mux_else_1541 = (_tmp_mux_cond_1538 ? _tmp_mux_then_1539 : _tmp_mux_else_1540);
+    assign _tmp_mux_else_1526 = (_tmp_mux_cond_1523 ? _tmp_mux_then_1524 : _tmp_mux_else_1525);
 
-    assign _tmp_mux_else_1542 = (_tmp_mux_cond_1532 ? _tmp_mux_then_1533 : _tmp_mux_else_1541);
+    assign _tmp_mux_else_1527 = (_tmp_mux_cond_1517 ? _tmp_mux_then_1518 : _tmp_mux_else_1526);
 
-    assign _tmp_mux_else_1543 = (_tmp_mux_cond_1526 ? _tmp_mux_then_1527 : _tmp_mux_else_1542);
+    assign _tmp_mux_else_1528 = (_tmp_mux_cond_1511 ? _tmp_mux_then_1512 : _tmp_mux_else_1527);
 
-    assign _tmp_mux_else_1544 = (_tmp_mux_cond_1520 ? _tmp_mux_then_1521 : _tmp_mux_else_1543);
+    assign _tmp_mux_else_1529 = (_tmp_mux_cond_1505 ? _tmp_mux_then_1506 : _tmp_mux_else_1528);
 
-    assign _tmp_mux_else_1545 = (_tmp_mux_cond_1514 ? _tmp_mux_then_1515 : _tmp_mux_else_1544);
+    assign _tmp_mux_else_1530 = (_tmp_mux_cond_1499 ? _tmp_mux_then_1500 : _tmp_mux_else_1529);
 
-    assign _tmp_mux_else_1546 = (_tmp_mux_cond_1508 ? _tmp_mux_then_1509 : _tmp_mux_else_1545);
+    assign _tmp_mux_else_1531 = (_tmp_mux_cond_1493 ? _tmp_mux_then_1494 : _tmp_mux_else_1530);
 
-    assign _tmp_mux_else_1547 = (_tmp_mux_cond_1502 ? _tmp_mux_then_1503 : _tmp_mux_else_1546);
+    assign _tmp_mux_else_1532 = (_tmp_mux_cond_1487 ? _tmp_mux_then_1488 : _tmp_mux_else_1531);
 
-    assign _tmp_mux_else_1548 = (_tmp_mux_cond_1496 ? _tmp_mux_then_1497 : _tmp_mux_else_1547);
+    assign _tmp_mux_else_1533 = (_tmp_mux_cond_1481 ? _tmp_mux_then_1482 : _tmp_mux_else_1532);
 
-    assign _tmp_mux_else_1549 = (_tmp_mux_cond_1490 ? _tmp_mux_then_1491 : _tmp_mux_else_1548);
+    assign _tmp_mux_else_1534 = (_tmp_mux_cond_1475 ? _tmp_mux_then_1476 : _tmp_mux_else_1533);
 
-    assign _tmp_mux_else_1550 = (_tmp_mux_cond_1484 ? _tmp_mux_then_1485 : _tmp_mux_else_1549);
+    assign _tmp_mux_else_1535 = (_tmp_mux_cond_1469 ? _tmp_mux_then_1470 : _tmp_mux_else_1534);
 
-    assign _tmp_mux_else_1551 = (_tmp_mux_cond_1478 ? _tmp_mux_then_1479 : _tmp_mux_else_1550);
+    assign _tmp_mux_else_1536 = (_tmp_mux_cond_1463 ? _tmp_mux_then_1464 : _tmp_mux_else_1535);
 
-    assign _tmp_mux_else_1552 = (_tmp_mux_cond_1472 ? _tmp_mux_then_1473 : _tmp_mux_else_1551);
+    assign _tmp_mux_else_1537 = (_tmp_mux_cond_1457 ? _tmp_mux_then_1458 : _tmp_mux_else_1536);
 
-    assign _tmp_mux_else_1553 = (_tmp_mux_cond_1466 ? _tmp_mux_then_1467 : _tmp_mux_else_1552);
+    assign _tmp_mux_else_1538 = (_tmp_mux_cond_1451 ? _tmp_mux_then_1452 : _tmp_mux_else_1537);
 
-    assign _tmp_mux_else_1554 = (_tmp_mux_cond_1460 ? _tmp_mux_then_1461 : _tmp_mux_else_1553);
+    assign _tmp_mux_else_1539 = (_tmp_mux_cond_1445 ? _tmp_mux_then_1446 : _tmp_mux_else_1538);
 
-    assign _tmp_mux_else_1555 = (_tmp_mux_cond_1454 ? _tmp_mux_then_1455 : _tmp_mux_else_1554);
+    assign _tmp_mux_else_1540 = (_tmp_mux_cond_1439 ? _tmp_mux_then_1440 : _tmp_mux_else_1539);
 
-    assign _tmp_mux_else_1556 = (_tmp_mux_cond_1448 ? _tmp_mux_then_1449 : _tmp_mux_else_1555);
+    assign _tmp_mux_else_1541 = (_tmp_mux_cond_1433 ? _tmp_mux_then_1434 : _tmp_mux_else_1540);
 
-    assign _tmp_mux_else_1557 = (_tmp_mux_cond_1442 ? _tmp_mux_then_1443 : _tmp_mux_else_1556);
+    assign _tmp_mux_else_1542 = (_tmp_mux_cond_1427 ? _tmp_mux_then_1428 : _tmp_mux_else_1541);
 
-    assign _tmp_mux_else_1558 = (_tmp_mux_cond_1436 ? _tmp_mux_then_1437 : _tmp_mux_else_1557);
+    assign _tmp_mux_else_1543 = (_tmp_mux_cond_1421 ? _tmp_mux_then_1422 : _tmp_mux_else_1542);
 
-    assign _tmp_mux_else_1559 = (_tmp_mux_cond_1430 ? _tmp_mux_then_1431 : _tmp_mux_else_1558);
+    assign _tmp_mux_else_1544 = (_tmp_mux_cond_1415 ? _tmp_mux_then_1416 : _tmp_mux_else_1543);
 
-    assign _tmp_mux_else_1560 = (_tmp_mux_cond_1424 ? _tmp_mux_then_1425 : _tmp_mux_else_1559);
+    assign _tmp_mux_else_1545 = (_tmp_mux_cond_1409 ? _tmp_mux_then_1410 : _tmp_mux_else_1544);
 
-    assign _tmp_mux_else_1561 = (_tmp_mux_cond_1418 ? _tmp_mux_then_1419 : _tmp_mux_else_1560);
+    assign _tmp_mux_else_1546 = (_tmp_mux_cond_1403 ? _tmp_mux_then_1404 : _tmp_mux_else_1545);
 
-    assign _tmp_mux_else_1562 = (_tmp_mux_cond_1412 ? _tmp_mux_then_1413 : _tmp_mux_else_1561);
+    assign _tmp_mux_else_1547 = (_tmp_mux_cond_1397 ? _tmp_mux_then_1398 : _tmp_mux_else_1546);
 
-    assign _tmp_mux_else_1563 = (_tmp_mux_cond_1406 ? _tmp_mux_then_1407 : _tmp_mux_else_1562);
+    assign _tmp_mux_else_1548 = (_tmp_mux_cond_1391 ? _tmp_mux_then_1392 : _tmp_mux_else_1547);
 
-    assign _tmp_mux_else_1564 = (_tmp_mux_cond_1400 ? _tmp_mux_then_1401 : _tmp_mux_else_1563);
+    assign _tmp_mux_else_1549 = (_tmp_mux_cond_1385 ? _tmp_mux_then_1386 : _tmp_mux_else_1548);
 
-    assign _tmp_mux_else_1565 = (_tmp_mux_cond_1394 ? _tmp_mux_then_1395 : _tmp_mux_else_1564);
+    assign _tmp_mux_else_1550 = (_tmp_mux_cond_1379 ? _tmp_mux_then_1380 : _tmp_mux_else_1549);
 
-    assign _tmp_mux_else_1566 = (_tmp_mux_cond_1388 ? _tmp_mux_then_1389 : _tmp_mux_else_1565);
+    assign _tmp_mux_else_1551 = (_tmp_mux_cond_1373 ? _tmp_mux_then_1374 : _tmp_mux_else_1550);
 
-    assign _tmp_mux_else_1567 = (_tmp_mux_cond_1382 ? _tmp_mux_then_1383 : _tmp_mux_else_1566);
+    assign _tmp_mux_else_1552 = (_tmp_mux_cond_1367 ? _tmp_mux_then_1368 : _tmp_mux_else_1551);
 
-    assign _tmp_mux_else_1568 = (_tmp_mux_cond_1376 ? _tmp_mux_then_1377 : _tmp_mux_else_1567);
+    assign _tmp_mux_else_1553 = (_tmp_mux_cond_1361 ? _tmp_mux_then_1362 : _tmp_mux_else_1552);
 
-    assign _tmp_mux_else_1569 = (_tmp_mux_cond_1370 ? _tmp_mux_then_1371 : _tmp_mux_else_1568);
+    assign _tmp_mux_else_1554 = (_tmp_mux_cond_1355 ? _tmp_mux_then_1356 : _tmp_mux_else_1553);
 
-    assign _tmp_mux_else_1570 = (_tmp_mux_cond_1364 ? _tmp_mux_then_1365 : _tmp_mux_else_1569);
+    assign _tmp_mux_else_1555 = (_tmp_mux_cond_1349 ? _tmp_mux_then_1350 : _tmp_mux_else_1554);
 
-    assign _tmp_mux_else_1571 = (_tmp_mux_cond_1358 ? _tmp_mux_then_1359 : _tmp_mux_else_1570);
+    assign _tmp_mux_else_1556 = (_tmp_mux_cond_1343 ? _tmp_mux_then_1344 : _tmp_mux_else_1555);
 
-    assign _tmp_b_1572 = (_tmp_mux_cond_1352 ? _tmp_mux_then_1353 : _tmp_mux_else_1571);
+    assign _tmp_b_1557 = (_tmp_mux_cond_1337 ? _tmp_mux_then_1338 : _tmp_mux_else_1556);
 
-    assign _gen_weight24_2 = {_gen_weightUpper_1, _tmp_b_1572};
+    assign _gen_weight24_2 = {_gen_weightUpper_1, _tmp_b_1557};
 
     assign _gen_product24_2 = (_gen_input24_1 * _gen_weight24_2);
 
     assign _gen_productSign_2 = _gen_product24_2[23:23];
 
-    assign _tmp_b_1573 = 1'd1;
+    assign _tmp_b_1558 = 1'd1;
 
-    assign _tmp_mux_cond_1574 = (_gen_productSign_2 == _tmp_b_1573);
+    assign _tmp_mux_cond_1559 = (_gen_productSign_2 == _tmp_b_1558);
 
-    assign _tmp_mux_then_1575 = 8'd255;
+    assign _tmp_mux_then_1560 = 8'd255;
 
-    assign _tmp_mux_else_1576 = 8'd0;
+    assign _tmp_mux_else_1561 = 8'd0;
 
-    assign _gen_productUpper_2 = (_tmp_mux_cond_1574 ? _tmp_mux_then_1575 : _tmp_mux_else_1576);
+    assign _gen_productUpper_2 = (_tmp_mux_cond_1559 ? _tmp_mux_then_1560 : _tmp_mux_else_1561);
 
-    assign _tmp_arg2_1577 = {_gen_productUpper_2, _gen_product24_2};
+    assign _tmp_arg2_1562 = {_gen_productUpper_2, _gen_product24_2};
 
-    assign _gen_hiddenMacAccOut_1 = (_gen_acc_reg_1 + _tmp_arg2_1577);
+    assign _gen_hiddenMacAccOut_1 = (_gen_acc_reg_1 + _tmp_arg2_1562);
 
     assign _gen_hiddenSign_1 = _gen_selectedHidden_1[15:15];
 
-    assign _tmp_b_1578 = 1'd1;
+    assign _tmp_b_1563 = 1'd1;
 
-    assign _tmp_mux_cond_1579 = (_gen_hiddenSign_1 == _tmp_b_1578);
+    assign _tmp_mux_cond_1564 = (_gen_hiddenSign_1 == _tmp_b_1563);
 
-    assign _tmp_mux_then_1580 = 8'd255;
+    assign _tmp_mux_then_1565 = 8'd255;
 
-    assign _tmp_mux_else_1581 = 8'd0;
+    assign _tmp_mux_else_1566 = 8'd0;
 
-    assign _gen_hiddenUpper_1 = (_tmp_mux_cond_1579 ? _tmp_mux_then_1580 : _tmp_mux_else_1581);
+    assign _gen_hiddenUpper_1 = (_tmp_mux_cond_1564 ? _tmp_mux_then_1565 : _tmp_mux_else_1566);
 
     assign _gen_hidden24_1 = {_gen_hiddenUpper_1, _gen_selectedHidden_1};
 
-    assign _tmp_b_1582 = 4'd0;
+    assign _tmp_b_1567 = 4'd0;
+
+    assign _tmp_mux_cond_1568 = (_gen_input_idx_1 == _tmp_b_1567);
+
+    assign _tmp_mux_then_1569 = 8'd0;
+
+    assign _tmp_b_1570 = 4'd1;
+
+    assign _tmp_mux_cond_1571 = (_gen_input_idx_1 == _tmp_b_1570);
+
+    assign _tmp_mux_then_1572 = 8'd0;
+
+    assign _tmp_b_1573 = 4'd2;
+
+    assign _tmp_mux_cond_1574 = (_gen_input_idx_1 == _tmp_b_1573);
+
+    assign _tmp_mux_then_1575 = 8'd1;
+
+    assign _tmp_b_1576 = 4'd3;
+
+    assign _tmp_mux_cond_1577 = (_gen_input_idx_1 == _tmp_b_1576);
+
+    assign _tmp_mux_then_1578 = 8'd0;
+
+    assign _tmp_b_1579 = 4'd4;
+
+    assign _tmp_mux_cond_1580 = (_gen_input_idx_1 == _tmp_b_1579);
+
+    assign _tmp_mux_then_1581 = 8'd255;
+
+    assign _tmp_b_1582 = 4'd5;
 
     assign _tmp_mux_cond_1583 = (_gen_input_idx_1 == _tmp_b_1582);
 
-    assign _tmp_mux_then_1584 = 8'd0;
+    assign _tmp_mux_then_1584 = 8'd255;
 
-    assign _tmp_b_1585 = 4'd1;
+    assign _tmp_b_1585 = 4'd6;
 
     assign _tmp_mux_cond_1586 = (_gen_input_idx_1 == _tmp_b_1585);
 
-    assign _tmp_mux_then_1587 = 8'd0;
+    assign _tmp_mux_then_1587 = 8'd1;
 
-    assign _tmp_b_1588 = 4'd2;
+    assign _tmp_b_1588 = 4'd7;
 
     assign _tmp_mux_cond_1589 = (_gen_input_idx_1 == _tmp_b_1588);
 
-    assign _tmp_mux_then_1590 = 8'd1;
+    assign _tmp_mux_then_1590 = 8'd255;
 
-    assign _tmp_b_1591 = 4'd3;
+    assign _tmp_mux_else_1591 = 8'd0;
 
-    assign _tmp_mux_cond_1592 = (_gen_input_idx_1 == _tmp_b_1591);
+    assign _tmp_mux_else_1592 = (_tmp_mux_cond_1589 ? _tmp_mux_then_1590 : _tmp_mux_else_1591);
 
-    assign _tmp_mux_then_1593 = 8'd0;
+    assign _tmp_mux_else_1593 = (_tmp_mux_cond_1586 ? _tmp_mux_then_1587 : _tmp_mux_else_1592);
 
-    assign _tmp_b_1594 = 4'd4;
+    assign _tmp_mux_else_1594 = (_tmp_mux_cond_1583 ? _tmp_mux_then_1584 : _tmp_mux_else_1593);
 
-    assign _tmp_mux_cond_1595 = (_gen_input_idx_1 == _tmp_b_1594);
+    assign _tmp_mux_else_1595 = (_tmp_mux_cond_1580 ? _tmp_mux_then_1581 : _tmp_mux_else_1594);
 
-    assign _tmp_mux_then_1596 = 8'd255;
+    assign _tmp_mux_else_1596 = (_tmp_mux_cond_1577 ? _tmp_mux_then_1578 : _tmp_mux_else_1595);
 
-    assign _tmp_b_1597 = 4'd5;
+    assign _tmp_mux_else_1597 = (_tmp_mux_cond_1574 ? _tmp_mux_then_1575 : _tmp_mux_else_1596);
 
-    assign _tmp_mux_cond_1598 = (_gen_input_idx_1 == _tmp_b_1597);
+    assign _tmp_mux_else_1598 = (_tmp_mux_cond_1571 ? _tmp_mux_then_1572 : _tmp_mux_else_1597);
 
-    assign _tmp_mux_then_1599 = 8'd255;
+    assign _tmp_s_1599 = (_tmp_mux_cond_1568 ? _tmp_mux_then_1569 : _tmp_mux_else_1598);
 
-    assign _tmp_b_1600 = 4'd6;
+    assign _gen_weightSign_3 = _tmp_s_1599[7:7];
 
-    assign _tmp_mux_cond_1601 = (_gen_input_idx_1 == _tmp_b_1600);
+    assign _tmp_b_1600 = 1'd1;
 
-    assign _tmp_mux_then_1602 = 8'd1;
+    assign _tmp_mux_cond_1601 = (_gen_weightSign_3 == _tmp_b_1600);
 
-    assign _tmp_b_1603 = 4'd7;
+    assign _tmp_mux_then_1602 = 16'd65535;
 
-    assign _tmp_mux_cond_1604 = (_gen_input_idx_1 == _tmp_b_1603);
+    assign _tmp_mux_else_1603 = 16'd0;
 
-    assign _tmp_mux_then_1605 = 8'd255;
+    assign _gen_weightUpper16_1 = (_tmp_mux_cond_1601 ? _tmp_mux_then_1602 : _tmp_mux_else_1603);
 
-    assign _tmp_mux_else_1606 = 8'd0;
+    assign _tmp_b_1604 = 4'd0;
 
-    assign _tmp_mux_else_1607 = (_tmp_mux_cond_1604 ? _tmp_mux_then_1605 : _tmp_mux_else_1606);
+    assign _tmp_mux_cond_1605 = (_gen_input_idx_1 == _tmp_b_1604);
 
-    assign _tmp_mux_else_1608 = (_tmp_mux_cond_1601 ? _tmp_mux_then_1602 : _tmp_mux_else_1607);
+    assign _tmp_mux_then_1606 = 8'd0;
 
-    assign _tmp_mux_else_1609 = (_tmp_mux_cond_1598 ? _tmp_mux_then_1599 : _tmp_mux_else_1608);
+    assign _tmp_b_1607 = 4'd1;
 
-    assign _tmp_mux_else_1610 = (_tmp_mux_cond_1595 ? _tmp_mux_then_1596 : _tmp_mux_else_1609);
+    assign _tmp_mux_cond_1608 = (_gen_input_idx_1 == _tmp_b_1607);
 
-    assign _tmp_mux_else_1611 = (_tmp_mux_cond_1592 ? _tmp_mux_then_1593 : _tmp_mux_else_1610);
+    assign _tmp_mux_then_1609 = 8'd0;
 
-    assign _tmp_mux_else_1612 = (_tmp_mux_cond_1589 ? _tmp_mux_then_1590 : _tmp_mux_else_1611);
+    assign _tmp_b_1610 = 4'd2;
 
-    assign _tmp_mux_else_1613 = (_tmp_mux_cond_1586 ? _tmp_mux_then_1587 : _tmp_mux_else_1612);
+    assign _tmp_mux_cond_1611 = (_gen_input_idx_1 == _tmp_b_1610);
 
-    assign _tmp_s_1614 = (_tmp_mux_cond_1583 ? _tmp_mux_then_1584 : _tmp_mux_else_1613);
+    assign _tmp_mux_then_1612 = 8'd1;
 
-    assign _gen_weightSign_3 = _tmp_s_1614[7:7];
+    assign _tmp_b_1613 = 4'd3;
 
-    assign _tmp_b_1615 = 1'd1;
+    assign _tmp_mux_cond_1614 = (_gen_input_idx_1 == _tmp_b_1613);
 
-    assign _tmp_mux_cond_1616 = (_gen_weightSign_3 == _tmp_b_1615);
+    assign _tmp_mux_then_1615 = 8'd0;
 
-    assign _tmp_mux_then_1617 = 16'd65535;
+    assign _tmp_b_1616 = 4'd4;
 
-    assign _tmp_mux_else_1618 = 16'd0;
+    assign _tmp_mux_cond_1617 = (_gen_input_idx_1 == _tmp_b_1616);
 
-    assign _gen_weightUpper16_1 = (_tmp_mux_cond_1616 ? _tmp_mux_then_1617 : _tmp_mux_else_1618);
+    assign _tmp_mux_then_1618 = 8'd255;
 
-    assign _tmp_b_1619 = 4'd0;
+    assign _tmp_b_1619 = 4'd5;
 
     assign _tmp_mux_cond_1620 = (_gen_input_idx_1 == _tmp_b_1619);
 
-    assign _tmp_mux_then_1621 = 8'd0;
+    assign _tmp_mux_then_1621 = 8'd255;
 
-    assign _tmp_b_1622 = 4'd1;
+    assign _tmp_b_1622 = 4'd6;
 
     assign _tmp_mux_cond_1623 = (_gen_input_idx_1 == _tmp_b_1622);
 
-    assign _tmp_mux_then_1624 = 8'd0;
+    assign _tmp_mux_then_1624 = 8'd1;
 
-    assign _tmp_b_1625 = 4'd2;
+    assign _tmp_b_1625 = 4'd7;
 
     assign _tmp_mux_cond_1626 = (_gen_input_idx_1 == _tmp_b_1625);
 
-    assign _tmp_mux_then_1627 = 8'd1;
+    assign _tmp_mux_then_1627 = 8'd255;
 
-    assign _tmp_b_1628 = 4'd3;
+    assign _tmp_mux_else_1628 = 8'd0;
 
-    assign _tmp_mux_cond_1629 = (_gen_input_idx_1 == _tmp_b_1628);
+    assign _tmp_mux_else_1629 = (_tmp_mux_cond_1626 ? _tmp_mux_then_1627 : _tmp_mux_else_1628);
 
-    assign _tmp_mux_then_1630 = 8'd0;
+    assign _tmp_mux_else_1630 = (_tmp_mux_cond_1623 ? _tmp_mux_then_1624 : _tmp_mux_else_1629);
 
-    assign _tmp_b_1631 = 4'd4;
+    assign _tmp_mux_else_1631 = (_tmp_mux_cond_1620 ? _tmp_mux_then_1621 : _tmp_mux_else_1630);
 
-    assign _tmp_mux_cond_1632 = (_gen_input_idx_1 == _tmp_b_1631);
+    assign _tmp_mux_else_1632 = (_tmp_mux_cond_1617 ? _tmp_mux_then_1618 : _tmp_mux_else_1631);
 
-    assign _tmp_mux_then_1633 = 8'd255;
+    assign _tmp_mux_else_1633 = (_tmp_mux_cond_1614 ? _tmp_mux_then_1615 : _tmp_mux_else_1632);
 
-    assign _tmp_b_1634 = 4'd5;
+    assign _tmp_mux_else_1634 = (_tmp_mux_cond_1611 ? _tmp_mux_then_1612 : _tmp_mux_else_1633);
 
-    assign _tmp_mux_cond_1635 = (_gen_input_idx_1 == _tmp_b_1634);
+    assign _tmp_mux_else_1635 = (_tmp_mux_cond_1608 ? _tmp_mux_then_1609 : _tmp_mux_else_1634);
 
-    assign _tmp_mux_then_1636 = 8'd255;
+    assign _tmp_b_1636 = (_tmp_mux_cond_1605 ? _tmp_mux_then_1606 : _tmp_mux_else_1635);
 
-    assign _tmp_b_1637 = 4'd6;
-
-    assign _tmp_mux_cond_1638 = (_gen_input_idx_1 == _tmp_b_1637);
-
-    assign _tmp_mux_then_1639 = 8'd1;
-
-    assign _tmp_b_1640 = 4'd7;
-
-    assign _tmp_mux_cond_1641 = (_gen_input_idx_1 == _tmp_b_1640);
-
-    assign _tmp_mux_then_1642 = 8'd255;
-
-    assign _tmp_mux_else_1643 = 8'd0;
-
-    assign _tmp_mux_else_1644 = (_tmp_mux_cond_1641 ? _tmp_mux_then_1642 : _tmp_mux_else_1643);
-
-    assign _tmp_mux_else_1645 = (_tmp_mux_cond_1638 ? _tmp_mux_then_1639 : _tmp_mux_else_1644);
-
-    assign _tmp_mux_else_1646 = (_tmp_mux_cond_1635 ? _tmp_mux_then_1636 : _tmp_mux_else_1645);
-
-    assign _tmp_mux_else_1647 = (_tmp_mux_cond_1632 ? _tmp_mux_then_1633 : _tmp_mux_else_1646);
-
-    assign _tmp_mux_else_1648 = (_tmp_mux_cond_1629 ? _tmp_mux_then_1630 : _tmp_mux_else_1647);
-
-    assign _tmp_mux_else_1649 = (_tmp_mux_cond_1626 ? _tmp_mux_then_1627 : _tmp_mux_else_1648);
-
-    assign _tmp_mux_else_1650 = (_tmp_mux_cond_1623 ? _tmp_mux_then_1624 : _tmp_mux_else_1649);
-
-    assign _tmp_b_1651 = (_tmp_mux_cond_1620 ? _tmp_mux_then_1621 : _tmp_mux_else_1650);
-
-    assign _gen_weight24_3 = {_gen_weightUpper16_1, _tmp_b_1651};
+    assign _gen_weight24_3 = {_gen_weightUpper16_1, _tmp_b_1636};
 
     assign _gen_product24_3 = (_gen_hidden24_1 * _gen_weight24_3);
 
     assign _gen_productSign_3 = _gen_product24_3[23:23];
 
-    assign _tmp_b_1652 = 1'd1;
+    assign _tmp_b_1637 = 1'd1;
 
-    assign _tmp_mux_cond_1653 = (_gen_productSign_3 == _tmp_b_1652);
+    assign _tmp_mux_cond_1638 = (_gen_productSign_3 == _tmp_b_1637);
 
-    assign _tmp_mux_then_1654 = 8'd255;
+    assign _tmp_mux_then_1639 = 8'd255;
 
-    assign _tmp_mux_else_1655 = 8'd0;
+    assign _tmp_mux_else_1640 = 8'd0;
 
-    assign _gen_productUpper_3 = (_tmp_mux_cond_1653 ? _tmp_mux_then_1654 : _tmp_mux_else_1655);
+    assign _gen_productUpper_3 = (_tmp_mux_cond_1638 ? _tmp_mux_then_1639 : _tmp_mux_else_1640);
 
-    assign _tmp_arg2_1656 = {_gen_productUpper_3, _gen_product24_3};
+    assign _tmp_arg2_1641 = {_gen_productUpper_3, _gen_product24_3};
 
-    assign _gen_outputMacAccOut_1 = (_gen_acc_reg_1 + _tmp_arg2_1656);
+    assign _gen_outputMacAccOut_1 = (_gen_acc_reg_1 + _tmp_arg2_1641);
 
-    assign _gen_mac_acc_out = (_gen_isMacOutput_2 ? _gen_outputMacAccOut_1 : _gen_hiddenMacAccOut_1);
+    assign _gen_mac_acc_out = (_gen_isMacOutput_1 ? _gen_outputMacAccOut_1 : _gen_hiddenMacAccOut_1);
 
-    assign _tmp_a_1657 = 32'd4294967295;
+    assign _tmp_a_1642 = 32'd4294967295;
 
-    assign _tmp_b_1658 = {_gen_hidden_weight_case_hit, _gen_output_weight_case_hit};
+    assign _tmp_b_1643 = {_gen_hidden_weight_case_hit, _gen_output_weight_case_hit};
 
-    assign _tmp_b_1659 = {_gen_output_hidden_case_hit, _tmp_b_1658};
+    assign _tmp_b_1644 = {_gen_output_hidden_case_hit, _tmp_b_1643};
 
-    assign _tmp_b_1660 = {_gen_hidden_input_case_hit, _tmp_b_1659};
+    assign _tmp_b_1645 = {_gen_hidden_input_case_hit, _tmp_b_1644};
 
-    assign _tmp_b_1661 = {_gen_hidden_reg7_1, _tmp_b_1660};
+    assign _tmp_b_1646 = {_gen_hidden_reg7_1, _tmp_b_1645};
 
-    assign _tmp_b_1662 = {_gen_hidden_reg6_1, _tmp_b_1661};
+    assign _tmp_b_1647 = {_gen_hidden_reg6_1, _tmp_b_1646};
 
-    assign _tmp_b_1663 = {_gen_hidden_reg5_1, _tmp_b_1662};
+    assign _tmp_b_1648 = {_gen_hidden_reg5_1, _tmp_b_1647};
 
-    assign _tmp_b_1664 = {_gen_hidden_reg4_1, _tmp_b_1663};
+    assign _tmp_b_1649 = {_gen_hidden_reg4_1, _tmp_b_1648};
 
-    assign _tmp_b_1665 = {_gen_hidden_reg3_1, _tmp_b_1664};
+    assign _tmp_b_1650 = {_gen_hidden_reg3_1, _tmp_b_1649};
 
-    assign _tmp_b_1666 = {_gen_hidden_reg2_1, _tmp_b_1665};
+    assign _tmp_b_1651 = {_gen_hidden_reg2_1, _tmp_b_1650};
 
-    assign _tmp_b_1667 = {_gen_hidden_reg1_1, _tmp_b_1666};
+    assign _tmp_b_1652 = {_gen_hidden_reg1_1, _tmp_b_1651};
 
-    assign _tmp_b_1668 = {_gen_hidden_reg0_1, _tmp_b_1667};
+    assign _tmp_b_1653 = {_gen_hidden_reg0_1, _tmp_b_1652};
 
-    assign _tmp_b_1669 = {_gen_input_reg3_1, _tmp_b_1668};
+    assign _tmp_b_1654 = {_gen_input_reg3_1, _tmp_b_1653};
 
-    assign _tmp_b_1670 = {_gen_input_reg2_1, _tmp_b_1669};
+    assign _tmp_b_1655 = {_gen_input_reg2_1, _tmp_b_1654};
 
-    assign _tmp_b_1671 = {_gen_input_reg1_1, _tmp_b_1670};
+    assign _tmp_b_1656 = {_gen_input_reg1_1, _tmp_b_1655};
 
-    assign _tmp_b_1672 = {_gen_input_reg0_1, _tmp_b_1671};
+    assign _tmp_b_1657 = {_gen_input_reg0_1, _tmp_b_1656};
 
-    assign _tmp_b_1673 = {_tmp_a_1657, _tmp_b_1672};
+    assign _tmp_b_1658 = {_tmp_a_1642, _tmp_b_1657};
 
-    assign _tmp_b_1674 = {_gen_mac_a, _tmp_b_1673};
+    assign _tmp_b_1659 = {_gen_mac_a, _tmp_b_1658};
 
-    assign _tmp_b_1675 = {_gen_mac_acc_out, _tmp_b_1674};
+    assign _tmp_b_1660 = {_gen_mac_acc_out, _tmp_b_1659};
 
-    assign _tmp_b_1676 = {_gen_acc_reg_1, _tmp_b_1675};
+    assign _tmp_b_1661 = {_gen_acc_reg_1, _tmp_b_1660};
 
-    assign _tmp_b_1677 = {_gen_input_idx_1, _tmp_b_1676};
+    assign _tmp_b_1662 = {_gen_input_idx_1, _tmp_b_1661};
 
-    assign _tmp_b_1678 = {_gen_hidden_idx_1, _tmp_b_1677};
+    assign _tmp_b_1663 = {_gen_hidden_idx_1, _tmp_b_1662};
 
-    assign _tmp_b_1679 = {_gen_out_reg_1, _tmp_b_1678};
+    assign _tmp_b_1664 = {_gen_out_reg_1, _tmp_b_1663};
 
-    assign _tmp_b_1680 = {_gen_busy, _tmp_b_1679};
+    assign _tmp_b_1665 = {_gen_busy, _tmp_b_1664};
 
-    assign _tmp_b_1681 = {_gen_done, _tmp_b_1680};
+    assign _tmp_b_1666 = {_gen_done, _tmp_b_1665};
 
-    assign _tmp_b_1682 = {_gen_do_bias_output_1, _tmp_b_1681};
+    assign _tmp_b_1667 = {_gen_do_bias_output_1, _tmp_b_1666};
 
-    assign _tmp_b_1683 = {_gen_do_mac_output_1, _tmp_b_1682};
+    assign _tmp_b_1668 = {_gen_do_mac_output_1, _tmp_b_1667};
 
-    assign _tmp_b_1684 = {_gen_advance_hidden_1, _tmp_b_1683};
+    assign _tmp_b_1669 = {_gen_advance_hidden_1, _tmp_b_1668};
 
-    assign _tmp_b_1685 = {_gen_do_act_hidden_1, _tmp_b_1684};
+    assign _tmp_b_1670 = {_gen_do_act_hidden_1, _tmp_b_1669};
 
-    assign _tmp_b_1686 = {_gen_do_bias_hidden_1, _tmp_b_1685};
+    assign _tmp_b_1671 = {_gen_do_bias_hidden_1, _tmp_b_1670};
 
-    assign _tmp_b_1687 = {_gen_do_mac_hidden_1, _tmp_b_1686};
+    assign _tmp_b_1672 = {_gen_do_mac_hidden_1, _tmp_b_1671};
 
-    assign _tmp_b_1688 = {_gen_load_input_1, _tmp_b_1687};
+    assign _tmp_b_1673 = {_gen_load_input_1, _tmp_b_1672};
 
-    assign _tmp_b_1689 = {_gen_load_input_1, _tmp_b_1688};
+    assign _tmp_b_1674 = {_gen_load_input_1, _tmp_b_1673};
 
-    assign _tmp_result_1690 = {_tmp_loop_body_1046, _tmp_b_1689};
+    assign _tmp_result_1675 = {_gen_phase_1, _tmp_b_1674};
 
-    assign out = _tmp_result_1690;
+    assign out = _tmp_result_1675;
 
 endmodule

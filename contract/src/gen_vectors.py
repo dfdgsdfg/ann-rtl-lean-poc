@@ -10,7 +10,7 @@ from typing import Iterable, Sequence
 from .artifacts import CONTRACT_WEIGHTS_PATH, ROOT
 from .params import HIDDEN_SIZE, INPUT_SIZE
 from .quantize_helpers import relu, wrap_signed
-from .schema import coerce_weights_payload
+from .schema import validate_analysis_payload
 
 TEST_VECTORS_PATH = ROOT / "simulations" / "shared" / "test_vectors.mem"
 TEST_VECTORS_META_PATH = ROOT / "simulations" / "shared" / "test_vectors_meta.svh"
@@ -215,7 +215,7 @@ def validate_witness_coverage(weights: dict[str, object]) -> None:
 def _load_contract_weights() -> dict[str, object]:
     if not CONTRACT_WEIGHTS_PATH.exists():
         raise FileNotFoundError(f"missing contract weights file: {CONTRACT_WEIGHTS_PATH}")
-    return coerce_weights_payload(
+    return validate_analysis_payload(
         json.loads(CONTRACT_WEIGHTS_PATH.read_text(encoding="utf-8")),
         label="contract weights",
     )

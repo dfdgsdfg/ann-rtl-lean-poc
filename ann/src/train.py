@@ -7,7 +7,7 @@ import random
 from pathlib import Path
 
 try:
-    from .artifacts import LATEST_RESULTS_DIR, display_path, ensure_dir, write_json
+    from .artifacts import default_run_dir, display_path, ensure_dir, write_json
     from .dataset import (
         DEFAULT_DATASET_SEED,
         DEFAULT_TRAIN_SIZE,
@@ -19,7 +19,7 @@ try:
     from .params import HIDDEN_SIZE, INPUT_SIZE
     from .quantize import assert_signed_range, quantize_matrix, quantize_vector, relu, wrap_signed
 except ImportError:
-    from artifacts import LATEST_RESULTS_DIR, display_path, ensure_dir, write_json
+    from artifacts import default_run_dir, display_path, ensure_dir, write_json
     from dataset import (
         DEFAULT_DATASET_SEED,
         DEFAULT_TRAIN_SIZE,
@@ -48,7 +48,7 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--init-noise", type=float, default=DEFAULT_INIT_NOISE)
     parser.add_argument("--regularization", type=float, default=DEFAULT_REGULARIZATION)
-    parser.add_argument("--out-dir", type=Path, default=LATEST_RESULTS_DIR)
+    parser.add_argument("--out-dir", type=Path, default=None, help="Output directory for this training run")
 
 
 def parse_args() -> argparse.Namespace:
@@ -265,7 +265,9 @@ def train(args: argparse.Namespace) -> Path:
             f"got train_size={args.train_size}, val_size={args.val_size}"
         )
 
-    run_dir = args.out_dir
+    run_dir = args.out_dir if args.out_dir is not None else default_run_dir(args.seed)
+    if args.out_dir is None and run_dir.exists():
+        raise FileExistsError(f"default immutable run directory already exists: {run_dir}")
     ensure_dir(run_dir)
 
     dataset = build_dataset(

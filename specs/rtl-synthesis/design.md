@@ -17,8 +17,11 @@ Validation is intentionally split:
 
 This asymmetry is intentional:
 
-- `generation_scope = controller`
-- `validation_scope = mixed-path mlp_core`
+- `artifact_kind = generated_controller_rtl`
+- `assembly_boundary = mixed_path_mlp_core`
+- `evidence_boundary = shared_full_core_top_level_bench`
+- `internal_observability_bench` is explicitly secondary and non-gating
+- `evidence_method = closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression`
 
 The repository is not treating those as mismatched scopes by accident. It is stating that controller generation is the only defensible synthesis target here, while mixed-path `mlp_core` validation is the only defensible primary soundness claim.
 
@@ -201,6 +204,8 @@ The second claim is stronger and requires stronger assumptions:
 The design should separate these claims instead of smuggling the stronger one in implicitly.
 
 The implemented flow therefore treats the exact-schedule TLSF result as secondary and uses a closed-loop mixed-path `mlp_core` equivalence check as the primary soundness claim.
+
+The maintained experiment runner must therefore read the fresh-flow summary and surface both formal steps directly. It must not treat a passing mixed-path simulation as sufficient branch success on its own, and it must skip the branch when the fresh synthesis/proof toolchain is unavailable instead of falling back to a committed snapshot.
 
 ## 6. Reset Modeling
 

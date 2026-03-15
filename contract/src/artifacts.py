@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
 import os
+import re
 import stat
 import tempfile
 from pathlib import Path
@@ -9,10 +11,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 ANN_RESULTS_DIR = ROOT / "ann" / "results"
-LATEST_RESULTS_DIR = ANN_RESULTS_DIR / "latest"
+RUNS_RESULTS_DIR = ANN_RESULTS_DIR / "runs"
 SELECTED_RUN_PATH = ANN_RESULTS_DIR / "selected_run.json"
 CONTRACT_RESULT_DIR = ROOT / "contract" / "result"
 CONTRACT_WEIGHTS_PATH = CONTRACT_RESULT_DIR / "weights.json"
+RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 def ensure_dir(path: Path) -> None:
@@ -78,3 +81,26 @@ def resolve_metadata_path(path_value: str | Path) -> Path:
     except ValueError as exc:
         raise ValueError(f"metadata path {path_value!r} is outside repository root {ROOT}") from exc
     return resolved
+
+
+def build_default_run_id(seed: int) -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{timestamp}-seed{seed}"
+
+
+def default_run_dir(seed: int) -> Path:
+    return RUNS_RESULTS_DIR / build_default_run_id(seed)
+
+
+def require_immutable_run_dir(path: Path) -> tuple[Path, str]:
+    resolved = resolve_metadata_path(path)
+    expected_parent = RUNS_RESULTS_DIR.resolve()
+    if resolved.parent != expected_parent:
+        raise ValueError(
+            f"canonical ANN run directories must live under {RUNS_RESULTS_DIR}, got {resolved}"
+        )
+
+    run_id = resolved.name
+    if not RUN_ID_PATTERN.fullmatch(run_id):
+        raise ValueError(f"run id {run_id!r} contains unsupported characters")
+    return resolved, run_id

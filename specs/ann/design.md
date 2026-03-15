@@ -95,7 +95,7 @@ This is important because quantization mismatch is one of the easiest ways to cr
 
 ## 7. Export Design
 
-The ANN flow should export one authoritative set of training results to `ann/results/latest/`. The `contract` domain is responsible for reading these results, freezing them into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
+The ANN flow should export immutable training results under `ann/results/runs/<run_id>/`. The `contract` domain is responsible for reading the selected immutable run, freezing it into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
 
 The ANN domain's export boundary is the file system:
 
@@ -103,7 +103,8 @@ The ANN domain's export boundary is the file system:
 dataset
   -> train model
   -> quantize
-  -> write results to ann/results/latest/
+  -> write results to ann/results/runs/<run_id>/
+  -> refresh ann/results/selected_run.json
   -> (contract domain reads and freezes)
 ```
 

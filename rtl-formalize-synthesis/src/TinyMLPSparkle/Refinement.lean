@@ -1,6 +1,7 @@
 import TinyMLP.Invariants
 import TinyMLP.Temporal
 import TinyMLPSparkle.ControllerSignal
+import TinyMLPSparkle.MlpCoreSignal
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
@@ -42,16 +43,154 @@ def ControllerView.sample {dom : DomainConfig} (view : ControllerView dom) (t : 
   , busy := view.busy.atTime t
   }
 
-def encodePhase : Phase → BitVec stateWidth
-  | .idle => stIdle
-  | .loadInput => stLoadInput
-  | .macHidden => stMacHidden
-  | .biasHidden => stBiasHidden
-  | .actHidden => stActHidden
-  | .nextHidden => stNextHidden
-  | .macOutput => stMacOutput
-  | .biasOutput => stBiasOutput
-  | .done => stDone
+structure MlpCoreOutputs where
+  state : BitVec stateWidth
+  load_input : Bool
+  clear_acc : Bool
+  do_mac_hidden : Bool
+  do_bias_hidden : Bool
+  do_act_hidden : Bool
+  advance_hidden : Bool
+  do_mac_output : Bool
+  do_bias_output : Bool
+  done : Bool
+  busy : Bool
+  out_bit : Bool
+  hidden_idx : BitVec stateWidth
+  input_idx : BitVec stateWidth
+  acc_reg : BitVec 32
+  mac_acc_out : BitVec 32
+  mac_a : BitVec 16
+  b2_data : BitVec 32
+  input_reg0 : BitVec 8
+  input_reg1 : BitVec 8
+  input_reg2 : BitVec 8
+  input_reg3 : BitVec 8
+  hidden_reg0 : BitVec 16
+  hidden_reg1 : BitVec 16
+  hidden_reg2 : BitVec 16
+  hidden_reg3 : BitVec 16
+  hidden_reg4 : BitVec 16
+  hidden_reg5 : BitVec 16
+  hidden_reg6 : BitVec 16
+  hidden_reg7 : BitVec 16
+  hidden_input_case_hit : Bool
+  output_hidden_case_hit : Bool
+  hidden_weight_case_hit : Bool
+  output_weight_case_hit : Bool
+deriving Repr, DecidableEq
+
+def MlpCoreView.sample {dom : DomainConfig} (view : MlpCoreView dom) (t : Nat) : MlpCoreOutputs :=
+  { state := view.state.atTime t
+  , load_input := view.load_input.atTime t
+  , clear_acc := view.clear_acc.atTime t
+  , do_mac_hidden := view.do_mac_hidden.atTime t
+  , do_bias_hidden := view.do_bias_hidden.atTime t
+  , do_act_hidden := view.do_act_hidden.atTime t
+  , advance_hidden := view.advance_hidden.atTime t
+  , do_mac_output := view.do_mac_output.atTime t
+  , do_bias_output := view.do_bias_output.atTime t
+  , done := view.done.atTime t
+  , busy := view.busy.atTime t
+  , out_bit := view.out_bit.atTime t
+  , hidden_idx := view.hidden_idx.atTime t
+  , input_idx := view.input_idx.atTime t
+  , acc_reg := view.acc_reg.atTime t
+  , mac_acc_out := view.mac_acc_out.atTime t
+  , mac_a := view.mac_a.atTime t
+  , b2_data := view.b2_data.atTime t
+  , input_reg0 := view.input_reg0.atTime t
+  , input_reg1 := view.input_reg1.atTime t
+  , input_reg2 := view.input_reg2.atTime t
+  , input_reg3 := view.input_reg3.atTime t
+  , hidden_reg0 := view.hidden_reg0.atTime t
+  , hidden_reg1 := view.hidden_reg1.atTime t
+  , hidden_reg2 := view.hidden_reg2.atTime t
+  , hidden_reg3 := view.hidden_reg3.atTime t
+  , hidden_reg4 := view.hidden_reg4.atTime t
+  , hidden_reg5 := view.hidden_reg5.atTime t
+  , hidden_reg6 := view.hidden_reg6.atTime t
+  , hidden_reg7 := view.hidden_reg7.atTime t
+  , hidden_input_case_hit := view.hidden_input_case_hit.atTime t
+  , output_hidden_case_hit := view.output_hidden_case_hit.atTime t
+  , hidden_weight_case_hit := view.hidden_weight_case_hit.atTime t
+  , output_weight_case_hit := view.output_weight_case_hit.atTime t
+  }
+
+private theorem mlpCoreOutputs_ext
+    {a b : MlpCoreOutputs}
+    (hState : a.state = b.state)
+    (hLoadInput : a.load_input = b.load_input)
+    (hClearAcc : a.clear_acc = b.clear_acc)
+    (hDoMacHidden : a.do_mac_hidden = b.do_mac_hidden)
+    (hDoBiasHidden : a.do_bias_hidden = b.do_bias_hidden)
+    (hDoActHidden : a.do_act_hidden = b.do_act_hidden)
+    (hAdvanceHidden : a.advance_hidden = b.advance_hidden)
+    (hDoMacOutput : a.do_mac_output = b.do_mac_output)
+    (hDoBiasOutput : a.do_bias_output = b.do_bias_output)
+    (hDone : a.done = b.done)
+    (hBusy : a.busy = b.busy)
+    (hOutBit : a.out_bit = b.out_bit)
+    (hHiddenIdx : a.hidden_idx = b.hidden_idx)
+    (hInputIdx : a.input_idx = b.input_idx)
+    (hAccReg : a.acc_reg = b.acc_reg)
+    (hMacAccOut : a.mac_acc_out = b.mac_acc_out)
+    (hMacA : a.mac_a = b.mac_a)
+    (hB2Data : a.b2_data = b.b2_data)
+    (hInputReg0 : a.input_reg0 = b.input_reg0)
+    (hInputReg1 : a.input_reg1 = b.input_reg1)
+    (hInputReg2 : a.input_reg2 = b.input_reg2)
+    (hInputReg3 : a.input_reg3 = b.input_reg3)
+    (hHiddenReg0 : a.hidden_reg0 = b.hidden_reg0)
+    (hHiddenReg1 : a.hidden_reg1 = b.hidden_reg1)
+    (hHiddenReg2 : a.hidden_reg2 = b.hidden_reg2)
+    (hHiddenReg3 : a.hidden_reg3 = b.hidden_reg3)
+    (hHiddenReg4 : a.hidden_reg4 = b.hidden_reg4)
+    (hHiddenReg5 : a.hidden_reg5 = b.hidden_reg5)
+    (hHiddenReg6 : a.hidden_reg6 = b.hidden_reg6)
+    (hHiddenReg7 : a.hidden_reg7 = b.hidden_reg7)
+    (hHiddenInputCaseHit : a.hidden_input_case_hit = b.hidden_input_case_hit)
+    (hOutputHiddenCaseHit : a.output_hidden_case_hit = b.output_hidden_case_hit)
+    (hHiddenWeightCaseHit : a.hidden_weight_case_hit = b.hidden_weight_case_hit)
+    (hOutputWeightCaseHit : a.output_weight_case_hit = b.output_weight_case_hit) :
+    a = b := by
+  cases a
+  cases b
+  cases hState
+  cases hLoadInput
+  cases hClearAcc
+  cases hDoMacHidden
+  cases hDoBiasHidden
+  cases hDoActHidden
+  cases hAdvanceHidden
+  cases hDoMacOutput
+  cases hDoBiasOutput
+  cases hDone
+  cases hBusy
+  cases hOutBit
+  cases hHiddenIdx
+  cases hInputIdx
+  cases hAccReg
+  cases hMacAccOut
+  cases hMacA
+  cases hB2Data
+  cases hInputReg0
+  cases hInputReg1
+  cases hInputReg2
+  cases hInputReg3
+  cases hHiddenReg0
+  cases hHiddenReg1
+  cases hHiddenReg2
+  cases hHiddenReg3
+  cases hHiddenReg4
+  cases hHiddenReg5
+  cases hHiddenReg6
+  cases hHiddenReg7
+  cases hHiddenInputCaseHit
+  cases hOutputHiddenCaseHit
+  cases hHiddenWeightCaseHit
+  cases hOutputWeightCaseHit
+  rfl
 
 def ControlInvariant (cs : ControlState) : Prop :=
   match cs.phase with
@@ -82,6 +221,18 @@ def controlOutputsOf (cs : ControlState) : ControllerOutputs :=
 def startSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom Bool :=
   ⟨fun t => (samples t).start⟩
 
+def input0Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => BitVec.ofInt 8 (samples t).inputs.x0.toInt⟩
+
+def input1Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => BitVec.ofInt 8 (samples t).inputs.x1.toInt⟩
+
+def input2Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => BitVec.ofInt 8 (samples t).inputs.x2.toInt⟩
+
+def input3Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => BitVec.ofInt 8 (samples t).inputs.x3.toInt⟩
+
 def hiddenIdxSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec stateWidth) :=
   ⟨fun t => BitVec.ofNat stateWidth (timedControlTrace samples t).hiddenIdx⟩
 
@@ -97,6 +248,98 @@ def canonicalControllerView {dom : DomainConfig} (samples : Nat → CtrlSample) 
     (inputIdxSignal samples)
     (Signal.pure inputCount4b)
     (Signal.pure hiddenCount4b)
+
+private def encodeInputReg (input : Input8) (idx : Nat) : BitVec 8 :=
+  BitVec.ofInt 8 (input.getInt8Nat idx).toInt
+
+private def encodeHiddenReg (hidden : Hidden16) (idx : Nat) : BitVec 16 :=
+  BitVec.ofInt 16 (hidden.getCellNat idx).toInt
+
+private def encodeAccReg (acc : Acc32) : BitVec 32 :=
+  BitVec.ofInt 32 acc.toInt
+
+private def w1DataComb (hidden_idx input_idx : BitVec stateWidth) : BitVec 8 :=
+  (w1Data (dom := defaultDomain) (Signal.pure hidden_idx) (Signal.pure input_idx)).atTime 0
+
+private def b1DataComb (hidden_idx : BitVec stateWidth) : BitVec 32 :=
+  (b1Data (dom := defaultDomain) (Signal.pure hidden_idx)).atTime 0
+
+private def w2DataComb (input_idx : BitVec stateWidth) : BitVec 8 :=
+  (w2Data (dom := defaultDomain) (Signal.pure input_idx)).atTime 0
+
+private def b2DataComb : BitVec 32 :=
+  (b2Data (dom := defaultDomain)).atTime 0
+
+def rtlHiddenIdxSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec stateWidth) :=
+  ⟨fun t => BitVec.ofNat stateWidth (rtlTrace samples t).hiddenIdx⟩
+
+def rtlInputIdxSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec stateWidth) :=
+  ⟨fun t => BitVec.ofNat stateWidth (rtlTrace samples t).inputIdx⟩
+
+def rtlPhaseSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec stateWidth) :=
+  ⟨fun t => encodePhase (rtlTrace samples t).phase⟩
+
+def rtlInputReg0Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => encodeInputReg (rtlTrace samples t).regs 0⟩
+
+def rtlInputReg1Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => encodeInputReg (rtlTrace samples t).regs 1⟩
+
+def rtlInputReg2Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => encodeInputReg (rtlTrace samples t).regs 2⟩
+
+def rtlInputReg3Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 8) :=
+  ⟨fun t => encodeInputReg (rtlTrace samples t).regs 3⟩
+
+def rtlHiddenReg0Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 0⟩
+
+def rtlHiddenReg1Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 1⟩
+
+def rtlHiddenReg2Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 2⟩
+
+def rtlHiddenReg3Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 3⟩
+
+def rtlHiddenReg4Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 4⟩
+
+def rtlHiddenReg5Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 5⟩
+
+def rtlHiddenReg6Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 6⟩
+
+def rtlHiddenReg7Signal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 16) :=
+  ⟨fun t => encodeHiddenReg (rtlTrace samples t).hidden 7⟩
+
+def rtlAccRegSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom (BitVec 32) :=
+  ⟨fun t => encodeAccReg (rtlTrace samples t).accumulator⟩
+
+def rtlOutRegSignal {dom : DomainConfig} (samples : Nat → CtrlSample) : Signal dom Bool :=
+  ⟨fun t => (rtlTrace samples t).output⟩
+
+def canonicalMlpCoreView {dom : DomainConfig} (samples : Nat → CtrlSample) : MlpCoreView dom :=
+  mlpCoreViewOfState
+    (rtlPhaseSignal samples)
+    (rtlHiddenIdxSignal samples)
+    (rtlInputIdxSignal samples)
+    (rtlInputReg0Signal samples)
+    (rtlInputReg1Signal samples)
+    (rtlInputReg2Signal samples)
+    (rtlInputReg3Signal samples)
+    (rtlHiddenReg0Signal samples)
+    (rtlHiddenReg1Signal samples)
+    (rtlHiddenReg2Signal samples)
+    (rtlHiddenReg3Signal samples)
+    (rtlHiddenReg4Signal samples)
+    (rtlHiddenReg5Signal samples)
+    (rtlHiddenReg6Signal samples)
+    (rtlHiddenReg7Signal samples)
+    (rtlAccRegSignal samples)
+    (rtlOutRegSignal samples)
 
 private theorem controlInvariant_of_controlOf {s : State} (hs : IndexInvariant s) :
     ControlInvariant (controlOf s) := by
@@ -379,6 +622,98 @@ private def controllerOutputsAt
   , busy := busyComb state
   }
 
+private def mlpCoreOutputsAt
+    (state : BitVec stateWidth)
+    (hidden_idx : BitVec stateWidth)
+    (input_idx : BitVec stateWidth)
+    (input_reg0 : BitVec 8)
+    (input_reg1 : BitVec 8)
+    (input_reg2 : BitVec 8)
+    (input_reg3 : BitVec 8)
+    (hidden_reg0 : BitVec 16)
+    (hidden_reg1 : BitVec 16)
+    (hidden_reg2 : BitVec 16)
+    (hidden_reg3 : BitVec 16)
+    (hidden_reg4 : BitVec 16)
+    (hidden_reg5 : BitVec 16)
+    (hidden_reg6 : BitVec 16)
+    (hidden_reg7 : BitVec 16)
+    (acc_reg : BitVec 32)
+    (out_reg : Bool) : MlpCoreOutputs :=
+  let hiddenMacTerm32At (inputVal weightVal : BitVec 8) : BitVec 32 :=
+    let inputUpper : BitVec 16 :=
+      if BitVec.extractLsb' 7 1 inputVal == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+    let weightUpper : BitVec 16 :=
+      if BitVec.extractLsb' 7 1 weightVal == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+    let input24 : BitVec 24 := BitVec.append inputUpper inputVal
+    let weight24 : BitVec 24 := BitVec.append weightUpper weightVal
+    let product24 : BitVec 24 := input24 * weight24
+    let productUpper : BitVec 8 :=
+      if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+    BitVec.append productUpper product24
+  let outputMacTerm32At (hiddenVal : BitVec 16) (weightVal : BitVec 8) : BitVec 32 :=
+    let hiddenUpper : BitVec 8 :=
+      if BitVec.extractLsb' 15 1 hiddenVal == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+    let hidden24 : BitVec 24 := BitVec.append hiddenUpper hiddenVal
+    let weightUpper : BitVec 16 :=
+      if BitVec.extractLsb' 7 1 weightVal == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+    let weight24 : BitVec 24 := BitVec.append weightUpper weightVal
+    let product24 : BitVec 24 := hidden24 * weight24
+    let productUpper : BitVec 8 :=
+      if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+    BitVec.append productUpper product24
+  let controller := controllerOutputsAt state input_idx inputCount4b hiddenCount4b
+  let isMacOutput := state == stMacOutput
+  let hidden_input_case_hit := (!isMacOutput) && BitVec.ult input_idx inputCount4b
+  let output_hidden_case_hit := isMacOutput && BitVec.ult input_idx hiddenCount4b
+  let hidden_weight_case_hit := BitVec.ult hidden_idx hiddenCount4b && BitVec.ult input_idx inputCount4b
+  let output_weight_case_hit := BitVec.ult input_idx hiddenCount4b
+  let selectedInput := selectInputRegComb input_idx input_reg0 input_reg1 input_reg2 input_reg3
+  let selectedHidden := selectHiddenRegComb
+    input_idx
+    hidden_reg0 hidden_reg1 hidden_reg2 hidden_reg3
+    hidden_reg4 hidden_reg5 hidden_reg6 hidden_reg7
+  let selectedInputUpper : BitVec 8 :=
+    if BitVec.extractLsb' 7 1 selectedInput == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+  let mac_a_hidden : BitVec 16 := BitVec.append selectedInputUpper selectedInput
+  let hiddenMacAccOut := acc_reg + hiddenMacTerm32At selectedInput (w1DataComb hidden_idx input_idx)
+  let outputMacAccOut := acc_reg + outputMacTerm32At selectedHidden (w2DataComb input_idx)
+  { state := controller.state
+  , load_input := controller.load_input
+  , clear_acc := controller.clear_acc
+  , do_mac_hidden := controller.do_mac_hidden
+  , do_bias_hidden := controller.do_bias_hidden
+  , do_act_hidden := controller.do_act_hidden
+  , advance_hidden := controller.advance_hidden
+  , do_mac_output := controller.do_mac_output
+  , do_bias_output := controller.do_bias_output
+  , done := controller.done
+  , busy := controller.busy
+  , out_bit := out_reg
+  , hidden_idx
+  , input_idx
+  , acc_reg
+  , mac_acc_out := if isMacOutput then outputMacAccOut else hiddenMacAccOut
+  , mac_a := if isMacOutput then selectedHidden else mac_a_hidden
+  , b2_data := b2DataComb
+  , input_reg0
+  , input_reg1
+  , input_reg2
+  , input_reg3
+  , hidden_reg0
+  , hidden_reg1
+  , hidden_reg2
+  , hidden_reg3
+  , hidden_reg4
+  , hidden_reg5
+  , hidden_reg6
+  , hidden_reg7
+  , hidden_input_case_hit
+  , output_hidden_case_hit
+  , hidden_weight_case_hit
+  , output_weight_case_hit
+  }
+
 private theorem controllerViewOfState_sample {dom : DomainConfig}
     (state : Signal dom (BitVec stateWidth))
     (input_idx : Signal dom (BitVec stateWidth))
@@ -404,6 +739,411 @@ private theorem controllerViewOfState_sample {dom : DomainConfig}
     clearAccComb, doMacHiddenComb, doBiasHiddenComb, doActHiddenComb, advanceHiddenComb,
     doMacOutputComb, doBiasOutputComb, doneComb, busyComb, Signal.atTime, Signal.pure,
     hAnd, hEq, hNot, hUlt, hNe]
+
+private theorem selectInputReg_sample {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (r0 r1 r2 r3 : Signal dom (BitVec 8))
+    (t : Nat) :
+    (selectInputReg idx r0 r1 r2 r3).atTime t =
+      selectInputRegComb
+        (idx.atTime t)
+        (r0.atTime t)
+        (r1.atTime t)
+        (r2.atTime t)
+        (r3.atTime t) := by
+  have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  simp [selectInputReg, selectInputRegComb, Signal.atTime, Signal.pure, Signal.mux, hEq]
+
+private theorem selectInputReg_val {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (r0 r1 r2 r3 : Signal dom (BitVec 8))
+    (t : Nat) :
+    (selectInputReg idx r0 r1 r2 r3).val t =
+      selectInputRegComb (idx.val t) (r0.val t) (r1.val t) (r2.val t) (r3.val t) := by
+  simpa [Signal.atTime] using selectInputReg_sample idx r0 r1 r2 r3 t
+
+private theorem selectInputReg_eq_comb_signal {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (r0 r1 r2 r3 : Signal dom (BitVec 8)) :
+    selectInputReg idx r0 r1 r2 r3 =
+      ⟨fun t => selectInputRegComb (idx.val t) (r0.val t) (r1.val t) (r2.val t) (r3.val t)⟩ := by
+  cases idx with
+  | mk idxVal =>
+      cases r0 with
+      | mk r0Val =>
+          cases r1 with
+          | mk r1Val =>
+              cases r2 with
+              | mk r2Val =>
+                  cases r3 with
+                  | mk r3Val =>
+                      apply congrArg Signal.mk
+                      funext t
+                      have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+                          (a === b).val t = (a.val t == b.val t) := by rfl
+                      simp [selectInputRegComb, Signal.pure, Signal.mux, hEq]
+
+private theorem selectHiddenReg_sample {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (h0 h1 h2 h3 h4 h5 h6 h7 : Signal dom (BitVec 16))
+    (t : Nat) :
+    (selectHiddenReg idx h0 h1 h2 h3 h4 h5 h6 h7).atTime t =
+      selectHiddenRegComb
+        (idx.atTime t)
+        (h0.atTime t)
+        (h1.atTime t)
+        (h2.atTime t)
+        (h3.atTime t)
+        (h4.atTime t)
+        (h5.atTime t)
+        (h6.atTime t)
+        (h7.atTime t) := by
+  have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  simp [selectHiddenReg, selectHiddenRegComb, Signal.atTime, Signal.pure, Signal.mux, hEq]
+
+private theorem selectHiddenReg_val {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (h0 h1 h2 h3 h4 h5 h6 h7 : Signal dom (BitVec 16))
+    (t : Nat) :
+    (selectHiddenReg idx h0 h1 h2 h3 h4 h5 h6 h7).val t =
+      selectHiddenRegComb
+        (idx.val t)
+        (h0.val t) (h1.val t) (h2.val t) (h3.val t)
+        (h4.val t) (h5.val t) (h6.val t) (h7.val t) := by
+  simpa [Signal.atTime] using selectHiddenReg_sample idx h0 h1 h2 h3 h4 h5 h6 h7 t
+
+private theorem selectHiddenReg_eq_comb_signal {dom : DomainConfig}
+    (idx : Signal dom (BitVec 4))
+    (h0 h1 h2 h3 h4 h5 h6 h7 : Signal dom (BitVec 16)) :
+    selectHiddenReg idx h0 h1 h2 h3 h4 h5 h6 h7 =
+      ⟨fun t =>
+        selectHiddenRegComb
+          (idx.val t)
+          (h0.val t) (h1.val t) (h2.val t) (h3.val t)
+          (h4.val t) (h5.val t) (h6.val t) (h7.val t)⟩ := by
+  cases idx with
+  | mk idxVal =>
+      cases h0 with
+      | mk h0Val =>
+          cases h1 with
+          | mk h1Val =>
+              cases h2 with
+              | mk h2Val =>
+                  cases h3 with
+                  | mk h3Val =>
+                      cases h4 with
+                      | mk h4Val =>
+                          cases h5 with
+                          | mk h5Val =>
+                              cases h6 with
+                              | mk h6Val =>
+                                  cases h7 with
+                                  | mk h7Val =>
+                                      apply congrArg Signal.mk
+                                      funext t
+                                      have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+                                          (a === b).val t = (a.val t == b.val t) := by rfl
+                                      simp [selectHiddenRegComb, Signal.pure, Signal.mux, hEq]
+
+private theorem w1Data_sample {dom : DomainConfig}
+    (hidden_idx input_idx : Signal dom (BitVec 4))
+    (t : Nat) :
+    (w1Data hidden_idx input_idx).atTime t =
+      w1DataComb (hidden_idx.atTime t) (input_idx.atTime t) := by
+  have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  have hAnd (a b : Signal dom Bool) :
+      (a &&& b).val t = (a.val t && b.val t) := by rfl
+  have hEq0 {α : Type} [BEq α] (a b : Signal defaultDomain α) :
+      (a === b).val 0 = (a.val 0 == b.val 0) := by rfl
+  have hAnd0 (a b : Signal defaultDomain Bool) :
+      (a &&& b).val 0 = (a.val 0 && b.val 0) := by rfl
+  simp [w1Data, w1DataComb, Signal.atTime, Signal.pure, Signal.mux, hEq, hAnd, hEq0, hAnd0]
+
+private theorem w1Data_val {dom : DomainConfig}
+    (hidden_idx input_idx : Signal dom (BitVec 4))
+    (t : Nat) :
+    (w1Data hidden_idx input_idx).val t =
+      w1DataComb (hidden_idx.val t) (input_idx.val t) := by
+  simpa [Signal.atTime] using w1Data_sample hidden_idx input_idx t
+
+private theorem w2Data_sample {dom : DomainConfig}
+    (input_idx : Signal dom (BitVec 4))
+    (t : Nat) :
+    (w2Data input_idx).atTime t =
+      w2DataComb (input_idx.atTime t) := by
+  have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  have hEq0 {α : Type} [BEq α] (a b : Signal defaultDomain α) :
+      (a === b).val 0 = (a.val 0 == b.val 0) := by rfl
+  simp [w2Data, w2DataComb, Signal.atTime, Signal.pure, Signal.mux, hEq, hEq0]
+
+private theorem w2Data_val {dom : DomainConfig}
+    (input_idx : Signal dom (BitVec 4))
+    (t : Nat) :
+    (w2Data input_idx).val t =
+      w2DataComb (input_idx.val t) := by
+  simpa [Signal.atTime] using w2Data_sample input_idx t
+
+private theorem hiddenMacTerm32_sample {dom : DomainConfig}
+    (inputVal weightVal : Signal dom (BitVec 8))
+    (t : Nat) :
+    (hiddenMacTerm32 inputVal weightVal).atTime t =
+      let inputUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (inputVal.atTime t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let weightUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (weightVal.atTime t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let input24 : BitVec 24 := BitVec.append inputUpper (inputVal.atTime t)
+      let weight24 : BitVec 24 := BitVec.append weightUpper (weightVal.atTime t)
+      let product24 : BitVec 24 := input24 * weight24
+      let productUpper : BitVec 8 :=
+        if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      BitVec.append productUpper product24 := by
+  have hMapAt {α β : Type} (f : α → β) (s : Signal dom α) :
+      (Signal.map f s).val t = f (s.val t) := by rfl
+  have hMuxAt {α : Type} (c : Signal dom Bool) (a b : Signal dom α) :
+      (Signal.mux c a b).val t = if c.val t then a.val t else b.val t := by rfl
+  have hBeqAt {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  have hAppendAt {m n : Nat} (a : Signal dom (BitVec m)) (b : Signal dom (BitVec n)) :
+      (((fun x1 x2 => x1 ++ x2) <$> a <*> b).val t) = BitVec.append (a.val t) (b.val t) := by rfl
+  have hMulAt {n : Nat} (a b : Signal dom (BitVec n)) :
+      (a * b).val t = a.val t * b.val t := by rfl
+  simp [hiddenMacTerm32, Signal.atTime, Signal.pure, hMapAt, hMuxAt, hBeqAt, hAppendAt, hMulAt]
+
+private theorem hiddenMacTerm32_val {dom : DomainConfig}
+    (inputVal weightVal : Signal dom (BitVec 8))
+    (t : Nat) :
+    (hiddenMacTerm32 inputVal weightVal).val t =
+      let inputUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (inputVal.val t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let weightUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (weightVal.val t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let input24 : BitVec 24 := BitVec.append inputUpper (inputVal.val t)
+      let weight24 : BitVec 24 := BitVec.append weightUpper (weightVal.val t)
+      let product24 : BitVec 24 := input24 * weight24
+      let productUpper : BitVec 8 :=
+        if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      BitVec.append productUpper product24 := by
+  simpa [Signal.atTime] using hiddenMacTerm32_sample inputVal weightVal t
+
+private theorem outputMacTerm32_sample {dom : DomainConfig}
+    (hiddenVal : Signal dom (BitVec 16))
+    (weightVal : Signal dom (BitVec 8))
+    (t : Nat) :
+    (outputMacTerm32 hiddenVal weightVal).atTime t =
+      let hiddenUpper : BitVec 8 :=
+        if BitVec.extractLsb' 15 1 (hiddenVal.atTime t) == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      let hidden24 : BitVec 24 := BitVec.append hiddenUpper (hiddenVal.atTime t)
+      let weightUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (weightVal.atTime t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let weight24 : BitVec 24 := BitVec.append weightUpper (weightVal.atTime t)
+      let product24 : BitVec 24 := hidden24 * weight24
+      let productUpper : BitVec 8 :=
+        if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      BitVec.append productUpper product24 := by
+  have hMapAt {α β : Type} (f : α → β) (s : Signal dom α) :
+      (Signal.map f s).val t = f (s.val t) := by rfl
+  have hMuxAt {α : Type} (c : Signal dom Bool) (a b : Signal dom α) :
+      (Signal.mux c a b).val t = if c.val t then a.val t else b.val t := by rfl
+  have hBeqAt {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  have hAppendAt {m n : Nat} (a : Signal dom (BitVec m)) (b : Signal dom (BitVec n)) :
+      (((fun x1 x2 => x1 ++ x2) <$> a <*> b).val t) = BitVec.append (a.val t) (b.val t) := by rfl
+  have hMulAt {n : Nat} (a b : Signal dom (BitVec n)) :
+      (a * b).val t = a.val t * b.val t := by rfl
+  simp [outputMacTerm32, Signal.atTime, Signal.pure, hMapAt, hMuxAt, hBeqAt, hAppendAt, hMulAt]
+
+private theorem outputMacTerm32_val {dom : DomainConfig}
+    (hiddenVal : Signal dom (BitVec 16))
+    (weightVal : Signal dom (BitVec 8))
+    (t : Nat) :
+    (outputMacTerm32 hiddenVal weightVal).val t =
+      let hiddenUpper : BitVec 8 :=
+        if BitVec.extractLsb' 15 1 (hiddenVal.val t) == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      let hidden24 : BitVec 24 := BitVec.append hiddenUpper (hiddenVal.val t)
+      let weightUpper : BitVec 16 :=
+        if BitVec.extractLsb' 7 1 (weightVal.val t) == 1#1 then BitVec.ofInt 16 (-1) else 0#16
+      let weight24 : BitVec 24 := BitVec.append weightUpper (weightVal.val t)
+      let product24 : BitVec 24 := hidden24 * weight24
+      let productUpper : BitVec 8 :=
+        if BitVec.extractLsb' 23 1 product24 == 1#1 then BitVec.ofInt 8 (-1) else 0#8
+      BitVec.append productUpper product24 := by
+  simpa [Signal.atTime] using outputMacTerm32_sample hiddenVal weightVal t
+
+private theorem mlpCoreViewOfState_sample {dom : DomainConfig}
+    (state : Signal dom (BitVec stateWidth))
+    (hidden_idx : Signal dom (BitVec stateWidth))
+    (input_idx : Signal dom (BitVec stateWidth))
+    (input_reg0 : Signal dom (BitVec 8))
+    (input_reg1 : Signal dom (BitVec 8))
+    (input_reg2 : Signal dom (BitVec 8))
+    (input_reg3 : Signal dom (BitVec 8))
+    (hidden_reg0 : Signal dom (BitVec 16))
+    (hidden_reg1 : Signal dom (BitVec 16))
+    (hidden_reg2 : Signal dom (BitVec 16))
+    (hidden_reg3 : Signal dom (BitVec 16))
+    (hidden_reg4 : Signal dom (BitVec 16))
+    (hidden_reg5 : Signal dom (BitVec 16))
+    (hidden_reg6 : Signal dom (BitVec 16))
+    (hidden_reg7 : Signal dom (BitVec 16))
+    (acc_reg : Signal dom (BitVec 32))
+    (out_reg : Signal dom Bool)
+    (t : Nat) :
+    (mlpCoreViewOfState
+      state
+      hidden_idx
+      input_idx
+      input_reg0
+      input_reg1
+      input_reg2
+      input_reg3
+      hidden_reg0
+      hidden_reg1
+      hidden_reg2
+      hidden_reg3
+      hidden_reg4
+      hidden_reg5
+      hidden_reg6
+      hidden_reg7
+      acc_reg
+      out_reg).sample t =
+        mlpCoreOutputsAt
+          (state.atTime t)
+          (hidden_idx.atTime t)
+          (input_idx.atTime t)
+          (input_reg0.atTime t)
+          (input_reg1.atTime t)
+          (input_reg2.atTime t)
+          (input_reg3.atTime t)
+          (hidden_reg0.atTime t)
+          (hidden_reg1.atTime t)
+          (hidden_reg2.atTime t)
+          (hidden_reg3.atTime t)
+          (hidden_reg4.atTime t)
+          (hidden_reg5.atTime t)
+          (hidden_reg6.atTime t)
+          (hidden_reg7.atTime t)
+          (acc_reg.atTime t)
+          (out_reg.atTime t) := by
+  have hController := controllerViewOfState_sample state input_idx (Signal.pure inputCount4b) (Signal.pure hiddenCount4b) t
+  have hState := congrArg ControllerOutputs.state hController
+  have hLoad := congrArg ControllerOutputs.load_input hController
+  have hClear := congrArg ControllerOutputs.clear_acc hController
+  have hMacHidden := congrArg ControllerOutputs.do_mac_hidden hController
+  have hBiasHidden := congrArg ControllerOutputs.do_bias_hidden hController
+  have hActHidden := congrArg ControllerOutputs.do_act_hidden hController
+  have hAdvance := congrArg ControllerOutputs.advance_hidden hController
+  have hMacOutput := congrArg ControllerOutputs.do_mac_output hController
+  have hBiasOutput := congrArg ControllerOutputs.do_bias_output hController
+  have hDone := congrArg ControllerOutputs.done hController
+  have hBusy := congrArg ControllerOutputs.busy hController
+  have hEq {α : Type} [BEq α] (a b : Signal dom α) :
+      (a === b).val t = (a.val t == b.val t) := by rfl
+  have hAnd (a b : Signal dom Bool) :
+      (a &&& b).val t = (a.val t && b.val t) := by rfl
+  have hNot (a : Signal dom Bool) :
+      ((fun value => !value) <$> a).val t = !a.val t := by rfl
+  have hUlt (a b : Signal dom (BitVec stateWidth)) :
+      (((BitVec.ult · ·) <$> a <*> b).val t) = BitVec.ult (a.val t) (b.val t) := by rfl
+  have hAdd {n : Nat} (a b : Signal dom (BitVec n)) :
+      (a + b).val t = a.val t + b.val t := by rfl
+  have hAppend {m n : Nat} (a : Signal dom (BitVec m)) (b : Signal dom (BitVec n)) :
+      (((BitVec.append · ·) <$> a <*> b).val t) = BitVec.append (a.val t) (b.val t) := by rfl
+  have hConcat {m n : Nat} (a : Signal dom (BitVec m)) (b : Signal dom (BitVec n)) :
+      (((fun x1 x2 => x1 ++ x2) <$> a <*> b).val t) = BitVec.append (a.val t) (b.val t) := by rfl
+  refine mlpCoreOutputs_ext
+    hState
+    hLoad
+    hClear
+    hMacHidden
+    hBiasHidden
+    hActHidden
+    hAdvance
+    hMacOutput
+    hBiasOutput
+    hDone
+    hBusy
+    rfl
+    rfl
+    rfl
+    rfl
+    ?_
+    ?_
+    ?_
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    rfl
+    ?_
+    ?_
+    ?_
+    ?_
+  · simp [MlpCoreView.sample, mlpCoreViewOfState, mlpCoreOutputsAt, Signal.atTime, Signal.pure, Signal.mux,
+      selectInputReg_val, selectHiddenReg_val, w1Data_val, w2Data_val, hiddenMacTerm32_val,
+      outputMacTerm32_val, hEq, hAnd, hNot, hUlt, hAdd]
+  · change
+      (let isMacOutput := state === (stMacOutput : Signal dom _)
+       let selectedInput := selectInputReg input_idx input_reg0 input_reg1 input_reg2 input_reg3
+       let selectedHidden := selectHiddenReg
+         input_idx
+         hidden_reg0 hidden_reg1 hidden_reg2 hidden_reg3
+         hidden_reg4 hidden_reg5 hidden_reg6 hidden_reg7
+       let selectedInputSign := selectedInput.map (BitVec.extractLsb' 7 1 ·)
+       let selectedInputUpper := Signal.mux
+         (selectedInputSign === Signal.pure 1#1)
+         (Signal.pure (BitVec.ofInt 8 (-1)))
+         (Signal.pure 0#8)
+       let mac_a_hidden : Signal dom (BitVec 16) := (BitVec.append · ·) <$> selectedInputUpper <*> selectedInput
+       let mac_a : Signal dom (BitVec 16) := Signal.mux isMacOutput selectedHidden mac_a_hidden
+       mac_a.atTime t)
+      =
+      (if state.atTime t == stMacOutput then
+        selectHiddenRegComb
+          (input_idx.atTime t)
+          (hidden_reg0.atTime t) (hidden_reg1.atTime t) (hidden_reg2.atTime t) (hidden_reg3.atTime t)
+          (hidden_reg4.atTime t) (hidden_reg5.atTime t) (hidden_reg6.atTime t) (hidden_reg7.atTime t)
+      else
+        BitVec.append
+          (if
+              BitVec.extractLsb' 7 1
+                  (selectInputRegComb
+                    (input_idx.atTime t)
+                    (input_reg0.atTime t) (input_reg1.atTime t) (input_reg2.atTime t) (input_reg3.atTime t)) == 1#1
+            then BitVec.ofInt 8 (-1)
+            else 0#8)
+          (selectInputRegComb
+            (input_idx.atTime t)
+            (input_reg0.atTime t) (input_reg1.atTime t) (input_reg2.atTime t) (input_reg3.atTime t)))
+    simp [selectInputReg_eq_comb_signal, selectHiddenReg_eq_comb_signal, Signal.atTime, Signal.pure,
+      Signal.mux, Signal.map, hEq, hConcat]
+  · simp [MlpCoreView.sample, mlpCoreViewOfState, mlpCoreOutputsAt, Signal.atTime, Signal.pure, b2DataComb, b2Data]
+  · change
+      (! (state.val t = 6#4) && BitVec.ult (input_idx.val t) inputCount4b) =
+        (! (state.val t = 6#4) && BitVec.ult (input_idx.val t) (BitVec.ofNat stateWidth inputCount))
+    simp [inputCount4b]
+  · change
+      ((state.val t = 6#4) && BitVec.ult (input_idx.val t) hiddenCount4b) =
+        ((state.val t = 6#4) && BitVec.ult (input_idx.val t) (BitVec.ofNat stateWidth hiddenCount))
+    simp [hiddenCount4b]
+  · change
+      (BitVec.ult (hidden_idx.val t) hiddenCount4b && BitVec.ult (input_idx.val t) inputCount4b) =
+        (BitVec.ult (hidden_idx.val t) (BitVec.ofNat stateWidth hiddenCount) &&
+          BitVec.ult (input_idx.val t) (BitVec.ofNat stateWidth inputCount))
+    simp [inputCount4b, hiddenCount4b]
+  · change BitVec.ult (input_idx.val t) hiddenCount4b =
+      BitVec.ult (input_idx.val t) (BitVec.ofNat stateWidth hiddenCount)
+    simp [hiddenCount4b]
 
 private theorem controllerOutputsAt_refines_controlOutputs (cs : ControlState) (hs : ControlInvariant cs) :
     controllerOutputsAt
@@ -439,5 +1179,102 @@ theorem canonicalControllerView_refines_timedControlTrace {dom : DomainConfig}
     _ = controlOutputsOf (timedControlTrace samples t) := by
       simpa [phaseSignal, inputIdxSignal] using
         controllerOutputsAt_refines_controlOutputs (timedControlTrace samples t) hs
+
+private def mlpCoreOutputsOfState (s : State) : MlpCoreOutputs :=
+  mlpCoreOutputsAt
+    (encodePhase s.phase)
+    (BitVec.ofNat stateWidth s.hiddenIdx)
+    (BitVec.ofNat stateWidth s.inputIdx)
+    (encodeInputReg s.regs 0)
+    (encodeInputReg s.regs 1)
+    (encodeInputReg s.regs 2)
+    (encodeInputReg s.regs 3)
+    (encodeHiddenReg s.hidden 0)
+    (encodeHiddenReg s.hidden 1)
+    (encodeHiddenReg s.hidden 2)
+    (encodeHiddenReg s.hidden 3)
+    (encodeHiddenReg s.hidden 4)
+    (encodeHiddenReg s.hidden 5)
+    (encodeHiddenReg s.hidden 6)
+    (encodeHiddenReg s.hidden 7)
+    (encodeAccReg s.accumulator)
+    s.output
+
+private theorem inputSignal_decodes_sample {dom : DomainConfig}
+    (samples : Nat → CtrlSample) (t : Nat) :
+    MlpCore.sampleAt
+        (startSignal (dom := dom) samples)
+        (input0Signal (dom := dom) samples)
+        (input1Signal (dom := dom) samples)
+        (input2Signal (dom := dom) samples)
+        (input3Signal (dom := dom) samples)
+        t
+      = samples t := by
+  cases hs : samples t with
+  | mk start inputs =>
+      cases inputs with
+      | mk x0 x1 x2 x3 =>
+          simp [Signal.atTime, MlpCore.sampleAt, startSignal, input0Signal, input1Signal, input2Signal, input3Signal,
+            decodeInput]
+          constructor
+          · simpa [hs]
+          constructor
+          · simpa [hs] using Int8.ofBitVec_toBitVec x0
+          constructor
+          · simpa [hs] using Int8.ofBitVec_toBitVec x1
+          constructor
+          · simpa [hs] using Int8.ofBitVec_toBitVec x2
+          · simpa [hs] using Int8.ofBitVec_toBitVec x3
+
+theorem canonicalMlpCoreView_refines_rtlTrace {dom : DomainConfig}
+    (samples : Nat → CtrlSample) (t : Nat) :
+    (canonicalMlpCoreView (dom := dom) samples).sample t =
+      mlpCoreOutputsOfState (rtlTrace samples t) := by
+  calc
+    (canonicalMlpCoreView (dom := dom) samples).sample t =
+        mlpCoreOutputsAt
+          ((rtlPhaseSignal (dom := dom) samples).atTime t)
+          ((rtlHiddenIdxSignal (dom := dom) samples).atTime t)
+          ((rtlInputIdxSignal (dom := dom) samples).atTime t)
+          ((rtlInputReg0Signal (dom := dom) samples).atTime t)
+          ((rtlInputReg1Signal (dom := dom) samples).atTime t)
+          ((rtlInputReg2Signal (dom := dom) samples).atTime t)
+          ((rtlInputReg3Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg0Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg1Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg2Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg3Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg4Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg5Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg6Signal (dom := dom) samples).atTime t)
+          ((rtlHiddenReg7Signal (dom := dom) samples).atTime t)
+          ((rtlAccRegSignal (dom := dom) samples).atTime t)
+          ((rtlOutRegSignal (dom := dom) samples).atTime t) := by
+      simpa [canonicalMlpCoreView] using
+        mlpCoreViewOfState_sample
+          (rtlPhaseSignal (dom := dom) samples)
+          (rtlHiddenIdxSignal (dom := dom) samples)
+          (rtlInputIdxSignal (dom := dom) samples)
+          (rtlInputReg0Signal (dom := dom) samples)
+          (rtlInputReg1Signal (dom := dom) samples)
+          (rtlInputReg2Signal (dom := dom) samples)
+          (rtlInputReg3Signal (dom := dom) samples)
+          (rtlHiddenReg0Signal (dom := dom) samples)
+          (rtlHiddenReg1Signal (dom := dom) samples)
+          (rtlHiddenReg2Signal (dom := dom) samples)
+          (rtlHiddenReg3Signal (dom := dom) samples)
+          (rtlHiddenReg4Signal (dom := dom) samples)
+          (rtlHiddenReg5Signal (dom := dom) samples)
+          (rtlHiddenReg6Signal (dom := dom) samples)
+          (rtlHiddenReg7Signal (dom := dom) samples)
+          (rtlAccRegSignal (dom := dom) samples)
+          (rtlOutRegSignal (dom := dom) samples)
+          t
+    _ = mlpCoreOutputsOfState (rtlTrace samples t) := by
+      simp [mlpCoreOutputsOfState, rtlPhaseSignal, rtlHiddenIdxSignal, rtlInputIdxSignal,
+        rtlInputReg0Signal, rtlInputReg1Signal, rtlInputReg2Signal, rtlInputReg3Signal,
+        rtlHiddenReg0Signal, rtlHiddenReg1Signal, rtlHiddenReg2Signal, rtlHiddenReg3Signal,
+        rtlHiddenReg4Signal, rtlHiddenReg5Signal, rtlHiddenReg6Signal, rtlHiddenReg7Signal,
+        rtlAccRegSignal, rtlOutRegSignal, Signal.atTime]
 
 end TinyMLP.Sparkle

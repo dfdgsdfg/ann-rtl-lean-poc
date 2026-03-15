@@ -99,9 +99,9 @@ The intended use is experimental:
 That means:
 
 - reactive synthesis is an experiment track, not the source of truth for the shipped RTL
-- experiment summaries should distinguish `generation_scope`, `integration_scope`, and `validation_scope` instead of collapsing branch status into a single "support level"
+- experiment summaries should distinguish `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method` instead of collapsing branch status into a single support label
 - Lean/Sparkle-generated RTL is a full-core experiment branch validated by the shared `mlp_core` regression bench and downstream QoR flows
-- the current Lean refinement milestone in `rtl-formalize-synthesis/` still covers controller semantics only; there is not yet a full-core theorem for the emitted Sparkle design
+- `rtl-formalize-synthesis/` now carries a full-core Lean refinement surface from the pure `rtlTrace` semantics to the Sparkle Signal DSL full-core view; emitted RTL remains downstream-validated rather than proved by Lean alone
 - Sparkle-to-Verilog remains a trusted backend boundary and is validated by shared full-core simulation and downstream synthesis comparison, not by Lean proof alone
 - hand-written `rtl/` remains the canonical implementation baseline
 
@@ -143,7 +143,7 @@ For the SMT flow specifically, `make smt` expects:
 For the Sparkle full-core generation path, `make rtl-formalize-synthesis-build` expects:
 
 - `git` for the Sparkle prepare step
-- `lake` to build and emit the checked-in Sparkle full-core artifact
+- `lake` to build and emit the checked-in Sparkle full-core artifact and stable generated `mlp_core` wrapper
 
 On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 
@@ -231,11 +231,12 @@ make export ARGS="--run-dir ann/results/tmp/run_001"
 
 The main human-facing outputs are:
 
-- `ann/results/latest/training_summary.md`
-- `ann/results/latest/metrics.json`
-- `ann/results/latest/weights_float.json`
-- `ann/results/latest/weights_float_selected.json`
-- `ann/results/latest/weights_quantized.json`
+- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/training_summary.md`
+- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/metrics.json`
+- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_float.json`
+- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_float_selected.json`
+- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_quantized.json`
+- `ann/results/selected_run.json` (canonical immutable selection metadata)
 - `contract/result/weights.json`
 - `contract/result/model.md`
 - `rtl/src/weight_rom.sv`
@@ -337,6 +338,10 @@ Simulation commands:
 make sim
 make sim-iverilog
 make sim-verilator
+make rtl-synthesis-sim
+make rtl-formalize-synthesis-sim
+make rtl-formalize-synthesis-iverilog
+make rtl-formalize-synthesis-verilator
 ```
 
 Experiment commands:

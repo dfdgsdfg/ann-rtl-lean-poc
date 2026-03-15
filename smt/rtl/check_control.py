@@ -10,21 +10,35 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SUMMARY = ROOT / "build" / "smt" / "rtl_control_summary.json"
-FORMAL_BUILD_DIR = ROOT / "build" / "smt" / "rtl_formal"
+FORMAL_BUILD_ROOT = ROOT / "build" / "smt" / "rtl_formal"
+DEFAULT_SUMMARIES = {
+    "rtl": ROOT / "build" / "smt" / "rtl_control_summary.json",
+    "rtl-formalize-synthesis": ROOT / "build" / "smt" / "rtl_formalize_synthesis_summary.json",
+}
 
-RTL_SOURCES = [
+BASELINE_RTL_SOURCES = [
     ROOT / "rtl" / "src" / "controller.sv",
     ROOT / "rtl" / "src" / "mac_unit.sv",
     ROOT / "rtl" / "src" / "mlp_core.sv",
     ROOT / "rtl" / "src" / "relu_unit.sv",
     ROOT / "rtl" / "src" / "weight_rom.sv",
 ]
+SPARKLE_RTL_SOURCES = [
+    ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv",
+    ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv",
+]
 
-SPEC_SOURCES = [
+COMMON_SPEC_SOURCES = [
     "specs/smt/requirement.md",
     "specs/smt/design.md",
 ]
+BRANCH_SPEC_SOURCES = {
+    "rtl": [],
+    "rtl-formalize-synthesis": [
+        "specs/rtl-formalize-synthesis/requirement.md",
+        "specs/rtl-formalize-synthesis/design.md",
+    ],
+}
 
 
 @dataclass(frozen=True)
@@ -79,8 +93,105 @@ def tool_version(command: list[str], fallback: str = "unknown") -> str:
     return first_output_line(proc) or fallback
 
 
-def formal_jobs() -> list[FormalJob]:
+def mlp_core_jobs(rtl_sources: list[Path], *, description_prefix: str) -> list[FormalJob]:
     rtl_dir = ROOT / "smt" / "rtl"
+    return [
+        FormalJob(
+            name="mlp_core_boundary_behavior",
+            family="boundary_behavior",
+            description=f"{description_prefix} mlp_core boundary proofs for hidden/output guard cycles and no-duplicate/no-skip transitions.",
+            top="formal_mlp_core_boundaries",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_boundaries.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The proof follows one bounded mlp_core transaction through DONE and release.",
+            ],
+            properties=[
+                "hidden MAC boundary takes exactly one guard cycle at input_idx == 4 with no duplicate MAC work",
+                "last hidden neuron handoff enters MAC_OUTPUT at hidden_idx == 0 and input_idx == 0",
+                "output MAC boundary takes exactly one guard cycle at input_idx == 8 with no duplicate MAC work",
+                "BIAS_OUTPUT applies the output bias once and enters DONE with the documented completion indices",
+            ],
+            rtl_sources=rtl_sources,
+        ),
+        FormalJob(
+            name="mlp_core_range_safety",
+            family="range_safety",
+            description=f"{description_prefix} mlp_core range-safety proofs around MAC enables, selector validity, and boundary guard reads.",
+            top="formal_mlp_core_range_safety",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_range_safety.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The proof is bounded to one transaction so hidden and output boundaries are both exercised.",
+            ],
+            properties=[
+                "do_mac_hidden implies input_idx < 4 and hits real input/weight selector cases",
+                "do_mac_output implies input_idx < 8 and hits real hidden/weight selector cases",
+                "hidden guard cycle at input_idx == 4 misses the hidden selector/ROM cases and drives mac_a to zero",
+                "output guard cycle at input_idx == 8 misses the output selector/ROM cases and drives mac_a to zero",
+                "MAC_OUTPUT operates with hidden_idx == 0 throughout the output phase",
+            ],
+            rtl_sources=rtl_sources,
+        ),
+        FormalJob(
+            name="mlp_core_transaction_capture",
+            family="transaction_capture",
+            description=f"{description_prefix} proof that an accepted start captures in0..in3 into the transaction state and keeps them stable.",
+            top="formal_mlp_core_transaction_capture",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_transaction_capture.sv",
+            depth=82,
+            assumptions=[
+                "Reset is asserted for the initial step, then released permanently.",
+                "start is high on the single accept cycle immediately after reset release.",
+                "start is low for the remainder of the bounded transaction window.",
+                "The environment may change in0..in3 after acceptance, so stability must come from the captured input_regs.",
+            ],
+            properties=[
+                "LOAD_INPUT is reached after the accepted start and asserts the top-level load pulse",
+                "LOAD_INPUT samples in0..in3 into input_regs on the transaction boundary",
+                "The captured input_regs remain stable for the rest of the bounded transaction",
+                "The load step clears acc_reg, resets the visible indices, and clears out_bit",
+            ],
+            rtl_sources=rtl_sources,
+        ),
+        FormalJob(
+            name="mlp_core_bounded_latency",
+            family="bounded_latency",
+            description=f"{description_prefix} exact-latency proof for the single-transaction mlp_core trace.",
+            top="formal_mlp_core_latency",
+            harness=rtl_dir / "mlp_core" / "formal_mlp_core_latency.sv",
+            depth=82,
+            assumptions=[
+                "Initial visible state is IDLE with hidden_idx = 0 and input_idx = 0 because reset is asserted.",
+                "start is sampled high only on the accept cycle immediately after reset release.",
+                "start stays low afterward so DONE can release back to IDLE.",
+                "No reset is applied during the bounded transaction window after acceptance.",
+            ],
+            properties=[
+                "the accepted transaction is not done early",
+                "busy stays high throughout the active window",
+                "done becomes visible exactly 76 cycles after the accept cycle",
+                "the design returns to IDLE one cycle after DONE when start is low",
+            ],
+            rtl_sources=rtl_sources,
+        ),
+    ]
+
+
+def formal_jobs(branch: str) -> list[FormalJob]:
+    rtl_dir = ROOT / "smt" / "rtl"
+    if branch == "rtl-formalize-synthesis":
+        return mlp_core_jobs(
+            SPARKLE_RTL_SOURCES,
+            description_prefix="Sparkle-wrapper-backed",
+        )
+
     return [
         FormalJob(
             name="controller_interface",
@@ -103,92 +214,17 @@ def formal_jobs() -> list[FormalJob]:
             ],
             rtl_sources=[ROOT / "rtl" / "src" / "controller.sv"],
         ),
-        FormalJob(
-            name="mlp_core_boundary_behavior",
-            family="boundary_behavior",
-            description="RTL-backed mlp_core boundary proofs for hidden/output guard cycles and no-duplicate/no-skip transitions.",
-            top="formal_mlp_core_boundaries",
-            harness=rtl_dir / "mlp_core" / "formal_mlp_core_boundaries.sv",
-            depth=82,
-            assumptions=[
-                "Reset is asserted for the initial step, then released permanently.",
-                "start is high on the single accept cycle immediately after reset release.",
-                "start is low for the remainder of the bounded transaction window.",
-                "The proof follows one bounded mlp_core transaction through DONE and release.",
-            ],
-            properties=[
-                "hidden MAC boundary takes exactly one guard cycle at input_idx == 4 with no duplicate MAC work",
-                "last hidden neuron handoff enters MAC_OUTPUT at hidden_idx == 0 and input_idx == 0",
-                "output MAC boundary takes exactly one guard cycle at input_idx == 8 with no duplicate MAC work",
-                "BIAS_OUTPUT applies the output bias once and enters DONE with the documented completion indices",
-            ],
-            rtl_sources=RTL_SOURCES,
-        ),
-        FormalJob(
-            name="mlp_core_range_safety",
-            family="range_safety",
-            description="RTL-backed mlp_core range-safety proofs around MAC enables, selector validity, and boundary guard reads.",
-            top="formal_mlp_core_range_safety",
-            harness=rtl_dir / "mlp_core" / "formal_mlp_core_range_safety.sv",
-            depth=82,
-            assumptions=[
-                "Reset is asserted for the initial step, then released permanently.",
-                "start is high on the single accept cycle immediately after reset release.",
-                "start is low for the remainder of the bounded transaction window.",
-                "The proof is bounded to one transaction so hidden and output boundaries are both exercised.",
-            ],
-            properties=[
-                "do_mac_hidden implies input_idx < 4 and hits real input/weight selector cases",
-                "do_mac_output implies input_idx < 8 and hits real hidden/weight selector cases",
-                "hidden guard cycle at input_idx == 4 misses the hidden selector/ROM cases and drives mac_a to zero",
-                "output guard cycle at input_idx == 8 misses the output selector/ROM cases and drives mac_a to zero",
-                "MAC_OUTPUT operates with hidden_idx == 0 throughout the output phase",
-            ],
-            rtl_sources=RTL_SOURCES,
-        ),
-        FormalJob(
-            name="mlp_core_transaction_capture",
-            family="transaction_capture",
-            description="RTL-backed proof that an accepted start captures in0..in3 into the transaction state and keeps them stable.",
-            top="formal_mlp_core_transaction_capture",
-            harness=rtl_dir / "mlp_core" / "formal_mlp_core_transaction_capture.sv",
-            depth=82,
-            assumptions=[
-                "Reset is asserted for the initial step, then released permanently.",
-                "start is high on the single accept cycle immediately after reset release.",
-                "start is low for the remainder of the bounded transaction window.",
-                "The environment may change in0..in3 after acceptance, so stability must come from the captured input_regs.",
-            ],
-            properties=[
-                "LOAD_INPUT is reached after the accepted start and asserts the top-level load pulse",
-                "LOAD_INPUT samples in0..in3 into input_regs on the transaction boundary",
-                "The captured input_regs remain stable for the rest of the bounded transaction",
-                "The load step clears acc_reg, resets the visible indices, and clears out_bit",
-            ],
-            rtl_sources=RTL_SOURCES,
-        ),
-        FormalJob(
-            name="mlp_core_bounded_latency",
-            family="bounded_latency",
-            description="RTL-backed exact-latency proof for the single-transaction mlp_core trace.",
-            top="formal_mlp_core_latency",
-            harness=rtl_dir / "mlp_core" / "formal_mlp_core_latency.sv",
-            depth=82,
-            assumptions=[
-                "Initial visible state is IDLE with hidden_idx = 0 and input_idx = 0 because reset is asserted.",
-                "start is sampled high only on the accept cycle immediately after reset release.",
-                "start stays low afterward so DONE can release back to IDLE.",
-                "No reset is applied during the bounded transaction window after acceptance.",
-            ],
-            properties=[
-                "the accepted transaction is not done early",
-                "busy stays high throughout the active window",
-                "done becomes visible exactly 76 cycles after the accept cycle",
-                "the design returns to IDLE one cycle after DONE when start is low",
-            ],
-            rtl_sources=RTL_SOURCES,
+        *mlp_core_jobs(
+            BASELINE_RTL_SOURCES,
+            description_prefix="RTL-backed",
         ),
     ]
+
+
+def branch_rtl_sources(branch: str) -> list[Path]:
+    if branch == "rtl-formalize-synthesis":
+        return SPARKLE_RTL_SOURCES
+    return BASELINE_RTL_SOURCES
 
 
 def build_yosys_script(job: FormalJob, smt2_path: Path) -> str:
@@ -204,8 +240,15 @@ def build_yosys_script(job: FormalJob, smt2_path: Path) -> str:
     ) + "\n"
 
 
-def run_job(job: FormalJob, yosys_bin: str, smtbmc_bin: str, solver_bin: str) -> FormalResult:
-    job_dir = FORMAL_BUILD_DIR / job.name
+def run_job(
+    job: FormalJob,
+    yosys_bin: str,
+    smtbmc_bin: str,
+    solver_bin: str,
+    *,
+    build_dir: Path,
+) -> FormalResult:
+    job_dir = build_dir / job.name
     job_dir.mkdir(parents=True, exist_ok=True)
 
     yosys_script = job_dir / "run.ys"
@@ -281,6 +324,12 @@ def run_job(job: FormalJob, yosys_bin: str, smtbmc_bin: str, solver_bin: str) ->
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run RTL-backed SMT control checks with Yosys and yosys-smtbmc.")
     parser.add_argument(
+        "--branch",
+        choices=sorted(DEFAULT_SUMMARIES),
+        default="rtl",
+        help="Which RTL branch/source set to validate.",
+    )
+    parser.add_argument(
         "--yosys",
         default=shutil.which("yosys") or "yosys",
         help="Path to the yosys binary.",
@@ -304,7 +353,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--summary",
         type=Path,
-        default=DEFAULT_SUMMARY,
+        default=None,
         help="JSON path for the pass/fail summary.",
     )
     return parser.parse_args()
@@ -314,13 +363,20 @@ def main() -> int:
     args = parse_args()
     if args.solver_alias:
         args.solver = args.solver_alias
+    if args.summary is None:
+        args.summary = DEFAULT_SUMMARIES[args.branch]
 
     for tool in (args.yosys, args.smtbmc, args.solver):
         if not tool_exists(tool):
             raise SystemExit(f"missing required tool: {tool}")
 
-    FORMAL_BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    results = [run_job(job, args.yosys, args.smtbmc, args.solver) for job in formal_jobs()]
+    formal_build_dir = FORMAL_BUILD_ROOT / args.branch
+    formal_build_dir.mkdir(parents=True, exist_ok=True)
+    jobs = formal_jobs(args.branch)
+    results = [
+        run_job(job, args.yosys, args.smtbmc, args.solver, build_dir=formal_build_dir)
+        for job in jobs
+    ]
     overall_result = "pass" if all(item.result == "pass" for item in results) else "fail"
 
     yosys_version = tool_version([args.yosys, "-V"])
@@ -329,6 +385,7 @@ def main() -> int:
 
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "branch": args.branch,
         "overall_result": overall_result,
         "tool": {
             "driver": "python3 smt/rtl/check_control.py",
@@ -339,14 +396,14 @@ def main() -> int:
             "solver": str(args.solver),
             "solver_version": solver_version,
             "command": (
-                f"python3 smt/rtl/check_control.py --yosys {args.yosys} "
+                f"python3 smt/rtl/check_control.py --branch {args.branch} --yosys {args.yosys} "
                 f"--smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
             ),
         },
         "sources": {
-            "rtl": [relative(path) for path in RTL_SOURCES],
-            "specs": SPEC_SOURCES,
-            "harnesses": [relative(job.harness) for job in formal_jobs()],
+            "rtl": [relative(path) for path in branch_rtl_sources(args.branch)],
+            "specs": [*COMMON_SPEC_SOURCES, *BRANCH_SPEC_SOURCES[args.branch]],
+            "harnesses": [relative(job.harness) for job in jobs],
         },
         "results": [asdict(item) for item in results],
     }
@@ -355,7 +412,7 @@ def main() -> int:
     args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     for item in results:
-        print(f"{item.result.upper():4} {item.family} {item.name}")
+        print(f"{item.result.upper():4} {args.branch} {item.family} {item.name}")
     print(f"wrote {args.summary}")
     return 0 if overall_result == "pass" else 1
 

@@ -22,13 +22,15 @@ The current flow records two formal claims:
 - primary: bounded `82`-cycle closed-loop `mlp_core` mixed-path equivalence over a post-reset accepted transaction window, with the hand-written datapath driving both baseline and synthesized-controller assemblies
 - secondary: bounded `80`-cycle sampled controller-interface equivalence through `MAC_OUTPUT`, `BIAS_OUTPUT`, `DONE`, and `DONE` hold/release under `exact_schedule_v1`
 
+`experiments/run.py --family branch-compare` consumes the recorded `rtl_synthesis_summary.json` directly and surfaces both claims as maintained branch evidence before the shared top-level simulation steps. A passing mixed-path simulation run is not sufficient if either recorded formal step fails. The baseline-oriented internal-observability bench is recorded only as secondary non-gating evidence for branches that still preserve that surface.
+
 Generated outputs are written under `build/rtl-synthesis/spot/`.
 
 The committed compatibility wrapper lives in:
 
 - `experiments/rtl-synthesis/spot/controller_spot_compat.sv`
 
-That wrapper is paired with the build-generated `controller_spot_core.sv` and build-generated `controller.sv` alias for mixed-path simulation. The mixed-path simulation path reuses `simulations/rtl/testbench.sv`; there is no branch-local `rtl-synthesis` bench file.
+That wrapper is paired with the build-generated `controller_spot_core.sv` and build-generated `controller.sv` alias for mixed-path simulation. The mixed-path simulation path reuses `simulations/rtl/testbench.sv` as the maintained top-level bench; the optional internal-observability replay reuses `simulations/rtl/testbench_internal.sv`.
 
 The sampled controller-interface harness models reset at sampled clock boundaries. Sub-cycle async reset parity remains covered by the wrapper-focused tests and the mixed-path simulation regressions, not by the secondary controller-only claim.
 
@@ -39,6 +41,8 @@ Required external tools for `make rtl-synthesis`:
 - `yosys`
 - `yosys-smtbmc`
 - `z3`
+
+If any of those tools are unavailable, the experiment families skip the `rtl-synthesis` branch. There is no committed AIGER snapshot fallback in the maintained reporting path.
 
 Additional tools for `make rtl-synthesis-sim`:
 

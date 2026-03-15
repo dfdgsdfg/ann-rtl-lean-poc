@@ -1,6 +1,7 @@
 {
   "contract_weights": "contract/result/weights.json",
   "selected_epoch": 51,
-  "selected_run": "ann/results/latest",
-  "weights_quantized": "ann/results/latest/weights_quantized.json"
+  "selected_run": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51",
+  "selected_run_id": "relu_teacher_v2-seed20260312-epoch51",
+  "weights_quantized": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_quantized.json"
 }

@@ -100,6 +100,8 @@ def coerce_weights_payload(payload: dict[str, Any], *, label: str) -> dict[str, 
         normalized["dataset_version"] = _coerce_string(raw["dataset_version"], "dataset_version", label)
     if "training_seed" in raw:
         normalized["training_seed"] = _coerce_int(raw["training_seed"], "training_seed", label)
+    if "selected_run_id" in raw:
+        normalized["selected_run_id"] = _coerce_string(raw["selected_run_id"], "selected_run_id", label)
     if "selected_run" in raw:
         normalized["selected_run"] = _coerce_string(raw["selected_run"], "selected_run", label)
     if "selected_epoch" in raw:
@@ -120,6 +122,8 @@ def validate_quantized_source_payload(payload: dict[str, Any], *, label: str) ->
 def validate_analysis_payload(payload: dict[str, Any], *, label: str) -> dict[str, object]:
     raw = _require_mapping(payload, label)
     normalized = validate_quantized_source_payload(raw, label=label)
+    if "selected_run_id" not in normalized:
+        raise ValueError(f"{label} field 'selected_run_id' is required")
     if "selected_run" not in normalized:
         raise ValueError(f"{label} field 'selected_run' is required")
     if str(normalized["source"]) not in ANALYSIS_SOURCES:
@@ -134,6 +138,7 @@ def validate_analysis_payload(payload: dict[str, Any], *, label: str) -> dict[st
 def build_analysis_payload(
     quantized_payload: dict[str, Any],
     *,
+    selected_run_id: str,
     selected_run: str,
     source: str = "trained_selected_quantized",
 ) -> dict[str, object]:
@@ -152,6 +157,7 @@ def build_analysis_payload(
     payload: dict[str, object] = {
         "schema_version": SCHEMA_VERSION,
         "source": source,
+        "selected_run_id": selected_run_id,
         "selected_run": selected_run,
         "input_size": quantized["input_size"],
         "hidden_size": quantized["hidden_size"],
@@ -188,6 +194,7 @@ def validate_selected_run_metadata(payload: dict[str, Any], *, label: str = "sel
     if contract_weights is None:
         contract_weights = raw.get("analysis_weights")
     normalized: dict[str, object] = {
+        "selected_run_id": _coerce_string(raw.get("selected_run_id"), "selected_run_id", label),
         "selected_run": _coerce_string(raw.get("selected_run"), "selected_run", label),
         "weights_quantized": _coerce_string(raw.get("weights_quantized"), "weights_quantized", label),
         "contract_weights": _coerce_string(contract_weights, "contract_weights", label),

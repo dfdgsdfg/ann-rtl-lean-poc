@@ -17,6 +17,7 @@ def build_summary() -> dict[str, object]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source_contract": str(CONTRACT_PATH.relative_to(ROOT)),
         "schema_version": contract["schema_version"],
+        "selected_run_id": contract["selected_run_id"],
         "selected_run": contract["selected_run"],
         "selected_epoch": contract["selected_epoch"],
         "source": contract["source"],

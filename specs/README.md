@@ -39,7 +39,7 @@ Cross-cutting verification complement:
 Optional proof-automation complement:
 `formalize -> formalize-smt`
 
-The `simulations` and `experiments` specs should state the generation, integration, and validation scopes for each RTL branch:
+The `simulations` and `experiments` specs should state the generation, integration, and validation scopes for each RTL branch. Branch-facing reports may spell those same boundaries through `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method`, but they should not hide the underlying scope split:
 
 - `rtl/`: full-core generation, full-core integration, and full-core validation at `mlp_core`
 - `rtl-synthesis`: controller generation with mixed-path `mlp_core` integration and mixed-path-primary validation unless a wider generated replacement is declared

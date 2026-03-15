@@ -59,22 +59,26 @@ The clean experiment is to synthesize a controller equivalent to `rtl/src/contro
 
 In the current repository terminology this means:
 
-- `generation_scope = controller`
-- `integration_scope = mixed-path mlp_core`
-- `validation_scope = mixed-path mlp_core` for the primary claim, with controller-scoped comparison as secondary evidence
+- `artifact_kind = generated_controller_rtl`
+- `assembly_boundary = mixed_path_mlp_core`
+- `evidence_boundary = shared_full_core_top_level_bench` for the primary regression claim, with controller-scoped formal comparison and the internal-observability bench recorded as secondary evidence
+- `evidence_method = closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression`
 
 Recommended flow:
 
 1. encode the controller handshake and phase-ordering contract in a reactive-synthesis-friendly form
 2. synthesize a controller candidate
 3. translate or wrap the result into a Verilog/SystemVerilog-compatible controller module
-4. run the existing simulation vectors against the combined design
-5. compare timing and QoR against the hand-written controller
+4. record both the primary closed-loop `mlp_core` proof and the secondary controller-scoped proof in the fresh-flow summary
+5. run the existing simulation vectors against the combined design
+6. compare timing and QoR against the hand-written controller
 
 This keeps the research question sharp:
 
 - can a synthesized controller satisfy the same reactive contract?
 - what is the cost relative to the hand-written FSM?
+
+Maintained reporting should consume the fresh-flow summary directly. If the required synthesis/proof toolchain is unavailable, this track should be marked `skip` rather than revived through a committed snapshot fallback.
 
 ## Success Criteria
 

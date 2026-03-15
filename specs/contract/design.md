@@ -31,7 +31,7 @@ The contract step should be scriptable with one simple command that freezes a se
 A practical command shape is:
 
 ```text
-python3 -m contract.src.freeze --run-dir ann/results/latest
+python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
 ```
 
 To validate an existing frozen contract without rewriting:
@@ -92,7 +92,8 @@ The `contract` domain must own all code it needs to validate, freeze, and genera
 
 The interface between `ann` and `contract` is the file system:
 
-- `ann` writes `ann/results/latest/weights_quantized.json` (and other training artifacts)
-- `contract` reads that file and produces `contract/result/weights.json` plus downstream generated files
+- `ann` writes immutable run artifacts under `ann/results/runs/<run_id>/...`
+- `ann/results/selected_run.json` records which immutable run is canonical
+- `contract` reads that selected immutable run and produces `contract/result/weights.json` plus downstream generated files
 
 Low-level utilities such as integer range checking may be duplicated across domains. This small duplication is preferable to a code-level coupling that would prevent the two domains from being tested and reasoned about independently.

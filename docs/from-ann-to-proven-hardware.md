@@ -533,22 +533,24 @@ graph LR
 
 ### What Is Proved
 
-[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) still proves controller-level theorems only:
+[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) now exposes both the controller bridge and a full-core sampled-view theorem:
 
 - `controllerPhaseNextComb_refines_timedControlStep`
 - `canonicalControllerView_refines_timedControlTrace`
+- `canonicalMlpCoreView_refines_rtlTrace`
 
-Those theorems connect the pure controller semantics in `formalize/` to the Sparkle Signal DSL controller view used inside the generated design. They do not yet constitute a full-core theorem for the emitted `mlp_core`.
+These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the Sparkle Signal DSL full-core observables used by the generated design.
 
 ### What Is Trusted
 
-The Sparkle-to-Verilog backend remains trusted code generation. The repository also trusts the manual wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus.
+The Sparkle-to-Verilog backend remains trusted code generation. The repository also trusts the generated wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus.
 
 ### What Is Validated
 
 The emitted full-core Sparkle RTL is validated by:
 
 - the shared `mlp_core` simulation bench over the committed vector suite
+- the wrapper-backed Sparkle SMT proof set in `smt/rtl/check_control.py --branch rtl-formalize-synthesis`
 - branch-comparison runs against the hand-written baseline
 - QoR and downstream synthesis characterization over the same top-level boundary
 
@@ -558,7 +560,7 @@ This is stronger than the retired controller-only wrapper experiment at the inte
 
 The generated artifact now covers the full `mlp_core` boundary, including controller and datapath state. The repository no longer maintains a separate controller-only Sparkle flow.
 
-The proof boundary is still below the emitted full-core RTL: the current Lean refinement stops at controller semantics, and the wrapper bus mapping plus Sparkle backend remain trusted. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for the intended full-core proof direction.
+The proof boundary is still below the emitted full-core RTL: the Lean refinement stops at Signal DSL semantics, and the wrapper bus mapping plus Sparkle backend remain trusted. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for that boundary.
 
 ## 10. The Verification Surface
 

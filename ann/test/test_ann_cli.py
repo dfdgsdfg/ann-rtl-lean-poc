@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from argparse import Namespace
 from pathlib import Path
+from unittest.mock import patch
 
 from ann.cli import __main__ as ann_cli
 from ann.src import evaluate as ann_evaluate
@@ -12,7 +13,8 @@ from ann.src import train as ann_train
 
 
 ROOT = Path(__file__).resolve().parents[2]
-LATEST_QUANTIZED = ROOT / "ann" / "results" / "latest" / "weights_quantized.json"
+SELECTED_RUN_DIR = ROOT / "ann" / "results" / "runs" / "relu_teacher_v2-seed20260312-epoch51"
+SELECTED_QUANTIZED = SELECTED_RUN_DIR / "weights_quantized.json"
 
 
 def _integral_float_weights_payload() -> dict[str, object]:
@@ -33,15 +35,21 @@ class AnnCliRegressionTests(unittest.TestCase):
             ann_train.train(Namespace(train_size=0, val_size=1))
 
     def test_evaluate_payload_rejects_empty_selected_split(self) -> None:
-        payload, kind, _ = ann_evaluate.load_evaluation_payload(run_dir=LATEST_QUANTIZED.parent, artifact="quantized")
+        payload, kind, _ = ann_evaluate.load_evaluation_payload(run_dir=SELECTED_QUANTIZED.parent, artifact="quantized")
         with self.assertRaisesRegex(ValueError, "split 'train' is empty"):
             ann_evaluate.evaluate_payload(payload, kind=kind, train_size=0, val_size=1, split="train")
 
     def test_evaluate_payload_allows_zero_unused_split(self) -> None:
-        payload, kind, _ = ann_evaluate.load_evaluation_payload(run_dir=LATEST_QUANTIZED.parent, artifact="quantized")
+        payload, kind, _ = ann_evaluate.load_evaluation_payload(run_dir=SELECTED_QUANTIZED.parent, artifact="quantized")
         result = ann_evaluate.evaluate_payload(payload, kind=kind, train_size=0, val_size=1, split="all")
         self.assertEqual(result["weights_kind"], "quantized")
         self.assertEqual(result["example_count"], 1)
+
+    def test_default_run_dir_requires_selected_run_metadata(self) -> None:
+        missing_path = ROOT / "build" / "missing-selected-run.json"
+        with patch.object(ann_evaluate, "SELECTED_RUN_PATH", missing_path):
+            with self.assertRaisesRegex(FileNotFoundError, "missing selected ANN run metadata"):
+                ann_evaluate.resolve_run_artifact(None, "quantized")
 
     def test_evaluation_helpers_reject_empty_lists(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires at least one example"):

@@ -55,7 +55,7 @@ If you already have a run directory with `weights_quantized.json`, you can freez
 
 ### 2. Freeze the contract
 
-Freeze using the currently recorded run if `ann/results/selected_run.json` exists and points to a valid run directory. If the metadata file does not exist, the CLI falls back to `ann/results/latest`. If the metadata file exists but points to a missing run, freeze fails instead of silently using `latest`.
+Freeze using the currently recorded immutable run if `ann/results/selected_run.json` exists and points to a valid `ann/results/runs/<run_id>` directory. If that metadata file is missing or invalid, freeze fails instead of guessing a mutable default.
 
 ```bash
 python3 -m contract.src.freeze
@@ -64,7 +64,7 @@ python3 -m contract.src.freeze
 Freeze an explicit run directory:
 
 ```bash
-python3 -m contract.src.freeze --run-dir ann/results/latest
+python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
 ```
 
 ### 3. Validate the current frozen contract

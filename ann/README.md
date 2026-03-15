@@ -10,11 +10,12 @@ The ANN flow trains a toy model, selects one quantized checkpoint, and freezes t
 
 Main outputs:
 
-- `ann/results/latest/weights_quantized.json`
-- `ann/results/latest/weights_float_selected.json`
-- `ann/results/latest/weights_float.json`
-- `ann/results/latest/metrics.json`
-- `ann/results/latest/training_summary.md`
+- `ann/results/runs/<run_id>/weights_quantized.json`
+- `ann/results/runs/<run_id>/weights_float_selected.json`
+- `ann/results/runs/<run_id>/weights_float.json`
+- `ann/results/runs/<run_id>/metrics.json`
+- `ann/results/runs/<run_id>/training_summary.md`
+- `ann/results/selected_run.json`
 - `contract/result/weights.json`
 
 `contract/result/weights.json` is the canonical downstream export.
@@ -60,13 +61,13 @@ make quantize ARGS="--artifact selected-float"
 Freeze a run into the canonical contract export:
 
 ```bash
-make export ARGS="--run-dir ann/results/latest"
+make export ARGS="--run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51"
 ```
 
 ## Typical Human Workflow
 
 1. Run `make train`
-2. Check `ann/results/latest/training_summary.md`
+2. Check `ann/results/selected_run.json` and the referenced `ann/results/runs/<run_id>/training_summary.md`
 3. Run `make evaluate ARGS="--artifact quantized"`
 4. If you trained into a custom run directory, freeze it with `make export ARGS="--run-dir ..."`
 
@@ -88,6 +89,7 @@ Repository defaults:
 - optimizer: `Adam`
 - batch size: `64`
 - epoch budget: `300`
+- canonical checked-in run: `ann/results/runs/relu_teacher_v2-seed20260312-epoch51`
 - early stopping patience: `20`
 - quantization: round half away from zero, then signed clipping
 

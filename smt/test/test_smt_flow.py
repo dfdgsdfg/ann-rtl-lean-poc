@@ -32,6 +32,7 @@ class SmtFlowTests(unittest.TestCase):
             exported = json.loads(output_path.read_text(encoding="utf-8"))
 
             self.assertEqual(exported["source_contract"], "contract/result/weights.json")
+            self.assertEqual(exported["selected_run_id"], "relu_teacher_v2-seed20260312-epoch51")
             self.assertEqual(exported["arithmetic"]["input_bits"], 8)
             self.assertEqual(exported["arithmetic"]["output_product_bits"], 24)
             self.assertEqual(exported["boundedness"]["status"], "verified")
@@ -51,22 +52,38 @@ class SmtFlowTests(unittest.TestCase):
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertIn("controller_interface", output)
+        self.assertIn("rtl controller_interface controller_interface", output)
+        self.assertIn("rtl-formalize-synthesis boundary_behavior mlp_core_boundary_behavior", output)
         self.assertIn("hidden_products_fit_int16", output)
         self.assertIn("out_bit_equivalent", output)
 
         rtl_summary = json.loads((ROOT / "build" / "smt" / "rtl_control_summary.json").read_text(encoding="utf-8"))
+        sparkle_summary = json.loads((ROOT / "build" / "smt" / "rtl_formalize_synthesis_summary.json").read_text(encoding="utf-8"))
         contract_summary = json.loads((ROOT / "build" / "smt" / "contract_assumptions.json").read_text(encoding="utf-8"))
         overflow_summary = json.loads((ROOT / "build" / "smt" / "contract_overflow_summary.json").read_text(encoding="utf-8"))
         equivalence_summary = json.loads((ROOT / "build" / "smt" / "contract_equivalence_summary.json").read_text(encoding="utf-8"))
 
+        self.assertEqual(rtl_summary["branch"], "rtl")
         self.assertEqual(rtl_summary["overall_result"], "pass")
+        self.assertEqual(sparkle_summary["branch"], "rtl-formalize-synthesis")
+        self.assertEqual(sparkle_summary["overall_result"], "pass")
         self.assertEqual(contract_summary["arithmetic"]["accumulator_bits"], 32)
         self.assertEqual(overflow_summary["overall_result"], "pass")
         self.assertEqual(equivalence_summary["overall_result"], "pass")
         self.assertEqual(
             {result["family"] for result in rtl_summary["results"]},
             {"controller_interface", "boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
+        )
+        self.assertEqual(
+            {result["family"] for result in sparkle_summary["results"]},
+            {"boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
+        )
+        self.assertEqual(
+            sparkle_summary["sources"]["rtl"],
+            [
+                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv",
+                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv",
+            ],
         )
         self.assertEqual(overflow_summary["encoding"]["contract_hidden_product_bits"], 16)
         self.assertEqual(overflow_summary["encoding"]["rtl_hidden_product_bits"], 24)

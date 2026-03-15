@@ -10,11 +10,11 @@ if __package__ in (None, ""):
         sys.path.insert(0, str(ROOT))
     from contract.src.artifacts import (
         CONTRACT_WEIGHTS_PATH,
-        LATEST_RESULTS_DIR,
         SELECTED_RUN_PATH,
         json_text,
         read_json,
         relative_to_root,
+        require_immutable_run_dir,
         resolve_metadata_path,
         write_text_files,
     )
@@ -24,11 +24,11 @@ if __package__ in (None, ""):
 else:
     from .artifacts import (
         CONTRACT_WEIGHTS_PATH,
-        LATEST_RESULTS_DIR,
         SELECTED_RUN_PATH,
         json_text,
         read_json,
         relative_to_root,
+        require_immutable_run_dir,
         resolve_metadata_path,
         write_text_files,
     )
@@ -39,11 +39,17 @@ else:
 
 def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
     if run_dir is not None:
-        return resolve_metadata_path(run_dir)
+        resolved, _ = require_immutable_run_dir(resolve_metadata_path(run_dir))
+        return resolved
 
     if SELECTED_RUN_PATH.exists():
         selected_meta = validate_selected_run_metadata(read_json(SELECTED_RUN_PATH))
-        candidate_dir = resolve_metadata_path(selected_meta["selected_run"])
+        candidate_dir, selected_run_id = require_immutable_run_dir(resolve_metadata_path(selected_meta["selected_run"]))
+        if selected_meta["selected_run_id"] != selected_run_id:
+            raise ValueError(
+                "selected run metadata does not match immutable run directory name: "
+                f"{selected_meta['selected_run_id']} != {selected_run_id}"
+            )
         if not candidate_dir.exists():
             raise FileNotFoundError(
                 "selected run metadata points to a missing run directory: "
@@ -51,11 +57,18 @@ def resolve_selected_run_dir(run_dir: Path | None = None) -> Path:
             )
         return candidate_dir
 
-    return LATEST_RESULTS_DIR
+    raise FileNotFoundError(
+        "missing selected ANN run metadata; pass --run-dir or refresh the canonical run selection first"
+    )
 
 
-def _selected_run_metadata_payload(selected_dir: Path, quantized_path: Path, contract_payload: dict[str, object]) -> dict[str, object]:
+def _selected_run_metadata_payload(
+    selected_dir: Path,
+    quantized_path: Path,
+    contract_payload: dict[str, object],
+) -> dict[str, object]:
     payload: dict[str, object] = {
+        "selected_run_id": contract_payload["selected_run_id"],
         "selected_run": relative_to_root(selected_dir),
         "weights_quantized": relative_to_root(quantized_path),
         "contract_weights": relative_to_root(CONTRACT_WEIGHTS_PATH),
@@ -67,6 +80,7 @@ def _selected_run_metadata_payload(selected_dir: Path, quantized_path: Path, con
 
 def freeze_contract(run_dir: Path | None = None) -> Path:
     selected_dir = resolve_selected_run_dir(run_dir)
+    selected_dir, selected_run_id = require_immutable_run_dir(selected_dir)
     quantized_path = selected_dir / "weights_quantized.json"
     if not quantized_path.exists():
         raise FileNotFoundError(f"missing quantized weights at {quantized_path}")
@@ -74,6 +88,7 @@ def freeze_contract(run_dir: Path | None = None) -> Path:
     quantized_payload = read_json(quantized_path)
     analysis_payload = build_analysis_payload(
         quantized_payload,
+        selected_run_id=selected_run_id,
         selected_run=relative_to_root(selected_dir),
     )
     selected_meta = _selected_run_metadata_payload(selected_dir, quantized_path, analysis_payload)
@@ -94,19 +109,33 @@ def freeze_contract(run_dir: Path | None = None) -> Path:
         }
     )
     write_text_files(pending_files)
-    validate_contract()
+    validate_canonical_contract_bundle()
     return CONTRACT_WEIGHTS_PATH
 
 
-def validate_contract() -> None:
+def validate_canonical_contract_bundle() -> None:
     contract_payload = validate_analysis_payload(read_json(CONTRACT_WEIGHTS_PATH), label="contract result")
     selected_meta = validate_selected_run_metadata(read_json(SELECTED_RUN_PATH))
+
+    contract_selected_dir, contract_selected_run_id = require_immutable_run_dir(
+        resolve_metadata_path(contract_payload["selected_run"])
+    )
+    if contract_payload["selected_run_id"] != contract_selected_run_id:
+        raise ValueError(
+            "contract result selected_run_id does not match immutable run directory name: "
+            f"{contract_payload['selected_run_id']} != {contract_selected_run_id}"
+        )
 
     expected_selected_run = str(contract_payload["selected_run"])
     if selected_meta["selected_run"] != expected_selected_run:
         raise ValueError(
             "selected run metadata does not match contract result: "
             f"{selected_meta['selected_run']} != {expected_selected_run}"
+        )
+    if selected_meta["selected_run_id"] != contract_payload["selected_run_id"]:
+        raise ValueError(
+            "selected run metadata does not match contract selected_run_id: "
+            f"{selected_meta['selected_run_id']} != {contract_payload['selected_run_id']}"
         )
 
     expected_contract_path = relative_to_root(CONTRACT_WEIGHTS_PATH)
@@ -127,9 +156,19 @@ def validate_contract() -> None:
     if not quantized_path.exists():
         raise FileNotFoundError(f"missing recorded quantized weights at {quantized_path}")
 
-    selected_dir = resolve_metadata_path(selected_meta["selected_run"])
+    selected_dir, selected_run_id = require_immutable_run_dir(resolve_metadata_path(selected_meta["selected_run"]))
+    if selected_run_id != selected_meta["selected_run_id"]:
+        raise ValueError(
+            "selected run metadata does not match immutable run directory name: "
+            f"{selected_meta['selected_run_id']} != {selected_run_id}"
+        )
     if not selected_dir.exists():
         raise FileNotFoundError(f"missing recorded selected run directory at {selected_dir}")
+    if selected_dir != contract_selected_dir:
+        raise ValueError(
+            "contract result selected_run does not match selected metadata immutable directory: "
+            f"{contract_selected_dir} != {selected_dir}"
+        )
 
     expected_quantized_path = selected_dir / "weights_quantized.json"
     if quantized_path.resolve() != expected_quantized_path.resolve():
@@ -140,6 +179,7 @@ def validate_contract() -> None:
 
     quantized_payload = build_analysis_payload(
         read_json(quantized_path),
+        selected_run_id=selected_meta["selected_run_id"],
         selected_run=selected_meta["selected_run"],
         source=str(contract_payload["source"]),
     )
@@ -161,6 +201,10 @@ def validate_contract() -> None:
             raise ValueError(f"generated contract artifact is out of sync: {generated_path}")
 
 
+def validate_contract() -> None:
+    validate_canonical_contract_bundle()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Freeze or validate the implementation contract")
     parser.add_argument("--run-dir", type=Path, default=None, help="Optional ANN run directory with weights_quantized.json")
@@ -171,7 +215,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.check:
-        validate_contract()
+        validate_canonical_contract_bundle()
         print("contract validation passed")
         return
 
