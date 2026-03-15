@@ -4,7 +4,9 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
+import stat
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -96,6 +98,7 @@ class CommandArtifact:
     command: str
     log: str
     artifacts: dict[str, str]
+    details: dict[str, object]
 
 
 def rooted_path(path: Path) -> Path:
@@ -114,6 +117,16 @@ def tool_exists(tool: str) -> bool:
     return Path(tool).exists() or shutil.which(tool) is not None
 
 
+def resolve_executable(tool: str) -> Path | None:
+    tool_path = Path(tool)
+    if tool_path.exists():
+        return tool_path.resolve()
+    resolved = shutil.which(tool)
+    if resolved is None:
+        return None
+    return Path(resolved).resolve()
+
+
 def first_output_line(proc: subprocess.CompletedProcess[str]) -> str:
     text = (proc.stdout + proc.stderr).strip()
     return text.splitlines()[0].strip() if text else "unknown"
@@ -121,12 +134,15 @@ def first_output_line(proc: subprocess.CompletedProcess[str]) -> str:
 
 def tool_version(commands: list[list[str]], fallback: str = "unknown") -> str:
     for command in commands:
-        proc = subprocess.run(
-            command,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        try:
+            proc = subprocess.run(
+                command,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        except OSError:
+            continue
         if proc.returncode == 0 and (proc.stdout or proc.stderr):
             return first_output_line(proc)
     return fallback
@@ -146,9 +162,22 @@ def tool_env(*tools: str) -> dict[str, str]:
     return env
 
 
+def prepend_path(env: dict[str, str], path: Path) -> dict[str, str]:
+    updated = env.copy()
+    current = updated.get("PATH", "")
+    updated["PATH"] = os.pathsep.join([str(path)] + ([current] if current else []))
+    return updated
+
+
 def write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding=encoding)
+
+
+def write_executable_shim(path: Path, command: list[str]) -> None:
+    quoted = " ".join(shlex.quote(part) for part in command)
+    write_text(path, f"#!/bin/sh\nexec {quoted} \"$@\"\n")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
 def run_command(command: list[str], *, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -191,6 +220,22 @@ def declared_symbol_lines() -> list[str]:
     lines = [f"i{idx} {name}" for idx, name in enumerate(ABSTRACT_INPUTS)]
     lines.extend(f"o{idx} {name}" for idx, name in enumerate(PHASE_OUTPUTS))
     return lines
+
+
+def prepare_solver_env(
+    *,
+    solver_name: str,
+    solver_bin: str,
+    launcher_dir: Path,
+    env: dict[str, str],
+) -> tuple[dict[str, str], str | None]:
+    resolved_solver = resolve_executable(solver_bin)
+    if resolved_solver is None or resolved_solver.name == solver_name:
+        return env, None
+
+    launcher_path = launcher_dir / solver_name
+    write_executable_shim(launcher_path, [str(resolved_solver)])
+    return prepend_path(env, launcher_dir), relative(launcher_path)
 
 
 def write_alias_module(path: Path, module_name: str, compat_module_name: str) -> None:
@@ -320,7 +365,7 @@ def build_closed_loop_script(
     joined = " ".join(relative(path) for path in verilog_sources)
     return "\n".join(
         [
-            f"read_verilog -DFORMAL -sv -formal {joined}",
+            f"read_verilog -sv -formal {joined}",
             "prep -top formal_closed_loop_mlp_core_equivalence",
             "async2sync",
             "dffunmap",
@@ -340,18 +385,22 @@ def run_equivalence_job(
     depth: int,
     yosys_bin: str,
     smtbmc_bin: str,
-    solver_bin: str,
+    solver_name: str,
     env: dict[str, str],
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, dict[str, object]]:
     write_text(script_path, script_text)
     yosys_proc = run_command([yosys_bin, "-q", "-s", str(script_path)], env=env)
     yosys_output = (yosys_proc.stdout + yosys_proc.stderr).strip()
     write_text(yosys_log, yosys_output + ("\n" if yosys_output else ""))
     if yosys_proc.returncode != 0:
         write_text(smtbmc_log, "")
-        return "error", relative(yosys_log), relative(smtbmc_log)
+        return (
+            "error",
+            relative(yosys_log),
+            relative(smtbmc_log),
+            {"reason": f"yosys exited with code {yosys_proc.returncode}"},
+        )
 
-    solver_name = Path(solver_bin).name
     smtbmc_proc = run_command(
         [
             smtbmc_bin,
@@ -367,10 +416,27 @@ def run_equivalence_job(
     smtbmc_output = (smtbmc_proc.stdout + smtbmc_proc.stderr).strip()
     write_text(smtbmc_log, smtbmc_output + ("\n" if smtbmc_output else ""))
     if "Status: PASSED" in smtbmc_output and smtbmc_proc.returncode == 0:
-        return "pass", relative(yosys_log), relative(smtbmc_log)
-    if "Status: FAILED" in smtbmc_output or smtbmc_proc.returncode != 0:
-        return "fail", relative(yosys_log), relative(smtbmc_log)
-    raise ValueError(f"{name} did not report PASSED or FAILED")
+        return "pass", relative(yosys_log), relative(smtbmc_log), {}
+    if "Status: FAILED" in smtbmc_output:
+        return (
+            "fail",
+            relative(yosys_log),
+            relative(smtbmc_log),
+            {"reason": "smt proof reported FAILED"},
+        )
+    if smtbmc_proc.returncode != 0:
+        return (
+            "error",
+            relative(yosys_log),
+            relative(smtbmc_log),
+            {"reason": f"yosys-smtbmc exited with code {smtbmc_proc.returncode}"},
+        )
+    return (
+        "error",
+        relative(yosys_log),
+        relative(smtbmc_log),
+        {"reason": f"{name} did not report PASSED or FAILED"},
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -401,6 +467,11 @@ def parse_args() -> argparse.Namespace:
         help="Path to the backend SMT solver binary.",
     )
     parser.add_argument(
+        "--solver-name",
+        default="z3",
+        help="Solver kind passed to yosys-smtbmc -s (for example: z3 or cvc5).",
+    )
+    parser.add_argument(
         "--build-dir",
         type=Path,
         default=DEFAULT_BUILD_DIR,
@@ -417,9 +488,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    for tool in (args.ltlsynt, args.syfco, args.yosys, args.smtbmc, args.solver):
-        if not tool_exists(tool):
-            raise SystemExit(f"missing required tool: {tool}")
 
     build_dir = rooted_path(args.build_dir)
     summary_path = rooted_path(args.summary)
@@ -429,6 +497,12 @@ def main() -> int:
     logs_dir.mkdir(parents=True, exist_ok=True)
 
     shared_env = tool_env(args.ltlsynt, args.syfco, args.yosys, args.smtbmc, args.solver)
+    shared_env, solver_launcher = prepare_solver_env(
+        solver_name=args.solver_name,
+        solver_bin=args.solver,
+        launcher_dir=generated_dir / "tool-shims",
+        env=shared_env,
+    )
 
     realisability_log = logs_dir / "ltlsynt_realisability.log"
     generate_log = logs_dir / "ltlsynt_generate.log"
@@ -452,86 +526,171 @@ def main() -> int:
     controller_equivalence_smt2 = generated_dir / "formal_controller_spot_equivalence.smt2"
     closed_loop_equivalence_smt2 = generated_dir / "formal_closed_loop_mlp_core_equivalence.smt2"
 
-    realisability_proc = run_command(
-        [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--realizability"],
-        env=shared_env,
-    )
-    realisability_output = (realisability_proc.stdout + realisability_proc.stderr).strip()
-    write_text(realisability_log, realisability_output + ("\n" if realisability_output else ""))
-    realisability = parse_realisability(realisability_output)
-
-    synthesis_result = "fail"
+    realisability = "unknown"
+    realisability_result = "skip"
+    realisability_details: dict[str, object] = {}
+    synthesis_result = "skip"
+    synthesis_details: dict[str, object] = {}
     translation_result = "skip"
+    translation_details: dict[str, object] = {}
     controller_equivalence_result = "skip"
+    controller_equivalence_details: dict[str, object] = {}
     closed_loop_equivalence_result = "skip"
+    closed_loop_equivalence_details: dict[str, object] = {}
 
-    if realisability_proc.returncode == 0 and realisability == "REALIZABLE":
-        generate_proc = run_command(
-            [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--aiger", "--verify", "--hide-status"],
+    tool_failures = [
+        tool
+        for tool in (args.ltlsynt, args.syfco, args.yosys, args.smtbmc, args.solver)
+        if not tool_exists(tool)
+    ]
+
+    if tool_failures:
+        missing = ", ".join(tool_failures)
+        realisability_result = "error"
+        realisability_details = {"reason": f"missing required tool(s): {missing}"}
+        synthesis_details = {"reason": "realisability step did not pass"}
+        translation_details = {"reason": "aiger generation step did not pass"}
+        controller_equivalence_details = {"reason": "yosys translation step did not pass"}
+        closed_loop_equivalence_details = {"reason": "yosys translation step did not pass"}
+        write_text(realisability_log, f"missing required tool(s): {missing}\n")
+        write_text(generate_log, "")
+        write_text(translate_log, "")
+        write_text(controller_equivalence_yosys_log, "")
+        write_text(controller_equivalence_smtbmc_log, "")
+        write_text(closed_loop_equivalence_yosys_log, "")
+        write_text(closed_loop_equivalence_smtbmc_log, "")
+    else:
+        realisability_proc = run_command(
+            [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--realizability"],
             env=shared_env,
         )
-        generate_output = (generate_proc.stdout or "") + (generate_proc.stderr or "")
-        write_text(generate_log, generate_output + ("\n" if generate_output and not generate_output.endswith("\n") else ""))
-        if generate_proc.returncode != 0:
-            synthesis_result = "fail"
+        realisability_output = (realisability_proc.stdout + realisability_proc.stderr).strip()
+        write_text(realisability_log, realisability_output + ("\n" if realisability_output else ""))
+        if realisability_proc.returncode != 0:
+            realisability_result = "error"
+            realisability_details = {"reason": f"ltlsynt exited with code {realisability_proc.returncode}"}
         else:
-            aiger_payload = extract_aiger_payload(generate_proc.stdout)
-            write_text(aiger_path, aiger_payload)
-            symbol_lines = extract_symbol_lines(aiger_payload) or declared_symbol_lines()
-            write_text(aiger_map_path, "\n".join(symbol_lines) + "\n")
-            synthesis_result = "pass"
-
-            write_text(translate_script, build_translate_script(aiger_path, aiger_map_path, generated_core_path))
-            translate_proc = run_command([args.yosys, "-q", "-s", str(translate_script)], env=shared_env)
-            translate_output = (translate_proc.stdout + translate_proc.stderr).strip()
-            write_text(translate_log, translate_output + ("\n" if translate_output else ""))
-            if translate_proc.returncode == 0 and generated_core_path.exists():
-                translation_result = "pass"
-                write_alias_module(controller_alias_path, "controller", "controller_spot_compat")
-                write_alias_module(generated_controller_copy, "generated_controller", "controller_spot_compat")
-                write_baseline_controller_copy(baseline_controller_copy)
-                write_mlp_core_copy(baseline_mlp_core_copy, "baseline_mlp_core", "baseline_controller")
-                write_mlp_core_copy(generated_mlp_core_copy, "generated_mlp_core", "generated_controller")
-
-                controller_equivalence_result, _, _ = run_equivalence_job(
-                    name="controller_interface_equivalence",
-                    script_path=controller_equivalence_script,
-                    script_text=build_controller_interface_script(generated_core_path, controller_equivalence_smt2),
-                    yosys_log=controller_equivalence_yosys_log,
-                    smtbmc_log=controller_equivalence_smtbmc_log,
-                    smt2_path=controller_equivalence_smt2,
-                    depth=SECONDARY_EQUIVALENCE_DEPTH,
-                    yosys_bin=args.yosys,
-                    smtbmc_bin=args.smtbmc,
-                    solver_bin=args.solver,
-                    env=shared_env,
-                )
-                closed_loop_equivalence_result, _, _ = run_equivalence_job(
-                    name="closed_loop_mlp_core_equivalence",
-                    script_path=closed_loop_equivalence_script,
-                    script_text=build_closed_loop_script(
-                        generated_core_path,
-                        baseline_controller_copy,
-                        generated_controller_copy,
-                        baseline_mlp_core_copy,
-                        generated_mlp_core_copy,
-                        closed_loop_equivalence_smt2,
-                    ),
-                    yosys_log=closed_loop_equivalence_yosys_log,
-                    smtbmc_log=closed_loop_equivalence_smtbmc_log,
-                    smt2_path=closed_loop_equivalence_smt2,
-                    depth=PRIMARY_EQUIVALENCE_DEPTH,
-                    yosys_bin=args.yosys,
-                    smtbmc_bin=args.smtbmc,
-                    solver_bin=args.solver,
-                    env=shared_env,
-                )
+            try:
+                realisability = parse_realisability(realisability_output)
+            except ValueError as exc:
+                realisability_result = "error"
+                realisability_details = {"reason": str(exc)}
             else:
-                translation_result = "fail"
+                if realisability == "REALIZABLE":
+                    realisability_result = "pass"
+                else:
+                    realisability_result = "fail"
+                    realisability_details = {"reported_status": realisability}
+
+        if realisability_result == "pass":
+            generate_proc = run_command(
+                [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--aiger", "--verify", "--hide-status"],
+                env=shared_env,
+            )
+            generate_output = (generate_proc.stdout or "") + (generate_proc.stderr or "")
+            write_text(generate_log, generate_output + ("\n" if generate_output and not generate_output.endswith("\n") else ""))
+            if generate_proc.returncode != 0:
+                synthesis_result = "fail"
+                synthesis_details = {"reason": f"ltlsynt exited with code {generate_proc.returncode}"}
+            else:
+                try:
+                    aiger_payload = extract_aiger_payload(generate_proc.stdout)
+                except ValueError as exc:
+                    synthesis_result = "error"
+                    synthesis_details = {"reason": str(exc)}
+                else:
+                    write_text(aiger_path, aiger_payload)
+                    symbol_lines = extract_symbol_lines(aiger_payload) or declared_symbol_lines()
+                    write_text(aiger_map_path, "\n".join(symbol_lines) + "\n")
+                    synthesis_result = "pass"
+
+            if synthesis_result == "pass":
+                write_text(translate_script, build_translate_script(aiger_path, aiger_map_path, generated_core_path))
+                translate_proc = run_command([args.yosys, "-q", "-s", str(translate_script)], env=shared_env)
+                translate_output = (translate_proc.stdout + translate_proc.stderr).strip()
+                write_text(translate_log, translate_output + ("\n" if translate_output else ""))
+                if translate_proc.returncode == 0 and generated_core_path.exists():
+                    translation_result = "pass"
+                    write_alias_module(controller_alias_path, "controller", "controller_spot_compat")
+                    write_alias_module(generated_controller_copy, "generated_controller", "controller_spot_compat")
+                    write_baseline_controller_copy(baseline_controller_copy)
+                    write_mlp_core_copy(baseline_mlp_core_copy, "baseline_mlp_core", "baseline_controller")
+                    write_mlp_core_copy(generated_mlp_core_copy, "generated_mlp_core", "generated_controller")
+
+                    (
+                        controller_equivalence_result,
+                        _,
+                        _,
+                        controller_equivalence_details,
+                    ) = run_equivalence_job(
+                        name="controller_interface_equivalence",
+                        script_path=controller_equivalence_script,
+                        script_text=build_controller_interface_script(generated_core_path, controller_equivalence_smt2),
+                        yosys_log=controller_equivalence_yosys_log,
+                        smtbmc_log=controller_equivalence_smtbmc_log,
+                        smt2_path=controller_equivalence_smt2,
+                        depth=SECONDARY_EQUIVALENCE_DEPTH,
+                        yosys_bin=args.yosys,
+                        smtbmc_bin=args.smtbmc,
+                        solver_name=args.solver_name,
+                        env=shared_env,
+                    )
+                    (
+                        closed_loop_equivalence_result,
+                        _,
+                        _,
+                        closed_loop_equivalence_details,
+                    ) = run_equivalence_job(
+                        name="closed_loop_mlp_core_equivalence",
+                        script_path=closed_loop_equivalence_script,
+                        script_text=build_closed_loop_script(
+                            generated_core_path,
+                            baseline_controller_copy,
+                            generated_controller_copy,
+                            baseline_mlp_core_copy,
+                            generated_mlp_core_copy,
+                            closed_loop_equivalence_smt2,
+                        ),
+                        yosys_log=closed_loop_equivalence_yosys_log,
+                        smtbmc_log=closed_loop_equivalence_smtbmc_log,
+                        smt2_path=closed_loop_equivalence_smt2,
+                        depth=PRIMARY_EQUIVALENCE_DEPTH,
+                        yosys_bin=args.yosys,
+                        smtbmc_bin=args.smtbmc,
+                        solver_name=args.solver_name,
+                        env=shared_env,
+                    )
+                else:
+                    translation_result = "fail"
+                    if translate_proc.returncode != 0:
+                        translation_details = {"reason": f"yosys exited with code {translate_proc.returncode}"}
+                    else:
+                        translation_details = {"reason": "translated controller core was not written"}
+                    controller_equivalence_details = {"reason": "yosys translation step did not pass"}
+                    closed_loop_equivalence_details = {"reason": "yosys translation step did not pass"}
+            else:
+                write_text(translate_log, "")
+                translation_details = {"reason": "aiger generation step did not pass"}
+                controller_equivalence_details = {"reason": "yosys translation step did not pass"}
+                closed_loop_equivalence_details = {"reason": "yosys translation step did not pass"}
+        else:
+            write_text(generate_log, "")
+            write_text(translate_log, "")
+            synthesis_details = {"reason": "realisability step did not pass"}
+            translation_details = {"reason": "aiger generation step did not pass"}
+            controller_equivalence_details = {"reason": "yosys translation step did not pass"}
+            closed_loop_equivalence_details = {"reason": "yosys translation step did not pass"}
+
+        if controller_equivalence_result == "skip":
+            write_text(controller_equivalence_yosys_log, "")
+            write_text(controller_equivalence_smtbmc_log, "")
+        if closed_loop_equivalence_result == "skip":
+            write_text(closed_loop_equivalence_yosys_log, "")
+            write_text(closed_loop_equivalence_smtbmc_log, "")
 
     overall_result = "pass"
     for result in (
-        "pass" if realisability == "REALIZABLE" and realisability_proc.returncode == 0 else "fail",
+        realisability_result,
         synthesis_result,
         translation_result,
         controller_equivalence_result,
@@ -539,6 +698,19 @@ def main() -> int:
     ):
         if result != "pass":
             overall_result = "fail"
+            break
+
+    failure_reason = None
+    for details in (
+        realisability_details,
+        synthesis_details,
+        translation_details,
+        controller_equivalence_details,
+        closed_loop_equivalence_details,
+    ):
+        reason = details.get("reason")
+        if isinstance(reason, str) and reason:
+            failure_reason = reason
             break
 
     ltlsynt_version = tool_version([[args.ltlsynt, "--version"], [args.ltlsynt, "-h"]])
@@ -550,10 +722,11 @@ def main() -> int:
     results = [
         CommandArtifact(
             name="realisability",
-            result="pass" if realisability == "REALIZABLE" and realisability_proc.returncode == 0 else "fail",
+            result=realisability_result,
             command=f"{args.ltlsynt} --tlsf {TLSF_SOURCE} --realizability",
             log=relative(realisability_log),
             artifacts={},
+            details=realisability_details,
         ),
         CommandArtifact(
             name="aiger_generation",
@@ -564,6 +737,7 @@ def main() -> int:
                 "aiger": relative(aiger_path),
                 "aiger_map": relative(aiger_map_path),
             },
+            details=synthesis_details,
         ),
         CommandArtifact(
             name="yosys_translation",
@@ -577,14 +751,16 @@ def main() -> int:
                 "baseline_controller_copy": relative(baseline_controller_copy),
                 "baseline_mlp_core_copy": relative(baseline_mlp_core_copy),
                 "generated_mlp_core_copy": relative(generated_mlp_core_copy),
+                **({"solver_launcher": solver_launcher} if solver_launcher is not None else {}),
             },
+            details=translation_details,
         ),
         CommandArtifact(
             name="controller_interface_equivalence",
             result=controller_equivalence_result,
             command=(
                 f"{args.yosys} -q -s {relative(controller_equivalence_script)} && "
-                f"{args.smtbmc} -s {Path(args.solver).name} --presat -t {SECONDARY_EQUIVALENCE_DEPTH} "
+                f"{args.smtbmc} -s {args.solver_name} --presat -t {SECONDARY_EQUIVALENCE_DEPTH} "
                 f"{relative(controller_equivalence_smt2)}"
             ),
             log=relative(controller_equivalence_smtbmc_log),
@@ -593,13 +769,14 @@ def main() -> int:
                 "smt2": relative(controller_equivalence_smt2),
                 "harness": relative(FORMAL_INTERFACE_HARNESS),
             },
+            details=controller_equivalence_details,
         ),
         CommandArtifact(
             name="closed_loop_mlp_core_equivalence",
             result=closed_loop_equivalence_result,
             command=(
                 f"{args.yosys} -q -s {relative(closed_loop_equivalence_script)} && "
-                f"{args.smtbmc} -s {Path(args.solver).name} --presat -t {PRIMARY_EQUIVALENCE_DEPTH} "
+                f"{args.smtbmc} -s {args.solver_name} --presat -t {PRIMARY_EQUIVALENCE_DEPTH} "
                 f"{relative(closed_loop_equivalence_smt2)}"
             ),
             log=relative(closed_loop_equivalence_smtbmc_log),
@@ -608,6 +785,7 @@ def main() -> int:
                 "smt2": relative(closed_loop_equivalence_smt2),
                 "harness": relative(FORMAL_CLOSED_LOOP_HARNESS),
             },
+            details=closed_loop_equivalence_details,
         ),
     ]
 
@@ -618,6 +796,7 @@ def main() -> int:
         "primary_claim_scope": PRIMARY_CLAIM_SCOPE,
         "secondary_claim_scope": SECONDARY_CLAIM_SCOPE,
         "claim_scope": PRIMARY_CLAIM_SCOPE,
+        **({"failure_reason": failure_reason} if failure_reason is not None else {}),
         "tool": {
             "driver": "python3 rtl-synthesis/controller/run_flow.py",
             "ltlsynt": str(args.ltlsynt),
@@ -629,10 +808,12 @@ def main() -> int:
             "yosys_smtbmc": str(args.smtbmc),
             "yosys_smtbmc_version": smtbmc_version,
             "solver": str(args.solver),
+            "solver_name": args.solver_name,
             "solver_version": solver_version,
             "command": (
                 f"python3 rtl-synthesis/controller/run_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
-                f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --summary {relative(summary_path)}"
+                f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --solver-name {args.solver_name} "
+                f"--build-dir {relative(build_dir)} --summary {relative(summary_path)}"
             ),
         },
         "sources": {

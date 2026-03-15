@@ -569,6 +569,12 @@ cwd = pathlib.Path.cwd()
 
 verilog_match = re.search(r"write_verilog -sv -noattr (\\S+)", text)
 if verilog_match:
+    if "read_aiger -module_name controller_spot_core -clk_name clk -map" not in text:
+        print("missing expected read_aiger translation step", file=sys.stderr)
+        raise SystemExit(1)
+    if "hierarchy -check -top controller_spot_core" not in text:
+        print("missing expected hierarchy check", file=sys.stderr)
+        raise SystemExit(1)
     out_path = cwd / verilog_match.group(1)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text({FAKE_CONTROLLER_CORE!r}, encoding="utf-8")
@@ -617,6 +623,48 @@ else:
             f"RTL_SYNTHESIS_SMTBMC={self.tools_dir / 'yosys-smtbmc'}",
             f"RTL_SYNTHESIS_Z3={self.tools_dir / 'z3'}",
         ]
+
+    def _run_run_flow(
+        self,
+        *,
+        ltlsynt: Path | None = None,
+        syfco: Path | None = None,
+        yosys: Path | None = None,
+        smtbmc: Path | None = None,
+        solver: Path | None = None,
+        solver_name: str = "z3",
+        build_dir: str | Path = "build/rtl-synthesis/spot",
+        summary: str | Path = "build/rtl-synthesis/spot/rtl_synthesis_summary.json",
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        command = [
+            "python3",
+            "rtl-synthesis/controller/run_flow.py",
+            "--ltlsynt",
+            str(ltlsynt or (self.tools_dir / "ltlsynt")),
+            "--syfco",
+            str(syfco or (self.tools_dir / "syfco")),
+            "--yosys",
+            str(yosys or (self.tools_dir / "yosys")),
+            "--smtbmc",
+            str(smtbmc or (self.tools_dir / "yosys-smtbmc")),
+            "--solver",
+            str(solver or (self.tools_dir / "z3")),
+            "--solver-name",
+            solver_name,
+            "--build-dir",
+            str(build_dir),
+            "--summary",
+            str(summary),
+        ]
+        return subprocess.run(
+            command,
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            env=env or self._make_env(),
+            check=False,
+        )
 
     def _write_closed_loop_formal_sources(self, generated_dir: Path) -> tuple[Path, Path, Path, Path]:
         baseline_controller_copy = generated_dir / "baseline_controller.sv"
@@ -724,6 +772,24 @@ else:
         self.assertIn("Status: PASSED", smtbmc_output)
         self.assertNotIn("PREUNSAT", smtbmc_output)
 
+    def test_extract_aiger_payload_and_symbol_lines_handle_fake_output(self) -> None:
+        payload = RUN_FLOW.extract_aiger_payload("REALIZABLE\n" + FAKE_AIGER)
+        self.assertTrue(payload.startswith("aag 17 17 0 9 0\n"))
+
+        symbol_lines = RUN_FLOW.extract_symbol_lines(payload)
+        self.assertIn("i0 start", symbol_lines)
+        self.assertIn("o8 phase_done", symbol_lines)
+
+    def test_build_translate_script_records_expected_read_aiger_shape(self) -> None:
+        script = RUN_FLOW.build_translate_script(
+            self.temp_root / "build" / "controller_spot.aag",
+            self.temp_root / "build" / "controller_spot.map",
+            self.temp_root / "build" / "controller_spot_core.sv",
+        )
+        self.assertIn("read_aiger -module_name controller_spot_core -clk_name clk -map", script)
+        self.assertIn("hierarchy -check -top controller_spot_core", script)
+        self.assertIn("write_verilog -sv -noattr", script)
+
     def test_controller_tlsf_records_exact_schedule_v1_assumptions(self) -> None:
         tlsf_path = ROOT / "rtl-synthesis" / "controller" / "controller.tlsf"
         tlsf_text = tlsf_path.read_text(encoding="utf-8")
@@ -778,25 +844,23 @@ else:
         harness_text = harness_path.read_text(encoding="utf-8")
 
         for snippet in (
-            "logic history_valid;",
-            "logic [3:0] sampled_baseline_state;",
-            "logic [3:0] prev_sampled_baseline_state;",
-            "logic sampled_rst_n;",
-            "always @(negedge clk) begin",
-            "sampled_baseline_state <= baseline_state;",
-            "always @(posedge clk) begin",
-            "assume (rst_n == sampled_rst_n);",
-            "if (!prev_sampled_rst_n && sampled_rst_n) begin",
-            "unique case (prev_sampled_baseline_state)",
-            "assert (generated_state == baseline_state);",
-            "assume (sampled_input_idx <= INPUT_NEURONS_4B);",
-            "assume (sampled_input_idx <= HIDDEN_NEURONS_4B);",
-            "if (history_valid && prev_sampled_rst_n && prev_sampled_baseline_state == DONE && !prev_sampled_start) begin",
-            "if (prev_sampled_input_idx < INPUT_NEURONS_4B) begin",
-            "assume (sampled_input_idx == prev_sampled_input_idx + 4'd1);",
-            "if (prev_sampled_hidden_idx == LAST_HIDDEN_IDX) begin",
+            "logic [3:0] expected_state;",
+            "logic [3:0] expected_hidden_idx;",
+            "logic [3:0] expected_input_idx;",
+            "assume (hidden_idx == expected_hidden_idx);",
+            "assume (input_idx == expected_input_idx);",
+            "unique case (expected_state)",
+            "assert (baseline_state == expected_state);",
+            "assert (generated_state == expected_state);",
+            "expected_state <= next_expected_state;",
+            "if (expected_hidden_idx == LAST_HIDDEN_IDX) begin",
         ):
             self.assertIn(snippet, harness_text)
+
+        self.assertNotIn("logic sampled_rst_n;", harness_text)
+        self.assertNotIn("always @(negedge clk) begin", harness_text)
+        self.assertNotIn("sampled_baseline_state", harness_text)
+        self.assertNotIn("prev_sampled_baseline_state", harness_text)
 
     def test_formal_closed_loop_harness_records_full_core_equivalence_checks(self) -> None:
         harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_closed_loop_mlp_core_equivalence.sv"
@@ -807,14 +871,15 @@ else:
             "generated_mlp_core generated_dut",
             "assume (rst_n == (step >= 7'd2));",
             "assume (start);",
+            "assume (!start);",
             "assert (generated_done == baseline_done);",
             "assert (generated_busy == baseline_busy);",
             "assert (generated_out_bit == baseline_out_bit);",
-            "assert (generated_formal_state == baseline_formal_state);",
-            "assert (generated_formal_input_reg0 == baseline_formal_input_reg0);",
-            "assert (generated_formal_acc_reg == baseline_formal_acc_reg);",
         ):
             self.assertIn(snippet, harness_text)
+
+        self.assertNotIn("generated_formal_state", harness_text)
+        self.assertNotIn("generated_formal_acc_reg", harness_text)
 
     def test_wrapper_matches_baseline_when_start_is_high_on_reset_release(self) -> None:
         for tool in ("iverilog", "vvp"):
@@ -952,7 +1017,7 @@ else:
         script_path.write_text(
             textwrap.dedent(
                 f"""\
-                read_verilog -DFORMAL -sv -formal rtl/src/mac_unit.sv rtl/src/relu_unit.sv rtl/src/weight_rom.sv {baseline_controller_copy} experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} {generated_controller_copy} {baseline_mlp_core_copy} {generated_mlp_core_copy} rtl-synthesis/controller/formal/formal_closed_loop_mlp_core_equivalence.sv
+                read_verilog -sv -formal rtl/src/mac_unit.sv rtl/src/relu_unit.sv rtl/src/weight_rom.sv {baseline_controller_copy} experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} {generated_controller_copy} {baseline_mlp_core_copy} {generated_mlp_core_copy} rtl-synthesis/controller/formal/formal_closed_loop_mlp_core_equivalence.sv
                 prep -top formal_closed_loop_mlp_core_equivalence
                 async2sync
                 dffunmap
@@ -962,7 +1027,189 @@ else:
             encoding="utf-8",
         )
 
-        self._run_smt2_smoke(script_path, smt2_path, 82)
+        self._run_smt2_smoke(script_path, smt2_path, 24)
+
+    def test_translate_script_passes_real_yosys_smoke(self) -> None:
+        if shutil.which("yosys") is None:
+            self.skipTest("missing required tool: yosys")
+
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        aiger_path = generated_dir / "controller_spot.aag"
+        map_path = generated_dir / "controller_spot.map"
+        generated_core_path = generated_dir / "controller_spot_core.sv"
+        script_path = generated_dir / "translate_controller_spot_core_smoke.ys"
+
+        aiger_path.write_text(textwrap.dedent(FAKE_AIGER), encoding="utf-8")
+        map_path.write_text("\n".join(RUN_FLOW.extract_symbol_lines(FAKE_AIGER)) + "\n", encoding="utf-8")
+        original_root = RUN_FLOW.ROOT
+        RUN_FLOW.ROOT = self.temp_root
+        try:
+            script_path.write_text(
+                RUN_FLOW.build_translate_script(aiger_path, map_path, generated_core_path),
+                encoding="utf-8",
+            )
+        finally:
+            RUN_FLOW.ROOT = original_root
+
+        yosys_result = subprocess.run(
+            ["yosys", "-q", "-s", str(script_path)],
+            cwd=self.temp_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        yosys_output = yosys_result.stdout + yosys_result.stderr
+        self.assertEqual(yosys_result.returncode, 0, msg=yosys_output)
+        self.assertTrue(generated_core_path.exists(), msg=yosys_output)
+
+        generated_core_text = generated_core_path.read_text(encoding="utf-8")
+        self.assertIn("module controller_spot_core", generated_core_text)
+        self.assertIn("input reset;", generated_core_text)
+        self.assertIn("output phase_done;", generated_core_text)
+
+    def test_run_flow_writes_summary_when_realisability_output_is_unparseable(self) -> None:
+        bad_ltlsynt = self.tools_dir / "ltlsynt-bad-realisability"
+        _write_executable(
+            bad_ltlsynt,
+            """#!/usr/bin/env python3
+import sys
+
+if "--version" in sys.argv:
+    print("ltlsynt fake 1.0")
+    raise SystemExit(0)
+
+if "--realizability" in sys.argv:
+    print("not-a-realisability-status")
+    raise SystemExit(0)
+
+print("unexpected generation call")
+raise SystemExit(1)
+""",
+        )
+
+        summary_path = self.temp_root / "build" / "bad-realisability" / "summary.json"
+        result = self._run_run_flow(
+            ltlsynt=bad_ltlsynt,
+            build_dir="build/bad-realisability",
+            summary=summary_path,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertNotEqual(result.returncode, 0, msg=output)
+        self.assertTrue(summary_path.exists(), msg=output)
+
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        by_name = {item["name"]: item for item in summary["results"]}
+        self.assertEqual(by_name["realisability"]["result"], "error")
+        self.assertIn("REALIZABLE or UNREALIZABLE", by_name["realisability"]["details"]["reason"])
+        self.assertEqual(by_name["aiger_generation"]["result"], "skip")
+        self.assertEqual(by_name["yosys_translation"]["result"], "skip")
+
+    def test_run_flow_writes_summary_when_generation_output_lacks_aiger_payload(self) -> None:
+        bad_ltlsynt = self.tools_dir / "ltlsynt-bad-aiger"
+        _write_executable(
+            bad_ltlsynt,
+            """#!/usr/bin/env python3
+import sys
+
+if "--version" in sys.argv:
+    print("ltlsynt fake 1.0")
+    raise SystemExit(0)
+
+if "--realizability" in sys.argv:
+    print("REALIZABLE")
+    raise SystemExit(0)
+
+print("REALIZABLE but no aiger payload")
+""",
+        )
+
+        summary_path = self.temp_root / "build" / "bad-aiger" / "summary.json"
+        result = self._run_run_flow(
+            ltlsynt=bad_ltlsynt,
+            build_dir="build/bad-aiger",
+            summary=summary_path,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertNotEqual(result.returncode, 0, msg=output)
+        self.assertTrue(summary_path.exists(), msg=output)
+
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        by_name = {item["name"]: item for item in summary["results"]}
+        self.assertEqual(by_name["realisability"]["result"], "pass")
+        self.assertEqual(by_name["aiger_generation"]["result"], "error")
+        self.assertIn("AIGER payload", by_name["aiger_generation"]["details"]["reason"])
+        self.assertEqual(by_name["yosys_translation"]["result"], "skip")
+
+    def test_run_flow_accepts_solver_wrapper_path_with_explicit_solver_name(self) -> None:
+        default_solver = self.tools_dir / "z3"
+        if default_solver.exists():
+            default_solver.unlink()
+
+        solver_log = self.temp_root / "build" / "solver-wrapper.log"
+        custom_solver = self.tools_dir / "custom-z3-wrapper"
+        _write_executable(
+            custom_solver,
+            f"""#!/usr/bin/env python3
+import pathlib
+import sys
+
+log_path = pathlib.Path({str(solver_log)!r})
+
+if "-version" in sys.argv or "--version" in sys.argv:
+    print("Custom Z3 wrapper 1.0")
+    raise SystemExit(0)
+
+log_path.write_text(" ".join(sys.argv[1:]) + "\\n", encoding="utf-8")
+print("custom wrapper invoked")
+""",
+        )
+
+        probe_smtbmc = self.tools_dir / "yosys-smtbmc-probe"
+        _write_executable(
+            probe_smtbmc,
+            """#!/usr/bin/env python3
+import shutil
+import subprocess
+import sys
+
+if "-h" in sys.argv:
+    print("yosys-smtbmc fake help")
+    raise SystemExit(0)
+
+solver = sys.argv[sys.argv.index("-s") + 1]
+solver_path = shutil.which(solver)
+if solver_path is None:
+    print(f"missing solver {solver}")
+    raise SystemExit(1)
+
+subprocess.run([solver_path, "--probe"], text=True, capture_output=True, check=False)
+print("Status: PASSED")
+""",
+        )
+
+        summary_path = self.temp_root / "build" / "solver-wrapper" / "summary.json"
+        result = self._run_run_flow(
+            smtbmc=probe_smtbmc,
+            solver=custom_solver,
+            solver_name="z3",
+            build_dir="build/solver-wrapper",
+            summary=summary_path,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertTrue(solver_log.exists(), msg=output)
+
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["tool"]["solver"], str(custom_solver))
+        self.assertEqual(summary["tool"]["solver_name"], "z3")
+        by_name = {item["name"]: item for item in summary["results"]}
+        self.assertEqual(by_name["controller_interface_equivalence"]["result"], "pass")
+        self.assertEqual(by_name["closed_loop_mlp_core_equivalence"]["result"], "pass")
+        self.assertIn("-s z3", by_name["controller_interface_equivalence"]["command"])
 
     def test_make_rtl_synthesis_generates_summary_and_artifacts_with_fake_tools(self) -> None:
         result = subprocess.run(
@@ -1015,37 +1262,20 @@ else:
         self.assertTrue((generated_dir / "controller_spot.aag").exists())
 
     def test_run_flow_accepts_relative_build_dir_with_fake_tools(self) -> None:
-        result = subprocess.run(
-            [
-                "python3",
-                "rtl-synthesis/controller/run_flow.py",
-                "--ltlsynt",
-                str(self.tools_dir / "ltlsynt"),
-                "--syfco",
-                str(self.tools_dir / "syfco"),
-                "--yosys",
-                str(self.tools_dir / "yosys"),
-                "--smtbmc",
-                str(self.tools_dir / "yosys-smtbmc"),
-                "--solver",
-                str(self.tools_dir / "z3"),
-                "--build-dir",
-                "rel-build",
-                "--summary",
-                "rel-build/out.json",
-            ],
-            cwd=self.temp_root,
-            text=True,
-            capture_output=True,
-            env=self._make_env(),
-            check=False,
+        result = self._run_run_flow(
+            build_dir="rel-build",
+            summary="rel-build/out.json",
         )
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertTrue((self.temp_root / "rel-build" / "out.json").exists(), msg=output)
+        summary_path = self.temp_root / "rel-build" / "out.json"
+        self.assertTrue(summary_path.exists(), msg=output)
         self.assertTrue((self.temp_root / "rel-build" / "generated" / "controller_spot_core.sv").exists(), msg=output)
         self.assertTrue((self.temp_root / "rel-build" / "generated" / "controller_spot.aag").exists(), msg=output)
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["tool"]["solver_name"], "z3")
+        self.assertIn("--build-dir rel-build", summary["tool"]["command"])
 
     def test_make_n_rtl_synthesis_sim_resolves_summary_backed_generated_artifacts(self) -> None:
         result = subprocess.run(

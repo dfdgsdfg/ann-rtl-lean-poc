@@ -81,8 +81,12 @@ VENDOR_OPENLANE_DIR := $(abspath $(VENDOR_DIR)/OpenLane)
 VENDOR_LTLSYNT_BIN := $(VENDOR_SPOT_INSTALL_DIR)/bin/ltlsynt
 VENDOR_SYFCO_BIN := $(VENDOR_SYFCO_INSTALL_DIR)/bin/syfco
 VENDOR_OPENLANE_FLOW := $(VENDOR_OPENLANE_DIR)/flow.tcl
-SPARKLE_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle.lean \
-	$(wildcard $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/*.lean) \
+SPARKLE_EMIT_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/Emit.lean \
+	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/Types.lean \
+	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/ControllerSignal.lean \
+	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/ContractData.lean \
+	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/DatapathSignal.lean \
+	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/MlpCoreSignal.lean \
 	$(SPARKLE_PREPARE_SCRIPT) \
 	$(SPARKLE_PKG_DIR)/patches/sparkle-local.patch \
 	$(SPARKLE_PKG_DIR)/lakefile.lean \
@@ -189,11 +193,11 @@ $(SPARKLE_PREPARE_STAMP): $(SPARKLE_PREPARE_SCRIPT) $(SPARKLE_PATCH_FILE)
 
 rtl-formalize-synthesis-build: $(SPARKLE_PREPARE_STAMP)
 	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
-	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
+	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle
 
-$(SPARKLE_FULL_CORE_ARTIFACT): $(SPARKLE_SOURCES) | rtl-formalize-synthesis-build
+$(SPARKLE_FULL_CORE_ARTIFACT): $(SPARKLE_EMIT_SOURCES) | rtl-formalize-synthesis-prepare
 	@mkdir -p $(SPARKLE_GENERATED_DIR)
-	cd $(SPARKLE_PKG_DIR) && lake env lean src/TinyMLPSparkle/Emit.lean
+	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
 
 $(SPARKLE_FULL_CORE_WRAPPER): $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_WRAPPER_GENERATOR)
 	@mkdir -p $(SPARKLE_GENERATED_DIR)

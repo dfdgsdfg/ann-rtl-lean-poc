@@ -222,9 +222,10 @@ class ExperimentFlowTests(unittest.TestCase):
             )
             self.assertEqual(
                 [item["name"] for item in summary["results"]],
-                ["freeze_check", "sparkle_generated_core_freshness"],
+                ["freeze_check", "sparkle_generated_core_freshness", "sparkle_proof_source_status"],
             )
             self.assertTrue(all(item["result"] == "pass" for item in summary["results"]))
+            self.assertFalse(summary["results"][2]["details"]["proof_sources_newer_than_generated_core"])
 
     def test_semantic_closure_family_exports_lean_bridge(self) -> None:
         for tool in ("lake", "z3"):
@@ -646,13 +647,16 @@ class ExperimentFlowTests(unittest.TestCase):
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
-                patch.object(experiments_run, "sparkle_generated_full_core_sources", return_value=[source_path]),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
+                patch.object(experiments_run, "sparkle_generated_full_core_proof_sources", return_value=[source_path]),
                 patch.object(experiments_run, "prepare_branch_manifests", return_value={"rtl-formalize-synthesis": manifest}),
             ):
                 artifact_summary = experiments_run.run_artifact_consistency_family(args, build_root)
                 self.assertEqual(artifact_summary["overall_result"], "fail")
                 self.assertEqual(artifact_summary["results"][1]["name"], "sparkle_generated_core_freshness")
                 self.assertEqual(artifact_summary["results"][1]["result"], "fail")
+                self.assertEqual(artifact_summary["results"][2]["name"], "sparkle_proof_source_status")
+                self.assertTrue(artifact_summary["results"][2]["details"]["proof_sources_newer_than_generated_core"])
 
                 branch_summary = experiments_run.run_branch_compare_family(args, build_root)
                 self.assertEqual(branch_summary["overall_result"], "fail")
@@ -666,7 +670,7 @@ class ExperimentFlowTests(unittest.TestCase):
                 self.assertEqual(sparkle_qor["result"], "fail")
                 self.assertEqual(sparkle_qor["metrics"], empty_metrics)
                 self.assertEqual(sparkle_qor["metrics_basis"], experiments_run.QOR_METRICS_BASIS)
-                self.assertIn("older than the newest Sparkle source input", sparkle_qor["details"]["reason"])
+                self.assertIn("older than the newest Sparkle emit-source input", sparkle_qor["details"]["reason"])
 
                 post_synth_summary = experiments_run.run_post_synth_family(args, build_root)
                 self.assertEqual(post_synth_summary["overall_result"], "fail")
@@ -689,7 +693,7 @@ class ExperimentFlowTests(unittest.TestCase):
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
-                patch.object(experiments_run, "sparkle_generated_full_core_sources", return_value=[source_path]),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
             ):
                 step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
 
@@ -713,7 +717,7 @@ class ExperimentFlowTests(unittest.TestCase):
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
-                patch.object(experiments_run, "sparkle_generated_full_core_sources", return_value=[source_path, missing_dependency]),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path, missing_dependency]),
             ):
                 step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
 
@@ -734,7 +738,7 @@ class ExperimentFlowTests(unittest.TestCase):
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
-                patch.object(experiments_run, "sparkle_generated_full_core_sources", return_value=[source_path]),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
             ):
                 step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
 
@@ -755,7 +759,7 @@ class ExperimentFlowTests(unittest.TestCase):
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
-                patch.object(experiments_run, "sparkle_generated_full_core_sources", return_value=[source_path]),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
             ):
                 step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
 
@@ -763,12 +767,59 @@ class ExperimentFlowTests(unittest.TestCase):
             self.assertEqual(step["details"]["validation_failure_kind"], "wrapper_mismatch")
             self.assertIn("stable wrapper does not match", step["details"]["reason"])
 
-    def test_sparkle_generated_full_core_sources_include_emit_dependencies(self) -> None:
-        source_paths = {experiments_run.relative(path) for path in experiments_run.sparkle_generated_full_core_sources()}
+    def test_newer_sparkle_proof_source_is_reported_without_failing_status_step(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            stale_root = Path(tmpdir)
+            core_path = stale_root / "sparkle_mlp_core.sv"
+            proof_path = stale_root / "Refinement.lean"
+            core_path.write_text("// generated core\n", encoding="utf-8")
+            proof_path.write_text("-- newer proof source\n", encoding="utf-8")
+            os.utime(core_path, (10, 10))
+            os.utime(proof_path, (20, 20))
 
+            with (
+                patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
+                patch.object(experiments_run, "sparkle_generated_full_core_proof_sources", return_value=[proof_path]),
+            ):
+                step = experiments_run.make_sparkle_proof_source_status_step(stale_root / "proof_status.log")
+
+            self.assertEqual(step["result"], "pass")
+            self.assertTrue(step["details"]["proof_sources_newer_than_generated_core"])
+            self.assertIn("proof-only Sparkle sources are newer", step["details"]["reason"])
+
+    def test_missing_sparkle_proof_dependency_fails_proof_status_check(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            stale_root = Path(tmpdir)
+            core_path = stale_root / "sparkle_mlp_core.sv"
+            missing_proof = stale_root / "Refinement.lean"
+            core_path.write_text("// generated core\n", encoding="utf-8")
+
+            with (
+                patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
+                patch.object(experiments_run, "sparkle_generated_full_core_proof_sources", return_value=[missing_proof]),
+            ):
+                step = experiments_run.make_sparkle_proof_source_status_step(stale_root / "proof_status.log")
+
+            self.assertEqual(step["result"], "fail")
+            self.assertEqual(step["details"]["reason"], "missing Sparkle proof source or generated core dependency")
+            self.assertIn(experiments_run.relative(missing_proof), step["details"]["missing_paths"])
+
+    def test_sparkle_generated_full_core_emit_sources_include_emit_dependencies(self) -> None:
+        source_paths = {experiments_run.relative(path) for path in experiments_run.sparkle_generated_full_core_emit_sources()}
+
+        self.assertIn("rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean", source_paths)
+        self.assertIn("rtl-formalize-synthesis/src/TinyMLPSparkle/MlpCoreSignal.lean", source_paths)
         self.assertIn("rtl-formalize-synthesis/patches/sparkle-local.patch", source_paths)
         self.assertIn("rtl-formalize-synthesis/lean-toolchain", source_paths)
         self.assertIn("rtl-formalize-synthesis/lake-manifest.json", source_paths)
+        self.assertNotIn("rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean", source_paths)
+
+    def test_sparkle_generated_full_core_proof_sources_include_proof_dependencies(self) -> None:
+        source_paths = {experiments_run.relative(path) for path in experiments_run.sparkle_generated_full_core_proof_sources()}
+
+        self.assertIn("rtl-formalize-synthesis/src/TinyMLPSparkle.lean", source_paths)
+        self.assertIn("rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean", source_paths)
+        self.assertNotIn("rtl-formalize-synthesis/src/TinyMLPSparkle/Emit.lean", source_paths)
 
     def test_post_synth_family_skips_when_openlane_flow_missing(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:

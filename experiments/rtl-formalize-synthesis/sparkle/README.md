@@ -34,7 +34,7 @@ Boundary and trust profile:
 - internal observability: not required for this branch; the internal bench remains a baseline-oriented secondary check only
 - semantic baseline: `rtl/src/mlp_core.sv`
 - stable downstream module boundary: `sparkle_mlp_core_wrapper.sv`
-- proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the Sparkle Signal DSL full-core view; the Lean theorem stops at Signal DSL semantics
+- proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the actual Sparkle Signal DSL full-core state/view (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`); the Lean theorem stops at Signal DSL semantics
 - backend trust boundary: Sparkle-to-Verilog remains trusted code generation
 - RTL validation: shared `mlp_core` vector regression, branch-comparison summaries, branch-aware SMT checks, QoR characterization, and downstream synthesis flows
 
@@ -44,4 +44,5 @@ Wrapper mapping:
 - raw generated module: `TinyMLP_sparkleMlpCorePacked`
 - stable downstream module boundary: `mlp_core`
 - wrapper generation path: `make rtl-formalize-synthesis-emit` regenerates both the raw module and this stable wrapper from committed sources
+- artifact freshness policy: generated-core freshness is checked against emit inputs, while proof-only Lean drift is reported separately in artifact-consistency without gating branch freshness
 - current protection level: if Sparkle changes raw packing order, the generated wrapper, shared full-core regression, and branch-aware SMT flow should fail, but there is no separate structural proof of the wrapper bit slices

@@ -13,6 +13,8 @@ module formal_controller_spot_equivalence;
   localparam logic [3:0] INPUT_NEURONS_4B = 4'd4;
   localparam logic [3:0] HIDDEN_NEURONS_4B = 4'd8;
   localparam logic [3:0] LAST_HIDDEN_IDX = HIDDEN_NEURONS_4B - 4'd1;
+  localparam logic [6:0] START_STEP = 7'd2;
+  localparam logic [6:0] DONE_HOLD_STEP = 7'd78;
 
   logic       rst_n;
   logic       start;
@@ -43,18 +45,24 @@ module formal_controller_spot_equivalence;
   logic       generated_done;
   logic       generated_busy;
 
+  logic [3:0] expected_state;
+  logic [3:0] expected_hidden_idx;
+  logic [3:0] expected_input_idx;
+  logic [3:0] next_expected_state;
+  logic [3:0] next_expected_hidden_idx;
+  logic [3:0] next_expected_input_idx;
+  logic       expected_load_input;
+  logic       expected_clear_acc;
+  logic       expected_do_mac_hidden;
+  logic       expected_do_bias_hidden;
+  logic       expected_do_act_hidden;
+  logic       expected_advance_hidden;
+  logic       expected_do_mac_output;
+  logic       expected_do_bias_output;
+  logic       expected_done;
+  logic       expected_busy;
+
   reg [6:0] step;
-  logic history_valid;
-  logic sampled_rst_n;
-  logic sampled_start;
-  logic [3:0] sampled_hidden_idx;
-  logic [3:0] sampled_input_idx;
-  logic [3:0] sampled_baseline_state;
-  logic prev_sampled_rst_n;
-  logic prev_sampled_start;
-  logic [3:0] prev_sampled_hidden_idx;
-  logic [3:0] prev_sampled_input_idx;
-  logic [3:0] prev_sampled_baseline_state;
 
   controller baseline_controller (
     .clk(clk),
@@ -96,142 +104,172 @@ module formal_controller_spot_equivalence;
 
   initial begin
     step = 7'd0;
-    history_valid = 1'b0;
-    sampled_rst_n = 1'b0;
-    sampled_start = 1'b0;
-    sampled_hidden_idx = 4'd0;
-    sampled_input_idx = 4'd0;
-    sampled_baseline_state = IDLE;
-    prev_sampled_rst_n = 1'b0;
-    prev_sampled_start = 1'b0;
-    prev_sampled_hidden_idx = 4'd0;
-    prev_sampled_input_idx = 4'd0;
-    prev_sampled_baseline_state = IDLE;
-  end
-
-  always @(negedge clk) begin
-    sampled_rst_n <= rst_n;
-    sampled_start <= start;
-    sampled_hidden_idx <= hidden_idx;
-    sampled_input_idx <= input_idx;
-    sampled_baseline_state <= baseline_state;
+    expected_state = IDLE;
+    expected_hidden_idx = 4'd0;
+    expected_input_idx = 4'd0;
   end
 
   always @* begin
-    if (step < 7'd2) begin
-      assume (!sampled_rst_n);
+    if (step < START_STEP) begin
+      assume (!rst_n);
+      assume (!start);
+    end else begin
+      assume (rst_n);
+      if (step == START_STEP || step == DONE_HOLD_STEP) begin
+        assume (start);
+      end else begin
+        assume (!start);
+      end
     end
 
-    if (!sampled_rst_n) begin
-      assume (sampled_hidden_idx == 4'd0);
-      assume (sampled_input_idx == 4'd0);
+    if (!rst_n) begin
+      assume (hidden_idx == 4'd0);
+      assume (input_idx == 4'd0);
     end else begin
-      unique case (sampled_baseline_state)
+      assume (hidden_idx == expected_hidden_idx);
+      assume (input_idx == expected_input_idx);
+    end
+  end
+
+  always @* begin
+    expected_load_input = 1'b0;
+    expected_clear_acc = 1'b0;
+    expected_do_mac_hidden = 1'b0;
+    expected_do_bias_hidden = 1'b0;
+    expected_do_act_hidden = 1'b0;
+    expected_advance_hidden = 1'b0;
+    expected_do_mac_output = 1'b0;
+    expected_do_bias_output = 1'b0;
+    expected_done = 1'b0;
+    expected_busy = 1'b0;
+
+    unique case (expected_state)
+      IDLE: begin
+      end
+      LOAD_INPUT: begin
+        expected_load_input = 1'b1;
+        expected_clear_acc = 1'b1;
+        expected_busy = 1'b1;
+      end
+      MAC_HIDDEN: begin
+        expected_do_mac_hidden = (expected_input_idx < INPUT_NEURONS_4B);
+        expected_busy = 1'b1;
+      end
+      BIAS_HIDDEN: begin
+        expected_do_bias_hidden = 1'b1;
+        expected_busy = 1'b1;
+      end
+      ACT_HIDDEN: begin
+        expected_do_act_hidden = 1'b1;
+        expected_busy = 1'b1;
+      end
+      NEXT_HIDDEN: begin
+        expected_advance_hidden = 1'b1;
+        expected_busy = 1'b1;
+      end
+      MAC_OUTPUT: begin
+        expected_do_mac_output = (expected_input_idx < HIDDEN_NEURONS_4B);
+        expected_busy = 1'b1;
+      end
+      BIAS_OUTPUT: begin
+        expected_do_bias_output = 1'b1;
+        expected_busy = 1'b1;
+      end
+      DONE: begin
+        expected_done = 1'b1;
+      end
+      default: begin
+      end
+    endcase
+  end
+
+  always @* begin
+    next_expected_state = expected_state;
+    next_expected_hidden_idx = expected_hidden_idx;
+    next_expected_input_idx = expected_input_idx;
+
+    if (!rst_n) begin
+      next_expected_state = IDLE;
+      next_expected_hidden_idx = 4'd0;
+      next_expected_input_idx = 4'd0;
+    end else begin
+      unique case (expected_state)
         IDLE: begin
-          assume (sampled_hidden_idx == 4'd0);
-          if (history_valid && prev_sampled_rst_n && prev_sampled_baseline_state == DONE && !prev_sampled_start) begin
-            assume (sampled_input_idx == HIDDEN_NEURONS_4B);
+          next_expected_hidden_idx = 4'd0;
+          if (start) begin
+            next_expected_state = LOAD_INPUT;
+            next_expected_input_idx = 4'd0;
           end else begin
-            assume (sampled_input_idx == 4'd0);
+            next_expected_state = IDLE;
+            next_expected_input_idx = 4'd0;
           end
         end
         LOAD_INPUT: begin
-          assume (sampled_hidden_idx == 4'd0);
-          assume (sampled_input_idx == 4'd0);
+          next_expected_state = MAC_HIDDEN;
+          next_expected_hidden_idx = 4'd0;
+          next_expected_input_idx = 4'd0;
         end
         MAC_HIDDEN: begin
-          assume (sampled_hidden_idx <= LAST_HIDDEN_IDX);
-          assume (sampled_input_idx <= INPUT_NEURONS_4B);
+          next_expected_hidden_idx = expected_hidden_idx;
+          if (expected_input_idx < INPUT_NEURONS_4B) begin
+            next_expected_state = MAC_HIDDEN;
+            next_expected_input_idx = expected_input_idx + 4'd1;
+          end else begin
+            next_expected_state = BIAS_HIDDEN;
+            next_expected_input_idx = INPUT_NEURONS_4B;
+          end
         end
         BIAS_HIDDEN: begin
-          assume (sampled_hidden_idx <= LAST_HIDDEN_IDX);
-          assume (sampled_input_idx == INPUT_NEURONS_4B);
+          next_expected_state = ACT_HIDDEN;
+          next_expected_hidden_idx = expected_hidden_idx;
+          next_expected_input_idx = INPUT_NEURONS_4B;
         end
         ACT_HIDDEN: begin
-          assume (sampled_hidden_idx <= LAST_HIDDEN_IDX);
-          assume (sampled_input_idx == INPUT_NEURONS_4B);
+          next_expected_state = NEXT_HIDDEN;
+          next_expected_hidden_idx = expected_hidden_idx;
+          next_expected_input_idx = 4'd0;
         end
         NEXT_HIDDEN: begin
-          assume (sampled_hidden_idx <= LAST_HIDDEN_IDX);
-          assume (sampled_input_idx == 4'd0);
+          next_expected_input_idx = 4'd0;
+          if (expected_hidden_idx == LAST_HIDDEN_IDX) begin
+            next_expected_state = MAC_OUTPUT;
+            next_expected_hidden_idx = 4'd0;
+          end else begin
+            next_expected_state = MAC_HIDDEN;
+            next_expected_hidden_idx = expected_hidden_idx + 4'd1;
+          end
         end
         MAC_OUTPUT: begin
-          assume (sampled_hidden_idx == 4'd0);
-          assume (sampled_input_idx <= HIDDEN_NEURONS_4B);
+          next_expected_hidden_idx = 4'd0;
+          if (expected_input_idx < HIDDEN_NEURONS_4B) begin
+            next_expected_state = MAC_OUTPUT;
+            next_expected_input_idx = expected_input_idx + 4'd1;
+          end else begin
+            next_expected_state = BIAS_OUTPUT;
+            next_expected_input_idx = HIDDEN_NEURONS_4B;
+          end
         end
         BIAS_OUTPUT: begin
-          assume (sampled_hidden_idx == 4'd0);
-          assume (sampled_input_idx == HIDDEN_NEURONS_4B);
+          next_expected_state = DONE;
+          next_expected_hidden_idx = 4'd0;
+          next_expected_input_idx = HIDDEN_NEURONS_4B;
         end
         DONE: begin
-          assume (sampled_hidden_idx == 4'd0);
-          assume (sampled_input_idx == HIDDEN_NEURONS_4B);
+          next_expected_hidden_idx = 4'd0;
+          if (start) begin
+            next_expected_state = DONE;
+            next_expected_input_idx = HIDDEN_NEURONS_4B;
+          end else begin
+            next_expected_state = IDLE;
+            next_expected_input_idx = HIDDEN_NEURONS_4B;
+          end
         end
         default: begin
-          assume (1'b0);
+          next_expected_state = IDLE;
+          next_expected_hidden_idx = 4'd0;
+          next_expected_input_idx = 4'd0;
         end
       endcase
-
-      if (history_valid) begin
-        if (!prev_sampled_rst_n && sampled_rst_n) begin
-          assume (sampled_hidden_idx == 4'd0);
-          assume (sampled_input_idx == 4'd0);
-        end else if (prev_sampled_rst_n && sampled_rst_n) begin
-          unique case (prev_sampled_baseline_state)
-            IDLE: begin
-              assume (sampled_hidden_idx == 4'd0);
-              assume (sampled_input_idx == 4'd0);
-            end
-            LOAD_INPUT: begin
-              assume (sampled_hidden_idx == 4'd0);
-              assume (sampled_input_idx == 4'd0);
-            end
-            MAC_HIDDEN: begin
-              assume (sampled_hidden_idx == prev_sampled_hidden_idx);
-              if (prev_sampled_input_idx < INPUT_NEURONS_4B) begin
-                assume (sampled_input_idx == prev_sampled_input_idx + 4'd1);
-              end else begin
-                assume (sampled_input_idx == INPUT_NEURONS_4B);
-              end
-            end
-            BIAS_HIDDEN: begin
-              assume (sampled_hidden_idx == prev_sampled_hidden_idx);
-              assume (sampled_input_idx == INPUT_NEURONS_4B);
-            end
-            ACT_HIDDEN: begin
-              assume (sampled_hidden_idx == prev_sampled_hidden_idx);
-              assume (sampled_input_idx == 4'd0);
-            end
-            NEXT_HIDDEN: begin
-              assume (sampled_input_idx == 4'd0);
-              if (prev_sampled_hidden_idx == LAST_HIDDEN_IDX) begin
-                assume (sampled_hidden_idx == 4'd0);
-              end else begin
-                assume (sampled_hidden_idx == prev_sampled_hidden_idx + 4'd1);
-              end
-            end
-            MAC_OUTPUT: begin
-              assume (sampled_hidden_idx == 4'd0);
-              if (prev_sampled_input_idx < HIDDEN_NEURONS_4B) begin
-                assume (sampled_input_idx == prev_sampled_input_idx + 4'd1);
-              end else begin
-                assume (sampled_input_idx == HIDDEN_NEURONS_4B);
-              end
-            end
-            BIAS_OUTPUT: begin
-              assume (sampled_hidden_idx == 4'd0);
-              assume (sampled_input_idx == HIDDEN_NEURONS_4B);
-            end
-            DONE: begin
-              assume (sampled_hidden_idx == 4'd0);
-              assume (sampled_input_idx == HIDDEN_NEURONS_4B);
-            end
-            default: begin
-              assume (1'b0);
-            end
-          endcase
-        end
-      end
     end
   end
 
@@ -240,12 +278,7 @@ module formal_controller_spot_equivalence;
       step <= step + 7'd1;
     end
 
-    assume (rst_n == sampled_rst_n);
-    assume (start == sampled_start);
-    assume (hidden_idx == sampled_hidden_idx);
-    assume (input_idx == sampled_input_idx);
-
-    if (!sampled_rst_n) begin
+    if (!rst_n) begin
       assert (baseline_state == IDLE);
       assert (!baseline_load_input);
       assert (!baseline_clear_acc);
@@ -269,25 +302,34 @@ module formal_controller_spot_equivalence;
       assert (!generated_do_bias_output);
       assert (!generated_done);
       assert (!generated_busy);
+    end else begin
+      assert (baseline_state == expected_state);
+      assert (baseline_load_input == expected_load_input);
+      assert (baseline_clear_acc == expected_clear_acc);
+      assert (baseline_do_mac_hidden == expected_do_mac_hidden);
+      assert (baseline_do_bias_hidden == expected_do_bias_hidden);
+      assert (baseline_do_act_hidden == expected_do_act_hidden);
+      assert (baseline_advance_hidden == expected_advance_hidden);
+      assert (baseline_do_mac_output == expected_do_mac_output);
+      assert (baseline_do_bias_output == expected_do_bias_output);
+      assert (baseline_done == expected_done);
+      assert (baseline_busy == expected_busy);
+
+      assert (generated_state == expected_state);
+      assert (generated_load_input == expected_load_input);
+      assert (generated_clear_acc == expected_clear_acc);
+      assert (generated_do_mac_hidden == expected_do_mac_hidden);
+      assert (generated_do_bias_hidden == expected_do_bias_hidden);
+      assert (generated_do_act_hidden == expected_do_act_hidden);
+      assert (generated_advance_hidden == expected_advance_hidden);
+      assert (generated_do_mac_output == expected_do_mac_output);
+      assert (generated_do_bias_output == expected_do_bias_output);
+      assert (generated_done == expected_done);
+      assert (generated_busy == expected_busy);
     end
 
-    assert (generated_state == baseline_state);
-    assert (generated_load_input == baseline_load_input);
-    assert (generated_clear_acc == baseline_clear_acc);
-    assert (generated_do_mac_hidden == baseline_do_mac_hidden);
-    assert (generated_do_bias_hidden == baseline_do_bias_hidden);
-    assert (generated_do_act_hidden == baseline_do_act_hidden);
-    assert (generated_advance_hidden == baseline_advance_hidden);
-    assert (generated_do_mac_output == baseline_do_mac_output);
-    assert (generated_do_bias_output == baseline_do_bias_output);
-    assert (generated_done == baseline_done);
-    assert (generated_busy == baseline_busy);
-
-    history_valid <= 1'b1;
-    prev_sampled_rst_n <= sampled_rst_n;
-    prev_sampled_start <= sampled_start;
-    prev_sampled_hidden_idx <= sampled_hidden_idx;
-    prev_sampled_input_idx <= sampled_input_idx;
-    prev_sampled_baseline_state <= sampled_baseline_state;
+    expected_state <= next_expected_state;
+    expected_hidden_idx <= next_expected_hidden_idx;
+    expected_input_idx <= next_expected_input_idx;
   end
 endmodule

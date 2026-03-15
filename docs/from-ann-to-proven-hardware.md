@@ -533,13 +533,14 @@ graph LR
 
 ### What Is Proved
 
-[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) now exposes both the controller bridge and a full-core sampled-view theorem:
+[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) now exposes both the controller bridge and the direct full-core Sparkle theorems:
 
 - `controllerPhaseNextComb_refines_timedControlStep`
 - `canonicalControllerView_refines_timedControlTrace`
-- `canonicalMlpCoreView_refines_rtlTrace`
+- `sparkleMlpCoreState_refines_rtlTrace`
+- `sparkleMlpCoreView_refines_rtlTrace`
 
-These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the Sparkle Signal DSL full-core observables used by the generated design.
+These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the actual Sparkle Signal DSL full-core state and sampled observables used by the generated design. `canonicalMlpCoreView_refines_rtlTrace` remains available as a helper theorem over the canonical repackaging of the same pure trace.
 
 ### What Is Trusted
 

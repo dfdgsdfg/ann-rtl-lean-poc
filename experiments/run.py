@@ -565,14 +565,26 @@ def format_mtime_utc(path: Path) -> str:
     return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
 
 
-def sparkle_generated_full_core_sources() -> list[Path]:
+def sparkle_generated_full_core_emit_sources() -> list[Path]:
     return [
-        *sorted((SPARKLE_PROJECT_DIR / "src").rglob("*.lean")),
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Emit.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Types.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "ControllerSignal.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "ContractData.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "DatapathSignal.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "MlpCoreSignal.lean",
         SPARKLE_PATCH_PATH,
         SPARKLE_LEAN_TOOLCHAIN,
         SPARKLE_LAKE_MANIFEST,
         SPARKLE_LAKEFILE,
         SPARKLE_PREPARE_SCRIPT,
+    ]
+
+
+def sparkle_generated_full_core_proof_sources() -> list[Path]:
+    return [
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Refinement.lean",
     ]
 
 
@@ -617,11 +629,11 @@ def remove_if_exists(path: Path) -> None:
 
 def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, object]:
     ensure_dir(log_path.parent)
-    raw_source_paths = sparkle_generated_full_core_sources()
+    emit_source_paths = sparkle_generated_full_core_emit_sources()
     wrapper_input_paths = sparkle_generated_full_core_wrapper_inputs()
     tracked_paths = list(
         dict.fromkeys(
-            [SPARKLE_FULL_CORE_RTL, SPARKLE_FULL_CORE_WRAPPER, *raw_source_paths, *wrapper_input_paths]
+            [SPARKLE_FULL_CORE_RTL, SPARKLE_FULL_CORE_WRAPPER, *emit_source_paths, *wrapper_input_paths]
         )
     )
     missing_paths = [
@@ -633,7 +645,7 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
         "generated_core": relative(SPARKLE_FULL_CORE_RTL),
         "wrapper": relative(SPARKLE_FULL_CORE_WRAPPER),
         "wrapper_generator": relative(SPARKLE_WRAPPER_GENERATOR),
-        "source_count": len(raw_source_paths),
+        "source_count": len(emit_source_paths),
     }
     artifacts: dict[str, Path] = {}
     log_lines = [
@@ -678,7 +690,7 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
             details=details,
         )
 
-    if not raw_source_paths:
+    if not emit_source_paths:
         details["reason"] = "no Sparkle source dependencies were discovered for freshness checking"
         log_lines.extend(
             [
@@ -714,7 +726,7 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
             details=details,
         )
 
-    newest_source = max(raw_source_paths, key=lambda path: path.stat().st_mtime)
+    newest_source = max(emit_source_paths, key=lambda path: path.stat().st_mtime)
     wrapper_trigger = max(wrapper_input_paths, key=lambda path: path.stat().st_mtime)
     details["newest_source"] = relative(newest_source)
     details["newest_source_mtime_utc"] = format_mtime_utc(newest_source)
@@ -768,7 +780,7 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
 
     if SPARKLE_FULL_CORE_RTL.stat().st_mtime < newest_source.stat().st_mtime:
         details["reason"] = (
-            "checked-in Sparkle generated core is older than the newest Sparkle source input; "
+            "checked-in Sparkle generated core is older than the newest Sparkle emit-source input; "
             "regenerate with `make rtl-formalize-synthesis-emit`"
         )
         log_lines.extend(
@@ -799,6 +811,106 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
         name="sparkle_generated_core_freshness",
         result=result,
         command="internal Sparkle generated RTL freshness check",
+        log_path=log_path,
+        artifacts=artifacts,
+        details=details,
+    )
+
+
+def make_sparkle_proof_source_status_step(log_path: Path) -> dict[str, object]:
+    ensure_dir(log_path.parent)
+    proof_source_paths = sparkle_generated_full_core_proof_sources()
+    tracked_paths = list(dict.fromkeys([SPARKLE_FULL_CORE_RTL, *proof_source_paths]))
+    missing_paths = [
+        path
+        for path in tracked_paths
+        if not path.exists()
+    ]
+    details: dict[str, object] = {
+        "generated_core": relative(SPARKLE_FULL_CORE_RTL),
+        "proof_source_count": len(proof_source_paths),
+        "gating": False,
+    }
+    artifacts: dict[str, Path] = {}
+    log_lines = [
+        "Sparkle proof-source status check",
+        "",
+        f"generated core: {relative(SPARKLE_FULL_CORE_RTL)}",
+    ]
+
+    if SPARKLE_FULL_CORE_RTL.exists():
+        details["generated_core_mtime_utc"] = format_mtime_utc(SPARKLE_FULL_CORE_RTL)
+        artifacts["generated_core"] = SPARKLE_FULL_CORE_RTL
+        log_lines.append(f"generated core mtime (utc): {details['generated_core_mtime_utc']}")
+
+    if missing_paths:
+        details["reason"] = "missing Sparkle proof source or generated core dependency"
+        details["missing_paths"] = [relative(path) for path in missing_paths]
+        log_lines.extend(
+            [
+                "result: fail",
+                f"reason: {details['reason']}",
+                "missing paths:",
+                *[f"- {path}" for path in details["missing_paths"]],
+            ]
+        )
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_proof_source_status",
+            result="fail",
+            command="internal Sparkle proof-source status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    if not proof_source_paths:
+        details["reason"] = "no Sparkle proof-source dependencies were discovered for status checking"
+        log_lines.extend(
+            [
+                "result: fail",
+                f"reason: {details['reason']}",
+            ]
+        )
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_proof_source_status",
+            result="fail",
+            command="internal Sparkle proof-source status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    newest_proof_source = max(proof_source_paths, key=lambda path: path.stat().st_mtime)
+    details["newest_proof_source"] = relative(newest_proof_source)
+    details["newest_proof_source_mtime_utc"] = format_mtime_utc(newest_proof_source)
+    details["proof_sources_newer_than_generated_core"] = (
+        SPARKLE_FULL_CORE_RTL.stat().st_mtime < newest_proof_source.stat().st_mtime
+    )
+    artifacts["newest_proof_source"] = newest_proof_source
+    log_lines.append(f"newest proof source: {details['newest_proof_source']}")
+    log_lines.append(f"newest proof source mtime (utc): {details['newest_proof_source_mtime_utc']}")
+
+    if details["proof_sources_newer_than_generated_core"]:
+        details["reason"] = (
+            "proof-only Sparkle sources are newer than the checked-in generated core; this is reported "
+            "separately and does not gate emit freshness"
+        )
+        log_lines.extend(
+            [
+                "result: pass",
+                f"reason: {details['reason']}",
+            ]
+        )
+    else:
+        log_lines.append("result: pass")
+
+    write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+    return make_step(
+        name="sparkle_proof_source_status",
+        result="pass",
+        command="internal Sparkle proof-source status check",
         log_path=log_path,
         artifacts=artifacts,
         details=details,
@@ -1075,6 +1187,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         )
     ]
     results.append(make_sparkle_generated_core_freshness_step(logs_dir / "sparkle_generated_core_freshness.log"))
+    results.append(make_sparkle_proof_source_status_step(logs_dir / "sparkle_proof_source_status.log"))
     summary = {
         "generated_at_utc": timestamp_utc(),
         "family": "artifact-consistency",
@@ -1085,7 +1198,8 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         "evidence_method": "frozen_contract_consistency_check",
         "claim_scope": (
             "checked-in frozen contract and downstream artifacts remain synchronized without rewriting tracked "
-            "files, and the checked-in Sparkle full-core RTL is not stale relative to its Lean/source inputs"
+            "files, the checked-in Sparkle full-core RTL is not stale relative to its emit inputs, and "
+            "proof-source drift is reported separately without gating branch freshness"
         ),
         "tool_versions": {
             "python3": tool_version([["python3", "--version"]]),

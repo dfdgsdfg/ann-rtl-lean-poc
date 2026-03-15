@@ -143,7 +143,7 @@ For the SMT flow specifically, `make smt` expects:
 For the Sparkle full-core generation path, `make rtl-formalize-synthesis-build` expects:
 
 - `git` for the Sparkle prepare step
-- `lake` to build and emit the checked-in Sparkle full-core artifact and stable generated `mlp_core` wrapper
+- `lake` to build the full `TinyMLPSparkle` library, then emit the checked-in Sparkle full-core artifact and stable generated `mlp_core` wrapper
 
 On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 
@@ -259,7 +259,7 @@ SystemVerilog source for the tiny inference core.
 Reactive-synthesis source inputs, formal harnesses, and driver scripts for the controller experiment.
 
 - `rtl-formalize-synthesis/`
-Lean/Sparkle source for the generated full-core experiment branch, plus the current controller-level refinement bridge into the Signal DSL model.
+Lean/Sparkle source for the generated full-core experiment branch, including the direct full-core refinement bridge from `rtlTrace` into the actual Sparkle Signal DSL view.
 
 - `formalize/`
 Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.

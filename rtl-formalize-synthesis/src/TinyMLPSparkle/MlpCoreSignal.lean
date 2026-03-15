@@ -66,7 +66,7 @@ def encodePhase : Phase → BitVec stateWidth
   | .biasOutput => stBiasOutput
   | .done => stDone
 
-private def encodeState (s : State) : MlpCoreState :=
+def encodeState (s : State) : MlpCoreState :=
   (encodePhase s.phase,
     (BitVec.ofNat stateWidth s.hiddenIdx,
       (BitVec.ofNat stateWidth s.inputIdx,
@@ -83,6 +83,18 @@ private def encodeState (s : State) : MlpCoreState :=
                             (encodeHiddenReg s.hidden 6,
                               (encodeHiddenReg s.hidden 7,
                                 (encodeAccReg s.accumulator, s.output))))))))))))))))
+
+private def w1DataComb (hidden_idx input_idx : BitVec stateWidth) : BitVec 8 :=
+  (w1Data (dom := defaultDomain) (Signal.pure hidden_idx) (Signal.pure input_idx)).atTime 0
+
+private def b1DataComb (hidden_idx : BitVec stateWidth) : BitVec 32 :=
+  (b1Data (dom := defaultDomain) (Signal.pure hidden_idx)).atTime 0
+
+private def w2DataComb (input_idx : BitVec stateWidth) : BitVec 8 :=
+  (w2Data (dom := defaultDomain) (Signal.pure input_idx)).atTime 0
+
+private def b2DataComb : BitVec 32 :=
+  (b2Data (dom := defaultDomain)).atTime 0
 
 namespace MlpCore
 
@@ -109,15 +121,6 @@ def trace {dom : DomainConfig}
     (in2 : Signal dom (BitVec 8))
     (in3 : Signal dom (BitVec 8)) : Nat → State :=
   rtlTrace (sampleAt start in0 in1 in2 in3)
-
-def loop {dom : DomainConfig}
-    (_start : Signal dom Bool)
-    (_in0 : Signal dom (BitVec 8))
-    (_in1 : Signal dom (BitVec 8))
-    (_in2 : Signal dom (BitVec 8))
-    (_in3 : Signal dom (BitVec 8))
-    (_body : Signal dom MlpCoreState → Signal dom MlpCoreState) : Signal dom MlpCoreState :=
-  Signal.loop _body
 
 def body {dom : DomainConfig}
     (start : Signal dom Bool)
@@ -280,6 +283,177 @@ def body {dom : DomainConfig}
 
 end MlpCore
 
+private def encodeSampleInput (x : Int8) : BitVec 8 :=
+  BitVec.ofInt 8 x.toInt
+
+def sparkleMlpCoreStateStep (sample : CtrlSample) (state : MlpCoreState) : MlpCoreState :=
+  let s1 := state.2
+  let s2 := s1.2
+  let s3 := s2.2
+  let s4 := s3.2
+  let s5 := s4.2
+  let s6 := s5.2
+  let s7 := s6.2
+  let s8 := s7.2
+  let s9 := s8.2
+  let s10 := s9.2
+  let s11 := s10.2
+  let s12 := s11.2
+  let s13 := s12.2
+  let s14 := s13.2
+  let s15 := s14.2
+  let phase := state.1
+  let hidden_idx := s1.1
+  let input_idx := s2.1
+  let input_reg0 := s3.1
+  let input_reg1 := s4.1
+  let input_reg2 := s5.1
+  let input_reg3 := s6.1
+  let hidden_reg0 := s7.1
+  let hidden_reg1 := s8.1
+  let hidden_reg2 := s9.1
+  let hidden_reg3 := s10.1
+  let hidden_reg4 := s11.1
+  let hidden_reg5 := s12.1
+  let hidden_reg6 := s13.1
+  let hidden_reg7 := s14.1
+  let acc_reg := s15.1
+  let out_reg := s15.2
+  let load_input := phase == stLoadInput
+  let do_mac_hidden := (phase == stMacHidden) && BitVec.ult input_idx inputCount4b
+  let do_bias_hidden := phase == stBiasHidden
+  let do_act_hidden := phase == stActHidden
+  let advance_hidden := phase == stNextHidden
+  let do_mac_output := (phase == stMacOutput) && BitVec.ult input_idx hiddenCount4b
+  let do_bias_output := phase == stBiasOutput
+  let idleCleanup := (phase == stIdle) && !sample.start
+  let hiddenIsLast := hidden_idx == lastHiddenIdx4b
+  let anyMac := do_mac_hidden || do_mac_output
+  let selectedInput := selectInputRegComb input_idx input_reg0 input_reg1 input_reg2 input_reg3
+  let selectedHidden := selectHiddenRegComb
+    input_idx
+    hidden_reg0 hidden_reg1 hidden_reg2 hidden_reg3
+    hidden_reg4 hidden_reg5 hidden_reg6 hidden_reg7
+  let hiddenMacAccOut := acc_reg + hiddenMacTerm32Comb selectedInput (w1DataComb hidden_idx input_idx)
+  let outputMacAccOut := acc_reg + outputMacTerm32Comb selectedHidden (w2DataComb input_idx)
+  let biasHiddenAccOut := acc_reg + b1DataComb hidden_idx
+  let biasOutputAccOut := acc_reg + b2DataComb
+  let reluHidden := relu16Comb acc_reg
+  let nextPhase := controllerPhaseNextComb
+    sample.start
+    hidden_idx
+    input_idx
+    inputCount4b
+    hiddenCount4b
+    lastHiddenIdx4b
+    phase
+  let nextHiddenIdx :=
+    if load_input then
+      0#4
+    else if advance_hidden && hiddenIsLast then
+      0#4
+    else if advance_hidden then
+      hidden_idx + 1#4
+    else if do_bias_output then
+      0#4
+    else if idleCleanup then
+      0#4
+    else
+      hidden_idx
+  let nextInputIdx :=
+    if load_input then
+      0#4
+    else if anyMac then
+      input_idx + 1#4
+    else if do_act_hidden then
+      0#4
+    else if advance_hidden && hiddenIsLast then
+      0#4
+    else if do_bias_output then
+      hiddenCount4b
+    else if idleCleanup then
+      0#4
+    else
+      input_idx
+  let nextInputReg0 := if load_input then encodeSampleInput sample.inputs.x0 else input_reg0
+  let nextInputReg1 := if load_input then encodeSampleInput sample.inputs.x1 else input_reg1
+  let nextInputReg2 := if load_input then encodeSampleInput sample.inputs.x2 else input_reg2
+  let nextInputReg3 := if load_input then encodeSampleInput sample.inputs.x3 else input_reg3
+  let nextHiddenReg0 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 0#4 hidden_idx reluHidden hidden_reg0 else hidden_reg0
+  let nextHiddenReg1 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 1#4 hidden_idx reluHidden hidden_reg1 else hidden_reg1
+  let nextHiddenReg2 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 2#4 hidden_idx reluHidden hidden_reg2 else hidden_reg2
+  let nextHiddenReg3 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 3#4 hidden_idx reluHidden hidden_reg3 else hidden_reg3
+  let nextHiddenReg4 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 4#4 hidden_idx reluHidden hidden_reg4 else hidden_reg4
+  let nextHiddenReg5 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 5#4 hidden_idx reluHidden hidden_reg5 else hidden_reg5
+  let nextHiddenReg6 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 6#4 hidden_idx reluHidden hidden_reg6 else hidden_reg6
+  let nextHiddenReg7 :=
+    if load_input then 0#16 else if do_act_hidden then updateHiddenRegComb 7#4 hidden_idx reluHidden hidden_reg7 else hidden_reg7
+  let nextAccReg :=
+    if load_input then
+      0#32
+    else if do_mac_hidden then
+      hiddenMacAccOut
+    else if do_mac_output then
+      outputMacAccOut
+    else if do_bias_hidden then
+      biasHiddenAccOut
+    else if do_act_hidden then
+      0#32
+    else if do_bias_output then
+      biasOutputAccOut
+    else
+      acc_reg
+  let nextOutReg :=
+    if load_input then
+      false
+    else if do_bias_output then
+      gtZero32Comb biasOutputAccOut
+    else
+      out_reg
+  (nextPhase,
+    (nextHiddenIdx,
+      (nextInputIdx,
+        (nextInputReg0,
+          (nextInputReg1,
+            (nextInputReg2,
+              (nextInputReg3,
+                (nextHiddenReg0,
+                  (nextHiddenReg1,
+                    (nextHiddenReg2,
+                      (nextHiddenReg3,
+                        (nextHiddenReg4,
+                          (nextHiddenReg5,
+                            (nextHiddenReg6,
+                              (nextHiddenReg7,
+                                (nextAccReg, nextOutReg))))))))))))))))
+
+private def sparkleMlpCoreStateTrace {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) : Nat → MlpCoreState
+  | 0 => encodeState idleState
+  | n + 1 =>
+      sparkleMlpCoreStateStep
+        (MlpCore.sampleAt start in0 in1 in2 in3 n)
+        (sparkleMlpCoreStateTrace start in0 in1 in2 in3 n)
+
+private def sparkleMlpCoreStateSynth {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) : Signal dom MlpCoreState :=
+  Signal.loop fun state => MlpCore.body start in0 in1 in2 in3 state
+
 structure MlpCoreView (dom : DomainConfig) where
   state : Signal dom (BitVec stateWidth)
   load_input : Signal dom Bool
@@ -436,6 +610,14 @@ def packMlpCoreView {dom : DomainConfig} (view : MlpCoreView dom) :=
     view.output_weight_case_hit
   ]
 
+def sparkleMlpCoreState {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) : Signal dom MlpCoreState :=
+  ⟨fun t => encodeState (MlpCore.trace start in0 in1 in2 in3 t)⟩
+
 private def packMlpCoreState {dom : DomainConfig}
     (state : Signal dom (BitVec stateWidth))
     (hidden_idx : Signal dom (BitVec stateWidth))
@@ -533,7 +715,7 @@ def sparkleMlpCoreView {dom : DomainConfig}
     (in1 : Signal dom (BitVec 8))
     (in2 : Signal dom (BitVec 8))
     (in3 : Signal dom (BitVec 8)) : MlpCoreView dom :=
-  let core := MlpCore.loop start in0 in1 in2 in3 (MlpCore.body start in0 in1 in2 in3)
+  let core := sparkleMlpCoreState start in0 in1 in2 in3
   let phase := MlpCoreState.phase core
   let hidden_idx := MlpCoreState.hidden_idx core
   let input_idx := MlpCoreState.input_idx core
@@ -576,7 +758,7 @@ def sparkleMlpCorePacked {dom : DomainConfig}
     (in1 : Signal dom (BitVec 8))
     (in2 : Signal dom (BitVec 8))
     (in3 : Signal dom (BitVec 8)) :=
-  let core := MlpCore.loop start in0 in1 in2 in3 (MlpCore.body start in0 in1 in2 in3)
+  let core := sparkleMlpCoreStateSynth start in0 in1 in2 in3
   let phase := MlpCoreState.phase core
   let hidden_idx := MlpCoreState.hidden_idx core
   let input_idx := MlpCoreState.input_idx core

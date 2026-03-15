@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -8,6 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TOP_LEVEL_TB = ROOT / "simulations" / "rtl" / "testbench.sv"
 INTERNAL_TB = ROOT / "simulations" / "rtl" / "testbench_internal.sv"
+SPARKLE_VENDOR_GIT = ROOT / "rtl-formalize-synthesis" / "vendor" / "Sparkle" / ".git"
+SPARKLE_RAW = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv"
+SPARKLE_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv"
+SPARKLE_WRAPPER_GENERATOR = ROOT / "rtl-formalize-synthesis" / "scripts" / "generate_wrapper.py"
 
 
 def run_make_dry_run(target: str) -> subprocess.CompletedProcess[str]:
@@ -52,9 +57,62 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("rtl-formalize-synthesis/scripts/prepare_sparkle.sh", output)
         self.assertIn("build/rtl-formalize-synthesis/sparkle_prepare.stamp", output)
-        self.assertIn("lake env lean src/TinyMLPSparkle/Emit.lean", output)
+        self.assertIn("cd rtl-formalize-synthesis && lake build TinyMLPSparkle.Emit", output)
         self.assertIn("python3 rtl-formalize-synthesis/scripts/generate_wrapper.py", output)
         self.assertIn("sparkle_mlp_core_wrapper.sv", output)
+
+    def test_sparkle_emit_target_executes_without_dirtying_tracked_artifacts(self) -> None:
+        if shutil.which("lake") is None:
+            self.skipTest("missing required tool: lake")
+        if shutil.which("git") is None:
+            self.skipTest("missing required tool: git")
+        if not SPARKLE_VENDOR_GIT.exists():
+            self.skipTest("missing prepared Sparkle vendor checkout")
+
+        emit = subprocess.run(
+            ["make", "rtl-formalize-synthesis-emit"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        emit_output = emit.stdout + emit.stderr
+        self.assertEqual(emit.returncode, 0, msg=emit_output)
+
+        wrapper_check = subprocess.run(
+            [
+                "python3",
+                str(SPARKLE_WRAPPER_GENERATOR),
+                "--raw",
+                str(SPARKLE_RAW),
+                "--wrapper",
+                str(SPARKLE_WRAPPER),
+                "--check",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        wrapper_check_output = wrapper_check.stdout + wrapper_check.stderr
+        self.assertEqual(wrapper_check.returncode, 0, msg=wrapper_check_output)
+
+        diff = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--exit-code",
+                "--",
+                str(SPARKLE_RAW.relative_to(ROOT)),
+                str(SPARKLE_WRAPPER.relative_to(ROOT)),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        diff_output = diff.stdout + diff.stderr
+        self.assertEqual(diff.returncode, 0, msg=diff_output)
 
     def test_sparkle_branch_aggregate_target_runs_both_simulators(self) -> None:
         result = run_make_dry_run("rtl-formalize-synthesis-sim")
