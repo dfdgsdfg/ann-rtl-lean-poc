@@ -196,7 +196,7 @@ Each emitted artifact should state:
 The current repository already uses `contract/src/downstream_sync.py` to generate:
 
 - [`rtl/results/canonical/sv/weight_rom.sv`](../../rtl/results/canonical/sv/weight_rom.sv)
-- [`formalize/src/MlpCore/Defs/SpecCore.lean`](../../formalize/src/MlpCore/Defs/SpecCore.lean)
+- [`formalize/src/MlpCore/Generated/Contract.lean`](../../formalize/src/MlpCore/Generated/Contract.lean)
 
 The Sparkle path should join that same synchronization flow rather than fork a new manual path.
 

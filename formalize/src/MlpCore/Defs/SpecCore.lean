@@ -1,3 +1,5 @@
+import MlpCore.Generated.Contract
+
 namespace MlpCore
 
 def inputCount : Nat := 4
@@ -404,67 +406,6 @@ def Hidden16.ofHidden (hidden : Hidden) : Hidden16 :=
 
 def relu (x : Int) : Int :=
   if x < 0 then 0 else x
-
-/- BEGIN AUTO-GENERATED WEIGHTS -/
-def w1At : Nat → Nat → Int
-  | 0, 0 => 0
-  | 0, 1 => 0
-  | 0, 2 => 0
-  | 0, 3 => 0
-  | 1, 0 => 0
-  | 1, 1 => 0
-  | 1, 2 => 0
-  | 1, 3 => -1
-  | 2, 0 => 2
-  | 2, 1 => 1
-  | 2, 2 => 1
-  | 2, 3 => -1
-  | 3, 0 => 0
-  | 3, 1 => 0
-  | 3, 2 => 0
-  | 3, 3 => -1
-  | 4, 0 => -1
-  | 4, 1 => 0
-  | 4, 2 => 0
-  | 4, 3 => 0
-  | 5, 0 => -1
-  | 5, 1 => 1
-  | 5, 2 => -1
-  | 5, 3 => 1
-  | 6, 0 => 0
-  | 6, 1 => -1
-  | 6, 2 => 1
-  | 6, 3 => -1
-  | 7, 0 => 1
-  | 7, 1 => 2
-  | 7, 2 => 0
-  | 7, 3 => 0
-  | _, _ => 0
-
-def b1At : Nat → Int
-  | 0 => 0
-  | 1 => 0
-  | 2 => 1
-  | 3 => 1
-  | 4 => 0
-  | 5 => 2
-  | 6 => 1
-  | 7 => -1
-  | _ => 0
-
-def w2At : Nat → Int
-  | 0 => 0
-  | 1 => 0
-  | 2 => 1
-  | 3 => 0
-  | 4 => -1
-  | 5 => -1
-  | 6 => 1
-  | 7 => -1
-  | _ => 0
-
-def b2 : Int := -1
-/- END AUTO-GENERATED WEIGHTS -/
 
 def w1 (i : Fin hiddenCount) (j : Fin inputCount) : Int :=
   w1At i.1 j.1

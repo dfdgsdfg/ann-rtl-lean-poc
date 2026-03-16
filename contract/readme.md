@@ -21,7 +21,7 @@ Running the freeze step refreshes these files and metadata from the same frozen 
 - `contract/results/canonical/weights.json`
 - `contract/results/canonical/model.md`
 - `rtl/results/canonical/sv/weight_rom.sv`
-- `formalize/src/MlpCore/Defs/SpecCore.lean`
+- `formalize/src/MlpCore/Generated/Contract.lean`
 - `simulations/shared/test_vectors.mem`
 - `simulations/shared/test_vectors_meta.svh`
 

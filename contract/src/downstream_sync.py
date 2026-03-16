@@ -5,7 +5,7 @@ from pathlib import Path
 from .artifacts import CONTRACT_MODEL_MD_PATH, ROOT
 
 WEIGHT_ROM_PATH = ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv"
-LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean"
+LEAN_CONTRACT_PATH = ROOT / "formalize" / "src" / "MlpCore" / "Generated" / "Contract.lean"
 SPARKLE_CONTRACT_DATA_PATH = ROOT / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean"
 DEFAULT_MODEL_DOC_TEMPLATE = """# MLP core ASIC Canonical Specification
 
@@ -263,10 +263,10 @@ def render_weight_rom_text(weights: dict[str, object]) -> str:
     )
 
 
-def render_lean_spec_text(weights: dict[str, object]) -> str:
-    lean_spec_text = LEAN_SPEC_PATH.read_text(encoding="utf-8")
+def render_lean_contract_text(weights: dict[str, object]) -> str:
+    lean_contract_text = LEAN_CONTRACT_PATH.read_text(encoding="utf-8")
     return _replace_block(
-        lean_spec_text,
+        lean_contract_text,
         "/- BEGIN AUTO-GENERATED WEIGHTS -/",
         "/- END AUTO-GENERATED WEIGHTS -/",
         _lean_w1_block(weights),
@@ -302,7 +302,7 @@ def expected_downstream_artifacts(weights: dict[str, object]) -> dict[Path, str]
     model_doc_text = render_model_doc_text(weights)
     return {
         WEIGHT_ROM_PATH: render_weight_rom_text(weights),
-        LEAN_SPEC_PATH: render_lean_spec_text(weights),
+        LEAN_CONTRACT_PATH: render_lean_contract_text(weights),
         SPARKLE_CONTRACT_DATA_PATH: render_sparkle_contract_data_text(weights),
         CONTRACT_MODEL_MD_PATH: model_doc_text,
     }
@@ -310,6 +310,6 @@ def expected_downstream_artifacts(weights: dict[str, object]) -> dict[Path, str]
 
 def sync_downstream(weights: dict[str, object]) -> None:
     WEIGHT_ROM_PATH.write_text(render_weight_rom_text(weights), encoding="utf-8")
-    LEAN_SPEC_PATH.write_text(render_lean_spec_text(weights), encoding="utf-8")
+    LEAN_CONTRACT_PATH.write_text(render_lean_contract_text(weights), encoding="utf-8")
     SPARKLE_CONTRACT_DATA_PATH.write_text(render_sparkle_contract_data_text(weights), encoding="utf-8")
     CONTRACT_MODEL_MD_PATH.write_text(render_model_doc_text(weights), encoding="utf-8")

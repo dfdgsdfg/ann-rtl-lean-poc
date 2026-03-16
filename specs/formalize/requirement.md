@@ -22,7 +22,7 @@ The target network is a `4 → 8 → 1` fixed-point MLP as frozen in `specs/cont
 - 8 hidden neurons, with int8 × int8 → int16 MAC accumulated in int32
 - 1 binary output, with int16 × int8 → int24 MAC accumulated in int32
 - ReLU activation on the hidden layer
-- Weights and biases are auto-generated constants embedded directly in `Defs/SpecCore.lean`
+- Weights and biases are auto-generated constants committed in `Generated/Contract.lean` and imported by `Defs/SpecCore.lean`
 
 The formalization must distinguish between:
 
@@ -186,7 +186,8 @@ formalize/
   src/
     MlpCore.lean                          -- root import hub (imports all submodules)
     MlpCore/
-      Defs/SpecCore.lean                 -- mathematical model, Input8/MathInput domains, bounded value wrappers, shared arithmetic helpers, weight constants, toMathInput, mlpSpec
+      Generated/Contract.lean            -- contract-generated weight and bias constants
+      Defs/SpecCore.lean                 -- mathematical model, Input8/MathInput domains, bounded value wrappers, shared arithmetic helpers, generated-contract imports, toMathInput, mlpSpec
       Interfaces/ArithmeticProofProvider.lean
                                           -- proof interface for arithmetic helper families required by shared fixed-point defs
       Defs/FixedPointCore.lean           -- hardware-domain executable arithmetic and shared fixed-point definitions
@@ -224,7 +225,7 @@ The repository should clearly show:
 - Which temporal theorem set is mandatory for milestone completion, and where each theorem lives
 - Which project-local temporal layer implementation is used, and where its operators and predicates are defined
 - Which assumptions are required
-- Which generated or fixed constants are used (the `AUTO-GENERATED WEIGHTS` block in `Defs/SpecCore.lean`)
+- Which generated or fixed constants are used (the `AUTO-GENERATED WEIGHTS` block in `Generated/Contract.lean`, imported by `Defs/SpecCore.lean`)
 - Whether any optional bounds proofs are incomplete
 
 ## 8. Acceptance Criteria

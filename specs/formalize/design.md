@@ -32,6 +32,7 @@ If the repository later wants an alternate proof lane such as `formalize-smt`, t
 
 The repository now does this for the arithmetic-first exposure pass:
 
+- `MlpCore/Generated/Contract.lean`
 - `MlpCore/Defs/SpecCore.lean`
 - `MlpCore/Interfaces/ArithmeticProofProvider.lean`
 - `MlpCore/Defs/FixedPointCore.lean`
@@ -90,7 +91,8 @@ Because exact handshake timing is part of the current proof scope, the temporal 
 ## 4. File Responsibilities
 
 - `MlpCore.lean`: root import hub — imports all submodules so `lake build` checks everything
-- `Defs/SpecCore.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, helper arithmetic/spec definitions, frozen weight constants (auto-generated block), and `mlpSpec`
+- `Generated/Contract.lean`: frozen weight and bias constants generated from the current contract
+- `Defs/SpecCore.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, helper arithmetic/spec definitions, imports of the generated contract constants, and `mlpSpec`
 - `Interfaces/ArithmeticProofProvider.lean`: the proof-provider boundary for the arithmetic lemmas needed by shared fixed-point executable definitions
 - `Defs/FixedPointCore.lean`: contract-domain executable arithmetic operators, `mlpFixed`, and the shared fixed-point executable surface parameterized by the arithmetic proof provider
 - `ProofsVanilla/SpecArithmetic.lean`: baseline arithmetic helper proofs plus the default `ArithmeticProofProvider` instance
@@ -233,7 +235,7 @@ These temporal properties are the minimum proof set needed to claim timing-aware
 |---|---|---|
 | Mathematical vs hardware input domain | **Separate `MathInput` and `Input8`** | Hardware-facing theorems must quantify over representable signed 8-bit inputs. If the mathematical layer uses unrestricted `Int`, it must be reached through an explicit `toMathInput` bridge. |
 | Hardware-to-math relationship | **State it as a separate bridge theorem** | `rtlCorrectnessGoal` should target the contract-domain model. Agreement with the unrestricted mathematical model, if claimed, must be proved separately over `Input8`. |
-| How ANN constants enter Lean | **Inline auto-generated block** in `Defs/SpecCore.lean` (between `BEGIN/END AUTO-GENERATED WEIGHTS` markers) | Constants are match-expression definitions (`w1At`, `b1At`, `w2At`, `b2`), generated from the training/export pipeline and committed directly. |
+| How ANN constants enter Lean | **Separate generated module** at `Generated/Contract.lean`, imported by `Defs/SpecCore.lean` | Contract-sensitive constants (`w1At`, `b1At`, `w2At`, `b2`) stay isolated from the hand-maintained semantic definitions and proofs. |
 | Machine model granularity | **One-to-one FSM state mapping with a timing-faithful overlay** | Each RTL state has a corresponding `Phase` constructor. The operational `step` model handles accepted-transaction sequencing; the temporal layer restores exact `IDLE`/`DONE` handshake semantics from the RTL. |
 | Temporal layer implementation | **Use a project-local finite-trace layer** | Keep the temporal vocabulary versioned and build-checked inside this repository. External libraries or papers may inform the design, but they are not dependencies. |
 | Boundary-theorem scope | **The strong boundary package is milestone-critical** | Public proofs must cover no-duplicate/no-skip/no-out-of-range boundary obligations and the `BIAS_OUTPUT`/`DONE` observability contract, not only the weaker guard-cycle phase transitions. |

@@ -17,7 +17,8 @@ ROOT = contract_artifacts.ROOT
 RUN_DIR = ROOT / "ann" / "results" / "runs" / "relu_teacher_v2-seed20260312-epoch51"
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv"
-LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean"
+LEAN_SPECCORE_TEMPLATE = ROOT / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean"
+LEAN_CONTRACT_TEMPLATE = ROOT / "formalize" / "src" / "MlpCore" / "Generated" / "Contract.lean"
 SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean"
 SIM_TESTBENCH_TEMPLATE = ROOT / "simulations" / "rtl" / "testbench.sv"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
@@ -56,6 +57,7 @@ class FreezeContractTests(unittest.TestCase):
         repo_root = self.temp_root / "repo"
         (repo_root / "ann" / "results" / "runs").mkdir(parents=True, exist_ok=True)
         (repo_root / "formalize" / "src" / "MlpCore" / "Defs").mkdir(parents=True, exist_ok=True)
+        (repo_root / "formalize" / "src" / "MlpCore" / "Generated").mkdir(parents=True, exist_ok=True)
         (repo_root / "rtl" / "results" / "canonical" / "sv").mkdir(parents=True, exist_ok=True)
         (repo_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
@@ -65,7 +67,8 @@ class FreezeContractTests(unittest.TestCase):
         shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
         shutil.copy2(SIM_TESTBENCH_TEMPLATE, repo_root / "simulations" / "rtl" / "testbench.sv")
         shutil.copy2(WEIGHT_ROM_TEMPLATE, repo_root / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv")
-        shutil.copy2(LEAN_SPEC_TEMPLATE, repo_root / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean")
+        shutil.copy2(LEAN_SPECCORE_TEMPLATE, repo_root / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean")
+        shutil.copy2(LEAN_CONTRACT_TEMPLATE, repo_root / "formalize" / "src" / "MlpCore" / "Generated" / "Contract.lean")
         shutil.copy2(
             SPARKLE_CONTRACT_TEMPLATE,
             repo_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean",
@@ -136,7 +139,7 @@ class FreezeContractTests(unittest.TestCase):
             contract_run_manifest,
             contract_model_path,
             repo_root / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
-            repo_root / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean",
+            repo_root / "formalize" / "src" / "MlpCore" / "Generated" / "Contract.lean",
             repo_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean",
             repo_root / "simulations" / "shared" / "test_vectors.mem",
             repo_root / "simulations" / "shared" / "test_vectors_meta.svh",

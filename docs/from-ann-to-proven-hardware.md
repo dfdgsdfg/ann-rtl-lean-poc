@@ -81,7 +81,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) generates three artifact
 ```mermaid
 graph TD
     W[contract/results/canonical/weights.json] --> ROM["rtl/results/canonical/sv/weight_rom.sv<br/>SystemVerilog ROM constants"]
-    W --> SPEC["formalize/src/MlpCore/Defs/SpecCore.lean<br/>Lean weight definitions"]
+    W --> SPEC["formalize/src/MlpCore/Generated/Contract.lean<br/>Lean weight definitions"]
     W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
@@ -103,9 +103,9 @@ end
 
 The same integers from `contract/results/canonical/weights.json` appear here as SystemVerilog signed literals. The RTL controller reads these values one per cycle during MAC operations.
 
-### The Lean Spec
+### The Lean Contract Module
 
-The freeze pipeline generates a match-expression block in `Defs/SpecCore.lean`:
+The freeze pipeline generates a match-expression block in `Generated/Contract.lean`, which `Defs/SpecCore.lean` imports:
 
 ```lean
 def w1At : Nat → Nat → Int
