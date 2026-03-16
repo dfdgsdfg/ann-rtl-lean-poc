@@ -6,6 +6,7 @@ Canonical files:
 
 - `rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`: raw Sparkle-emitted full-core RTL
 - `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`: stable generated `mlp_core` boundary used by the shared simulation bench, SMT flow, and experiment families
+- `rtl-formalize-synthesis/results/canonical/verification_manifest.json`: declared emitted-subset and semantics-preservation statement consumed by wrapper generation and artifact-consistency checks
 - `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`: stable wrapper-level comparable schematic
 - `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg`: raw Sparkle-emitted implementation schematic
 
@@ -28,7 +29,7 @@ python3 experiments/run.py --family branch-compare
 python3 experiments/run.py --family qor
 ```
 
-`artifact-consistency` is the direct structural-validation path for the checked-in wrapper. It runs the wrapper generator in `--check` mode against the raw Sparkle RTL and catches raw-module interface drift, wrapper mismatches, and stale wrapper regeneration inputs.
+`artifact-consistency` is the direct structural-validation path for the checked-in wrapper and declared emitted-subset claim. It runs the wrapper generator in `--check` mode against the raw Sparkle RTL plus `verification_manifest.json`, and catches raw-module interface drift, declared-subset drift, wrapper mismatches, and stale wrapper regeneration inputs.
 
 Boundary and trust profile:
 
@@ -42,8 +43,8 @@ Boundary and trust profile:
 - stable downstream module boundary: `mlp_core.sv`
 - comparable schematic boundary: `mlp_core.svg`
 - implementation-detail schematic boundary: `sparkle_mlp_core.svg`
-- proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the actual Sparkle Signal DSL full-core state/view (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`); the Lean theorem stops at Signal DSL semantics
-- backend trust boundary: Sparkle-to-Verilog remains trusted code generation
+- proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the actual Sparkle Signal DSL full-core state/view (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`); the Lean theorem itself stops at Signal DSL semantics
+- backend boundary: the Sparkle lowering/backend is treated as verified only for the committed emitted subset exercised by this branch's checked-in sources and emission entrypoint
 - RTL validation: shared `mlp_core` vector regression, branch-comparison summaries, branch-aware SMT checks, QoR characterization, and downstream synthesis flows
 
 Wrapper mapping:

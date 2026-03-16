@@ -85,6 +85,9 @@ SPARKLE_LEAN_TOOLCHAIN = SPARKLE_PROJECT_DIR / "lean-toolchain"
 SPARKLE_LAKE_MANIFEST = SPARKLE_PROJECT_DIR / "lake-manifest.json"
 SPARKLE_FULL_CORE_RTL = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv"
 SPARKLE_FULL_CORE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
+SPARKLE_VERIFICATION_MANIFEST = (
+    ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
+)
 SEMANTIC_BRIDGE_SCRIPT = ROOT / "formalize" / "scripts" / "ExportSemanticBridge.lean"
 OPENLANE_TEMPLATE = ROOT / "asic" / "openlane" / "config.json"
 OPENLANE_FLOORPLAN = ROOT / "asic" / "openlane" / "floorplan.tcl"
@@ -591,6 +594,7 @@ def sparkle_generated_full_core_wrapper_inputs() -> list[Path]:
     return [
         SPARKLE_FULL_CORE_RTL,
         SPARKLE_WRAPPER_GENERATOR,
+        SPARKLE_VERIFICATION_MANIFEST,
     ]
 
 
@@ -600,6 +604,19 @@ def classify_sparkle_validation_failure(output: str) -> tuple[str, str]:
             "wrapper_mismatch",
             "checked-in Sparkle stable wrapper does not match the raw Sparkle RTL plus wrapper generator; "
             "regenerate with `make rtl-formalize-synthesis-emit`",
+        )
+    if "emitted subset validation failed" in output:
+        return (
+            "emitted_subset_mismatch",
+            "checked-in Sparkle generated core no longer matches the declared emitted subset verification "
+            "manifest; regenerate with `make rtl-formalize-synthesis-emit` or update "
+            "`rtl-formalize-synthesis/results/canonical/verification_manifest.json`",
+        )
+    if "verification manifest validation failed" in output:
+        return (
+            "invalid_verification_manifest",
+            "checked-in Sparkle emitted-subset verification manifest is invalid; fix "
+            "`rtl-formalize-synthesis/results/canonical/verification_manifest.json`",
         )
     if any(
         token in output
@@ -644,6 +661,7 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
         "generated_core": relative(SPARKLE_FULL_CORE_RTL),
         "wrapper": relative(SPARKLE_FULL_CORE_WRAPPER),
         "wrapper_generator": relative(SPARKLE_WRAPPER_GENERATOR),
+        "verification_manifest": relative(SPARKLE_VERIFICATION_MANIFEST),
         "source_count": len(emit_source_paths),
     }
     artifacts: dict[str, Path] = {}
@@ -667,6 +685,10 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
         details["wrapper_generator_mtime_utc"] = format_mtime_utc(SPARKLE_WRAPPER_GENERATOR)
         artifacts["wrapper_generator"] = SPARKLE_WRAPPER_GENERATOR
         log_lines.append(f"wrapper generator mtime (utc): {details['wrapper_generator_mtime_utc']}")
+    if SPARKLE_VERIFICATION_MANIFEST.exists():
+        details["verification_manifest_mtime_utc"] = format_mtime_utc(SPARKLE_VERIFICATION_MANIFEST)
+        artifacts["verification_manifest"] = SPARKLE_VERIFICATION_MANIFEST
+        log_lines.append(f"verification manifest mtime (utc): {details['verification_manifest_mtime_utc']}")
 
     if missing_paths:
         details["reason"] = "missing Sparkle generated branch artifact or source dependency"
@@ -744,6 +766,8 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
         str(SPARKLE_FULL_CORE_RTL),
         "--wrapper",
         str(SPARKLE_FULL_CORE_WRAPPER),
+        "--subset-manifest",
+        str(SPARKLE_VERIFICATION_MANIFEST),
         "--check",
     ]
     details["validation_command"] = command_text(validation_command)
@@ -1197,8 +1221,9 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         "evidence_method": "frozen_contract_consistency_check",
         "claim_scope": (
             "checked-in frozen contract and downstream artifacts remain synchronized without rewriting tracked "
-            "files, the checked-in Sparkle full-core RTL is not stale relative to its emit inputs, and "
-            "proof-source drift is reported separately without gating branch freshness"
+            "files, the checked-in Sparkle full-core RTL and wrapper remain aligned with the declared emitted "
+            "subset verification manifest and emit inputs, and proof-source drift is reported separately without "
+            "gating branch freshness"
         ),
         "tool_versions": {
             "python3": tool_version([["python3", "--version"]]),

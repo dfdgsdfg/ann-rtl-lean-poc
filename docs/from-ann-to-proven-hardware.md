@@ -542,9 +542,11 @@ graph LR
 
 These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the actual Sparkle Signal DSL full-core state and sampled observables used by the generated design. `canonicalMlpCoreView_refines_rtlTrace` remains available as a helper theorem over the canonical repackaging of the same pure trace.
 
-### What Is Trusted
+### What Is Verified vs. Validated
 
-The Sparkle-to-Verilog backend remains trusted code generation. The repository also trusts the generated wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus.
+For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `TinyMLPSparkle` sources and documented emission entrypoint.
+
+That claim does not automatically extend to wrapper reconstruction logic, unexercised Sparkle/backend features, or downstream integration artifacts. The generated wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus remains a direct validation surface.
 
 ### What Is Validated
 
@@ -561,7 +563,7 @@ This is stronger than the retired controller-only wrapper experiment at the inte
 
 The generated artifact now covers the full `mlp_core` boundary, including controller and datapath state. The repository no longer maintains a separate controller-only Sparkle flow.
 
-The proof boundary is still below the emitted full-core RTL: the Lean refinement stops at Signal DSL semantics, and the wrapper bus mapping plus Sparkle backend remain trusted. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for that boundary.
+The proof boundary is still below the emitted full-core RTL in the Lean theorem itself: the Lean refinement stops at Signal DSL semantics. The emitted-RTL story is strengthened separately by the subset-scoped verified Sparkle lowering/backend claim, while wrapper bus mapping and downstream integration remain validation-backed surfaces. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for that boundary.
 
 ## 10. The Verification Surface
 

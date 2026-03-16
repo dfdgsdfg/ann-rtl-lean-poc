@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -104,6 +105,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate the stable Sparkle mlp_core wrapper.")
     parser.add_argument("--raw", type=Path, required=True, help="Path to the raw Sparkle-emitted RTL module.")
     parser.add_argument("--wrapper", type=Path, required=True, help="Path to the generated stable wrapper.")
+    parser.add_argument(
+        "--subset-manifest",
+        type=Path,
+        help="Optional JSON manifest describing the declared emitted subset and semantics-preservation statement.",
+    )
     parser.add_argument(
         "--check",
         action="store_true",
@@ -257,9 +263,9 @@ def parse_raw_module(raw_text: str, raw_path: Path) -> tuple[str, list[RawPort]]
     return raw_module_name, raw_ports
 
 
-def validate_raw_ports(raw_ports: list[RawPort], raw_path: Path) -> int:
-    expected_by_name = {port.name: port for port in EXPECTED_RAW_PORTS}
-    actual_by_name = {port.name: port for port in raw_ports}
+def collect_port_problems(actual_ports: list[RawPort], expected_ports: list[RawPort]) -> list[str]:
+    expected_by_name = {port.name: port for port in expected_ports}
+    actual_by_name = {port.name: port for port in actual_ports}
 
     problems: list[str] = []
     missing = sorted(name for name in expected_by_name if name not in actual_by_name)
@@ -278,11 +284,156 @@ def validate_raw_ports(raw_ports: list[RawPort], raw_path: Path) -> int:
                 f"port {name} mismatch: expected {expected.direction} width {expected.width}, "
                 f"found {actual.direction} width {actual.width}"
             )
+    return problems
 
+
+def validate_raw_ports(raw_ports: list[RawPort], raw_path: Path) -> int:
+    problems = collect_port_problems(raw_ports, EXPECTED_RAW_PORTS)
     if problems:
         detail = "\n".join(f"- {problem}" for problem in problems)
         raise SystemExit(f"raw module interface validation failed for {raw_path}:\n{detail}")
-    return expected_by_name["out"].width
+    return next(port.width for port in EXPECTED_RAW_PORTS if port.name == "out")
+
+
+def manifest_error(manifest_path: Path, message: str) -> SystemExit:
+    return SystemExit(f"verification manifest validation failed for {manifest_path}: {message}")
+
+
+def require_manifest_str(value: object, manifest_path: Path, *, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise manifest_error(manifest_path, f"{label} must be a non-empty string")
+    return value
+
+
+def require_manifest_str_list(value: object, manifest_path: Path, *, label: str) -> list[str]:
+    if not isinstance(value, list) or not value or any(not isinstance(item, str) or not item for item in value):
+        raise manifest_error(manifest_path, f"{label} must be a non-empty list of strings")
+    return list(value)
+
+
+def require_manifest_port_list(value: object, manifest_path: Path, *, label: str) -> list[RawPort]:
+    if not isinstance(value, list) or not value:
+        raise manifest_error(manifest_path, f"{label} must be a non-empty list")
+    ports: list[RawPort] = []
+    for index, entry in enumerate(value):
+        if not isinstance(entry, dict):
+            raise manifest_error(manifest_path, f"{label}[{index}] must be an object")
+        direction = entry.get("direction")
+        name = entry.get("name")
+        width = entry.get("width")
+        if direction not in {"input", "output"}:
+            raise manifest_error(manifest_path, f"{label}[{index}].direction must be 'input' or 'output'")
+        if not isinstance(name, str) or not name:
+            raise manifest_error(manifest_path, f"{label}[{index}].name must be a non-empty string")
+        if not isinstance(width, int) or width < 1:
+            raise manifest_error(manifest_path, f"{label}[{index}].width must be a positive integer")
+        ports.append(RawPort(direction=direction, name=name, width=width))
+    return ports
+
+
+def validate_subset_manifest(
+    raw_text: str,
+    raw_module_name: str,
+    raw_ports: list[RawPort],
+    raw_path: Path,
+    manifest_path: Path,
+) -> None:
+    if not manifest_path.exists():
+        raise manifest_error(manifest_path, "file does not exist")
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise manifest_error(manifest_path, f"invalid JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise manifest_error(manifest_path, "top-level payload must be an object")
+    if payload.get("schema_version") != 1:
+        raise manifest_error(manifest_path, "schema_version must equal 1")
+
+    declared_subset = payload.get("declared_emitted_subset")
+    if not isinstance(declared_subset, dict):
+        raise manifest_error(manifest_path, "declared_emitted_subset must be an object")
+    require_manifest_str(declared_subset.get("entrypoint"), manifest_path, label="declared_emitted_subset.entrypoint")
+    require_manifest_str(
+        declared_subset.get("raw_artifact"),
+        manifest_path,
+        label="declared_emitted_subset.raw_artifact",
+    )
+    require_manifest_str_list(
+        declared_subset.get("emit_source_paths"),
+        manifest_path,
+        label="declared_emitted_subset.emit_source_paths",
+    )
+    expected_module_name = require_manifest_str(
+        declared_subset.get("raw_module_name"),
+        manifest_path,
+        label="declared_emitted_subset.raw_module_name",
+    )
+    expected_header_comments = require_manifest_str_list(
+        declared_subset.get("required_header_comments"),
+        manifest_path,
+        label="declared_emitted_subset.required_header_comments",
+    )
+    expected_ports = require_manifest_port_list(
+        declared_subset.get("expected_raw_ports"),
+        manifest_path,
+        label="declared_emitted_subset.expected_raw_ports",
+    )
+
+    semantics = payload.get("semantics_preservation_statement")
+    if not isinstance(semantics, dict):
+        raise manifest_error(manifest_path, "semantics_preservation_statement must be an object")
+    require_manifest_str(
+        semantics.get("source_model"),
+        manifest_path,
+        label="semantics_preservation_statement.source_model",
+    )
+    require_manifest_str(
+        semantics.get("target_artifact"),
+        manifest_path,
+        label="semantics_preservation_statement.target_artifact",
+    )
+    require_manifest_str(
+        semantics.get("verification_scope"),
+        manifest_path,
+        label="semantics_preservation_statement.verification_scope",
+    )
+    require_manifest_str_list(
+        semantics.get("residual_validation_surfaces"),
+        manifest_path,
+        label="semantics_preservation_statement.residual_validation_surfaces",
+    )
+
+    if raw_module_name != expected_module_name:
+        raise SystemExit(
+            "emitted subset validation failed for "
+            f"{raw_path} against {manifest_path}: expected raw module {expected_module_name}, "
+            f"found {raw_module_name}"
+        )
+
+    header_lines: list[str] = []
+    for line in raw_text.splitlines():
+        stripped = line.strip()
+        if not stripped and not header_lines:
+            continue
+        if line.startswith("//"):
+            header_lines.append(line)
+            continue
+        break
+    actual_header_prefix = header_lines[: len(expected_header_comments)]
+    if actual_header_prefix != expected_header_comments:
+        raise SystemExit(
+            "emitted subset validation failed for "
+            f"{raw_path} against {manifest_path}: expected leading header comments "
+            f"{expected_header_comments!r}, found {actual_header_prefix!r}"
+        )
+
+    problems = collect_port_problems(raw_ports, expected_ports)
+    if problems:
+        detail = "\n".join(f"- {problem}" for problem in problems)
+        raise SystemExit(
+            "emitted subset validation failed for "
+            f"{raw_path} against {manifest_path}:\n{detail}"
+        )
 
 
 def check_wrapper(wrapper_path: Path, expected_text: str) -> None:
@@ -312,11 +463,19 @@ def main() -> int:
     raw_text = args.raw.read_text(encoding="utf-8")
     raw_module_name, raw_ports = parse_raw_module(raw_text, args.raw)
     packed_width = validate_raw_ports(raw_ports, args.raw)
+    if args.subset_manifest is not None:
+        validate_subset_manifest(raw_text, raw_module_name, raw_ports, args.raw, args.subset_manifest)
 
     wrapper_text = render_wrapper(raw_module_name, packed_width)
     if args.check:
         check_wrapper(args.wrapper, wrapper_text)
-        print(f"validated {args.raw} and verified {args.wrapper}")
+        if args.subset_manifest is not None:
+            print(
+                f"validated {args.raw}, verified declared emitted subset via {args.subset_manifest}, "
+                f"and verified {args.wrapper}"
+            )
+        else:
+            print(f"validated {args.raw} and verified {args.wrapper}")
         return 0
     args.wrapper.parent.mkdir(parents=True, exist_ok=True)
     args.wrapper.write_text(wrapper_text, encoding="utf-8")

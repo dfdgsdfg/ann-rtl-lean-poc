@@ -75,13 +75,16 @@ The design assumptions for this repository are based on the public Sparkle proje
 - a Signal DSL for synthesizable hardware
 - Verilog/SystemVerilog emission through commands such as `#synthesizeVerilog` and `#writeVerilogDesign`
 
-This repository must treat Sparkle as an external dependency and a trusted code-generation boundary. Lean proofs about the Sparkle Signal DSL model do not automatically prove the emitted RTL.
+This repository must treat Sparkle as an external dependency with an explicitly bounded verification claim, not as a blanket trusted code-generation boundary. Lean proofs about the Sparkle Signal DSL model do not automatically prove arbitrary emitted RTL.
+
+For this domain, the declared emitted subset is the Sparkle Signal DSL fragment, elaboration path, and lowering/backend path exercised by the committed `TinyMLPSparkle` sources and the repository's documented emission entrypoint for the raw full-core artifact. Claims in this specification do not automatically extend beyond that exercised subset.
 
 The required semantic connection for this domain is:
 
 - pure Lean machine and temporal semantics in `formalize/`
 - proved refinement into a Sparkle Signal DSL full-core model of `mlp_core`
-- emitted RTL validated separately by simulation, SMT, and synthesis comparison
+- a verified Sparkle lowering/backend story for the declared emitted subset used by this domain
+- emitted RTL, wrapper or adapter logic, and downstream integration validated separately by simulation, SMT, and synthesis comparison
 
 ## 4. Behavioral Requirements
 
@@ -211,6 +214,7 @@ Required validation methods:
 
 2. **Structural validation**
 
+- the emitted raw artifact is checked to stay within the declared Sparkle emitted subset covered by the repository's lowering/backend verification claim
 - the raw Sparkle-emitted module interface is checked against the repository's expected wrapper or adapter input assumptions
 - the stable wrapper or adapter is mechanically regenerated or checked against committed output
 - packed-field slicing, reset adaptation, and `FORMAL`-only observability aliases used by the shared SMT flow are treated as part of the stable downstream artifact contract and validated directly
@@ -242,7 +246,8 @@ The minimum required statements are:
 
 - which properties are proved in pure Lean over the mathematical, machine, and temporal model
 - which full-core properties are proved about the Sparkle Signal DSL model
-- which properties are assumed about Sparkle's code generator
+- which properties are verified about the Sparkle lowering/backend on the declared emitted subset
+- which Sparkle/backend, wrapper, or integration properties remain assumptions or validation-only outside that subset
 - whether any equivalence result is a theorem about the Signal DSL model, a validation result about the emitted RTL, or both
 - whether the claim being made is about the Signal DSL full-core model, the emitted RTL, or both
 
@@ -250,12 +255,9 @@ Required for this domain:
 
 - a refinement theorem from the repository's pure Lean full-core machine and temporal semantics to the Sparkle Signal DSL full-core model
 - theorem statements strong enough to cover the cycle-visible semantics relied on by the external `mlp_core` contract
-- an explicit statement that the Lean theorem stops at the Signal DSL semantics and does not, by itself, prove the emitted RTL
+- an explicit statement that the Lean theorem stops at the Signal DSL semantics and does not, by itself, prove the emitted RTL; any stronger emitted-RTL claim must come from the separately stated emitted-subset lowering/backend verification story
+- a structured semantics-preservation statement between the Sparkle Signal DSL model and the emitted RTL for the declared emitted subset
 - direct structural checks for any stable wrapper or adapter boundary whose packing, reset adaptation, or `FORMAL` observability ports are consumed by downstream simulation or SMT flows
-
-Desired but not mandatory:
-
-- a structured semantics-preservation argument between the Sparkle Signal DSL model and the emitted RTL
 
 ## 10. Acceptance Criteria
 
@@ -268,4 +270,4 @@ The `rtl-formalize-synthesis` domain is complete when:
 5. The generated RTL matches the current `mlp_core` interface, handshake contract, cycle schedule, and exact `76`-cycle latency measured from the accept cycle to the first cycle where `done` is visible.
 6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`, and when needed also exposes `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg` as the raw implementation-detail schematic, while any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
 7. A Lean refinement theorem connects the repository's pure Lean full-core semantics to the Sparkle Signal DSL full-core model.
-8. The repository explicitly states that Sparkle-to-Verilog remains a trusted backend boundary and that emitted RTL is validated by simulation, SMT, and synthesis rather than proved in Lean alone.
+8. The repository explicitly states that the Sparkle lowering/backend is verified for the declared emitted subset used by this domain, while wrapper or adapter logic, unexercised Sparkle/backend features, and downstream integration remain validation-backed or assumption-backed exactly as documented.

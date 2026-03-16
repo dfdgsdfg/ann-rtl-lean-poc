@@ -102,7 +102,7 @@ That means:
 - experiment summaries should distinguish `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method` instead of collapsing branch status into a single support label
 - Lean/Sparkle-generated RTL is a full-core experiment branch validated by the shared `mlp_core` regression bench and downstream QoR flows
 - `rtl-formalize-synthesis/` now carries a full-core Lean refinement surface from the pure `rtlTrace` semantics to the Sparkle Signal DSL full-core view; emitted RTL remains downstream-validated rather than proved by Lean alone
-- Sparkle-to-Verilog remains a trusted backend boundary and is validated by shared full-core simulation and downstream synthesis comparison, not by Lean proof alone
+- the Sparkle lowering/backend claim is subset-scoped: the committed emitted subset used by `rtl-formalize-synthesis/` is treated as verified, while wrapper or adapter recovery logic and downstream integration remain validation-backed rather than proved by Lean alone
 - hand-written `rtl/` remains the canonical implementation baseline
 
 Relevant docs:

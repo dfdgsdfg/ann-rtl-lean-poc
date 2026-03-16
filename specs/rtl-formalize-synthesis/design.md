@@ -11,7 +11,7 @@ frozen contract
   -> pure Lean spec / machine / temporal semantics
   -> Sparkle Signal DSL full-core model
   -> full-core refinement theorem
-  -> raw emitted Verilog/SystemVerilog (trusted backend)
+  -> raw emitted Verilog/SystemVerilog (verified lowering/backend on the committed emitted subset)
   -> stable generated `mlp_core` wrapper/adapter when needed
   -> normalized branch-local `sv/` export tree
   -> branch-local `blueprint/mlp_core.svg`
@@ -68,7 +68,7 @@ The clean architecture is:
 
 3. **Emission layer**
 
-- dedicated synthesis commands emit the raw full-core Verilog/SystemVerilog artifact and any stable downstream wrapper or adapter artifact
+- dedicated synthesis commands emit the raw full-core Verilog/SystemVerilog artifact through a verified Sparkle lowering/backend path for the committed emitted subset, plus any stable downstream wrapper or adapter artifact
 
 This avoids overloading the `formalize/` files with backend-specific concerns while still closing the pure-spec-to-Signal-DSL gap at the full-core boundary.
 
@@ -260,6 +260,7 @@ Validation should happen in five layers.
 ### 7.2 Structural Validation
 
 - generated ports match the intended `mlp_core` interface
+- the emitted raw artifact stays within the declared Sparkle emitted subset covered by the repository's lowering/backend verification claim
 - the raw Sparkle-emitted module interface is checked against the repository's wrapper or adapter assumptions
 - any stable wrapper or adapter is mechanically regenerated or checked against committed output
 - packed-field recovery, reset adaptation, and `FORMAL` alias signals used by the SMT harness are validated directly
@@ -287,7 +288,7 @@ Validation should happen in five layers.
 
 ## 8. Proof Strategy
 
-The proof story should be incremental without pretending Sparkle generation is proof-producing by itself.
+The proof story should be incremental without pretending that the entire Sparkle stack is proof-producing by itself.
 
 ### Phase A
 
@@ -299,13 +300,14 @@ Prove that the Sparkle Signal DSL full-core implementation refines the relevant 
 
 ### Phase C
 
-Treat the emitted RTL as a generated artifact behind a trusted Sparkle backend, and validate it with simulation and downstream SMT/synthesis unless a stronger semantics-preservation argument is developed.
+Rely on a verified Sparkle lowering/backend only for the committed emitted subset exercised by this repository's checked-in sources and emission entrypoint, then validate the resulting RTL and any stable wrapper or adapter with simulation and downstream SMT/synthesis.
 
 This keeps the trust boundary honest:
 
 - proofs cover the pure spec and the Signal DSL full-core implementation model
-- Sparkle-to-Verilog generation is trusted software
-- emitted RTL is still checked by simulation, SMT, and synthesis
+- the Sparkle lowering/backend claim is stronger than trust, but only for the committed emitted subset used by this branch
+- wrapper or adapter recovery logic and Sparkle features outside that emitted subset remain separate validation or assumption surfaces
+- emitted RTL and the stable downstream artifact are still checked by simulation, SMT, and synthesis
 
 ## 9. Main Risks
 
@@ -329,7 +331,7 @@ The repository explicitly accepts the emitted-side monolithic cost when that kee
 
 ### 9.3 False Confidence From Generation
 
-Generated RTL is not automatically correct because it came from Lean.
+Generated RTL is not automatically correct because it came from Lean, or because part of the Sparkle backend story is verified on the exercised subset.
 
 Correctness still depends on:
 
@@ -347,4 +349,4 @@ Correctness still depends on:
 | Domain scope | Full generated `mlp_core` semantics at the top-level boundary | Makes the domain target explicit and removes ambiguous partial-scope claims |
 | Weight source | Reuse the frozen contract pipeline | Prevents semantic drift |
 | Implementation strategy | Re-implement the hardware in Sparkle Signal DSL with explicit controller/datapath state | The current proof files are not automatically synthesizable |
-| Proof boundary | Full-core pure-model to Signal-DSL refinement is required; emitted RTL still sits behind a trusted backend and is validated separately | Makes the trust boundary explicit without overstating what Lean proves |
+| Proof boundary | Full-core pure-model to Signal-DSL refinement is required; the committed emitted subset uses a verified lowering/backend path, while wrapper/adapter and downstream artifact surfaces are validated separately | Makes the trust boundary explicit without overstating what Lean proves |

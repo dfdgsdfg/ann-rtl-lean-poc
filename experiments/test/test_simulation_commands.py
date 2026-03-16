@@ -12,6 +12,7 @@ INTERNAL_TB = ROOT / "simulations" / "rtl" / "testbench_internal.sv"
 SPARKLE_VENDOR_GIT = ROOT / "rtl-formalize-synthesis" / "vendor" / "Sparkle" / ".git"
 SPARKLE_RAW = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv"
 SPARKLE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
+SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 SPARKLE_WRAPPER_GENERATOR = ROOT / "rtl-formalize-synthesis" / "scripts" / "generate_wrapper.py"
 
 
@@ -77,6 +78,7 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertIn("build/rtl-formalize-synthesis/sparkle_prepare.stamp", output)
         self.assertIn("cd rtl-formalize-synthesis && lake build TinyMLPSparkle.Emit", output)
         self.assertIn("python3 rtl-formalize-synthesis/scripts/generate_wrapper.py", output)
+        self.assertIn("rtl-formalize-synthesis/results/canonical/verification_manifest.json", output)
         self.assertIn("rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv", output)
 
     def test_sparkle_emit_target_executes_without_dirtying_tracked_artifacts(self) -> None:
@@ -105,6 +107,8 @@ class SimulationCommandTests(unittest.TestCase):
                 str(SPARKLE_RAW),
                 "--wrapper",
                 str(SPARKLE_WRAPPER),
+                "--subset-manifest",
+                str(SPARKLE_VERIFICATION_MANIFEST),
                 "--check",
             ],
             cwd=ROOT,
