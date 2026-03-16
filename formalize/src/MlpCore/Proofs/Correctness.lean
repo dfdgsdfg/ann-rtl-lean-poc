@@ -1,5 +1,5 @@
 import MlpCore.Defs.CorrectnessGoals
-import MlpCore.ProofsVanilla.Temporal
+import MlpCore.Proofs.Temporal
 
 namespace MlpCore
 

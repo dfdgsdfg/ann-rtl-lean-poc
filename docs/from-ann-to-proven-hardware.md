@@ -618,9 +618,9 @@ The Lean formalization addresses all four at the model level. The simulation val
 
 ### formalize-smt as a Parallel Lean-SMT Lane
 
-`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side proof lane that aims to mirror the public theorem surface of `formalize` while using SMT where that reduces real proof burden.
+`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side proof lane that mirrors the public theorem surface of `formalize` under the `MlpCoreSmt` namespace while using SMT where that reduces real proof burden.
 
-The checked-in implementation is still only a partial slice of that goal in `formalize-smt/`: today it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
+The checked-in implementation now exposes the full mirrored theorem surface in `formalize-smt/`: arithmetic, fixed-point bridge, invariants, simulation, temporal, and top-level correctness theorems are all available through `MlpCoreSmt`. That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
 
 So the architectural rule is:
 

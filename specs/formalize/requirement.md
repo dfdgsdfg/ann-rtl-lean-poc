@@ -191,8 +191,8 @@ formalize/
       Interfaces/ArithmeticProofProvider.lean
                                           -- proof interface for arithmetic helper families required by shared fixed-point defs
       Defs/FixedPointCore.lean           -- hardware-domain executable arithmetic and shared fixed-point definitions
-      ProofsVanilla/SpecArithmetic.lean  -- baseline arithmetic lemmas and baseline provider value
-      ProofsVanilla/FixedPoint.lean      -- baseline proofs for fixed-point executable definitions and the hardware→math bridge
+      Proofs/SpecArithmetic.lean  -- baseline arithmetic lemmas and baseline provider value
+      Proofs/FixedPoint.lean      -- baseline proofs for fixed-point executable definitions and the hardware→math bridge
       Machine.lean                       -- State, Phase, step, run, initialState, totalCycles with bounded value storage and invariant-backed controller indices
       Temporal.lean                      -- temporal/trace layer and mandatory timing theorems
       Simulation.lean                    -- operational bridge lemmas used by temporal and end-state proofs
@@ -208,7 +208,7 @@ formalize/
     MlpCore/
       Defs/               -- shared definitions, constants, and executable functions
       Interfaces/         -- proof interfaces consumed by shared defs
-      ProofsVanilla/      -- current baseline proofs and provider values selected locally by consuming files
+      Proofs/      -- current baseline proofs and provider values selected locally by consuming files
 ```
 
 The current checked-in baseline still realizes this split first at the arithmetic and fixed-point executable layer. However, the purpose of that split is to support an alternate proof lane that can eventually mirror the same public theorem surface without importing vanilla proof modules as an oracle.

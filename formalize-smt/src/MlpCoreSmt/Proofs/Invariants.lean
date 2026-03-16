@@ -1,9 +1,11 @@
 import MlpCore.Defs.MachineCore
-import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCoreSmt.Proofs.SpecArithmetic
 
-namespace MlpCore
+namespace MlpCoreSmt
 
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+open MlpCore
+
+local instance : ArithmeticProofProvider := smtArithmeticProofProvider
 
 def IndexInvariant (s : State) : Prop :=
   match s.phase with
@@ -128,4 +130,4 @@ theorem initial_run_preserves_indexInvariant (n : Nat) (input : Input8) :
     IndexInvariant (run n (initialState input)) := by
   exact run_preserves_indexInvariant n (initialState_indexInvariant input)
 
-end MlpCore
+end MlpCoreSmt

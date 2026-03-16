@@ -311,7 +311,7 @@ The architectural distinction:
 
 The trust question is the key concern. If the solver only accelerates proof search while the Lean kernel still checks the final proof term, `formalize-smt` stays inside the Lean leg of the repository's verification story. If solver answers are accepted as oracles (via `sorry` or unverified axioms), the Lean proofs become only as trustworthy as the solver — weakening the Lean leg rather than creating a new independent verification direction.
 
-The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`. The checked-in implementation is also still partial relative to the intended full mirrored theorem surface.
+The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`. The checked-in implementation now exposes the full mirrored theorem surface under `MlpCoreSmt`, but it still inherits that weaker trust boundary.
 
 ### What No Single Method Covers
 

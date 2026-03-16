@@ -45,7 +45,7 @@ Lane-specific proof surface:
 
 Forbidden proof sharing:
 
-- `formalize-smt` must not satisfy mirrored theorem families by importing the finished `ProofsVanilla/*` modules or other vanilla proof modules as oracles
+- `formalize-smt` must not satisfy mirrored theorem families by importing the finished `Proofs/*` modules or other baseline proof modules as oracles
 
 This keeps the comparison honest: one semantic surface, two proof lanes.
 

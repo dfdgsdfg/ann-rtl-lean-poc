@@ -1,5 +1,5 @@
 import MlpCore.Defs.TemporalCore
-import MlpCore.ProofsVanilla.Simulation
+import MlpCore.Proofs.Simulation
 
 namespace MlpCore
 

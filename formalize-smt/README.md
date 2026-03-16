@@ -5,25 +5,19 @@ This package implements the optional SMT-backed Lean proof lane described in [`s
 Baseline relationship:
 
 - `formalize/` is the canonical solver-free Lean proof path
-- `formalize-smt/` is an optional SMT-backed lane intended to mirror the same public theorem interface
+- `formalize-smt/` is an optional SMT-backed alternative that mirrors the same public theorem surface under the `MlpCoreSmt` namespace
 
-Target scope:
+Current checked-in scope:
 
-- provide an SMT-backed proof lane with the same public theorem surface as `formalize`
-- reuse shared semantic definitions and proof interfaces from `../formalize` where practical
-- use `lean-smt` where it reduces real repository-specific proof burden rather than only demonstrating the library
+- `MlpCoreSmt` mirrors the proof-facing responsibilities of `MlpCore`
+- the SMT lane reuses shared semantic definitions and proof interfaces from `../formalize`
+- arithmetic-side proof burden is reduced with `lean-smt`, while upper simulation / temporal / correctness layers remain readable Lean proofs built on the SMT-backed lower surface
 
-Current checked-in status:
+Non-goals:
 
-- the implementation is still partial relative to that target lane
-- today it reproves the `ArithmeticProofProvider` theorem family and exposes an alternate provider value for the shared fixed-point executable layer
-- the upper machine / simulation / temporal / correctness theorem surface has not yet reached interface parity
-
-Current non-goals:
-
-- replacing the vanilla `formalize/` package as the canonical baseline
-- making SMT tooling a prerequisite for understanding the repository's baseline proof story
-- presenting the current partial implementation as if the full target lane were already complete
+- replacing the vanilla `formalize/` package as the canonical repository baseline
+- making SMT tooling a prerequisite for the repository's baseline proof story
+- folding the external `smt/` domain into this Lean-side package
 
 ## Dependencies
 
@@ -49,11 +43,11 @@ Trust boundary:
 
 Lane relationship:
 
-- `formalize-smt` is specified as a full optional proof lane, not merely as a tiny arithmetic proof slice
-- shared semantic modules may be imported from `MlpCore.*`, but replaced proof families should not be imported from `ProofsVanilla/*` as solved facts
-- the current checked-in implementation still reflects only the first provider-level slice of that wider target
+- the mirrored public theorem surface is exposed through `MlpCoreSmt.Proofs.SpecArithmetic`, `MlpCoreSmt.Proofs.FixedPoint`, `MlpCoreSmt.Proofs.Invariants`, `MlpCoreSmt.Proofs.Simulation`, `MlpCoreSmt.Proofs.Temporal`, and `MlpCoreSmt.Proofs.Correctness`
+- shared semantic modules may be imported from `MlpCore.*`, but SMT-lane proofs must not be satisfied by importing `MlpCore.Proofs.*` as solved facts
+- `MlpCoreSmt.Arithmetic` remains a compatibility shim for the older arithmetic-only entrypoint
 
-## Command
+## Commands
 
 ```bash
 make formalize-smt
@@ -69,23 +63,24 @@ cd formalize-smt
 lake build
 ```
 
-Example of explicit lane selection outside the SMT lane package:
+Example of lane swapping by imports:
 
 ```lean
-import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCore
+
+open MlpCore
+
+example (input : Input8) :
+    @mlpFixed vanillaArithmeticProofProvider input = mlpSpec (toMathInput input) := by
+  exact MlpCore.fixedPoint_matchesSpec input
+```
+
+```lean
 import MlpCoreSmt
 
 open MlpCore
 
-section VanillaLane
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
-example (lhs rhs : Int8) : (mul8x8To16 lhs rhs).toInt = lhs.toInt * rhs.toInt := by
-  rfl
-end VanillaLane
-
-section SmtLane
-local instance : ArithmeticProofProvider := smtArithmeticProofProvider
-example (lhs rhs : Int8) : (mul8x8To16 lhs rhs).toInt = lhs.toInt * rhs.toInt := by
-  rfl
-end SmtLane
+example (input : Input8) :
+    @mlpFixed MlpCoreSmt.smtArithmeticProofProvider input = mlpSpec (toMathInput input) := by
+  exact MlpCoreSmt.fixedPoint_matchesSpec input
 ```

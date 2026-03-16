@@ -36,8 +36,8 @@ The repository now does this for the arithmetic-first exposure pass:
 - `MlpCore/Defs/SpecCore.lean`
 - `MlpCore/Interfaces/ArithmeticProofProvider.lean`
 - `MlpCore/Defs/FixedPointCore.lean`
-- `MlpCore/ProofsVanilla/SpecArithmetic.lean`
-- `MlpCore/ProofsVanilla/FixedPoint.lean`
+- `MlpCore/Proofs/SpecArithmetic.lean`
+- `MlpCore/Proofs/FixedPoint.lean`
 
 Upper layers remain canonical vanilla in the baseline package, but an alternate `formalize-smt` lane may mirror the same public theorem surface as a separate optional package rather than stopping at the arithmetic helper layer forever.
 
@@ -95,8 +95,8 @@ Because exact handshake timing is part of the current proof scope, the temporal 
 - `Defs/SpecCore.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, helper arithmetic/spec definitions, imports of the generated contract constants, and `mlpSpec`
 - `Interfaces/ArithmeticProofProvider.lean`: the proof-provider boundary for the arithmetic lemmas needed by shared fixed-point executable definitions
 - `Defs/FixedPointCore.lean`: contract-domain executable arithmetic operators, `mlpFixed`, and the shared fixed-point executable surface parameterized by the arithmetic proof provider
-- `ProofsVanilla/SpecArithmetic.lean`: baseline arithmetic helper proofs plus the default `ArithmeticProofProvider` instance
-- `ProofsVanilla/FixedPoint.lean`: baseline fixed-point proofs and the hardware-to-math bridge theorem
+- `Proofs/SpecArithmetic.lean`: baseline arithmetic helper proofs plus the default `ArithmeticProofProvider` instance
+- `Proofs/FixedPoint.lean`: baseline fixed-point proofs and the hardware-to-math bridge theorem
 - `Machine.lean`: `Phase`, `State`, `step`, `run`, `initialState`, `totalCycles`, with bounded hardware-facing value storage and invariant-backed controller indices
 - `Temporal.lean`: machine-trace definitions, local temporal operators, and named temporal formulas over controller behavior
 - `Invariants.lean`: `IndexInvariant`, step/run preservation proofs
@@ -107,7 +107,7 @@ If `formalize-smt` is pursued, the baseline exposure point for the first milesto
 
 - `Defs`: shared semantic definitions, constants, and executable functions
 - `Interfaces`: proof-provider interfaces consumed by shared defs
-- `ProofsVanilla`: the current baseline proofs
+- `Proofs`: the current baseline proofs
 
 The important point is the separation of reusable semantic surface from proof implementation. That separation begins at the arithmetic and shared fixed-point executable layer today, and it is the baseline hook that an alternate proof lane must build on if it later mirrors the full public theorem surface.
 

@@ -1,5 +1,5 @@
 import MlpCore.Defs.FixedPointCore
-import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCore.Proofs.SpecArithmetic
 
 namespace MlpCore
 

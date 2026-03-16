@@ -1,10 +1,12 @@
 import MlpCore.Defs.TemporalCore
-import MlpCore.ProofsVanilla.Invariants
-import MlpCore.ProofsVanilla.FixedPoint
+import MlpCoreSmt.Proofs.Invariants
+import MlpCoreSmt.Proofs.FixedPoint
 
-namespace MlpCore
+namespace MlpCoreSmt
 
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+open MlpCore
+
+local instance : ArithmeticProofProvider := smtArithmeticProofProvider
 
 -- ============================================================
 -- Phase 1: run composition lemmas
@@ -323,4 +325,4 @@ theorem rtl_correct (input : Input8) :
   rw [biasOutput_outputMac_1step]
   simp [doneEntry, mlpFixed, finalOutputAcc, outputScoreFixed]
 
-end MlpCore
+end MlpCoreSmt
