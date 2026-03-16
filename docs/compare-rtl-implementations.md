@@ -158,6 +158,8 @@ For `rtl-formalize-synthesis`, that chain is intentionally split:
 
 This is why the formalized branch remains meaningful even though it is the least visually similar to the handwritten baseline. The value of formalization here is not cosmetic symmetry. The value is that semantic preservation remains reviewable even after the implementation stops looking hand-layered.
 
+The formalization backbone itself now has two proof lanes: the canonical `formalize/` vanilla Lean path and the optional `formalize-smt/` SMT-backed lane. Both expose the same public theorem surface — arithmetic bounds, fixed-point bridge, invariants, simulation, temporal, and correctness — under different namespaces (`MlpCore` vs `MlpCoreSmt`). The SMT-backed lane uses `lean-smt` for bounded multiplication helpers in the arithmetic base while keeping upper layers as readable Lean proofs. Since both lanes share the same semantic definitions in `MlpCore.Defs.*`, the formalization that underpins this branch comparison is not tied to a single proof strategy. A second independent lane reproving the same theorem surface strengthens confidence in the shared semantic backbone that makes the three RTL branches comparable.
+
 ## Actual Circuit Comparison
 
 ### Common comparable top-level view
