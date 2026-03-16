@@ -2,131 +2,123 @@
 
 ## 1. Design Goal
 
-The design goal of `formalize-smt` is to create a separate Lean-plus-SMT workflow without destabilizing the mature `formalize` baseline.
+The design goal of `formalize-smt` is to provide a full optional Lean-plus-SMT proof lane without destabilizing the mature `formalize` baseline.
 
 The key architectural decision is:
 
 - `formalize/` stays canonical
-- `formalize-smt/` is an optional proof-automation lane
+- `formalize-smt/` is a second proof lane with the same public theorem interface
 
-This separation is worth keeping explicit because the two lanes optimize for different things:
+This separation remains worth keeping explicit because the two lanes optimize for different things:
 
 - vanilla Lean optimizes for minimal external dependencies and straightforward reviewability
-- SMT-assisted Lean optimizes for automation on solver-friendly proof obligations
+- Lean-plus-SMT optimizes for reducing repetitive proof labor while preserving theorem statements
 
-## 2. Workflow Model
+## 2. Lane Model
 
-The intended workflow is layered rather than competitive.
+`formalize-smt` is not just a small helper slice in the design target. It is a parallel proof lane.
 
-Recommended mental model:
+That means:
 
-1. Write or preserve the main theorem structure in vanilla Lean.
-2. Identify repetitive helper lemmas that are solver-friendly.
-3. Add SMT assistance only where it removes low-value proof labor.
-4. Keep the resulting theorem surface readable and kernel-checked.
+- the semantic backbone remains shared where practical
+- the proof implementations are lane-specific
+- the public theorem surface is intended to match the vanilla lane
+- the SMT lane is still optional and explicitly weaker in trust unless the underlying tooling story improves
 
-The design should avoid turning the project into a solver-script repository wrapped in Lean syntax.
+The design should still avoid turning the repository into a solver-script repository wrapped in Lean syntax. The goal is interface parity with better automation, not opaque proof scripts.
 
-The repository already exposes the arithmetic and shared fixed-point executable layer cleanly enough for a selective overlay. The upper machine and temporal stack remain vanilla unless the repository deliberately adds a similarly clean exposure boundary there.
+## 3. Shared vs Lane-Specific Surface
 
-## 3. Separation Strategy
+The design should keep three categories separate.
 
-There are three plausible implementation patterns.
+Shared baseline surface:
 
-### 3.1 Full Fork
+- `TinyMLP.Defs.*`
+- `TinyMLP.Interfaces.*`
+- frozen constants and executable definitions whose semantics should not fork
 
-Duplicate the full `formalize` development and maintain an SMT-assisted copy.
+Lane-specific proof surface:
 
-This is the least attractive option here because it maximizes drift and maintenance cost.
+- arithmetic proof implementations
+- fixed-point proof implementations
+- machine / invariant / simulation / temporal / correctness theorem implementations
 
-### 3.2 Oracle Wrapper
+Forbidden proof sharing:
 
-Import the finished vanilla proofs and use them as solved facts while claiming an SMT-assisted path.
+- `formalize-smt` must not satisfy mirrored theorem families by importing the finished `ProofsVanilla/*` modules or other vanilla proof modules as oracles
 
-This is also a poor fit for this repository. It weakens the comparison story and makes the SMT-assisted lane hard to interpret, because the baseline proof is doing the real work.
+This keeps the comparison honest: one semantic surface, two proof lanes.
 
-### 3.3 Selective Overlay
+## 4. Interface Parity Rule
 
-Reuse the existing `formalize` definitions and proof interfaces, but reprove only the targeted theorem families with SMT assistance.
+The design target is interface parity with the vanilla lane.
 
-This is viable only if:
+For this repository, that means:
 
-- imports are well controlled
-- the extra dependency is explicit
-- the baseline build story remains understandable
-- the targeted lemmas do not import the finished vanilla proof modules as an oracle
+- `TinyMLPSmt` mirrors the proof-facing module responsibilities of `TinyMLP`
+- public theorem names, theorem statements, and goal definitions are intended to match modulo package / namespace prefix
+- consumers should be able to swap the proof lane by changing imports rather than by rewriting theorem statements
 
-For this repository, the selective overlay is the right design. The vanilla `formalize` path is already mature, so definitions should be shared, but replaced proof families should still be reproved inside the SMT-assisted lane.
+This parity requirement matters more than whether every internal helper theorem is named the same way. The public theorem contract is the compatibility target.
 
-## 4. Overlay Import Rule
+## 5. Repository Relationship
 
-The overlay rule should be explicit:
+The intended relationship among the proof and solver domains is:
 
-- `formalize-smt` may import baseline definition modules
-- `formalize-smt` may import shared proof interfaces
-- `formalize-smt` should not import the vanilla proof module for any theorem family it claims to replace
-- `formalize-smt` may still depend on vanilla proofs for unrelated areas that it is not trying to reprove, provided that boundary is documented
+- `formalize`: canonical theorem statements and baseline proofs
+- `formalize-smt`: optional SMT-backed Lean proof lane with matching interface
+- `smt`: external solver verification outside Lean
 
-This gives the repository a clean trust and comparison story:
+This keeps three different kinds of value separate:
 
-- shared semantics come from one place
-- SMT-assisted proofs are real proofs of the targeted obligations
-- untouched theorem families do not need to be duplicated gratuitously
+- semantic proof backbone
+- proof-lane comparison inside Lean
+- bounded solver-backed verification over RTL or SMT-LIB artifacts
 
-## 5. Exposure Prerequisite
+## 6. Layout Direction
 
-The repository exposes the overlay boundary for the arithmetic and shared fixed-point layer as:
+The SMT-backed lane should use a separate sibling package:
 
-- `Defs`
-- `Interfaces`
-- `ProofsVanilla`
+- `formalize/` remains the canonical vanilla package
+- `formalize-smt/` is a second Lake package that depends on `../formalize`
+- both packages share the same Lean toolchain pin so the comparison is reproducible
 
-Concretely:
+The layout should support full proof-lane mirroring:
 
-- `Defs/SpecCore.lean` exposes shared semantic definitions and frozen constants
-- `Interfaces/ArithmeticProofProvider.lean` exposes the proof-provider interface used by shared fixed-point executable defs
-- `Defs/FixedPointCore.lean` exposes provider-parameterized fixed-point executable definitions
-- `ProofsVanilla/SpecArithmetic.lean` and `ProofsVanilla/FixedPoint.lean` keep the baseline proofs and the baseline provider value
+- `formalize-smt/lean-toolchain`
+- `formalize-smt/lakefile.lean`
+- `formalize-smt/src/TinyMLPSmt.lean`
+- `formalize-smt/src/TinyMLPSmt/*` for the mirrored proof-facing modules
 
-This is enough to support an SMT-assisted overlay on the arithmetic and shared fixed-point layer without importing the finished vanilla proofs it wants to replace. The upper machine and temporal stack still require a similarly clean exposure boundary if they are ever targeted.
+Shared semantic modules may still be imported from `TinyMLP.*` rather than duplicated, provided the theorem families themselves are proved in the SMT lane.
 
-## 6. Good Target Families
+## 7. Proof Strategy
 
-The best `formalize-smt` targets in this repository are arithmetic and shared fixed-point helper lemmas whose proof labor is repetitive, solver-friendly, and lower-value than the theorem statement itself.
+A sensible proof-lane strategy is:
 
-Good target families include:
+1. Reuse shared semantic definitions and theorem statements where available.
+2. Introduce SMT-backed proofs first where proof burden is most repetitive and solver-friendly.
+3. Build upward until the SMT lane exposes the same public theorem surface as the vanilla lane.
+4. Keep theorem statements readable and structurally recognizable even when proof scripts change substantially.
+5. Make current implementation status explicit whenever the checked-in SMT lane still lags behind the design target.
+
+The point is not to replace all reasoning with SMT. The point is to preserve interface parity while using SMT in the parts where it materially improves proof maintenance.
+
+## 8. High-Value Theorem Families
+
+The theorem families most likely to justify SMT assistance in this repository are:
 
 - bounded multiplication lemmas such as `int8_mul_int8_bounds` and `int16_mul_int8_bounds`
 - width-preservation lemmas such as `int16_to_int32_bounds` and `int24_to_int32_bounds`
-- wraparound elimination lemmas such as `wrap16_eq_self_of_bounds`, `wrap32_eq_self_of_bounds`, and the derived families `wrap32_hiddenPreAt8_*` and `wrap16_hiddenSpecAt8_*`
+- wraparound elimination lemmas such as `wrap16_eq_self_of_bounds`, `wrap32_eq_self_of_bounds`, `wrap32_hiddenPreAt8_*`, and `wrap16_hiddenSpecAt8_*`
 - closed-form bounded arithmetic lemmas such as `hiddenSpecAt8_*_bounds` and `outputScoreSpec8_bounds`
-- finite case-split bridge lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt` when handled through a proof-producing or reconstruction-backed decision procedure rather than an opaque oracle
+- finite case-split bridge lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt`
 
-Poor targets include:
+These families are where `lean-smt` can deliver actual proof value instead of acting as a smoke test for the library.
 
-- trace or control invariants in `Temporal.lean`
-- delicate machine-step proofs whose value comes from explicit structural reasoning
-- large semantic bridge theorems whose value is mainly in their readable statement structure rather than in repetitive local arithmetic proof work
+The upper machine / temporal / correctness layers still belong to the lane target, but the design expectation there is interface parity plus readable proof structure, not aggressive solver use for its own sake.
 
-These target families sit squarely inside the existing arithmetic/shared fixed-point exposure boundary and do not require turning the repository into a separate external-solver verification lane.
-
-## 7. Dependency Strategy
-
-The SMT-assisted path should use a narrow dependency story.
-
-Recommended direction:
-
-- one Lean integration layer
-- one preferred solver
-- explicit version pinning
-
-If `lean-smt` is used, the design should record:
-
-- that it is a tactic layer rather than a standalone solver
-- which backend solver it depends on
-- which theorem families justify the extra dependency
-
-## 8. Trust Strategy
+## 9. Trust Strategy
 
 The core requirement is that final theorems remain Lean theorems.
 
@@ -140,75 +132,17 @@ The repository should say plainly if a given tactic has a weaker trust story tha
 
 The repository should also say plainly whether a theorem family is:
 
-- reproved in the SMT-assisted lane
-- inherited unchanged from the vanilla baseline
-- or intentionally left on the vanilla path
+- already mirrored in the SMT lane
+- intentionally still vanilla-only in the checked-in implementation
+- or pending migration to achieve interface parity
 
-## 9. Repository Relationship
+## 10. Coexistence Rules
 
-The intended relationship among the proof and solver domains is:
+Coexistence between the vanilla and SMT lanes should remain explicit:
 
-- `formalize`: canonical theorem statements and baseline proofs
-- `formalize-smt`: optional Lean proof acceleration
-- `smt`: external solver verification outside Lean
+- neither lane should silently redefine the canonical repository proof claim
+- shared semantic modules should stay semantically identical across lanes
+- lane choice should happen through imports, not hidden global-instance selection
+- documentation should distinguish the design target of the SMT lane from the narrower currently checked-in implementation when the two diverge
 
-This keeps three different kinds of value separate:
-
-- semantic proof backbone
-- proof authoring convenience
-- bounded solver-backed verification
-
-## 10. Overlay Workflow
-
-The repository should adopt SMT assistance through a stable overlay workflow:
-
-1. Keep `formalize` as the baseline proof path.
-2. Reuse the existing exposure split: shared definitions in `Defs/*`, proof interfaces in `Interfaces/*`, and baseline proofs in `ProofsVanilla/*`.
-3. Reuse the exposed baseline definitions and theorem statements for each targeted theorem family.
-4. Reprove the targeted family in the SMT-assisted lane without importing the finished vanilla proof of that same family.
-5. Keep the resulting theorem surface readable, kernel-checked, and comparable against the vanilla path.
-
-This keeps the solver integration focused on proof authoring convenience rather than on redefining the repository's semantic proof backbone.
-
-## 11. Repository Layout and Coexistence
-
-The SMT-assisted overlay should use a separate sibling package:
-
-- `formalize/` remains the canonical vanilla package
-- `formalize-smt/` is a second Lake package that depends on `../formalize`
-- both packages share the same Lean toolchain pin so the overlay is reproducible
-
-The package layout should be:
-
-- `formalize-smt/lean-toolchain`
-- `formalize-smt/lakefile.lean`
-- `formalize-smt/src/TinyMLPSmt.lean`
-- `formalize-smt/src/TinyMLPSmt/Arithmetic.lean`
-
-The dependency stack should be narrow and explicit:
-
-- `lean-smt` as the tactic layer
-- its transitive `lean-cvc5` dependency for solver interaction
-- a pinned upstream commit rather than a floating branch in the committed package manifest
-
-Representative migrated theorem families may include:
-
-- `ArithmeticProofProvider` obligations such as the bounded multiplication lemmas
-- width-preservation and wraparound helper families in `ProofsVanilla/SpecArithmetic.lean`
-- closed-form bound proofs such as `hiddenSpecAt8_*_bounds` and `outputScoreSpec8_bounds`
-- finite case-split bridge lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt`
-
-When the overlay targets a theorem family consumed by provider-parameterized executable definitions, it may define alternate provider values and small smoke theorems that instantiate those definitions with the SMT-backed provider.
-
-Coexistence between the vanilla and SMT lanes should be explicit:
-
-- neither lane should export a global `ArithmeticProofProvider` instance
-- provider selection should happen through local bindings in the files that elaborate provider-parameterized definitions
-- importing both lanes together should leave instance synthesis unresolved until a file chooses the intended lane explicitly
-
-The overlay should not migrate:
-
-- machine, invariant, simulation, temporal, or correctness theorems whose primary value is explicit structural reasoning
-- controller proofs or other theorem families whose natural verification target is emitted RTL rather than Lean proof obligations
-
-That boundary keeps the comparison clean and preserves the repository-wide split between semantic proof, proof automation, and external solver-backed verification.
+The repository should not describe `formalize-smt` as a full proof lane and a tiny arithmetic proof slice at the same time. One clear story is required, and the design target for this repository is the full optional SMT-backed lane with interface parity.

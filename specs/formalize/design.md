@@ -11,7 +11,7 @@ The formalization should be:
 - Structured so machine proofs do not hide arithmetic assumptions
 - Explicit enough to reason about cycle-level timing behavior
 
-This domain is the canonical baseline formalization. If the repository later adopts SMT-assisted Lean proof automation, that belongs to a separate optional workflow documented under `specs/formalize-smt/`.
+This domain is the canonical baseline formalization. If the repository later adopts an SMT-backed parallel proof lane, that belongs to a separate optional workflow documented under `specs/formalize-smt/`.
 
 ## 2. Modeling Strategy
 
@@ -38,7 +38,7 @@ The repository now does this for the arithmetic-first exposure pass:
 - `TinyMLP/ProofsVanilla/SpecArithmetic.lean`
 - `TinyMLP/ProofsVanilla/FixedPoint.lean`
 
-Upper layers are intentionally still vanilla in this pass.
+Upper layers remain canonical vanilla in the baseline package, but an alternate `formalize-smt` lane may mirror the same public theorem surface as a separate optional package rather than stopping at the arithmetic helper layer forever.
 
 The critical design rule is: unrestricted `Int` belongs only to the mathematical layer for arithmetic and value semantics. Hardware-facing data definitions must encode the contract domain in their types. Controller indices may remain `Nat` in the machine model if their legal ranges and phase-appropriate uses are justified by explicit invariants.
 
@@ -107,7 +107,7 @@ If `formalize-smt` is pursued, the baseline exposure point for the first milesto
 - `Interfaces`: proof-provider interfaces consumed by shared defs
 - `ProofsVanilla`: the current baseline proofs
 
-The important point is the separation of reusable semantic surface from proof implementation. In the current implementation, that separation is established first for the arithmetic and shared fixed-point executable layer rather than for the whole proof stack at once.
+The important point is the separation of reusable semantic surface from proof implementation. That separation begins at the arithmetic and shared fixed-point executable layer today, and it is the baseline hook that an alternate proof lane must build on if it later mirrors the full public theorem surface.
 
 ## 5. Proof Strategy
 
@@ -129,9 +129,9 @@ This order avoids mixing the hardest arithmetic and machine-state obligations to
 
 If an alternate proof lane is planned, add one more preparatory step before that work:
 
-12. Expose shared definitions and proof interfaces independently from the vanilla proof modules
+12. Expose shared definitions and proof interfaces independently from the vanilla proof modules, so a parallel proof lane can mirror the theorem surface without importing vanilla proofs as an oracle
 
-Without that exposure step, a selective-overlay `formalize-smt` path will either duplicate too much code or accidentally depend on the vanilla proofs it is supposed to replace.
+Without that exposure step, a parallel `formalize-smt` lane will either duplicate too much code or accidentally depend on the vanilla proofs it is supposed to replace.
 
 ## 6. Machine Modeling Plan
 

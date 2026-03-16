@@ -1,5 +1,6 @@
-import TinyMLP.Invariants
-import TinyMLP.Temporal
+import TinyMLP.Defs.TemporalCore
+import TinyMLP.ProofsVanilla.SpecArithmetic
+import TinyMLP.ProofsVanilla.Temporal
 import TinyMLPSparkle.ControllerSignal
 import TinyMLPSparkle.MlpCoreSignal
 
@@ -7,6 +8,8 @@ open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
 namespace TinyMLP.Sparkle
+
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
 abbrev inputCount4b : BitVec stateWidth := BitVec.ofNat stateWidth inputCount
 abbrev hiddenCount4b : BitVec stateWidth := BitVec.ofNat stateWidth hiddenCount

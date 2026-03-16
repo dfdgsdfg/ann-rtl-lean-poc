@@ -1,9 +1,12 @@
 import TinyMLPSparkle.Refinement
+import TinyMLP.ProofsVanilla.SpecArithmetic
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
 namespace TinyMLP.Sparkle
+
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
 def packMlpCoreOutputsBundle (outputs : MlpCoreOutputs) :=
   let packed : Signal defaultDomain _ :=

@@ -298,11 +298,11 @@ The layers do not prove the same thing in the same sense. Lean's `acceptedStart_
 
 ### The formalize-smt Distinction
 
-The repository also contains `formalize-smt/`, a separate optional Lean-side package that uses SMT solvers as proof-automation tactics inside Lean. This is not part of the `smt/` domain described in this document.
+The repository also contains `formalize-smt/`, a separate optional Lean-side package that serves as an SMT-backed parallel proof lane inside Lean. This is not part of the `smt/` domain described in this document.
 
 The architectural distinction:
 
-| | `smt/` (this domain) | `formalize-smt/` (Lean overlay) |
+| | `smt/` (this domain) | `formalize-smt/` (Lean proof lane) |
 |---|---|---|
 | Where it runs | Outside Lean — Python, Yosys, Z3 | Inside Lean — as tactics in `.lean` files |
 | What it reasons about | Real Verilog RTL, QF_BV contract encodings | Lean proof obligations |
@@ -311,7 +311,7 @@ The architectural distinction:
 
 The trust question is the key concern. If the solver only accelerates proof search while the Lean kernel still checks the final proof term, `formalize-smt` stays inside the Lean leg of the repository's verification story. If solver answers are accepted as oracles (via `sorry` or unverified axioms), the Lean proofs become only as trustworthy as the solver — weakening the Lean leg rather than creating a new independent verification direction.
 
-The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`.
+The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`. The checked-in implementation is also still partial relative to the intended full mirrored theorem surface.
 
 ### What No Single Method Covers
 

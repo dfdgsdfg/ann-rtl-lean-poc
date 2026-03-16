@@ -3,8 +3,10 @@ import TinyMLP.Interfaces.ArithmeticProofProvider
 import TinyMLP.ProofsVanilla.SpecArithmetic
 import TinyMLP.Defs.FixedPointCore
 import TinyMLP.ProofsVanilla.FixedPoint
-import TinyMLP.Machine
-import TinyMLP.Invariants
-import TinyMLP.Simulation
-import TinyMLP.Temporal
-import TinyMLP.Correctness
+import TinyMLP.Defs.MachineCore
+import TinyMLP.Defs.TemporalCore
+import TinyMLP.Defs.CorrectnessGoals
+import TinyMLP.ProofsVanilla.Invariants
+import TinyMLP.ProofsVanilla.Simulation
+import TinyMLP.ProofsVanilla.Temporal
+import TinyMLP.ProofsVanilla.Correctness

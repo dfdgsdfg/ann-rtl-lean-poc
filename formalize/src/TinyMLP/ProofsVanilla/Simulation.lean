@@ -1,4 +1,5 @@
-import TinyMLP.Invariants
+import TinyMLP.Defs.TemporalCore
+import TinyMLP.ProofsVanilla.Invariants
 import TinyMLP.ProofsVanilla.FixedPoint
 
 namespace TinyMLP
@@ -26,48 +27,6 @@ theorem run_add (m n : Nat) (s : State) :
 -- ============================================================
 -- Phase 2: Termination via control projection
 -- ============================================================
-
-structure ControlState where
-  phase : Phase
-  hiddenIdx : Nat
-  inputIdx : Nat
-deriving Repr, DecidableEq
-
-def controlStep (cs : ControlState) : ControlState :=
-  match cs.phase with
-  | .idle =>
-      { cs with phase := .loadInput }
-  | .loadInput =>
-      { phase := .macHidden, hiddenIdx := 0, inputIdx := 0 }
-  | .macHidden =>
-      if cs.inputIdx < inputCount then
-        { cs with inputIdx := cs.inputIdx + 1 }
-      else
-        { cs with phase := .biasHidden }
-  | .biasHidden =>
-      { cs with phase := .actHidden }
-  | .actHidden =>
-      { cs with inputIdx := 0, phase := .nextHidden }
-  | .nextHidden =>
-      if cs.hiddenIdx + 1 < hiddenCount then
-        { cs with hiddenIdx := cs.hiddenIdx + 1, phase := .macHidden }
-      else
-        { phase := .macOutput, hiddenIdx := 0, inputIdx := 0 }
-  | .macOutput =>
-      if cs.inputIdx < hiddenCount then
-        { cs with inputIdx := cs.inputIdx + 1 }
-      else
-        { cs with phase := .biasOutput }
-  | .biasOutput =>
-      { cs with phase := .done }
-  | .done => cs
-
-def controlRun : Nat → ControlState → ControlState
-  | 0, cs => cs
-  | n + 1, cs => controlRun n (controlStep cs)
-
-def controlOf (s : State) : ControlState :=
-  { phase := s.phase, hiddenIdx := s.hiddenIdx, inputIdx := s.inputIdx }
 
 theorem control_step_agrees (s : State) :
     controlOf (step s) = controlStep (controlOf s) := by

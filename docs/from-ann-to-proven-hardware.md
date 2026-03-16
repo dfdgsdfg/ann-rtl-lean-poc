@@ -616,18 +616,18 @@ The arithmetic in this project is small. The hard parts are:
 
 The Lean formalization addresses all four at the model level. The simulation validates the first two against actual Verilog on selected vectors. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The generated controller tightens the Lean ↔ RTL correspondence for the FSM. The combination is what makes the end-to-end case credible, even though the repository still has explicit trust boundaries between the Lean models and the Verilog implementations.
 
-### formalize-smt as a Lean Overlay
+### formalize-smt as a Parallel Lean-SMT Lane
 
-`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side overlay that changes how some helper lemmas are proved inside Lean.
+`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side proof lane that aims to mirror the public theorem surface of `formalize` while using SMT where that reduces real proof burden.
 
-The repository already includes a narrow implementation of that idea in `formalize-smt/`: it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package is separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
+The checked-in implementation is still only a partial slice of that goal in `formalize-smt/`: today it reproves the arithmetic `ArithmeticProofProvider` obligations with `lean-smt` and exposes an alternate provider for the shared fixed-point layer. That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
 
 So the architectural rule is:
 
 - if SMT is used only to help construct Lean theorems that are still kernel-checked, it stays inside the Lean leg of the four-way story
 - if the project ever accepted solver answers as an oracle, that would weaken the Lean leg rather than create a new independent one
 
-The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as a proof-automation experiment.
+The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as an experimental SMT-backed proof lane.
 
 ## 11. Seeing the Hardware
 

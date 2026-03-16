@@ -1,9 +1,6 @@
 import TinyMLP.Defs.FixedPointCore
-import TinyMLP.ProofsVanilla.SpecArithmetic
 
 namespace TinyMLP
-
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
 inductive Phase
   | idle
@@ -36,6 +33,10 @@ def initialState (input : Input8) : State :=
   , phase := .idle
   , output := false
   }
+
+section
+
+variable [ArithmeticProofProvider]
 
 def step (s : State) : State :=
   match s.phase with
@@ -89,6 +90,8 @@ def step (s : State) : State :=
 def run : Nat → State → State
   | 0, s => s
   | n + 1, s => run n (step s)
+
+end
 
 def totalCycles : Nat := 76
 

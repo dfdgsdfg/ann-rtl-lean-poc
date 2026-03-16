@@ -14,7 +14,7 @@ Each domain may contain:
 - `contract`: frozen result and downstream handoff
 - `rtl`: hardware behavior and microarchitecture
 - `formalize`: Lean models and proof targets
-- `formalize-smt`: optional SMT-assisted Lean proof workflow
+- `formalize-smt`: optional SMT-backed Lean proof lane
 - `smt`: solver-backed verification outside Lean
 - `rtl-formalize-synthesis`: Lean Signal-DSL hardware generation via Sparkle
 - `rtl-synthesis`: reactive controller synthesis from temporal specifications
@@ -36,7 +36,7 @@ Optional Lean-generated RTL branch:
 Cross-branch comparison and characterization complement:
 `rtl branches -> experiments`
 
-Optional proof-automation complement:
+Optional parallel Lean-SMT proof lane:
 `formalize -> formalize-smt`
 
 ## RTL Verification Ladder

@@ -54,7 +54,7 @@ The Lean development must include:
 3. RTL machine model
 4. A temporal or trace layer for reasoning about timing-sensitive RTL behavior
 
-The baseline formalization must also expose a reusable interface boundary for future alternate proof lanes. In particular, if the repository wants an SMT-assisted proof overlay later, `formalize/` must make it possible to import shared definitions and proof interfaces without being forced to import the finished vanilla proofs of the same theorem families.
+The baseline formalization must also expose a reusable interface boundary for future alternate proof lanes. In particular, if the repository wants an SMT-backed alternate proof lane later, `formalize/` must make it possible to import shared definitions and proof interfaces without being forced to import the finished vanilla proofs of the same theorem families.
 
 Expected top-level definitions:
 
@@ -210,13 +210,13 @@ formalize/
       ProofsVanilla/      -- current baseline proofs and provider values selected locally by consuming files
 ```
 
-In this first pass, the split is intentionally limited to the arithmetic and fixed-point executable layer. `Machine`, `Invariants`, `Simulation`, `Temporal`, and `Correctness` remain the vanilla lane and consume the default arithmetic provider.
+The current checked-in baseline still realizes this split first at the arithmetic and fixed-point executable layer. However, the purpose of that split is to support an alternate proof lane that can eventually mirror the same public theorem surface without importing vanilla proof modules as an oracle.
 
 ## 7. Reproducibility Requirements
 
 The formal flow must be reproducible by running `cd formalize && lake build` using the pinned Lean toolchain (currently v4.27.0). A successful `lake build` with zero `sorry` in the targeted files constitutes proof that all claimed theorems are machine-checked.
 
-The baseline `formalize` build should remain understandable as a solver-independent Lean path. Any optional SMT-assisted theorem automation must be documented separately rather than silently becoming part of the baseline contract.
+The baseline `formalize` build should remain understandable as a solver-independent Lean path. Any optional SMT-backed secondary proof lane must be documented separately rather than silently becoming part of the baseline contract.
 
 The repository should clearly show:
 
@@ -240,5 +240,5 @@ The `formalize` domain is complete when:
 7. If `mlpSpec` uses a wider mathematical domain, the repository states and proves the explicit hardware-to-math bridge theorem.
 8. Index-safety lemmas are proved (`IndexInvariant` preserved by `step` and `run`).
 9. Public proof structure follows the project proof-engineering rules: linear arithmetic is pushed into decidable fragments, nonlinear reasoning is factored into helper lemmas, and context-sensitive safety claims carry explicit phase assumptions.
-10. The baseline module structure is exposed cleanly enough that future alternate proof lanes can reuse shared definitions and proof interfaces without importing the finished vanilla proofs of the same theorem families as an oracle. For the first pass, this requirement applies to the arithmetic and shared fixed-point executable layer exposed via `Defs/*` and `Interfaces/ArithmeticProofProvider.lean`.
+10. The baseline module structure is exposed cleanly enough that future alternate proof lanes can reuse shared definitions and proof interfaces while mirroring the same public theorem surface without importing the finished vanilla proofs of the same theorem families as an oracle. The currently exposed hook starts at the arithmetic and shared fixed-point executable layer via `Defs/*` and `Interfaces/ArithmeticProofProvider.lean`, and further exposure work may be needed as the alternate lane grows.
 11. `cd formalize && lake build` succeeds with zero `sorry` in all files under `formalize/src/`. No `axiom` declarations beyond Lean's built-in foundations. Use of `decide`, `omega`, and `native_decide` is acceptable for concrete arithmetic obligations.

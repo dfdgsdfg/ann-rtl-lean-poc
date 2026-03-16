@@ -1,7 +1,8 @@
 import Sparkle.Core.Domain
 import Sparkle.Core.Signal
 import Sparkle.Core.StateMacro
-import TinyMLP.Temporal
+import TinyMLP.Defs.TemporalCore
+import TinyMLP.ProofsVanilla.SpecArithmetic
 import TinyMLPSparkle.Types
 import TinyMLPSparkle.ControllerSignal
 import TinyMLPSparkle.ContractData
@@ -11,6 +12,8 @@ open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
 namespace TinyMLP.Sparkle
+
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
 declare_signal_state MlpCoreState
   | phase : BitVec 4 := 0#4

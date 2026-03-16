@@ -1,5 +1,5 @@
 import TinyMLP.Defs.FixedPointCore
-import TinyMLP.Machine
+import TinyMLP.Defs.MachineCore
 
 open System
 

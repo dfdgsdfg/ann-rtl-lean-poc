@@ -1,6 +1,9 @@
-import TinyMLP.Machine
+import TinyMLP.Defs.MachineCore
+import TinyMLP.ProofsVanilla.SpecArithmetic
 
 namespace TinyMLP
+
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
 def IndexInvariant (s : State) : Prop :=
   match s.phase with

@@ -1,14 +1,9 @@
-import TinyMLP.Temporal
+import TinyMLP.Defs.CorrectnessGoals
+import TinyMLP.ProofsVanilla.Temporal
 
 namespace TinyMLP
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
-
-def rtlCorrectnessGoal (input : Input8) : Prop :=
-  (run totalCycles (initialState input)).output = mlpFixed input
-
-def rtlTerminationGoal (input : Input8) : Prop :=
-  (run totalCycles (initialState input)).phase = .done
 
 theorem fixedPoint_matchesSpec (input : Input8) :
     mlpFixed input = mlpSpec (toMathInput input) := by

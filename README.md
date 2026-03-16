@@ -83,7 +83,7 @@ flowchart LR
 - `contract`: frozen implementation handoff, arithmetic assumptions, and downstream sync
 - `rtl`: baseline handwritten SystemVerilog implementation
 - `formalize`: Lean model and proof baseline
-- `formalize-smt`: optional SMT-assisted Lean proof workflow
+- `formalize-smt`: optional SMT-backed Lean proof lane
 - `simulations`: shared executable validation
 - `smt`: solver-backed validation outside Lean
 - `experiments`: cross-branch comparison, characterization, and reporting
@@ -158,13 +158,13 @@ make smt
 make verify
 ```
 
-Optional SMT-assisted Lean overlay:
+Optional SMT-backed Lean proof lane:
 
 ```bash
 make formalize-smt
 ```
 
-`make verify` remains the baseline required verification core and does not include this optional overlay build.
+`make verify` remains the baseline required verification core and does not include this optional SMT-backed lane build.
 
 ### Working From An Explicit ANN Run
 
@@ -259,7 +259,7 @@ Vendor/tool bootstrap helpers remain under `scripts/`, for example:
 - `rtl-synthesis/`: controller-synthesis branch
 - `rtl-formalize-synthesis/`: Lean/Sparkle RTL-generation branch
 - `formalize/`: Lean proof baseline
-- `formalize-smt/`: optional proof automation complement
+- `formalize-smt/`: optional SMT-backed Lean proof lane
 - `simulations/`: shared benches and simulation runners
 - `smt/`: solver-backed validation
 - `experiments/`: branch comparison and characterization
