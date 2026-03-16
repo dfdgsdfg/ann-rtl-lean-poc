@@ -5,9 +5,9 @@ from pathlib import Path
 from .artifacts import CONTRACT_MODEL_MD_PATH, ROOT
 
 WEIGHT_ROM_PATH = ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv"
-LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
-SPARKLE_CONTRACT_DATA_PATH = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
-DEFAULT_MODEL_DOC_TEMPLATE = """# Tiny MLP ASIC Canonical Specification
+LEAN_SPEC_PATH = ROOT / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean"
+SPARKLE_CONTRACT_DATA_PATH = ROOT / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean"
+DEFAULT_MODEL_DOC_TEMPLATE = """# MLP core ASIC Canonical Specification
 
 ## Topology
 

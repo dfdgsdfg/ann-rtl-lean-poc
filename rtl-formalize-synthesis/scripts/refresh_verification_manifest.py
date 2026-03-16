@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     payload["proof_endpoint"] = {
         "kind": "packed_signal_payload",
         "typed_backend_ir": str(export["typed_backend_ir"]),
-        "lean_theorem": "TinyMLP.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace",
+        "lean_theorem": "MlpCore.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace",
         "decl_name": str(export["decl_name"]),
     }
     payload["sparkle_feature_slice"] = {

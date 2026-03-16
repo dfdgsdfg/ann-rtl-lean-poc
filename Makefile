@@ -138,12 +138,12 @@ VENDOR_OPENLANE_DIR := $(abspath $(VENDOR_DIR)/OpenLane)
 VENDOR_LTLSYNT_BIN := $(VENDOR_SPOT_INSTALL_DIR)/bin/ltlsynt
 VENDOR_SYFCO_BIN := $(VENDOR_SYFCO_INSTALL_DIR)/bin/syfco
 VENDOR_OPENLANE_FLOW := $(VENDOR_OPENLANE_DIR)/flow.tcl
-SPARKLE_EMIT_SOURCES := $(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/Emit.lean \
-	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/Types.lean \
-	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/ControllerSignal.lean \
-	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/ContractData.lean \
-	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/DatapathSignal.lean \
-	$(SPARKLE_PKG_DIR)/src/TinyMLPSparkle/MlpCoreSignal.lean \
+SPARKLE_EMIT_SOURCES := $(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/Emit.lean \
+	$(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/Types.lean \
+	$(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/ControllerSignal.lean \
+	$(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/ContractData.lean \
+	$(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/DatapathSignal.lean \
+	$(SPARKLE_PKG_DIR)/src/MlpCoreSparkle/MlpCoreSignal.lean \
 	$(SPARKLE_PREPARE_SCRIPT) \
 	$(SPARKLE_PKG_DIR)/patches/sparkle-local.patch \
 	$(SPARKLE_PKG_DIR)/lakefile.lean \

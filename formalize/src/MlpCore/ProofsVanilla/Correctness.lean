@@ -1,7 +1,7 @@
-import TinyMLP.Defs.CorrectnessGoals
-import TinyMLP.ProofsVanilla.Temporal
+import MlpCore.Defs.CorrectnessGoals
+import MlpCore.ProofsVanilla.Temporal
 
-namespace TinyMLP
+namespace MlpCore
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -180,4 +180,4 @@ theorem temporal_biasOutput_registers_result (sample : CtrlSample) (s : State)
     outputValidOf (timedStep sample s) :=
   biasOutput_registers_result sample s hphase
 
-end TinyMLP
+end MlpCore

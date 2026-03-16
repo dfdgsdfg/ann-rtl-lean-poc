@@ -6,7 +6,7 @@ This document defines the requirements for a Lean-to-RTL path based on [Verilean
 
 The `rtl-formalize-synthesis` domain covers:
 
-- expressing the TinyMLP hardware in Lean using Sparkle's Signal DSL
+- expressing the MlpCore hardware in Lean using Sparkle's Signal DSL
 - generating Verilog/SystemVerilog from that Lean description
 - relating the generated hardware to this repository's existing contract and formal models
 
@@ -77,7 +77,7 @@ The design assumptions for this repository are based on the public Sparkle proje
 
 This repository must treat Sparkle as an external dependency with an explicitly bounded verification claim, not as a blanket trusted code-generation boundary. Lean proofs about the Sparkle Signal DSL model do not automatically prove arbitrary emitted RTL.
 
-For this domain, the declared emitted subset is the Sparkle Signal DSL fragment, elaboration path, and lowering/backend path exercised by the committed `TinyMLPSparkle` sources and the repository's documented emission entrypoint for the raw full-core artifact. Claims in this specification do not automatically extend beyond that exercised subset.
+For this domain, the declared emitted subset is the Sparkle Signal DSL fragment, elaboration path, and lowering/backend path exercised by the committed `MlpCoreSparkle` sources and the repository's documented emission entrypoint for the raw full-core artifact. Claims in this specification do not automatically extend beyond that exercised subset.
 
 The required semantic connection for this domain is:
 

@@ -81,8 +81,8 @@ rtl-formalize-synthesis/
   lakefile.lean
   lean-toolchain
   src/
-    TinyMLPSparkle.lean
-    TinyMLPSparkle/
+    MlpCoreSparkle.lean
+    MlpCoreSparkle/
       Types.lean
       ContractData.lean
       ControllerSignal.lean
@@ -196,7 +196,7 @@ Each emitted artifact should state:
 The current repository already uses `contract/src/downstream_sync.py` to generate:
 
 - [`rtl/results/canonical/sv/weight_rom.sv`](../../rtl/results/canonical/sv/weight_rom.sv)
-- [`formalize/src/TinyMLP/Defs/SpecCore.lean`](../../formalize/src/TinyMLP/Defs/SpecCore.lean)
+- [`formalize/src/MlpCore/Defs/SpecCore.lean`](../../formalize/src/MlpCore/Defs/SpecCore.lean)
 
 The Sparkle path should join that same synchronization flow rather than fork a new manual path.
 

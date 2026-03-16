@@ -1,11 +1,11 @@
 import Sparkle.Core.Domain
 import Sparkle.Core.Signal
-import TinyMLPSparkle.Types
+import MlpCoreSparkle.Types
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 structure ControllerView (dom : DomainConfig) where
   state : Signal dom (BitVec stateWidth)
@@ -225,4 +225,4 @@ def sparkleControllerPacked {dom : DomainConfig}
   sparkleControllerPackedFlat
     start hidden_idx input_idx inputNeurons4b hiddenNeurons4b lastHiddenIdx
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

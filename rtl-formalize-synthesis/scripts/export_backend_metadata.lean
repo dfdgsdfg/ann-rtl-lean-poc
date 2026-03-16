@@ -1,7 +1,7 @@
 import Lean
 import Sparkle.Backend.Verilog
 import Sparkle.Compiler.Elab
-import TinyMLPSparkle
+import MlpCoreSparkle
 
 open Lean
 
@@ -12,10 +12,10 @@ private def jsonEscape (text : String) : String :=
   let escapedReturn := escapedNewline.replace "\r" "\\r"
   escapedReturn.replace "\t" "\\t"
 
-private def exactEmitDecl : Name := ``TinyMLP.Sparkle.sparkleMlpCorePacked
+private def exactEmitDecl : Name := ``MlpCore.Sparkle.sparkleMlpCorePacked
 
 def main (_args : List String) : IO UInt32 := do
-  let env ← Lean.importModules #[{ module := `TinyMLPSparkle }] {} (trustLevel := 1024)
+  let env ← Lean.importModules #[{ module := `MlpCoreSparkle }] {} (trustLevel := 1024)
   let coreCtx : Lean.Core.Context := { fileName := "<export_backend_metadata>", fileMap := default }
   let coreState : Lean.Core.State := { env := env }
   let (design, _, _) ← Lean.Meta.MetaM.toIO

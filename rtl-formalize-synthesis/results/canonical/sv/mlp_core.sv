@@ -65,7 +65,7 @@ module mlp_core (
 
   assign rst = ~rst_n;
 
-  TinyMLP_sparkleMlpCorePacked u_sparkle_mlp_core (
+  MlpCore_sparkleMlpCorePacked u_sparkle_mlp_core (
     ._gen_start(start),
     ._gen_in0(in0),
     ._gen_in1(in1),

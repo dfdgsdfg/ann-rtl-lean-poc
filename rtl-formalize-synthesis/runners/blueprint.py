@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
         yosys=args.yosys,
         netlistsvg=args.netlistsvg,
         sources=[SV_DIR / "sparkle_mlp_core.sv"],
-        top="TinyMLP_sparkleMlpCorePacked",
+        top="MlpCore_sparkleMlpCorePacked",
         json_path=BUILD_DIR / "sparkle_mlp_core.json",
         svg_path=BLUEPRINT_DIR / "sparkle_mlp_core.svg",
     )

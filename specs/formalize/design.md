@@ -32,11 +32,11 @@ If the repository later wants an alternate proof lane such as `formalize-smt`, t
 
 The repository now does this for the arithmetic-first exposure pass:
 
-- `TinyMLP/Defs/SpecCore.lean`
-- `TinyMLP/Interfaces/ArithmeticProofProvider.lean`
-- `TinyMLP/Defs/FixedPointCore.lean`
-- `TinyMLP/ProofsVanilla/SpecArithmetic.lean`
-- `TinyMLP/ProofsVanilla/FixedPoint.lean`
+- `MlpCore/Defs/SpecCore.lean`
+- `MlpCore/Interfaces/ArithmeticProofProvider.lean`
+- `MlpCore/Defs/FixedPointCore.lean`
+- `MlpCore/ProofsVanilla/SpecArithmetic.lean`
+- `MlpCore/ProofsVanilla/FixedPoint.lean`
 
 Upper layers remain canonical vanilla in the baseline package, but an alternate `formalize-smt` lane may mirror the same public theorem surface as a separate optional package rather than stopping at the arithmetic helper layer forever.
 
@@ -89,7 +89,7 @@ Because exact handshake timing is part of the current proof scope, the temporal 
 
 ## 4. File Responsibilities
 
-- `TinyMLP.lean`: root import hub — imports all submodules so `lake build` checks everything
+- `MlpCore.lean`: root import hub — imports all submodules so `lake build` checks everything
 - `Defs/SpecCore.lean`: `MathInput`, `Input8`, `toMathInput`, bounded integer wrapper definitions shared by later layers, helper arithmetic/spec definitions, frozen weight constants (auto-generated block), and `mlpSpec`
 - `Interfaces/ArithmeticProofProvider.lean`: the proof-provider boundary for the arithmetic lemmas needed by shared fixed-point executable definitions
 - `Defs/FixedPointCore.lean`: contract-domain executable arithmetic operators, `mlpFixed`, and the shared fixed-point executable surface parameterized by the arithmetic proof provider

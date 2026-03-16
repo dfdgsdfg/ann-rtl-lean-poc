@@ -10,7 +10,7 @@
    "configFile": "lakefile.lean"},
   {"type": "path",
    "scope": "",
-   "name": "tinymlp",
+   "name": "mlpcore",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
    "dir": "../formalize",

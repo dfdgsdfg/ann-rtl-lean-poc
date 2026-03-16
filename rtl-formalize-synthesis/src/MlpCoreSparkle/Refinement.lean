@@ -1,13 +1,13 @@
-import TinyMLP.Defs.TemporalCore
-import TinyMLP.ProofsVanilla.SpecArithmetic
-import TinyMLP.ProofsVanilla.Temporal
-import TinyMLPSparkle.ControllerSignal
-import TinyMLPSparkle.MlpCoreSignal
+import MlpCore.Defs.TemporalCore
+import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCore.ProofsVanilla.Temporal
+import MlpCoreSparkle.ControllerSignal
+import MlpCoreSparkle.MlpCoreSignal
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -1672,4 +1672,4 @@ theorem canonicalMlpCoreView_refines_rtlTrace {dom : DomainConfig}
         rtlHiddenReg4Signal, rtlHiddenReg5Signal, rtlHiddenReg6Signal, rtlHiddenReg7Signal,
         rtlAccRegSignal, rtlOutRegSignal, Signal.atTime]
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

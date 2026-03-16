@@ -4,7 +4,7 @@ import Sparkle.Core.Signal
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 private def bv4 (value : Nat) : BitVec 4 :=
   BitVec.ofNat 4 value
@@ -80,4 +80,4 @@ def b2Data {dom : DomainConfig} : Signal dom (BitVec 32) :=
   Signal.pure (bv32 (-1))
 /- END AUTO-GENERATED CONTRACT DATA -/
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

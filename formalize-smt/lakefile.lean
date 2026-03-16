@@ -2,16 +2,16 @@ import Lake
 
 open Lake DSL System
 
-package tinymlp_smt where
+package mlpcore_smt where
   leanOptions := #[⟨`autoImplicit, false⟩]
 
-require tinymlp from "../formalize"
+require mlpcore from "../formalize"
 
 require smt from git
   "https://github.com/ufmg-smite/lean-smt.git" @ "e556db814854fbd2e69d10adb25abf3518376154"
 
 @[default_target]
-lean_lib TinyMLPSmt where
+lean_lib MlpCoreSmt where
   srcDir := "src"
 
 private def toolExists (tool : String) : IO Bool := do

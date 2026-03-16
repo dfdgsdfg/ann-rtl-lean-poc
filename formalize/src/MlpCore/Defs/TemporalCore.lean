@@ -1,6 +1,6 @@
-import TinyMLP.Defs.MachineCore
+import MlpCore.Defs.MachineCore
 
-namespace TinyMLP
+namespace MlpCore
 
 structure ControlState where
   phase : Phase
@@ -162,4 +162,4 @@ def timedControlTrace (samples : Nat → CtrlSample) : Nat → ControlState
 def holdHigh : Nat → CtrlSample :=
   fun _ => { start := true, inputs := zeroInput }
 
-end TinyMLP
+end MlpCore

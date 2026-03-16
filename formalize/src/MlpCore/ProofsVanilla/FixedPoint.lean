@@ -1,7 +1,7 @@
-import TinyMLP.Defs.FixedPointCore
-import TinyMLP.ProofsVanilla.SpecArithmetic
+import MlpCore.Defs.FixedPointCore
+import MlpCore.ProofsVanilla.SpecArithmetic
 
-namespace TinyMLP
+namespace MlpCore
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -290,4 +290,4 @@ theorem hiddenFixedAt_eq_ofInt_hiddenSpecAt8 (input : Input8) (idx : Nat) (hidx 
     mlpFixed input = mlpSpec (toMathInput input) := by
   simp [mlpFixed, mlpSpec]
 
-end TinyMLP
+end MlpCore

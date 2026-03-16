@@ -4,10 +4,10 @@ open Lake DSL
 package rtlFormalizeSynthesis where
   leanOptions := #[⟨`autoImplicit, false⟩]
 
-require tinymlp from "../formalize"
+require mlpcore from "../formalize"
 
 require Sparkle from "vendor/Sparkle"
 
 @[default_target]
-lean_lib TinyMLPSparkle where
+lean_lib MlpCoreSparkle where
   srcDir := "src"

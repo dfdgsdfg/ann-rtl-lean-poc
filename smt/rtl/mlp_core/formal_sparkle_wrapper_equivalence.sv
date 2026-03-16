@@ -74,7 +74,7 @@ module formal_sparkle_wrapper_equivalence;
     .formal_b2_data(formal_b2_data)
   );
 
-  TinyMLP_sparkleMlpCorePacked raw (
+  MlpCore_sparkleMlpCorePacked raw (
     ._gen_start(start),
     ._gen_in0(in0),
     ._gen_in1(in1),

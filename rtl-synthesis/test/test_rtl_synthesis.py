@@ -23,13 +23,13 @@ CONTRACT_RESULT_DIR = ROOT / "contract" / "results"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 CONTRACT_RUNNERS_DIR = ROOT / "contract" / "runners"
 ROOT_RUNNERS_DIR = ROOT / "runners"
-LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
+LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean"
 RTL_CANONICAL_SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
 SIM_SHARED_DIR = ROOT / "simulations" / "shared"
 SIM_RUNNERS_DIR = ROOT / "simulations" / "runners"
 SCRIPTS_DIR = ROOT / "scripts"
-SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
+SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean"
 RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
 RTL_SYNTHESIS_RUNNERS_DIR = ROOT / "rtl-synthesis" / "runners"
 RTL_SYNTHESIS_CANONICAL_DIR = ROOT / "rtl-synthesis" / "results" / "canonical"
@@ -493,8 +493,8 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         self.temp_root = Path(self._tmpdir.name) / "rtl-synthesis-repo"
         self.temp_root.mkdir(parents=True, exist_ok=True)
         (self.temp_root / "ann" / "results" / "runs").mkdir(parents=True, exist_ok=True)
-        (self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs").mkdir(parents=True, exist_ok=True)
-        (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "formalize" / "src" / "MlpCore" / "Defs").mkdir(parents=True, exist_ok=True)
+        (self.temp_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle").mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
         shutil.copytree(ANN_CANONICAL_DIR, self.temp_root / "ann" / "results" / "canonical", dirs_exist_ok=True)
@@ -502,7 +502,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_RUNNERS_DIR, self.temp_root / "contract" / "runners", dirs_exist_ok=True)
         shutil.copytree(ROOT_RUNNERS_DIR, self.temp_root / "runners", dirs_exist_ok=True)
-        shutil.copy2(LEAN_SPEC_TEMPLATE, self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
+        shutil.copy2(LEAN_SPEC_TEMPLATE, self.temp_root / "formalize" / "src" / "MlpCore" / "Defs" / "SpecCore.lean")
         shutil.copytree(RTL_CANONICAL_SV_DIR, self.temp_root / "rtl" / "results" / "canonical" / "sv", dirs_exist_ok=True)
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
         shutil.copytree(SIM_SHARED_DIR, self.temp_root / "simulations" / "shared", dirs_exist_ok=True)
@@ -510,7 +510,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         shutil.copytree(SCRIPTS_DIR, self.temp_root / "scripts", dirs_exist_ok=True)
         shutil.copy2(
             SPARKLE_CONTRACT_TEMPLATE,
-            self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
+            self.temp_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle" / "ContractData.lean",
         )
         shutil.copytree(RTL_SYNTHESIS_CONTROLLER_DIR, self.temp_root / "rtl-synthesis" / "controller", dirs_exist_ok=True)
         shutil.copytree(RTL_SYNTHESIS_RUNNERS_DIR, self.temp_root / "rtl-synthesis" / "runners", dirs_exist_ok=True)

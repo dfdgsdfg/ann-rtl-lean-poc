@@ -184,8 +184,8 @@ Lean files:
 ```text
 formalize/
   src/
-    TinyMLP.lean                          -- root import hub (imports all submodules)
-    TinyMLP/
+    MlpCore.lean                          -- root import hub (imports all submodules)
+    MlpCore/
       Defs/SpecCore.lean                 -- mathematical model, Input8/MathInput domains, bounded value wrappers, shared arithmetic helpers, weight constants, toMathInput, mlpSpec
       Interfaces/ArithmeticProofProvider.lean
                                           -- proof interface for arithmetic helper families required by shared fixed-point defs
@@ -204,7 +204,7 @@ The current exposure split is arithmetic-first. The repository now exposes the s
 ```text
 formalize/
   src/
-    TinyMLP/
+    MlpCore/
       Defs/               -- shared definitions, constants, and executable functions
       Interfaces/         -- proof interfaces consumed by shared defs
       ProofsVanilla/      -- current baseline proofs and provider values selected locally by consuming files

@@ -1,6 +1,6 @@
 import Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 abbrev stateWidth : Nat := 4
 abbrev controllerPackedWidth : Nat := 14
@@ -16,4 +16,4 @@ abbrev stMacOutput : BitVec stateWidth := 6#4
 abbrev stBiasOutput : BitVec stateWidth := 7#4
 abbrev stDone : BitVec stateWidth := 8#4
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

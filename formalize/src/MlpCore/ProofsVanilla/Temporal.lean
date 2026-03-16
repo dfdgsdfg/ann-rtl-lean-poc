@@ -1,7 +1,7 @@
-import TinyMLP.Defs.TemporalCore
-import TinyMLP.ProofsVanilla.Simulation
+import MlpCore.Defs.TemporalCore
+import MlpCore.ProofsVanilla.Simulation
 
-namespace TinyMLP
+namespace MlpCore
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -603,4 +603,4 @@ theorem holdHigh_accepts :
     acceptedStart (holdHigh 0) idleState := by
   simp [acceptedStart, holdHigh, idleState, zeroInput]
 
-end TinyMLP
+end MlpCore

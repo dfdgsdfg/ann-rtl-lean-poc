@@ -1,10 +1,10 @@
-import TinyMLPSparkle.Refinement
-import TinyMLP.ProofsVanilla.SpecArithmetic
+import MlpCoreSparkle.Refinement
+import MlpCore.ProofsVanilla.SpecArithmetic
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -111,4 +111,4 @@ theorem sparkleMlpCoreBackendPayload_refines_rtlTrace {dom : DomainConfig}
       packMlpCoreOutputsBundle (mlpCoreOutputsOfState (rtlTrace samples t)) :=
   sparkleMlpCorePackedView_refines_rtlTrace (dom := dom) samples t
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

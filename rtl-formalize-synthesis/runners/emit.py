@@ -52,10 +52,10 @@ def main(argv: list[str] | None = None) -> int:
     if shutil.which(args.lake) is None:
         raise SystemExit(f"missing required tool: {args.lake}")
     if mode_build_only:
-        run([args.lake, "build", "TinyMLPSparkle"], cwd=DOMAIN_ROOT)
+        run([args.lake, "build", "MlpCoreSparkle"], cwd=DOMAIN_ROOT)
         return 0
 
-    run([args.lake, "build", "TinyMLPSparkle.Emit"], cwd=DOMAIN_ROOT)
+    run([args.lake, "build", "MlpCoreSparkle", "MlpCoreSparkle.Emit"], cwd=DOMAIN_ROOT)
     run(["python3", str(REFRESH_SCRIPT), "--manifest", str(VERIFICATION_MANIFEST)])
     run(
         [

@@ -1,4 +1,4 @@
-namespace TinyMLP
+namespace MlpCore
 
 def inputCount : Nat := 4
 def hiddenCount : Nat := 8
@@ -543,4 +543,4 @@ def outputScoreSpec (input : MathInput) : Int :=
 def mlpSpec (input : MathInput) : Bool :=
   outputScoreSpec input > 0
 
-end TinyMLP
+end MlpCore

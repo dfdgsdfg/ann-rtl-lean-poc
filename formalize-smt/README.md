@@ -50,7 +50,7 @@ Trust boundary:
 Lane relationship:
 
 - `formalize-smt` is specified as a full optional proof lane, not merely as a tiny arithmetic proof slice
-- shared semantic modules may be imported from `TinyMLP.*`, but replaced proof families should not be imported from `ProofsVanilla/*` as solved facts
+- shared semantic modules may be imported from `MlpCore.*`, but replaced proof families should not be imported from `ProofsVanilla/*` as solved facts
 - the current checked-in implementation still reflects only the first provider-level slice of that wider target
 
 ## Command
@@ -72,10 +72,10 @@ lake build
 Example of explicit lane selection outside the SMT lane package:
 
 ```lean
-import TinyMLP.ProofsVanilla.SpecArithmetic
-import TinyMLPSmt
+import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCoreSmt
 
-open TinyMLP
+open MlpCore
 
 section VanillaLane
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider

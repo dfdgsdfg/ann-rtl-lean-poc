@@ -1,11 +1,11 @@
 import Smt
-import TinyMLP.Defs.SpecCore
-import TinyMLP.Interfaces.ArithmeticProofProvider
-import TinyMLP.Defs.FixedPointCore
+import MlpCore.Defs.SpecCore
+import MlpCore.Interfaces.ArithmeticProofProvider
+import MlpCore.Defs.FixedPointCore
 
-namespace TinyMLPSmt
+namespace MlpCoreSmt
 
-open TinyMLP
+open MlpCore
 
 private theorem int8_mul_int8_interval_bounds_smt
     (x y : Int)
@@ -128,4 +128,4 @@ theorem shared_fixed_point_overlay_smoke (lhs rhs : Int8) :
 
 end Smoke
 
-end TinyMLPSmt
+end MlpCoreSmt

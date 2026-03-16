@@ -585,12 +585,12 @@ def format_mtime_utc(path: Path) -> str:
 
 def sparkle_generated_full_core_emit_sources() -> list[Path]:
     return [
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Emit.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Types.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "ControllerSignal.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "ContractData.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "DatapathSignal.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "MlpCoreSignal.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "Emit.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "Types.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "ControllerSignal.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "ContractData.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "DatapathSignal.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "MlpCoreSignal.lean",
         SPARKLE_PATCH_PATH,
         SPARKLE_LEAN_TOOLCHAIN,
         SPARKLE_LAKE_MANIFEST,
@@ -601,9 +601,9 @@ def sparkle_generated_full_core_emit_sources() -> list[Path]:
 
 def sparkle_generated_full_core_proof_sources() -> list[Path]:
     return [
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Refinement.lean",
-        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "BackendSemantics.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "Refinement.lean",
+        SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "BackendSemantics.lean",
         SPARKLE_BACKEND_METADATA_EXPORT,
         SPARKLE_VERIFICATION_REFRESH,
     ]
@@ -1038,7 +1038,7 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
     log_lines.append(f"newest proof source: {details['newest_proof_source']}")
     log_lines.append(f"newest proof source mtime (utc): {details['newest_proof_source_mtime_utc']}")
 
-    build_command = ["lake", "build", "TinyMLPSparkle.BackendSemantics"]
+    build_command = ["lake", "build", "MlpCoreSparkle.BackendSemantics"]
     details["proof_build_command"] = command_text(build_command)
     build_proc = run_command(build_command, cwd=SPARKLE_PROJECT_DIR)
     build_output = ((build_proc.stdout or "") + (build_proc.stderr or "")).strip()
@@ -1122,7 +1122,7 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
             mismatches.append("proof_endpoint.kind does not equal packed_signal_payload")
         if proof_endpoint.get("typed_backend_ir") != "Sparkle.IR.AST.Design":
             mismatches.append("proof_endpoint.typed_backend_ir does not equal Sparkle.IR.AST.Design")
-        if proof_endpoint.get("lean_theorem") != "TinyMLP.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace":
+        if proof_endpoint.get("lean_theorem") != "MlpCore.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace":
             mismatches.append("proof_endpoint.lean_theorem does not match the expected theorem")
         if proof_endpoint.get("decl_name") != current_metadata["decl_name"]:
             mismatches.append("proof_endpoint.decl_name does not match the current emit declaration")

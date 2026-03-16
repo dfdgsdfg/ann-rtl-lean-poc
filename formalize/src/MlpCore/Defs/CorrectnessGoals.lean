@@ -1,7 +1,7 @@
-import TinyMLP.Defs.FixedPointCore
-import TinyMLP.Defs.TemporalCore
+import MlpCore.Defs.FixedPointCore
+import MlpCore.Defs.TemporalCore
 
-namespace TinyMLP
+namespace MlpCore
 
 section
 
@@ -15,4 +15,4 @@ def rtlTerminationGoal (input : Input8) : Prop :=
 
 end
 
-end TinyMLP
+end MlpCore

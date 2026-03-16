@@ -4,7 +4,7 @@ import Sparkle.Core.Signal
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 private def signBit8 (x : BitVec 8) : BitVec 1 :=
   BitVec.extractLsb' 7 1 x
@@ -179,4 +179,4 @@ def gtZero32 {dom : DomainConfig}
     (x : Signal dom (BitVec 32)) : Signal dom Bool :=
   (BitVec.slt · ·) <$> Signal.pure (0#32 : BitVec 32) <*> x
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

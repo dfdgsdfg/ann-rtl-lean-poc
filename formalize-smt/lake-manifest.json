@@ -13,7 +13,7 @@
    "configFile": "lakefile.lean"},
   {"type": "path",
    "scope": "",
-   "name": "tinymlp",
+   "name": "mlpcore",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
    "dir": "../formalize",
@@ -128,5 +128,5 @@
    "inputRev": "v4.27.0",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "tinymlp_smt",
+ "name": "mlpcore_smt",
  "lakeDir": ".lake"}

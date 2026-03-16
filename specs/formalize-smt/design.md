@@ -33,8 +33,8 @@ The design should keep three categories separate.
 
 Shared baseline surface:
 
-- `TinyMLP.Defs.*`
-- `TinyMLP.Interfaces.*`
+- `MlpCore.Defs.*`
+- `MlpCore.Interfaces.*`
 - frozen constants and executable definitions whose semantics should not fork
 
 Lane-specific proof surface:
@@ -55,7 +55,7 @@ The design target is interface parity with the vanilla lane.
 
 For this repository, that means:
 
-- `TinyMLPSmt` mirrors the proof-facing module responsibilities of `TinyMLP`
+- `MlpCoreSmt` mirrors the proof-facing module responsibilities of `MlpCore`
 - public theorem names, theorem statements, and goal definitions are intended to match modulo package / namespace prefix
 - consumers should be able to swap the proof lane by changing imports rather than by rewriting theorem statements
 
@@ -87,10 +87,10 @@ The layout should support full proof-lane mirroring:
 
 - `formalize-smt/lean-toolchain`
 - `formalize-smt/lakefile.lean`
-- `formalize-smt/src/TinyMLPSmt.lean`
-- `formalize-smt/src/TinyMLPSmt/*` for the mirrored proof-facing modules
+- `formalize-smt/src/MlpCoreSmt.lean`
+- `formalize-smt/src/MlpCoreSmt/*` for the mirrored proof-facing modules
 
-Shared semantic modules may still be imported from `TinyMLP.*` rather than duplicated, provided the theorem families themselves are proved in the SMT lane.
+Shared semantic modules may still be imported from `MlpCore.*` rather than duplicated, provided the theorem families themselves are proved in the SMT lane.
 
 ## 7. Proof Strategy
 

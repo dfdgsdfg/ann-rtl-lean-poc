@@ -1,17 +1,17 @@
 import Sparkle.Core.Domain
 import Sparkle.Core.Signal
 import Sparkle.Core.StateMacro
-import TinyMLP.Defs.TemporalCore
-import TinyMLP.ProofsVanilla.SpecArithmetic
-import TinyMLPSparkle.Types
-import TinyMLPSparkle.ControllerSignal
-import TinyMLPSparkle.ContractData
-import TinyMLPSparkle.DatapathSignal
+import MlpCore.Defs.TemporalCore
+import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCoreSparkle.Types
+import MlpCoreSparkle.ControllerSignal
+import MlpCoreSparkle.ContractData
+import MlpCoreSparkle.DatapathSignal
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
-namespace TinyMLP.Sparkle
+namespace MlpCore.Sparkle
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -798,4 +798,4 @@ def sparkleMlpCorePacked {dom : DomainConfig}
     acc_reg
     out_reg
 
-end TinyMLP.Sparkle
+end MlpCore.Sparkle

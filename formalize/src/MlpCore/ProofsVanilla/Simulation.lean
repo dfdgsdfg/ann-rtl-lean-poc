@@ -1,8 +1,8 @@
-import TinyMLP.Defs.TemporalCore
-import TinyMLP.ProofsVanilla.Invariants
-import TinyMLP.ProofsVanilla.FixedPoint
+import MlpCore.Defs.TemporalCore
+import MlpCore.ProofsVanilla.Invariants
+import MlpCore.ProofsVanilla.FixedPoint
 
-namespace TinyMLP
+namespace MlpCore
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -323,4 +323,4 @@ theorem rtl_correct (input : Input8) :
   rw [biasOutput_outputMac_1step]
   simp [doneEntry, mlpFixed, finalOutputAcc, outputScoreFixed]
 
-end TinyMLP
+end MlpCore

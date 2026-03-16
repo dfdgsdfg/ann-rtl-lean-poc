@@ -50,8 +50,8 @@ Boundary and trust profile:
 
 Wrapper mapping:
 
-- generated Lean namespace: `TinyMLP.Sparkle`
-- raw generated module: `TinyMLP_sparkleMlpCorePacked`
+- generated Lean namespace: `MlpCore.Sparkle`
+- raw generated module: `MlpCore_sparkleMlpCorePacked`
 - stable downstream module boundary: `mlp_core`
 - wrapper generation path: `make rtl-formalize-synthesis-emit` regenerates both the raw module and this stable wrapper from committed sources
 - artifact freshness policy: generated-core freshness is checked against emit inputs, while proof-only Lean drift is reported separately in artifact-consistency without gating branch freshness

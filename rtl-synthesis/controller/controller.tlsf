@@ -1,5 +1,5 @@
 INFO {
-  TITLE:       "TinyMLP Controller Reactive-Synthesis Contract"
+  TITLE:       "MlpCore Controller Reactive-Synthesis Contract"
   DESCRIPTION: "Controller-only phase contract for rtl/results/canonical/sv/controller.sv with exact_schedule_v1 assumptions"
   SEMANTICS:   Mealy
   TARGET:      Mealy

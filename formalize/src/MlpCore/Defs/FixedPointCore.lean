@@ -1,7 +1,7 @@
-import TinyMLP.Defs.SpecCore
-import TinyMLP.Interfaces.ArithmeticProofProvider
+import MlpCore.Defs.SpecCore
+import MlpCore.Interfaces.ArithmeticProofProvider
 
-namespace TinyMLP
+namespace MlpCore
 
 def w1Int8At (hiddenIdx inputIdx : Nat) : Int8 :=
   Int8.ofInt (w1At hiddenIdx inputIdx)
@@ -95,4 +95,4 @@ def outputScoreFixed (input : Input8) : Acc32 :=
 def mlpFixed (input : Input8) : Bool :=
   (outputScoreFixed input).toInt > 0
 
-end TinyMLP
+end MlpCore

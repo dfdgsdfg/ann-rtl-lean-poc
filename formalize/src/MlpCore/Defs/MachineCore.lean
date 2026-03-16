@@ -1,6 +1,6 @@
-import TinyMLP.Defs.FixedPointCore
+import MlpCore.Defs.FixedPointCore
 
-namespace TinyMLP
+namespace MlpCore
 
 inductive Phase
   | idle
@@ -95,4 +95,4 @@ end
 
 def totalCycles : Nat := 76
 
-end TinyMLP
+end MlpCore

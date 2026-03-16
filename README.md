@@ -4,7 +4,7 @@
 
 This repository is a small end-to-end research project for a tiny neural-network inference chip.
 
-It takes one toy MLP and pushes it through the full stack:
+It takes one small MLP core and pushes it through the full stack:
 
 1. train an actual ANN
 2. freeze one quantized result as the implementation contract

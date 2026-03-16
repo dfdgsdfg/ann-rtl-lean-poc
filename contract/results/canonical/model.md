@@ -1,4 +1,4 @@
-# Tiny MLP ASIC Canonical Specification
+# MLP core ASIC Canonical Specification
 
 ## Topology
 

@@ -1,9 +1,9 @@
-import TinyMLP.Defs.FixedPointCore
-import TinyMLP.Defs.MachineCore
+import MlpCore.Defs.FixedPointCore
+import MlpCore.Defs.MachineCore
 
 open System
 
-namespace TinyMLP
+namespace MlpCore
 
 def joinComma (items : List String) : String :=
   String.intercalate ", " items
@@ -31,7 +31,7 @@ def w2Rows : List Int :=
 def semanticBridgeJson : String :=
   "{\n" ++
   "  \"artifact_kind\": " ++ jsonString "lean_fixed_point_bridge" ++ ",\n" ++
-  "  \"source_module\": " ++ jsonString "TinyMLP" ++ ",\n" ++
+  "  \"source_module\": " ++ jsonString "MlpCore" ++ ",\n" ++
   "  \"topology\": {\n" ++
   "    \"input_size\": " ++ toString inputCount ++ ",\n" ++
   "    \"hidden_size\": " ++ toString hiddenCount ++ ",\n" ++
@@ -74,7 +74,7 @@ def runMain (args : List String) : IO UInt32 := do
   IO.FS.writeFile outputPath semanticBridgeJson
   pure 0
 
-end TinyMLP
+end MlpCore
 
 def main (args : List String) : IO UInt32 :=
-  TinyMLP.runMain args
+  MlpCore.runMain args

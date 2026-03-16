@@ -1,7 +1,7 @@
-import TinyMLP.Defs.SpecCore
-import TinyMLP.Interfaces.ArithmeticProofProvider
+import MlpCore.Defs.SpecCore
+import MlpCore.Interfaces.ArithmeticProofProvider
 
-namespace TinyMLP
+namespace MlpCore
 
 theorem int8_mul_int8_bounds (lhs rhs : Int8) :
     Int16Bounds (lhs.toInt * rhs.toInt) := by
@@ -388,4 +388,4 @@ theorem outputScoreSpec8_bounds (input : Input8) :
     outputScoreSpecFromHidden (hiddenSpec (toMathInput input)) = outputScoreSpec (toMathInput input) := by
   rfl
 
-end TinyMLP
+end MlpCore

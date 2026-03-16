@@ -81,7 +81,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) generates three artifact
 ```mermaid
 graph TD
     W[contract/results/canonical/weights.json] --> ROM["rtl/results/canonical/sv/weight_rom.sv<br/>SystemVerilog ROM constants"]
-    W --> SPEC["formalize/src/TinyMLP/Defs/SpecCore.lean<br/>Lean weight definitions"]
+    W --> SPEC["formalize/src/MlpCore/Defs/SpecCore.lean<br/>Lean weight definitions"]
     W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
 
@@ -533,7 +533,7 @@ graph LR
 
 ### What Is Proved
 
-[`Refinement.lean`](../rtl-formalize-synthesis/src/TinyMLPSparkle/Refinement.lean) now exposes both the controller bridge and the direct full-core Sparkle theorems:
+[`Refinement.lean`](../rtl-formalize-synthesis/src/MlpCoreSparkle/Refinement.lean) now exposes both the controller bridge and the direct full-core Sparkle theorems:
 
 - `controllerPhaseNextComb_refines_timedControlStep`
 - `canonicalControllerView_refines_timedControlTrace`
@@ -544,7 +544,7 @@ These theorems connect the pure Lean machine and temporal semantics in `formaliz
 
 ### What Is Verified vs. Validated
 
-For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `TinyMLPSparkle` sources and documented emission entrypoint.
+For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `MlpCoreSparkle` sources and documented emission entrypoint.
 
 That claim does not automatically extend to wrapper reconstruction logic, unexercised Sparkle/backend features, or downstream integration artifacts. The generated wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus remains a direct validation surface.
 

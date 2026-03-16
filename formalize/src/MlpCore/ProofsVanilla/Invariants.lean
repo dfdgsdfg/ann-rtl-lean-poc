@@ -1,7 +1,7 @@
-import TinyMLP.Defs.MachineCore
-import TinyMLP.ProofsVanilla.SpecArithmetic
+import MlpCore.Defs.MachineCore
+import MlpCore.ProofsVanilla.SpecArithmetic
 
-namespace TinyMLP
+namespace MlpCore
 
 local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
 
@@ -128,4 +128,4 @@ theorem initial_run_preserves_indexInvariant (n : Nat) (input : Input8) :
     IndexInvariant (run n (initialState input)) := by
   exact run_preserves_indexInvariant n (initialState_indexInvariant input)
 
-end TinyMLP
+end MlpCore
