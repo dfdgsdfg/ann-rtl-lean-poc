@@ -203,6 +203,22 @@ The minimum comparable diagram artifact remains `blueprint/mlp_core.svg`. When t
 
 The generated RTL must be validated against the repository baseline.
 
+Inherited `common required` core:
+
+- `contract-preflight`
+- branch-local canonical surface existence under `rtl-formalize-synthesis/results/canonical/`
+- shared `mlp_core` dual-simulator regression owned by `simulations`
+- shared top-level SMT family owned by `smt` at the stable wrapper-level `mlp_core` boundary
+
+Branch-specific required validation for `rtl-formalize-synthesis`:
+
+- Lean emit and build validation
+- wrapper regeneration or freshness validation
+- wrapper structural validation over packing, reset adaptation, and `FORMAL` observability aliases
+- a raw-core specific review artifact such as `blueprint/sparkle_mlp_core.svg`
+
+The branch does not inherit a requirement for baseline-style internal observability benches or `controller_interface` SMT, because the accepted branch style is monolithic raw full-core plus a stable wrapper.
+
 Required validation methods:
 
 1. **Build validation**
@@ -238,6 +254,8 @@ Required validation methods:
 - Yosys or equivalent downstream synthesis tooling accepts the generated RTL
 - generated RTL is usable by the repository's existing simulation, SMT, and ASIC-facing flows
 
+Common experiments such as branch comparison or QoR may report these results, and branch-specific experiment runners such as artifact-consistency may host some of these checks, but those reports do not replace the required validation contract above.
+
 ## 9. Proof and Trust-Boundary Requirements
 
 This domain must make the proof boundary explicit.
@@ -271,3 +289,6 @@ The `rtl-formalize-synthesis` domain is complete when:
 6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`, and when needed also exposes `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg` as the raw implementation-detail schematic, while any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
 7. A Lean refinement theorem connects the repository's pure Lean full-core semantics to the Sparkle Signal DSL full-core model.
 8. The repository explicitly states that the Sparkle lowering/backend is verified for the declared emitted subset used by this domain, while wrapper or adapter logic, unexercised Sparkle/backend features, and downstream integration remain validation-backed or assumption-backed exactly as documented.
+9. The branch inherits and documents the repository-wide executable and top-level SMT verification core.
+10. Lean emit/build, wrapper regeneration or freshness, wrapper structural validation, and a raw-core review artifact remain required branch-owned steps.
+11. Common experiments and branch-specific experiment summaries remain supporting reports rather than substitutes for the required validation contract.

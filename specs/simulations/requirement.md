@@ -6,11 +6,14 @@ This document defines the requirements for validating the Tiny Neural Inference 
 
 The `simulations` domain covers:
 
+- repository-wide executable validation owned by this domain
 - RTL testbench behavior
 - Python reference-model comparison
 - Test-vector generation
 - Regression and pass or fail criteria
 - Declared simulation support boundaries for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`
+
+The `simulations` domain owns the branch-independent executable validation core. It does not own solver-backed formal checks, branch comparison reports, QoR studies, or wrapper freshness studies. Those belong to `smt/` or `experiments/`.
 
 ## 2. Testbench Requirements
 
@@ -33,13 +36,29 @@ The shipped regression entry point for any full-core or mixed-path branch should
 
 Module-based testbench assertions over DUT state or control must sample post-update values, not immediate `posedge` values before nonblocking register updates settle.
 
-## 3. Implementation Branch Support
+## 3. Executable Validation Core
+
+The shared executable validation core must cover:
+
+- `contract-preflight` before simulation starts
+- existence of the branch-local canonical `sv/` tree and `blueprint/mlp_core.svg`
+- the shared vector-driven `mlp_core` regression under both `Icarus Verilog` and `Verilator`
+
+These steps are `common required` for every supported RTL branch that claims the normalized `mlp_core` boundary.
+
+## 4. Implementation Branch Support
 
 The simulation domain must define support for these RTL implementation branches:
 
 - `rtl/`: canonical full-core simulation support against the shared vector-driven `mlp_core` bench
 - `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath contract and vector format while replacing the controller implementation, but exposes that compared assembly through a branch-local `rtl-synthesis/results/canonical/sv/` tree
 - `rtl-formalize-synthesis`: full-core simulation support against the shared `mlp_core` bench once the emitted Sparkle wrapper preserves that top-level boundary
+
+Branch-specific executable add-ons should be declared separately from the shared core:
+
+- `rtl/`: internal observability bench over the layered baseline state and counter boundaries
+- `rtl-synthesis`: internal observability bench over the mixed-path controller replacement when that adapter boundary remains review-relevant
+- `rtl-formalize-synthesis`: no internal observability bench required while the stable comparison boundary remains the shared top-level `mlp_core`
 
 Each simulation entry point, summary, or experiment note must state:
 
@@ -48,7 +67,7 @@ Each simulation entry point, summary, or experiment note must state:
 - whether the bench is shared with the baseline or branch-local
 - which normalized branch-local export tree supplied the RTL under test
 
-## 4. Reference Model Requirements
+## 5. Reference Model Requirements
 
 Simulation outputs must be compared against a Python reference model using the same weights, biases, and input vectors.
 
@@ -64,7 +83,7 @@ Generated simulation vectors must preserve enough expected data to distinguish p
 
 Freeze and vector generation must fail early if the current frozen weights cannot produce at least one positive, zero, and negative score witness from the deterministic candidate pool used by the repository.
 
-## 5. Test Coverage Requirements
+## 6. Test Coverage Requirements
 
 The simulation flow must include:
 
@@ -92,7 +111,7 @@ Any controller-scoped branch-local benches that still exist elsewhere in the rep
 - phase-ordering agreement against the baseline controller
 - `start` / `busy` / `done` behavior at the declared support boundary
 
-## 6. Required Files
+## 7. Required Files
 
 Suggested simulation-related files:
 
@@ -129,15 +148,17 @@ If branch-local simulation support exists, the directory structure must make the
 - if a generated branch reuses baseline RTL, that reuse must appear inside the branch-local `sv/` tree via symlink or override rather than through hidden direct bench references to `rtl/results/canonical/sv/`
 - each branch should expose at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact paired with the compared RTL tree
 
-## 7. Acceptance Criteria
+## 8. Acceptance Criteria
 
 The `simulations` domain is complete when:
 
-1. The testbench can run inference end to end without manual intervention.
-2. RTL outputs are automatically checked against Python-generated expectations.
-3. Directed tests pass.
-4. Generated regression vectors pass or produce actionable mismatch logs.
-5. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
-6. Any branch that is not yet full-core end-to-end support is clearly labeled with its generation, integration, and validation scopes rather than described as baseline-equivalent simulation support.
-7. The compared RTL for each branch is discoverable through its branch-local `sv/` export tree.
-8. Each branch exposes at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact.
+1. The domain owns and documents the repository-wide executable validation core instead of mixing in SMT, branch-comparison, or QoR ownership.
+2. The testbench can run inference end to end without manual intervention.
+3. RTL outputs are automatically checked against Python-generated expectations.
+4. `contract-preflight` runs before executable validation and the compared RTL is discoverable through the branch-local canonical `sv/` export tree.
+5. The shared `mlp_core` regression runs under both `Icarus Verilog` and `Verilator`.
+6. Directed tests pass.
+7. Generated regression vectors pass or produce actionable mismatch logs.
+8. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`, including any branch-specific executable add-on bench.
+9. Any branch that is not yet full-core end-to-end support is clearly labeled with its generation, integration, and validation scopes rather than described as baseline-equivalent simulation support.
+10. Each branch exposes at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact.

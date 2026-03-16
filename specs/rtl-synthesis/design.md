@@ -326,26 +326,41 @@ The design should avoid tool lock-in. The stable asset is the temporal contract,
 
 ## 9. Validation Plan
 
-The synthesized controller should be validated in three layers:
+The synthesized controller inherits the repository-wide `common required` core first:
+
+- `contract-preflight`
+- branch-local canonical surface existence
+- shared `mlp_core` dual-simulator replay
+- shared top-level SMT families
+
+On top of that shared core, `rtl-synthesis` adds its own `branch-specific required` pack. The synthesized controller should therefore be validated in four layers:
 
 1. **Spec-level**
 
 - the TLSF file parses
 - the realizability result is recorded
 
-2. **Controller-level secondary**
+2. **Adapter-level required**
+
+- the generated controller core is translated into the stable `controller.sv` boundary through `controller_spot_compat.sv`
+- reset adaptation, predicate abstraction, and state reconstruction are checked directly
+- the branch-local canonical tree makes the generated-versus-reused boundary obvious
+
+3. **Controller-level required secondary evidence**
 
 - the synthesized controller agrees with [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) on phase ordering
 - `busy` and `done` match
 - guard-cycle behavior matches
 - hold-in-`DONE` and release-to-`IDLE` match
 
-3. **Integrated RTL-level primary**
+4. **Integrated RTL-level primary**
 
 - the wrapped synthesized controller can replace the hand-written controller inside [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - the primary formal claim compares baseline and mixed-path `mlp_core` assemblies under the same post-reset external inputs
 - the existing simulation vectors still pass
 - Yosys synthesis can compare QoR against the hand-written baseline
+
+Branch-comparison and QoR summaries remain reporting surfaces on top of these required layers. They should not be used to erase a missing fresh synthesis or missing equivalence proof.
 
 ## 10. Resolved Design Decisions
 

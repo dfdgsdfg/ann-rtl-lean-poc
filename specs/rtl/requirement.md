@@ -236,7 +236,23 @@ The `sv/` tree is the canonical comparable full-core RTL surface for the baselin
 
 The `blueprint/` tree is the canonical schematic export surface for the baseline branch. Additional SVGs are allowed, but `blueprint/mlp_core.svg` is the minimum required comparable diagram artifact.
 
-## 7. Acceptance Criteria
+## 7. Verification Integration
+
+The baseline `rtl` branch inherits the repository-wide `common required` verification core:
+
+- `contract-preflight`
+- branch-local canonical surface existence under `rtl/results/canonical/`
+- shared `mlp_core` dual-simulator regression owned by `simulations`
+- shared top-level SMT family owned by `smt`
+
+On top of that shared core, the baseline branch keeps these `branch-specific required` validations:
+
+- internal observability replay over the layered controller, counter, and accumulator boundaries
+- `controller_interface` SMT over [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
+
+Common experiments such as branch comparison, QoR, and post-synthesis characterization may report on this branch, but they do not replace the required verification layers above.
+
+## 8. Acceptance Criteria
 
 The `rtl` domain is complete when:
 
@@ -248,3 +264,5 @@ The `rtl` domain is complete when:
 6. The exact `76`-cycle latency, level-based `done`, level-based `busy`, and `out_bit` validity contract are explicitly verified against the current RTL behavior.
 7. The branch defines a normalized comparable export tree at `rtl/results/canonical/sv/` rather than relying on readers or downstream tools to infer the baseline source layout from `rtl/results/canonical/sv/`.
 8. The branch defines a normalized schematic export tree at `rtl/results/canonical/blueprint/` with at least `mlp_core.svg`.
+9. The branch inherits and documents the repository-wide executable and top-level SMT verification core.
+10. The layered baseline keeps internal observability replay and `controller_interface` SMT as required branch-owned validation, not merely as optional experiments.

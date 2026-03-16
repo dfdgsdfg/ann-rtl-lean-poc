@@ -9,6 +9,7 @@ The simulation flow should be:
 - Shared across RTL, Python, and generated assets
 - Structured so failures are easy to localize
 - Explicit about which RTL implementation branch a bench supports
+- Explicit that this domain owns executable validation only
 
 ## 2. Reference Flow
 
@@ -21,7 +22,30 @@ Python should act as the golden reference pipeline:
 
 This creates one source of truth for constants and reduces manual mismatch risk.
 
-## 3. CLI Flow
+## 3. Simulation Ownership
+
+The `simulations` domain owns the shared executable validation core, not the entire repository verification story.
+
+Its `common required` responsibilities are:
+
+- `contract-preflight`
+- branch-local canonical surface discovery for `*/results/canonical/sv/` and `*/results/canonical/blueprint/mlp_core.svg`
+- shared `mlp_core` dual-simulator replay
+
+Its branch-specific executable add-ons are:
+
+- `rtl/`: internal observability replay over the layered baseline internals
+- `rtl-synthesis`: mixed-path internal observability replay when the controller adapter boundary must be inspected
+- `rtl-formalize-synthesis`: no additional executable add-on required while the shared wrapper-level `mlp_core` bench remains the right boundary
+
+This domain does not own:
+
+- shared SMT families
+- branch-comparison summaries
+- QoR or post-synthesis characterization
+- Sparkle freshness or wrapper-regeneration reports
+
+## 4. CLI Flow
 
 After training finishes, testing should be runnable through a small command sequence.
 
@@ -59,7 +83,7 @@ The user should not need to manually copy weights or hand-edit vectors after tra
 
 Vector generation should synthesize dedicated positive, zero, and negative score witnesses during freeze. If the deterministic candidate pool cannot provide one of those classes, freeze should fail before the simulator runs.
 
-## 4. Supported RTL Branches
+## 5. Supported RTL Branches
 
 The simulation design supports three RTL implementation tracks with different current scopes:
 
@@ -69,7 +93,7 @@ The simulation design supports three RTL implementation tracks with different cu
 
 This split is intentional as long as the scope is declared in commands, summaries, and experiment notes.
 
-## 5. Testbench Design
+## 6. Testbench Design
 
 The SystemVerilog testbench should:
 
@@ -97,7 +121,7 @@ Two bench styles are expected:
 
 When a branch-local bench is used, the scope statement must explain why the shared full-core bench is not yet the right support boundary.
 
-## 6. Regression Strategy
+## 7. Regression Strategy
 
 The initial regression plan should include:
 
@@ -114,7 +138,7 @@ For multi-branch support, each regression result should also record:
 - bench identity: shared vector bench or branch-local comparison bench
 - contract/vector provenance shared across the compared branches
 
-## 7. Asset Flow
+## 8. Asset Flow
 
 The simulation assets should move in one direction:
 
@@ -128,7 +152,7 @@ The generated vector file should remain plain text, but it should carry enough i
 
 The frozen contract and generated vectors are the common semantic anchor for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
 
-## 8. Recommended Layout
+## 9. Recommended Layout
 
 The simulation directory should separate shared assets from branch-local benches.
 
@@ -155,7 +179,7 @@ Layout rules:
 - branch-local compared RTL should resolve through aligned `*/sv/` trees rather than through hidden cross-branch source references
 - each branch should pair the compared RTL tree with at least `blueprint/mlp_core.svg`
 
-## 9. Debugging Plan
+## 10. Debugging Plan
 
 When a mismatch occurs, the flow should make it easy to answer:
 

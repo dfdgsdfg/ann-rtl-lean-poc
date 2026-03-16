@@ -18,28 +18,59 @@ Each domain may contain:
 - `smt`: solver-backed verification outside Lean
 - `rtl-formalize-synthesis`: Lean Signal-DSL hardware generation via Sparkle
 - `rtl-synthesis`: reactive controller synthesis from temporal specifications
-- `simulations`: vectors, testbench, regression flow
-- `experiments`: optional comparison and evaluation work
+- `simulations`: shared executable validation for branch-local RTL exports
+- `experiments`: comparison, characterization, and reporting over validated branches
 - `asic`: synthesis and physical-design flow
 
 ## Process
 
 Canonical implementation path:
-`ann -> contract -> rtl -> simulations -> experiments -> asic`
+`ann -> contract -> rtl -> simulations + smt -> asic`
 
 Optional controller-synthesis branch:
-`ann -> contract -> rtl + rtl-synthesis -> simulations -> experiments -> asic`
+`ann -> contract -> rtl + rtl-synthesis -> simulations + smt -> asic`
 
 Optional Lean-generated RTL branch:
-`ann -> contract -> formalize -> rtl-formalize-synthesis -> simulations -> experiments -> asic`
+`ann -> contract -> formalize -> rtl-formalize-synthesis -> simulations + smt -> asic`
 
-Cross-cutting verification complement:
-`contract -> rtl -> smt`
+Cross-branch comparison and characterization complement:
+`rtl branches -> experiments`
 
 Optional proof-automation complement:
 `formalize -> formalize-smt`
 
-The `simulations` and `experiments` specs should state the generation, integration, and validation scopes for each RTL branch. Branch-facing reports may spell those same boundaries through `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method`, but they should not hide the underlying scope split:
+## RTL Verification Ladder
+
+The RTL branches use one shared verification ladder with branch-specific extension packs:
+
+1. `contract-preflight`
+2. branch-local canonical surface existence
+3. shared executable validation owned by `simulations`
+4. shared top-level SMT family owned by `smt`
+5. branch-specific required validation owned by each RTL branch
+6. common experiments owned by `experiments`
+7. branch-specific experiments owned by `experiments`
+
+The first four steps are the repository-wide common required core. Step five is required per branch. Steps six and seven are experiment/reporting layers; they may record `pass`, `fail`, or `skip`, but they do not redefine the normative branch-support boundary unless a branch spec explicitly imports them as required.
+
+Step four applies to every supported RTL branch, not only to the baseline. The shared top-level SMT family must be instantiated against each branch-local canonical `mlp_core` surface:
+
+- `rtl/results/canonical/sv/mlp_core.sv`
+- `rtl-synthesis/results/canonical/sv/mlp_core.sv`
+- `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`
+
+## Verification Status Vocabulary
+
+The specs should use one status vocabulary:
+
+- `common required`: repository-wide required verification shared by all supported RTL branches
+- `branch-specific required`: additional required validation owned by one branch
+- `soft-gate experiment`: reportable experiment that may fail or skip without redefining normative branch support on its own
+- `advisory/optional experiment`: non-gating characterization or exploratory work
+
+## RTL Branch Scopes
+
+The `simulations`, `smt`, and `experiments` specs should state the generation, integration, and validation scopes for each RTL branch. Branch-facing reports may spell those same boundaries through `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method`, but they should not hide the underlying scope split:
 
 - `rtl/`: full-core generation, full-core integration, and full-core validation at `mlp_core`
 - `rtl-synthesis`: controller generation with mixed-path `mlp_core` integration unless a wider generated replacement is declared; however, its branch-local export surface must still materialize a full comparable `mlp_core` tree
@@ -49,6 +80,7 @@ They should also prefer a branch-first layout:
 
 - `experiments/` should use branch folders directly
 - `simulations/` should keep shared assets separate from branch-local benches
+- `smt/` should distinguish shared top-level families from branch-owned required formal add-ons
 - branch-local comparable RTL exports should align on `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
 - branch-local blueprint exports should align on `rtl/results/canonical/blueprint/`, `rtl-synthesis/results/canonical/blueprint/`, and `rtl-formalize-synthesis/results/canonical/blueprint/`
 

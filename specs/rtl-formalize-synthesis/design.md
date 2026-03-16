@@ -247,7 +247,14 @@ The key distinction is that this decomposition requirement applies to the Lean a
 
 ## 7. Validation Strategy
 
-Validation should happen in five layers.
+Validation begins with the repository-wide `common required` core:
+
+- `contract-preflight`
+- branch-local canonical surface existence
+- shared `mlp_core` executable regression
+- shared top-level SMT families at the stable wrapper boundary
+
+On top of that inherited core, this branch adds its own required generation and wrapper checks. Validation should therefore happen in five layers.
 
 ### 7.1 Elaboration Validation
 
@@ -267,6 +274,7 @@ Validation should happen in five layers.
 - the normalized `rtl-formalize-synthesis/results/canonical/sv/` export tree presents the same comparable top-level module contract expected of the other branches
 - emitted state and control signals are inspectable enough to debug schedule drift
 - reset and sequential logic are emitted in a form acceptable to the downstream simulators
+- the branch exposes a raw-core review artifact such as `sparkle_mlp_core.svg` when the wrapper-level diagram is intentionally too simple to serve as the main structural review surface
 
 ### 7.3 Behavioral Validation
 
@@ -285,6 +293,8 @@ Validation should happen in five layers.
 
 - Yosys can synthesize the generated RTL
 - area, timing, or cell-count comparison against the hand-written baseline is recorded when relevant
+
+Branch-comparison, QoR, and artifact-consistency summaries remain reporting layers over this validation stack. They can surface failures and skips, but they do not replace the inherited core plus branch-specific required checks.
 
 ## 8. Proof Strategy
 

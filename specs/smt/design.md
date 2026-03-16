@@ -15,6 +15,8 @@ The design goal is not to replace any of those layers. It is to add a solver-bac
 - bitvector-width reasoning
 - automated checking of repetitive control properties
 
+The `smt` domain owns the shared top-level formal core. It does not automatically own every formal or equivalence check attached to a generated branch.
+
 ## 2. Domain Focus
 
 This domain is intentionally limited to solver-backed verification outside Lean.
@@ -50,18 +52,7 @@ What SMT does poorly here is replace the full semantic structure of the Lean dev
 
 The first SMT implementation should focus on properties that are already central in the repository docs and tests.
 
-### 4.1 Controller Properties
-
-For [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv):
-
-- legal phase ordering
-- one-step transition correctness
-- `done` / `busy` definitions
-- hold-high behavior in `DONE`
-- release-to-`IDLE` behavior
-- hidden and output guard-cycle transition behavior
-
-### 4.2 Top-Level Integration Properties
+### 4.1 Shared Top-Level SMT Core
 
 For [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv):
 
@@ -69,6 +60,26 @@ For [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_
 - hidden and output loop boundaries do not trigger duplicate work
 - no out-of-range counter use is required at the transition steps
 - exact-cycle claims are checked only under explicit environment assumptions
+
+These are the families that every supported branch should inherit when it exposes the normalized `mlp_core` boundary through its branch-local canonical tree.
+
+In this repository that means the same shared top-level family should exist for:
+
+- `rtl/results/canonical/sv/mlp_core.sv`
+- `rtl-synthesis/results/canonical/sv/mlp_core.sv`
+- `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`
+
+The branch-specific formal add-ons below are extensions beyond that shared family, not substitutes for it.
+
+### 4.2 Branch-Owned Formal Extensions
+
+Additional formal checks may live near the SMT infrastructure without becoming part of the shared core:
+
+- `rtl/`: controller-interface properties over [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
+- `rtl-synthesis`: controller-only equivalence plus mixed-path closed-loop equivalence, on top of the shared `mlp_core` SMT family over the branch-local mixed-path export tree
+- `rtl-formalize-synthesis`: wrapper-structure checks around the raw emitted core and wrapper boundary
+
+Those checks remain `branch-specific required` only when the relevant branch spec says so.
 
 ### 4.3 Arithmetic Properties
 
@@ -146,6 +157,13 @@ The intended relationship is:
 - `formalize-smt` can optionally define an SMT-assisted Lean workflow
 - `simulations` provides practical regression checks
 - `smt` adds automated bounded verification outside Lean
+
+Within that relationship:
+
+- `simulations` owns the shared executable core
+- `smt` owns the shared top-level formal core
+- branch specs own any additional required formal validations beyond that shared core
+- `experiments` may report formal summaries, but it does not redefine formal ownership
 
 This means the SMT domain is cross-cutting, not linear in the repository pipeline.
 

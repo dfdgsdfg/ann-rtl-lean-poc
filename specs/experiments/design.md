@@ -13,12 +13,34 @@ The design should favor:
 - Clear separation between canonical implementation artifacts and experimental generated variants
 - Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, and `rtl-synthesis`
 - Explicit declaration of generation, integration, and validation scopes for each branch under comparison
+- Explicit separation between required verification and experiment/reporting surfaces
 
 ## 2. Experiment Families
 
 The experiment layer should be organized by the uncertainty each family is meant to reduce.
 
-### Semantic Closure
+### 2.1 Common Experiments
+
+These are shared reporting surfaces across branches:
+
+- semantic closure
+- branch comparison
+- QoR
+- post-synthesis validation
+
+They are typically `soft-gate experiments`: useful to report and compare, but not themselves the repository's `common required` verification core.
+
+### 2.2 Branch-Specific Experiments
+
+These are attached to one branch and often summarize or orchestrate branch-local validation and characterization:
+
+- Sparkle artifact-consistency and wrapper-freshness reports
+- reactive-synthesis realizability and translation studies
+- branch-local review artifacts for wrappers, adapters, or raw emitted cores
+
+These remain experiments unless the relevant branch spec explicitly imports one of them as `branch-specific required`.
+
+### 2.3 Semantic Closure
 
 Run generated vectors through:
 
@@ -30,7 +52,7 @@ The goal is to show end-to-end agreement at scale, not just with a few directed 
 
 This family should also include an explicit Lean fixed-point <-> RTL datapath equivalence study. That comparison closes the main unverified gap between the formal model and the committed datapath implementation.
 
-### Artifact Consistency
+### 2.4 Artifact Consistency
 
 First, check artifact consistency automatically:
 
@@ -38,7 +60,7 @@ First, check artifact consistency automatically:
 
 This family is about keeping frozen downstream artifacts aligned with the contract that feeds RTL, Lean, and simulation assets.
 
-### Implementation Characterization
+### 2.5 Implementation Characterization
 
 Measure:
 
@@ -48,13 +70,13 @@ Measure:
 
 QoR studies should use real synthesis outputs and the frozen contract inputs used elsewhere in the repository. The point is to characterize actual implementations, not hypothetical deltas.
 
-### Flow-Stage Validation
+### 2.6 Flow-Stage Validation
 
 Post-synthesis simulation should be added once the ASIC flow produces synthesized netlists or equivalent downstream artifacts.
 
 This family checks that synthesis preserves the intended behavior under the same benches or vector suites used before synthesis.
 
-### Generated Implementation Comparisons
+### 2.7 Generated Implementation Comparisons
 
 Compare the committed hand-written RTL against alternative implementation paths such as:
 
@@ -77,7 +99,7 @@ Current branch conventions should be recorded as part of the experiment design:
 - `rtl-synthesis`: controller generation, mixed-path integration, mixed-path-primary validation by swapping only the controller and reusing the baseline datapath, while still exporting a branch-local full comparable `sv/` tree
 - `rtl-formalize-synthesis`: full-core generation, full-core integration, full-core validation once the emitted `mlp_core` path is materialized and validated
 
-### RTL-Formalize-Synthsis Studies
+### 2.8 RTL-Formalize-Synthsis Studies
 
 Compare Sparkle-generated RTL against the hand-written baseline and the pure Lean model.
 
@@ -88,7 +110,7 @@ Typical questions:
 - how much of the baseline can be replaced: controller, primitive path, or full core?
 - what trust boundary remains between the pure Lean proof layer and the emitted RTL?
 
-### RTL-Synthesis Studies
+### 2.9 RTL-Synthesis Studies
 
 Compare controller artifacts produced from temporal specifications against `rtl/results/canonical/sv/controller.sv`.
 
@@ -113,6 +135,7 @@ Each experiment should keep a stable mapping between:
 - Declared integration scope, such as full-core `mlp_core` or mixed-path `mlp_core`
 - Declared validation scope, such as full-core `mlp_core`, mixed-path `mlp_core`, or controller trace parity
 - Validation method, such as theorem-level model comparison, RTL simulation agreement, or QoR characterization
+- Experiment status, such as `soft-gate experiment` or `advisory/optional experiment`
 
 This can be implemented with scripts plus short markdown reports.
 

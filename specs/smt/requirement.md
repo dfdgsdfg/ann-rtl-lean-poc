@@ -24,7 +24,8 @@ The `smt` domain is a verification and automation layer that sits beside `rtl`, 
 
 It covers:
 
-- controller and top-level RTL property checking for [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
+- the shared top-level SMT family at the normalized `mlp_core` boundary
+- controller and top-level RTL property checking where a branch spec explicitly imports additional formal work
 - QF_BV-style reasoning about fixed widths, wraparound, guards, and bounded traces
 - equivalence-style checks between RTL-level behavior and the frozen contract where practical
 
@@ -40,18 +41,28 @@ It does not cover:
 
 The SMT domain must target the same frozen arithmetic and control contract used elsewhere in the repository.
 
-Required verification targets:
+The `common required` SMT core is the shared top-level `mlp_core` family. It is intentionally narrower than "all formal work in the repository," but it is still required for every supported RTL branch that exposes the normalized `mlp_core` boundary.
 
-1. Handshake and control properties
+Normatively, the shared SMT core must run against all three branch-local canonical top levels:
+
+- [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
+- [`rtl-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-synthesis/results/canonical/sv/mlp_core.sv)
+- [`rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv)
+
+Required shared-core verification targets:
+
+1. Handshake and top-level control properties
 2. Boundary and guard-cycle properties
 3. Width and overflow properties over the frozen quantized datapath
-4. Optional equivalence properties between two machine-readable views
+4. Optional equivalence properties between two machine-readable views at the shared top-level boundary
 
-The first milestone should prioritize control correctness over arithmetic sophistication.
+The first milestone should prioritize control correctness over arithmetic sophistication at the `mlp_core` boundary.
+
+Additional branch-owned formal obligations may be hosted in the repository, but they should be classified as `branch-specific required` in the relevant branch specs rather than silently folded into the shared SMT core. Those branch-owned checks extend the shared core; they do not replace it.
 
 ## 4. RTL Property Requirements
 
-At minimum, the SMT layer must be able to state and check properties for:
+At minimum, the shared SMT core must be able to state and check properties for:
 
 - accepted `start` causing the correct transition out of `IDLE`
 - `busy` being high throughout active execution and low in `IDLE` and `DONE`
@@ -64,6 +75,12 @@ At minimum, the SMT layer must be able to state and check properties for:
 - absence of out-of-range loop reads at the hidden and output boundaries
 
 If exact `76`-cycle completion is claimed in the SMT layer, the property set must also record the environment assumptions that make that statement true.
+
+Branch-specific required formal checks should be classified separately:
+
+- `rtl/`: `controller_interface` remains a baseline-specific formal obligation over `controller.sv`
+- `rtl-synthesis`: the branch still runs the shared top-level `mlp_core` SMT family over [`rtl-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-synthesis/results/canonical/sv/mlp_core.sv), and additionally requires controller-only equivalence plus mixed-path closed-loop equivalence as branch-owned formal obligations
+- `rtl-formalize-synthesis`: shared top-level SMT families apply at the wrapper-level `mlp_core` boundary; wrapper-specific structural checks remain branch-owned validation
 
 ## 5. Arithmetic and Datapath Requirements
 
@@ -116,6 +133,8 @@ Integration rules:
 - Lean remains the main semantic proof layer
 - SMT results may strengthen confidence and catch shallow bugs quickly, but they do not by themselves replace the end-to-end correctness argument
 
+The `smt` domain owns the shared top-level formal core. Branch specs may inherit that shared core and then add their own formal obligations on top.
+
 If SMT checks are wired into a command or CI target, a failed property check should be treated as a verification failure, not as advisory output.
 
 ## 9. Acceptance Criteria
@@ -123,7 +142,8 @@ If SMT checks are wired into a command or CI target, a failed property check sho
 The `smt` domain is complete for its first milestone when:
 
 1. A checked-in SMT requirements document and design document exist under `specs/smt/`.
-2. The repository records a solver-backed verification strategy for RTL control properties.
+2. The repository records a solver-backed strategy for the shared top-level `mlp_core` families used by all supported RTL branches, including `rtl-synthesis` and `rtl-formalize-synthesis`.
 3. The repository records how frozen arithmetic assumptions enter any SMT encoding.
-4. The repository explicitly separates SMT-backed verification from both the Lean proof backbone and any optional SMT-assisted Lean flow.
-5. The intended artifacts, assumptions, and reproduction commands are specified clearly enough to implement without re-deciding the scope.
+4. The repository explicitly separates the shared SMT core from branch-owned formal add-ons such as baseline controller proofs or reactive-synthesis equivalence checks.
+5. The repository explicitly separates SMT-backed verification from both the Lean proof backbone and any optional SMT-assisted Lean flow.
+6. The intended artifacts, assumptions, and reproduction commands are specified clearly enough to implement without re-deciding the scope.

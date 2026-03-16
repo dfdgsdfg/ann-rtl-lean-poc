@@ -255,7 +255,25 @@ Implicit downstream consumption of `rtl/results/canonical/sv/*.sv` outside the b
 
 ## 9. Validation Requirements
 
-Validation must cover at least:
+Validation is layered.
+
+Inherited `common required` core:
+
+- `contract-preflight`
+- branch-local canonical surface existence under `rtl-synthesis/results/canonical/`
+- shared `mlp_core` dual-simulator regression owned by `simulations`
+- shared top-level SMT family owned by `smt`, instantiated over `rtl-synthesis/results/canonical/sv/mlp_core.sv`
+
+Branch-specific required validation for `rtl-synthesis`:
+
+- fresh synthesis flow from the checked-in temporal specification
+- adapter validation over `controller_spot_core.sv`, `controller_spot_compat.sv`, and the stable `controller.sv` boundary
+- bounded closed-loop equivalence between the baseline `mlp_core` assembly and the synthesized-controller mixed-path `mlp_core` assembly under common external inputs
+- trace-level controller equivalence or refinement against the hand-written controller under the documented assumptions
+
+The shared top-level SMT family and the branch-specific formal equivalence checks are both required. The branch does not treat mixed-path equivalence as a substitute for the shared `mlp_core` SMT families, nor does it treat the shared SMT families as a substitute for the controller and mixed-path equivalence proofs.
+
+Within that layered contract, validation must cover at least:
 
 - bounded closed-loop equivalence between the baseline `mlp_core` assembly and the synthesized-controller mixed-path `mlp_core` assembly under common external inputs
 - trace-level controller equivalence or refinement against the hand-written controller under the documented assumptions
@@ -264,7 +282,7 @@ Validation must cover at least:
 - agreement on hold-in-`DONE` and release-to-`IDLE` behavior
 - integration with the existing datapath contract represented through the branch-local comparable `rtl-synthesis/results/canonical/sv/` export tree, including the shared full-core simulation bench reused by `rtl-synthesis-sim`
 
-The maintained experiment report must surface the primary `closed_loop_mlp_core_equivalence` result and the secondary `controller_interface_equivalence` result directly from the fresh-flow summary. It must not downgrade the branch to a passing result when only simulation passes, and it must skip the branch rather than use a committed snapshot fallback when the required fresh-flow toolchain is unavailable.
+Common experiments such as branch comparison or QoR remain supporting summaries. They must not downgrade the branch to a passing result when only simulation passes, and they must not substitute for the required fresh synthesis flow or the required formal equivalence checks. If the required fresh-flow toolchain is unavailable, the branch should skip the required step rather than fall back to a committed snapshot and claim the branch has passed.
 
 The maintained comparison contract must make it obvious which files are generated, which files are reused from the baseline, and where override boundaries exist. A reviewer should be able to inspect `rtl-synthesis/results/canonical/sv/` alone and understand the full compared assembly without reverse-engineering implicit path reuse elsewhere in the repository.
 
@@ -282,3 +300,6 @@ The `rtl-synthesis` domain is complete when:
 8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact, and also records `controller.svg` plus `controller_spot_core.svg` so the wrapper and synthesized core boundaries remain independently reviewable.
 9. The repository also records the secondary controller-scoped comparison against [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and keeps its assumption profile explicit.
 10. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.
+11. The branch inherits and documents the repository-wide executable and top-level SMT verification core.
+12. Shared simulation alone is not considered sufficient; fresh synthesis flow and adapter validation remain required branch-owned steps.
+13. Branch-comparison, QoR, and similar experiment summaries remain supporting evidence rather than substitutes for the required validation contract.

@@ -197,7 +197,17 @@ The baseline branch should also expose normalized comparison artifacts:
 
 Additional blueprint files are allowed, but `mlp_core.svg` is the required common comparison surface across `rtl/`, `rtl-synthesis/`, and `rtl-formalize-synthesis`.
 
-## 8. Resolved Design Decisions
+## 8. Verification Layering
+
+The baseline branch participates in the repository verification ladder as follows:
+
+- inherited `common required` core: `contract-preflight`, canonical-surface existence, shared `mlp_core` executable regression, shared top-level SMT families
+- branch-specific required validation: internal observability replay over the layered state and counter structure plus `controller_interface` SMT over the baseline controller boundary
+- supporting experiments: branch-comparison, QoR, and post-synthesis summaries as reporting layers only
+
+This is intentional. The baseline branch is the human-auditable layered anchor, so controller-level observability remains required here even though it is not part of the repository-wide common core.
+
+## 9. Resolved Design Decisions
 
 - **Top-level port naming:** inputs are `in0`..`in3` (separate signed `int8` ports), output is `out_bit`, handshake is `start`/`done`/`busy`.
 - **Handshake semantics:** `done` is a level in `DONE`, not a pulse; `busy` is low in both `IDLE` and `DONE`; the controller remains in `DONE` while `start` stays high.
