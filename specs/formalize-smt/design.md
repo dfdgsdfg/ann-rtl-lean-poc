@@ -27,7 +27,7 @@ Recommended mental model:
 
 The design should avoid turning the project into a solver-script repository wrapped in Lean syntax.
 
-The repository now has a first exposure pass for the arithmetic and shared fixed-point executable layer. The selective-overlay model is therefore implementable for that slice, while the upper machine/temporal stack remains vanilla for now.
+The repository already exposes the arithmetic and shared fixed-point executable layer cleanly enough for a selective overlay. The upper machine and temporal stack remain vanilla unless the repository deliberately adds a similarly clean exposure boundary there.
 
 ## 3. Separation Strategy
 
@@ -75,7 +75,7 @@ This gives the repository a clean trust and comparison story:
 
 ## 5. Exposure Prerequisite
 
-The current preparatory refactor exposes the arithmetic-first boundary as:
+The repository exposes the overlay boundary for the arithmetic and shared fixed-point layer as:
 
 - `Defs`
 - `Interfaces`
@@ -88,24 +88,27 @@ Concretely:
 - `Defs/FixedPointCore.lean` exposes provider-parameterized fixed-point executable definitions
 - `ProofsVanilla/SpecArithmetic.lean` and `ProofsVanilla/FixedPoint.lean` keep the baseline proofs and the baseline provider value
 
-This is enough to support an SMT-assisted overlay on the arithmetic layer without importing the finished vanilla proofs it wants to replace. The upper machine and temporal stack still require further exposure work if they are ever targeted.
+This is enough to support an SMT-assisted overlay on the arithmetic and shared fixed-point layer without importing the finished vanilla proofs it wants to replace. The upper machine and temporal stack still require a similarly clean exposure boundary if they are ever targeted.
 
-## 6. Good Initial Targets
+## 6. Good Target Families
 
-The first candidate targets should be arithmetic helper lemmas in the existing formalization, not the controller proofs.
+The best `formalize-smt` targets in this repository are arithmetic and shared fixed-point helper lemmas whose proof labor is repetitive, solver-friendly, and lower-value than the theorem statement itself.
 
-Good starting points include:
+Good target families include:
 
-- bounded multiplication lemmas behind `Interfaces/ArithmeticProofProvider`
-- arithmetic side conditions that currently need repeated sign-case splitting
-- width-fit obligations produced by `Defs/FixedPointCore.lean`
+- bounded multiplication lemmas such as `int8_mul_int8_bounds` and `int16_mul_int8_bounds`
+- width-preservation lemmas such as `int16_to_int32_bounds` and `int24_to_int32_bounds`
+- wraparound elimination lemmas such as `wrap16_eq_self_of_bounds`, `wrap32_eq_self_of_bounds`, and the derived families `wrap32_hiddenPreAt8_*` and `wrap16_hiddenSpecAt8_*`
+- closed-form bounded arithmetic lemmas such as `hiddenSpecAt8_*_bounds` and `outputScoreSpec8_bounds`
+- finite case-split bridge lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt` when handled through a proof-producing or reconstruction-backed decision procedure rather than an opaque oracle
 
-Bad first targets:
+Poor targets include:
 
 - trace or control invariants in `Temporal.lean`
 - delicate machine-step proofs whose value comes from explicit structural reasoning
+- large semantic bridge theorems whose value is mainly in their readable statement structure rather than in repetitive local arithmetic proof work
 
-Those targets are especially suitable once the baseline exposure split exists.
+These target families sit squarely inside the existing arithmetic/shared fixed-point exposure boundary and do not require turning the repository into a separate external-solver verification lane.
 
 ## 7. Dependency Strategy
 
@@ -139,7 +142,7 @@ The repository should also say plainly whether a theorem family is:
 
 - reproved in the SMT-assisted lane
 - inherited unchanged from the vanilla baseline
-- or still pending migration
+- or intentionally left on the vanilla path
 
 ## 9. Repository Relationship
 
@@ -155,29 +158,27 @@ This keeps three different kinds of value separate:
 - proof authoring convenience
 - bounded solver-backed verification
 
-## 10. Delivery Plan
+## 10. Overlay Workflow
 
-A practical implementation order is:
+The repository should adopt SMT assistance through a stable overlay workflow:
 
-1. Keep the current `formalize` path unchanged as the baseline.
-2. Reuse the existing arithmetic-first exposure split: shared definitions in `Defs/*`, proof interfaces in `Interfaces/*`, and baseline proofs in `ProofsVanilla/*`.
-3. Identify one or two arithmetic lemma families where SMT assistance would remove obvious manual proof boilerplate.
-4. Reuse the exposed baseline definitions and theorem statements for those lemmas.
-5. Reprove those lemmas in the SMT-assisted lane without importing the finished vanilla proof of the same family.
-6. Compare the result against the vanilla path for readability, maintenance burden, and dependency cost.
-7. Expand only if the gain is clear.
+1. Keep `formalize` as the baseline proof path.
+2. Reuse the existing exposure split: shared definitions in `Defs/*`, proof interfaces in `Interfaces/*`, and baseline proofs in `ProofsVanilla/*`.
+3. Reuse the exposed baseline definitions and theorem statements for each targeted theorem family.
+4. Reprove the targeted family in the SMT-assisted lane without importing the finished vanilla proof of that same family.
+5. Keep the resulting theorem surface readable, kernel-checked, and comparable against the vanilla path.
 
-This avoids paying solver-integration complexity before the repository has a concrete proof-maintenance problem worth solving.
+This keeps the solver integration focused on proof authoring convenience rather than on redefining the repository's semantic proof backbone.
 
-## 11. First Implementation Decisions
+## 11. Repository Layout and Coexistence
 
-The first concrete implementation should use a separate sibling package:
+The SMT-assisted overlay should use a separate sibling package:
 
 - `formalize/` remains the canonical vanilla package
 - `formalize-smt/` is a second Lake package that depends on `../formalize`
 - both packages share the same Lean toolchain pin so the overlay is reproducible
 
-For the first implementation milestone, the package layout should be:
+The package layout should be:
 
 - `formalize-smt/lean-toolchain`
 - `formalize-smt/lakefile.lean`
@@ -190,11 +191,14 @@ The dependency stack should be narrow and explicit:
 - its transitive `lean-cvc5` dependency for solver interaction
 - a pinned upstream commit rather than a floating branch in the committed package manifest
 
-The first migrated theorem family should stay minimal:
+Representative migrated theorem families may include:
 
-- reprove only the `ArithmeticProofProvider` obligations
-- define an alternate provider value from those SMT-assisted proofs
-- include one small smoke theorem that instantiates the shared fixed-point executable layer with the SMT provider
+- `ArithmeticProofProvider` obligations such as the bounded multiplication lemmas
+- width-preservation and wraparound helper families in `ProofsVanilla/SpecArithmetic.lean`
+- closed-form bound proofs such as `hiddenSpecAt8_*_bounds` and `outputScoreSpec8_bounds`
+- finite case-split bridge lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt`
+
+When the overlay targets a theorem family consumed by provider-parameterized executable definitions, it may define alternate provider values and small smoke theorems that instantiate those definitions with the SMT-backed provider.
 
 Coexistence between the vanilla and SMT lanes should be explicit:
 
@@ -202,10 +206,9 @@ Coexistence between the vanilla and SMT lanes should be explicit:
 - provider selection should happen through local bindings in the files that elaborate provider-parameterized definitions
 - importing both lanes together should leave instance synthesis unresolved until a file chooses the intended lane explicitly
 
-The first milestone should not migrate:
+The overlay should not migrate:
 
-- `hiddenSpecAt8_*_bounds`
-- wraparound helper theorems
-- machine, invariant, simulation, temporal, or correctness theorems
+- machine, invariant, simulation, temporal, or correctness theorems whose primary value is explicit structural reasoning
+- controller proofs or other theorem families whose natural verification target is emitted RTL rather than Lean proof obligations
 
-That scope keeps the comparison clean and makes it easy to tell whether the SMT lane is providing real value before expanding it further.
+That boundary keeps the comparison clean and preserves the repository-wide split between semantic proof, proof automation, and external solver-backed verification.

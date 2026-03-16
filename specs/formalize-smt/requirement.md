@@ -29,7 +29,7 @@ It does not cover:
 This domain also assumes a prerequisite on the baseline Lean structure:
 
 - `formalize/` must expose shared definitions and proof interfaces cleanly enough for an overlay proof lane to import them without importing the finished vanilla proofs of the same theorem families
-- in the current repository, that prerequisite is satisfied first for the arithmetic and shared fixed-point executable layer via `Defs/*`, `Interfaces/ArithmeticProofProvider.lean`, and `ProofsVanilla/*`
+- in this repository, that prerequisite is satisfied for the arithmetic and shared fixed-point executable layer via `Defs/*`, `Interfaces/ArithmeticProofProvider.lean`, and `ProofsVanilla/*`
 
 ## 3. Baseline Preservation Requirements
 
@@ -66,10 +66,11 @@ The `formalize-smt` domain should target theorem classes that are solver-friendl
 
 Good targets include:
 
-- bounded multiplication lemmas
-- sign-sensitive arithmetic case splits
-- width-preservation side conditions
-- repetitive arithmetic normalization subgoals
+- bounded multiplication lemmas such as `int8_mul_int8_bounds` and `int16_mul_int8_bounds`
+- sign-sensitive arithmetic and closed-form bound proofs such as `hiddenSpecAt8_*_bounds` and `outputScoreSpec8_bounds`
+- width-preservation side conditions such as `int16_to_int32_bounds` and `int24_to_int32_bounds`
+- wraparound elimination and repetitive arithmetic normalization lemmas such as `wrap16_eq_self_of_bounds`, `wrap32_eq_self_of_bounds`, `wrap32_hiddenPreAt8_*`, and `wrap16_hiddenSpecAt8_*`
+- finite case-split or decision-procedure lemmas such as `w1Int8At_toInt` and `w2Int8At_toInt`, provided the resulting proof remains auditable and kernel-checked
 
 Poor targets include:
 
@@ -121,12 +122,12 @@ This domain may also record comparison notes such as:
 
 ## 8. Acceptance Criteria
 
-The `formalize-smt` domain is complete for its first milestone when:
+The `formalize-smt` domain is adequately specified for this repository when:
 
 1. A checked-in requirements document and design document exist under `specs/formalize-smt/`.
 2. The repository explicitly identifies `formalize` as the canonical vanilla Lean baseline and `formalize-smt` as optional or secondary.
 3. The repository specifies which theorem classes are appropriate SMT-assistance targets.
-4. The baseline `formalize` domain exposes shared definitions and proof interfaces cleanly enough that `formalize-smt` can be an overlay instead of a fork or oracle wrapper. For the first milestone, this requirement is scoped to the arithmetic and shared fixed-point executable layer.
+4. The baseline `formalize` domain exposes shared definitions and proof interfaces cleanly enough that `formalize-smt` can be an overlay instead of a fork or oracle wrapper for the arithmetic and shared fixed-point executable layer.
 5. The repository specifies the overlay boundary clearly: shared definitions are allowed, but replaced theorem families are reproved rather than imported as solved facts from vanilla proof modules.
 6. The repository specifies the external dependency and trust story clearly.
 7. The repository specifies how the SMT-assisted path coexists with, or is compared against, the vanilla path.
