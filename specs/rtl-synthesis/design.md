@@ -311,7 +311,7 @@ build/
       logs/
 ```
 
-The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/results/canonical/sv/` plus `rtl-synthesis/results/canonical/blueprint/`. The blueprint surface should preserve both the mixed-path top-level view (`mlp_core.svg`) and the controller-scoped review views (`controller.svg`, `controller_spot_core.svg`).
+The committed source assets live under `rtl-synthesis/controller/`. Generated runtime flow outputs are written under `build/rtl-synthesis/{runs,canonical}/flow/spot/`, while normalized reports are written under `reports/rtl-synthesis/{runs,canonical}/flow/spot/summary.json`. The normalized branch-local comparison surface remains `rtl-synthesis/results/canonical/sv/` plus `rtl-synthesis/results/canonical/blueprint/`. The blueprint surface should preserve both the mixed-path top-level view (`mlp_core.svg`) and the controller-scoped review views (`controller.svg`, `controller_spot_core.svg`).
 
 ## 8. Tooling Direction
 

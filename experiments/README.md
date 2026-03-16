@@ -23,7 +23,7 @@ make experiments-qor
 make experiments-post-synth
 ```
 
-Each command writes JSON summaries and Markdown reports under `build/experiments/`.
+Each command writes runtime artifacts under `build/experiments/{runs,canonical}/` and JSON summaries plus Markdown reports under `reports/experiments/{runs,canonical}/`.
 
 Branch-oriented reports should record:
 

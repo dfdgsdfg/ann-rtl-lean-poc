@@ -7,13 +7,20 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-FORMAL_BUILD_ROOT = ROOT / "build" / "smt" / "rtl_formal"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+
+DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
+DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
 DEFAULT_SUMMARIES = {
-    "rtl": ROOT / "build" / "smt" / "rtl_control_summary.json",
-    "rtl-formalize-synthesis": ROOT / "build" / "smt" / "rtl_formalize_synthesis_summary.json",
+    "rtl": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl" / "summary.json",
+    "rtl-formalize-synthesis": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-formalize-synthesis" / "summary.json",
 }
 
 BASELINE_RTL_SOURCES = [
@@ -187,10 +194,27 @@ def mlp_core_jobs(rtl_sources: list[Path], *, description_prefix: str) -> list[F
 def formal_jobs(branch: str) -> list[FormalJob]:
     rtl_dir = ROOT / "smt" / "rtl"
     if branch == "rtl-formalize-synthesis":
-        return mlp_core_jobs(
-            SPARKLE_RTL_SOURCES,
-            description_prefix="Sparkle-wrapper-backed",
-        )
+        return [
+            FormalJob(
+                name="sparkle_wrapper_equivalence",
+                family="wrapper_equivalence",
+                description="Sparkle raw packed module and stable wrapper equivalence over reset adaptation, packed bus recovery, and FORMAL aliases.",
+                top="formal_sparkle_wrapper_equivalence",
+                harness=rtl_dir / "mlp_core" / "formal_sparkle_wrapper_equivalence.sv",
+                depth=2,
+                assumptions=[],
+                properties=[
+                    "wrapper-visible behavior matches a direct raw-module instantiation under the documented rst_n to rst adaptation",
+                    "done, busy, and out_bit are exact projections of the raw packed bus",
+                    "all FORMAL aliases are exact projections of the documented packed fields",
+                ],
+                rtl_sources=SPARKLE_RTL_SOURCES,
+            ),
+            *mlp_core_jobs(
+                SPARKLE_RTL_SOURCES,
+                description_prefix="Sparkle-wrapper-backed",
+            ),
+        ]
 
     return [
         FormalJob(
@@ -351,6 +375,23 @@ def parse_args() -> argparse.Namespace:
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
+        "--build-root",
+        type=Path,
+        default=DEFAULT_BUILD_ROOT,
+        help="Runtime build root for SMT job artifacts.",
+    )
+    parser.add_argument(
+        "--report-root",
+        type=Path,
+        default=DEFAULT_REPORT_ROOT,
+        help="Runtime report root for SMT summaries.",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run id for runtime artifact provenance mode.",
+    )
+    parser.add_argument(
         "--summary",
         type=Path,
         default=None,
@@ -363,14 +404,25 @@ def main() -> int:
     args = parse_args()
     if args.solver_alias:
         args.solver = args.solver_alias
-    if args.summary is None:
-        args.summary = DEFAULT_SUMMARIES[args.branch]
+    explicit_output_mode = args.summary is not None
+    snapshot = None
+    if explicit_output_mode:
+        args.summary = args.summary or DEFAULT_SUMMARIES[args.branch]
+        formal_build_dir = (args.build_root.resolve() / "canonical" / "rtl" / args.branch / "jobs")
+    else:
+        snapshot = prepare_snapshot(
+            build_root=args.build_root.resolve(),
+            report_root=args.report_root.resolve(),
+            run_id=args.run_id or build_run_id("smt", f"rtl-{args.branch}"),
+            subpath=Path("rtl") / args.branch,
+        )
+        args.summary = snapshot.report_run_dir / "summary.json"
+        formal_build_dir = snapshot.build_run_dir / "jobs"
 
     for tool in (args.yosys, args.smtbmc, args.solver):
         if not tool_exists(tool):
             raise SystemExit(f"missing required tool: {tool}")
 
-    formal_build_dir = FORMAL_BUILD_ROOT / args.branch
     formal_build_dir.mkdir(parents=True, exist_ok=True)
     jobs = formal_jobs(args.branch)
     results = [
@@ -383,8 +435,9 @@ def main() -> int:
     solver_version = tool_version([args.solver, "-version"])
     smtbmc_version = tool_version([args.smtbmc, "-h"], fallback=f"bundled with {yosys_version}")
 
+    generated_at_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
     summary = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at_utc": generated_at_utc,
         "branch": args.branch,
         "overall_result": overall_result,
         "tool": {
@@ -410,6 +463,24 @@ def main() -> int:
 
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if snapshot is not None:
+        promote_snapshot(
+            snapshot,
+            source="smt_rtl_family",
+            created_at_utc=generated_at_utc,
+            inputs={"branch": args.branch},
+            commands={"driver": summary["tool"]["command"]},
+            tool_versions={
+                "yosys": yosys_version,
+                "yosys_smtbmc": smtbmc_version,
+                "solver": solver_version,
+            },
+            artifacts={
+                "jobs_dir": relative(formal_build_dir),
+                "rtl_sources": summary["sources"]["rtl"],
+            },
+            reports={"summary": relative(args.summary)},
+        )
 
     for item in results:
         print(f"{item.result.upper():4} {args.branch} {item.family} {item.name}")

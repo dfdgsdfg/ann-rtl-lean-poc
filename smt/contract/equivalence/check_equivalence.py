@@ -6,7 +6,10 @@ from pathlib import Path
 
 
 if __package__ in (None, ""):
+    ROOT = Path(__file__).resolve().parents[3]
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
     from common import (  # type: ignore[import-not-found]
         ROOT,
         CheckSpec,
@@ -24,6 +27,7 @@ if __package__ in (None, ""):
         write_json,
         z3_version,
     )
+    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
 else:
     from ..common import (
         ROOT,
@@ -42,14 +46,34 @@ else:
         write_json,
         z3_version,
     )
+    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
 
 
-DEFAULT_SUMMARY = ROOT / "build" / "smt" / "contract_equivalence_summary.json"
+DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
+DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
+DEFAULT_SUMMARY = DEFAULT_REPORT_ROOT / "canonical" / "contract" / "equivalence" / "summary.json"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Prove arithmetic equivalence between the frozen contract view and the RTL-style bitvector view."
+    )
+    parser.add_argument(
+        "--build-root",
+        type=Path,
+        default=DEFAULT_BUILD_ROOT,
+        help="Runtime build root for SMT equivalence artifacts.",
+    )
+    parser.add_argument(
+        "--report-root",
+        type=Path,
+        default=DEFAULT_REPORT_ROOT,
+        help="Runtime report root for SMT equivalence summaries.",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run id for runtime artifact provenance mode.",
     )
     parser.add_argument(
         "--contract",
@@ -60,8 +84,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--summary",
         type=Path,
-        default=DEFAULT_SUMMARY,
-        help="JSON path for the proof summary.",
+        default=None,
+        help="JSON path for the proof summary. Overrides provenance mode.",
     )
     parser.add_argument(
         "--z3",
@@ -206,6 +230,18 @@ def build_checks(contract_path: Path) -> tuple[list[CheckSpec], tuple[str, ...],
 
 def main() -> int:
     args = parse_args()
+    snapshot = None
+    if args.summary is None:
+        snapshot = prepare_snapshot(
+            build_root=args.build_root.resolve(),
+            report_root=args.report_root.resolve(),
+            run_id=args.run_id or build_run_id("smt", "contract-equivalence"),
+            subpath=Path("contract") / "equivalence",
+        )
+        args.summary = snapshot.report_run_dir / "summary.json"
+        if args.dump_smt is None:
+            args.dump_smt = snapshot.build_run_dir / "query.smt2"
+
     contract = load_contract(args.contract)
     model = build_network_model(contract)
     checks, base_lines, smt_text = build_checks(args.contract)
@@ -239,8 +275,9 @@ def main() -> int:
         )
         print(f"{check.name}: {check_result} ({solver_result})")
 
+    generated_at_utc = timestamp_utc()
     summary = {
-        "generated_at_utc": timestamp_utc(),
+        "generated_at_utc": generated_at_utc,
         "summary_kind": "contract_equivalence",
         "overall_result": overall_result,
         "source_contract": repo_relative(contract.path),
@@ -284,6 +321,17 @@ def main() -> int:
     }
 
     write_json(args.summary, summary)
+    if snapshot is not None:
+        promote_snapshot(
+            snapshot,
+            source="smt_contract_equivalence",
+            created_at_utc=generated_at_utc,
+            inputs={"contract": repo_relative(contract.path)},
+            commands={"driver": summary["reproduction"]["command"]},
+            tool_versions={"z3": solver_version},
+            artifacts={"query": repo_relative(args.dump_smt)} if args.dump_smt is not None else {},
+            reports={"summary": repo_relative(args.summary)},
+        )
     print(f"wrote {args.summary}")
     if args.dump_smt is not None:
         print(f"wrote {args.dump_smt}")

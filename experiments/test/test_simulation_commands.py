@@ -56,8 +56,8 @@ class SimulationCommandTests(unittest.TestCase):
 
     def test_internal_sim_targets_exist_for_baseline_and_rtl_synthesis(self) -> None:
         expectations = {
-            "sim-internal": "vvp build/sim-internal/iverilog/testbench_internal.out",
-            "rtl-synthesis-sim-internal": "vvp build/rtl-synthesis/spot/sim-internal/iverilog/testbench_internal.out",
+            "sim-internal": "vvp build/rtl/canonical/simulations/internal/iverilog/testbench_internal.out",
+            "rtl-synthesis-sim-internal": "vvp build/rtl-synthesis/canonical/simulations/internal/iverilog/testbench_internal.out",
         }
         for target, expected in expectations.items():
             with self.subTest(target=target):
@@ -75,8 +75,9 @@ class SimulationCommandTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("rtl-formalize-synthesis/scripts/prepare_sparkle.sh", output)
-        self.assertIn("build/rtl-formalize-synthesis/sparkle_prepare.stamp", output)
+        self.assertIn("build/rtl-formalize-synthesis/canonical/flow/prepare/sparkle_prepare.stamp", output)
         self.assertIn("cd rtl-formalize-synthesis && lake build TinyMLPSparkle.Emit", output)
+        self.assertIn("python3 rtl-formalize-synthesis/scripts/refresh_verification_manifest.py", output)
         self.assertIn("python3 rtl-formalize-synthesis/scripts/generate_wrapper.py", output)
         self.assertIn("rtl-formalize-synthesis/results/canonical/verification_manifest.json", output)
         self.assertIn("rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv", output)
@@ -142,10 +143,10 @@ class SimulationCommandTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("python3 -m contract.src.freeze --check", output)
-        self.assertIn("vvp build/rtl-formalize-synthesis/iverilog/testbench.out", output)
+        self.assertIn("vvp build/rtl-formalize-synthesis/canonical/simulations/shared/iverilog/testbench.out", output)
         self.assertIn("verilator --binary --timing", output)
-        self.assertIn("build/rtl-formalize-synthesis/verilator", output)
-        self.assertIn("build/rtl-formalize-synthesis/verilator/Vtestbench", output)
+        self.assertIn("build/rtl-formalize-synthesis/canonical/simulations/shared/verilator", output)
+        self.assertIn("build/rtl-formalize-synthesis/canonical/simulations/shared/verilator/Vtestbench", output)
         self.assertNotIn("testbench_internal", output)
 
     def test_sparkle_branch_leaf_targets_exist(self) -> None:

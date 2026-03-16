@@ -36,40 +36,41 @@ In practice it expects `python3`, `yosys`, `yosys-smtbmc`, and `z3`.
 Run only the RTL control checks:
 
 ```bash
-python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
+python3 smt/rtl/check_control.py
 ```
 
 Run only the Sparkle full-core RTL checks:
 
 ```bash
-python3 smt/rtl/check_control.py --branch rtl-formalize-synthesis --summary build/smt/rtl_formalize_synthesis_summary.json
+python3 smt/rtl/check_control.py --branch rtl-formalize-synthesis
 ```
 
 Export the frozen arithmetic assumptions:
 
 ```bash
-python3 smt/contract/export_assumptions.py --output build/smt/contract_assumptions.json
+python3 smt/contract/export_assumptions.py
 ```
 
 Run only the contract overflow checks:
 
 ```bash
-python3 smt/contract/overflow/check_bounds.py --summary build/smt/contract_overflow_summary.json
+python3 smt/contract/overflow/check_bounds.py
 ```
 
 Run only the contract equivalence checks:
 
 ```bash
-python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contract_equivalence_summary.json
+python3 smt/contract/equivalence/check_equivalence.py
 ```
 
 Generated artifacts:
 
-- `build/smt/rtl_control_summary.json`
-- `build/smt/rtl_formalize_synthesis_summary.json`
-- `build/smt/contract_assumptions.json`
-- `build/smt/contract_overflow_summary.json`
-- `build/smt/contract_equivalence_summary.json`
+- `build/smt/{runs,canonical}/rtl/<branch>/jobs/...`
+- `build/smt/{runs,canonical}/contract/{overflow,equivalence}/query.smt2`
+- `reports/smt/{runs,canonical}/rtl/<branch>/summary.json`
+- `reports/smt/{runs,canonical}/contract/assumptions.json`
+- `reports/smt/{runs,canonical}/contract/overflow/summary.json`
+- `reports/smt/{runs,canonical}/contract/equivalence/summary.json`
 
 These summaries record the solver/tool version, the assumptions used for each property family, and a concise pass/fail result suitable for CI or local review.
 

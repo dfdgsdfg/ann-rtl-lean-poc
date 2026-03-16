@@ -9,11 +9,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+TEST_TMP_ROOT = ROOT / "build" / "tests" / "tmp"
 
 
 class SmtFlowTests(unittest.TestCase):
     def test_contract_assumption_export_matches_frozen_contract(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        TEST_TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=TEST_TMP_ROOT) as tmpdir:
             output_path = Path(tmpdir) / "contract_assumptions.json"
             result = subprocess.run(
                 [
@@ -57,11 +59,11 @@ class SmtFlowTests(unittest.TestCase):
         self.assertIn("hidden_products_fit_int16", output)
         self.assertIn("out_bit_equivalent", output)
 
-        rtl_summary = json.loads((ROOT / "build" / "smt" / "rtl_control_summary.json").read_text(encoding="utf-8"))
-        sparkle_summary = json.loads((ROOT / "build" / "smt" / "rtl_formalize_synthesis_summary.json").read_text(encoding="utf-8"))
-        contract_summary = json.loads((ROOT / "build" / "smt" / "contract_assumptions.json").read_text(encoding="utf-8"))
-        overflow_summary = json.loads((ROOT / "build" / "smt" / "contract_overflow_summary.json").read_text(encoding="utf-8"))
-        equivalence_summary = json.loads((ROOT / "build" / "smt" / "contract_equivalence_summary.json").read_text(encoding="utf-8"))
+        rtl_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl" / "summary.json").read_text(encoding="utf-8"))
+        sparkle_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-formalize-synthesis" / "summary.json").read_text(encoding="utf-8"))
+        contract_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "contract" / "assumptions.json").read_text(encoding="utf-8"))
+        overflow_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "contract" / "overflow" / "summary.json").read_text(encoding="utf-8"))
+        equivalence_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "contract" / "equivalence" / "summary.json").read_text(encoding="utf-8"))
 
         self.assertEqual(rtl_summary["branch"], "rtl")
         self.assertEqual(rtl_summary["overall_result"], "pass")
@@ -76,7 +78,7 @@ class SmtFlowTests(unittest.TestCase):
         )
         self.assertEqual(
             {result["family"] for result in sparkle_summary["results"]},
-            {"boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
+            {"wrapper_equivalence", "boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
         )
         self.assertEqual(
             sparkle_summary["sources"]["rtl"],

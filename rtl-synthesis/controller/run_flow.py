@@ -11,12 +11,20 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+
 DOMAIN_ROOT = ROOT / "rtl-synthesis" / "controller"
-DEFAULT_BUILD_DIR = ROOT / "build" / "rtl-synthesis" / "spot"
-DEFAULT_SUMMARY = DEFAULT_BUILD_DIR / "rtl_synthesis_summary.json"
+DEFAULT_BUILD_ROOT = ROOT / "build" / "rtl-synthesis"
+DEFAULT_REPORT_ROOT = ROOT / "reports" / "rtl-synthesis"
+DEFAULT_BUILD_DIR = DEFAULT_BUILD_ROOT / "canonical" / "flow" / "spot"
+DEFAULT_SUMMARY = DEFAULT_REPORT_ROOT / "canonical" / "flow" / "spot" / "summary.json"
 VENDOR_DIR = ROOT / "vendor"
 VENDORED_LTLSYNT = VENDOR_DIR / "spot-install" / "bin" / "ltlsynt"
 VENDORED_SYFCO = VENDOR_DIR / "syfco-install" / "bin" / "syfco"
@@ -552,25 +560,53 @@ def parse_args() -> argparse.Namespace:
         help="Solver kind passed to yosys-smtbmc -s (for example: z3 or cvc5).",
     )
     parser.add_argument(
+        "--build-root",
+        type=Path,
+        default=DEFAULT_BUILD_ROOT,
+        help="Runtime build root for run snapshots and canonical artifacts.",
+    )
+    parser.add_argument(
+        "--report-root",
+        type=Path,
+        default=DEFAULT_REPORT_ROOT,
+        help="Runtime report root for run snapshots and canonical summaries.",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run id for runtime artifact provenance mode.",
+    )
+    parser.add_argument(
         "--build-dir",
         type=Path,
-        default=DEFAULT_BUILD_DIR,
-        help="Build directory for generated artifacts.",
+        default=None,
+        help="Explicit build directory for generated artifacts. Overrides --build-root provenance mode.",
     )
     parser.add_argument(
         "--summary",
         type=Path,
-        default=DEFAULT_SUMMARY,
-        help="JSON path for the synthesis summary.",
+        default=None,
+        help="Explicit JSON path for the synthesis summary. Overrides --report-root provenance mode.",
     )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-
-    build_dir = rooted_path(args.build_dir)
-    summary_path = rooted_path(args.summary)
+    explicit_output_mode = args.build_dir is not None or args.summary is not None
+    snapshot = None
+    if explicit_output_mode:
+        build_dir = rooted_path(args.build_dir or DEFAULT_BUILD_DIR)
+        summary_path = rooted_path(args.summary or DEFAULT_SUMMARY)
+    else:
+        snapshot = prepare_snapshot(
+            build_root=rooted_path(args.build_root),
+            report_root=rooted_path(args.report_root),
+            run_id=args.run_id or build_run_id("rtl-synthesis", "spot"),
+            subpath="flow/spot",
+        )
+        build_dir = snapshot.build_run_dir
+        summary_path = snapshot.report_run_dir / "summary.json"
     generated_dir = build_dir / "generated"
     logs_dir = build_dir / "logs"
     generated_dir.mkdir(parents=True, exist_ok=True)
@@ -905,8 +941,9 @@ def main() -> int:
         ),
     ]
 
+    generated_at_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
     summary = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at_utc": generated_at_utc,
         "overall_result": overall_result,
         "assumption_profile": "exact_schedule_v1",
         "primary_claim_scope": PRIMARY_CLAIM_SCOPE,
@@ -955,6 +992,31 @@ def main() -> int:
 
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if snapshot is not None:
+        promote_snapshot(
+            snapshot,
+            source="rtl_synthesis_spot_flow",
+            created_at_utc=generated_at_utc,
+            inputs={
+                "tlsf": relative(TLSF_SOURCE),
+                "solver_name": args.solver_name,
+                "input_lowering": input_lowering,
+            },
+            commands={"driver": summary["tool"]["command"]},
+            tool_versions={
+                "ltlsynt": ltlsynt_version,
+                "syfco": syfco_version,
+                "yosys": yosys_version,
+                "yosys_smtbmc": smtbmc_version,
+                "solver": solver_version,
+            },
+            artifacts={
+                "build_dir": relative(build_dir),
+                "generated_dir": relative(generated_dir),
+                "logs_dir": relative(logs_dir),
+            },
+            reports={"summary": relative(summary_path)},
+        )
 
     for item in results:
         print(f"{item.result.upper():4} {item.name}")

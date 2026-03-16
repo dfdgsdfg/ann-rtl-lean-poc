@@ -311,6 +311,12 @@ def require_manifest_str_list(value: object, manifest_path: Path, *, label: str)
     return list(value)
 
 
+def require_manifest_object(value: object, manifest_path: Path, *, label: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise manifest_error(manifest_path, f"{label} must be an object")
+    return dict(value)
+
+
 def require_manifest_port_list(value: object, manifest_path: Path, *, label: str) -> list[RawPort]:
     if not isinstance(value, list) or not value:
         raise manifest_error(manifest_path, f"{label} must be a non-empty list")
@@ -346,8 +352,14 @@ def validate_subset_manifest(
         raise manifest_error(manifest_path, f"invalid JSON: {exc}") from exc
     if not isinstance(payload, dict):
         raise manifest_error(manifest_path, "top-level payload must be an object")
-    if payload.get("schema_version") != 1:
-        raise manifest_error(manifest_path, "schema_version must equal 1")
+    if payload.get("schema_version") != 2:
+        raise manifest_error(manifest_path, "schema_version must equal 2")
+
+    proof_endpoint = require_manifest_object(payload.get("proof_endpoint"), manifest_path, label="proof_endpoint")
+    require_manifest_str(proof_endpoint.get("kind"), manifest_path, label="proof_endpoint.kind")
+    require_manifest_str(proof_endpoint.get("typed_backend_ir"), manifest_path, label="proof_endpoint.typed_backend_ir")
+    require_manifest_str(proof_endpoint.get("lean_theorem"), manifest_path, label="proof_endpoint.lean_theorem")
+    require_manifest_str(proof_endpoint.get("decl_name"), manifest_path, label="proof_endpoint.decl_name")
 
     declared_subset = payload.get("declared_emitted_subset")
     if not isinstance(declared_subset, dict):
@@ -377,6 +389,73 @@ def validate_subset_manifest(
         declared_subset.get("expected_raw_ports"),
         manifest_path,
         label="declared_emitted_subset.expected_raw_ports",
+    )
+
+    feature_slice = require_manifest_object(payload.get("sparkle_feature_slice"), manifest_path, label="sparkle_feature_slice")
+    require_manifest_str(
+        feature_slice.get("compiler_entrypoint"),
+        manifest_path,
+        label="sparkle_feature_slice.compiler_entrypoint",
+    )
+    require_manifest_str(
+        feature_slice.get("backend_renderer"),
+        manifest_path,
+        label="sparkle_feature_slice.backend_renderer",
+    )
+    require_manifest_str(
+        feature_slice.get("typed_backend_ir"),
+        manifest_path,
+        label="sparkle_feature_slice.typed_backend_ir",
+    )
+    require_manifest_str_list(
+        feature_slice.get("constructs"),
+        manifest_path,
+        label="sparkle_feature_slice.constructs",
+    )
+    require_manifest_str(
+        feature_slice.get("emit_payload_shape"),
+        manifest_path,
+        label="sparkle_feature_slice.emit_payload_shape",
+    )
+
+    exact_emit_path = require_manifest_object(payload.get("exact_emit_path"), manifest_path, label="exact_emit_path")
+    require_manifest_str(exact_emit_path.get("decl_name"), manifest_path, label="exact_emit_path.decl_name")
+    require_manifest_str(
+        exact_emit_path.get("vendor_revision"),
+        manifest_path,
+        label="exact_emit_path.vendor_revision",
+    )
+    require_manifest_str(
+        exact_emit_path.get("local_patch_id"),
+        manifest_path,
+        label="exact_emit_path.local_patch_id",
+    )
+    require_manifest_str(
+        exact_emit_path.get("top_module"),
+        manifest_path,
+        label="exact_emit_path.top_module",
+    )
+    if not isinstance(exact_emit_path.get("module_count"), int) or exact_emit_path["module_count"] <= 0:
+        raise manifest_error(manifest_path, "exact_emit_path.module_count must be a positive integer")
+    require_manifest_str(
+        exact_emit_path.get("elaborated_design_fingerprint"),
+        manifest_path,
+        label="exact_emit_path.elaborated_design_fingerprint",
+    )
+    require_manifest_str(
+        exact_emit_path.get("backend_ast_fingerprint"),
+        manifest_path,
+        label="exact_emit_path.backend_ast_fingerprint",
+    )
+    require_manifest_str(
+        exact_emit_path.get("verilog_render_fingerprint"),
+        manifest_path,
+        label="exact_emit_path.verilog_render_fingerprint",
+    )
+    require_manifest_str(
+        exact_emit_path.get("raw_artifact_fingerprint"),
+        manifest_path,
+        label="exact_emit_path.raw_artifact_fingerprint",
     )
 
     semantics = payload.get("semantics_preservation_statement")

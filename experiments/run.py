@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -36,6 +37,7 @@ if __package__ in (None, ""):
         write_json,
         write_text,
     )
+    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
 else:
     from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json
     from contract.src.downstream_sync import expected_downstream_artifacts
@@ -54,6 +56,7 @@ else:
         write_json,
         write_text,
     )
+    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
     ROOT = REPO_ROOT
 
 
@@ -80,6 +83,8 @@ SPARKLE_PROJECT_DIR = ROOT / "rtl-formalize-synthesis"
 SPARKLE_LAKEFILE = SPARKLE_PROJECT_DIR / "lakefile.lean"
 SPARKLE_PREPARE_SCRIPT = SPARKLE_PROJECT_DIR / "scripts" / "prepare_sparkle.sh"
 SPARKLE_WRAPPER_GENERATOR = SPARKLE_PROJECT_DIR / "scripts" / "generate_wrapper.py"
+SPARKLE_BACKEND_METADATA_EXPORT = SPARKLE_PROJECT_DIR / "scripts" / "export_backend_metadata.lean"
+SPARKLE_VERIFICATION_REFRESH = SPARKLE_PROJECT_DIR / "scripts" / "refresh_verification_manifest.py"
 SPARKLE_PATCH_PATH = SPARKLE_PROJECT_DIR / "patches" / "sparkle-local.patch"
 SPARKLE_LEAN_TOOLCHAIN = SPARKLE_PROJECT_DIR / "lean-toolchain"
 SPARKLE_LAKE_MANIFEST = SPARKLE_PROJECT_DIR / "lake-manifest.json"
@@ -111,6 +116,15 @@ RTL_SYNTHESIS_FLOW_STEP_ORDER = (
     "controller_interface_equivalence",
     "closed_loop_mlp_core_equivalence",
 )
+SPARKLE_FEATURE_SLICE_CONSTRUCTS = [
+    "Signal.loop",
+    "Signal.pure",
+    "hw_cond",
+    "BitVec.append",
+    "BitVec.extractLsb'",
+    "BitVec.ult",
+    "declare_signal_state",
+]
 
 
 @dataclass(frozen=True)
@@ -424,6 +438,8 @@ def parse_args() -> argparse.Namespace:
         help="Experiment family to run.",
     )
     parser.add_argument("--build-root", type=Path, default=ROOT / "build" / "experiments")
+    parser.add_argument("--report-root", type=Path, default=ROOT / "reports" / "experiments")
+    parser.add_argument("--run-id", default=None)
     parser.add_argument("--iverilog", default=shutil.which("iverilog") or "iverilog")
     parser.add_argument("--vvp", default=shutil.which("vvp") or "vvp")
     parser.add_argument("--verilator", default=shutil.which("verilator") or "verilator")
@@ -460,9 +476,9 @@ def make_step(
     }
 
 
-def write_family_outputs(family_root: Path, summary: dict[str, object], report: str) -> None:
-    write_json(family_root / "summary.json", summary)
-    write_text(family_root / "report.md", report)
+def write_family_outputs(report_root: Path, summary: dict[str, object], report: str) -> None:
+    write_json(report_root / "summary.json", summary)
+    write_text(report_root / "report.md", report)
 
 
 def render_family_report(summary: dict[str, object]) -> str:
@@ -587,6 +603,9 @@ def sparkle_generated_full_core_proof_sources() -> list[Path]:
     return [
         SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle.lean",
         SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "Refinement.lean",
+        SPARKLE_PROJECT_DIR / "src" / "TinyMLPSparkle" / "BackendSemantics.lean",
+        SPARKLE_BACKEND_METADATA_EXPORT,
+        SPARKLE_VERIFICATION_REFRESH,
     ]
 
 
@@ -596,6 +615,93 @@ def sparkle_generated_full_core_wrapper_inputs() -> list[Path]:
         SPARKLE_WRAPPER_GENERATOR,
         SPARKLE_VERIFICATION_MANIFEST,
     ]
+
+
+def load_sparkle_verification_manifest() -> dict[str, object]:
+    payload = read_json(SPARKLE_VERIFICATION_MANIFEST)
+    if not isinstance(payload, dict):
+        raise ValueError("verification manifest must be a JSON object")
+    return payload
+
+
+def export_current_sparkle_backend_metadata() -> tuple[dict[str, object], str]:
+    command = [
+        "lake",
+        "env",
+        "lean",
+        "--run",
+        str(SPARKLE_BACKEND_METADATA_EXPORT),
+    ]
+    proc = run_command(command, cwd=SPARKLE_PROJECT_DIR)
+    output = ((proc.stdout or "") + (proc.stderr or "")).strip()
+    if proc.returncode != 0:
+        raise RuntimeError(output or "backend metadata export failed")
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"backend metadata export did not return valid JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("backend metadata export must return a JSON object")
+    return payload, command_text(command)
+
+
+def current_sparkle_backend_fingerprints(export_payload: dict[str, object]) -> dict[str, str]:
+    design_repr = str(export_payload.get("design_repr", ""))
+    verilog_text = str(export_payload.get("verilog_text", ""))
+    return {
+        "decl_name": str(export_payload.get("decl_name", "")),
+        "typed_backend_ir": str(export_payload.get("typed_backend_ir", "")),
+        "top_module": str(export_payload.get("top_module", "")),
+        "module_count": str(export_payload.get("module_count", "")),
+        "elaborated_design_fingerprint": sha256_text(design_repr),
+        "backend_ast_fingerprint": sha256_text(design_repr),
+        "verilog_render_fingerprint": sha256_text(verilog_text),
+        "raw_artifact_fingerprint": sha256_file(SPARKLE_FULL_CORE_RTL),
+        "local_patch_id": sha256_file(SPARKLE_PATCH_PATH),
+    }
+
+
+def git_head_revision(repo_dir: Path) -> str:
+    if not (repo_dir / ".git").exists():
+        return "unknown"
+    proc = run_command(["git", "-C", str(repo_dir), "rev-parse", "HEAD"], cwd=ROOT)
+    if proc.returncode != 0:
+        return "unknown"
+    return ((proc.stdout or "") + (proc.stderr or "")).strip().splitlines()[0].strip() or "unknown"
+
+
+def check_sparkle_feature_slice(manifest_payload: dict[str, object]) -> tuple[list[str], dict[str, list[str]]]:
+    feature_slice = manifest_payload.get("sparkle_feature_slice")
+    if not isinstance(feature_slice, dict):
+        return (["missing sparkle_feature_slice object"], {})
+    declared_constructs = feature_slice.get("constructs")
+    if declared_constructs != SPARKLE_FEATURE_SLICE_CONSTRUCTS:
+        return (
+            [
+                "sparkle_feature_slice.constructs does not match the repository-declared feature slice"
+            ],
+            {},
+        )
+
+    emit_sources = sparkle_generated_full_core_emit_sources()
+    hit_map: dict[str, list[str]] = {}
+    missing_constructs: list[str] = []
+    for token in SPARKLE_FEATURE_SLICE_CONSTRUCTS:
+        hits: list[str] = []
+        for path in emit_sources:
+            if not path.exists():
+                continue
+            if token in path.read_text(encoding="utf-8"):
+                hits.append(relative(path))
+        if not hits:
+            missing_constructs.append(token)
+        hit_map[token] = hits
+    if missing_constructs:
+        return (
+            [f"declared feature-slice token not found in current emit sources: {token}" for token in missing_constructs],
+            hit_map,
+        )
+    return ([], hit_map)
 
 
 def classify_sparkle_validation_failure(output: str) -> tuple[str, str]:
@@ -641,6 +747,14 @@ def classify_sparkle_validation_failure(output: str) -> tuple[str, str]:
 def remove_if_exists(path: Path) -> None:
     if path.exists():
         path.unlink()
+
+
+def sha256_text(text: str) -> str:
+    return f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}"
+
+
+def sha256_file(path: Path) -> str:
+    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, object]:
@@ -840,34 +954,46 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
     )
 
 
-def make_sparkle_proof_source_status_step(log_path: Path) -> dict[str, object]:
+def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
     ensure_dir(log_path.parent)
     proof_source_paths = sparkle_generated_full_core_proof_sources()
-    tracked_paths = list(dict.fromkeys([SPARKLE_FULL_CORE_RTL, *proof_source_paths]))
-    missing_paths = [
-        path
-        for path in tracked_paths
-        if not path.exists()
-    ]
+    tracked_paths = list(
+        dict.fromkeys(
+            [
+                SPARKLE_FULL_CORE_RTL,
+                SPARKLE_VERIFICATION_MANIFEST,
+                SPARKLE_BACKEND_METADATA_EXPORT,
+                SPARKLE_VERIFICATION_REFRESH,
+                *proof_source_paths,
+            ]
+        )
+    )
+    missing_paths = [path for path in tracked_paths if not path.exists()]
     details: dict[str, object] = {
         "generated_core": relative(SPARKLE_FULL_CORE_RTL),
+        "verification_manifest": relative(SPARKLE_VERIFICATION_MANIFEST),
         "proof_source_count": len(proof_source_paths),
-        "gating": False,
+        "gating": True,
     }
     artifacts: dict[str, Path] = {}
     log_lines = [
-        "Sparkle proof-source status check",
+        "Sparkle backend proof-status check",
         "",
         f"generated core: {relative(SPARKLE_FULL_CORE_RTL)}",
+        f"verification manifest: {relative(SPARKLE_VERIFICATION_MANIFEST)}",
     ]
 
     if SPARKLE_FULL_CORE_RTL.exists():
         details["generated_core_mtime_utc"] = format_mtime_utc(SPARKLE_FULL_CORE_RTL)
         artifacts["generated_core"] = SPARKLE_FULL_CORE_RTL
         log_lines.append(f"generated core mtime (utc): {details['generated_core_mtime_utc']}")
+    if SPARKLE_VERIFICATION_MANIFEST.exists():
+        details["verification_manifest_mtime_utc"] = format_mtime_utc(SPARKLE_VERIFICATION_MANIFEST)
+        artifacts["verification_manifest"] = SPARKLE_VERIFICATION_MANIFEST
+        log_lines.append(f"verification manifest mtime (utc): {details['verification_manifest_mtime_utc']}")
 
     if missing_paths:
-        details["reason"] = "missing Sparkle proof source or generated core dependency"
+        details["reason"] = "missing Sparkle proof-source, manifest, or generated-core dependency"
         details["missing_paths"] = [relative(path) for path in missing_paths]
         log_lines.extend(
             [
@@ -879,16 +1005,16 @@ def make_sparkle_proof_source_status_step(log_path: Path) -> dict[str, object]:
         )
         write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
         return make_step(
-            name="sparkle_proof_source_status",
+            name="sparkle_backend_proof_status",
             result="fail",
-            command="internal Sparkle proof-source status check",
+            command="internal Sparkle backend proof-status check",
             log_path=log_path,
             artifacts=artifacts,
             details=details,
         )
 
     if not proof_source_paths:
-        details["reason"] = "no Sparkle proof-source dependencies were discovered for status checking"
+        details["reason"] = "no Sparkle proof-source dependencies were discovered for proof-status checking"
         log_lines.extend(
             [
                 "result: fail",
@@ -897,9 +1023,9 @@ def make_sparkle_proof_source_status_step(log_path: Path) -> dict[str, object]:
         )
         write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
         return make_step(
-            name="sparkle_proof_source_status",
+            name="sparkle_backend_proof_status",
             result="fail",
-            command="internal Sparkle proof-source status check",
+            command="internal Sparkle backend proof-status check",
             log_path=log_path,
             artifacts=artifacts,
             details=details,
@@ -908,32 +1034,145 @@ def make_sparkle_proof_source_status_step(log_path: Path) -> dict[str, object]:
     newest_proof_source = max(proof_source_paths, key=lambda path: path.stat().st_mtime)
     details["newest_proof_source"] = relative(newest_proof_source)
     details["newest_proof_source_mtime_utc"] = format_mtime_utc(newest_proof_source)
-    details["proof_sources_newer_than_generated_core"] = (
-        SPARKLE_FULL_CORE_RTL.stat().st_mtime < newest_proof_source.stat().st_mtime
-    )
     artifacts["newest_proof_source"] = newest_proof_source
     log_lines.append(f"newest proof source: {details['newest_proof_source']}")
     log_lines.append(f"newest proof source mtime (utc): {details['newest_proof_source_mtime_utc']}")
 
-    if details["proof_sources_newer_than_generated_core"]:
-        details["reason"] = (
-            "proof-only Sparkle sources are newer than the checked-in generated core; this is reported "
-            "separately and does not gate emit freshness"
+    build_command = ["lake", "build", "TinyMLPSparkle.BackendSemantics"]
+    details["proof_build_command"] = command_text(build_command)
+    build_proc = run_command(build_command, cwd=SPARKLE_PROJECT_DIR)
+    build_output = ((build_proc.stdout or "") + (build_proc.stderr or "")).strip()
+    log_lines.extend(
+        [
+            "",
+            f"$ {details['proof_build_command']}",
+            build_output or "(no output)",
+        ]
+    )
+    if build_proc.returncode != 0:
+        details["reason"] = "Lean backend proof module failed to build"
+        details["proof_build_output"] = build_output
+        log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
         )
-        log_lines.extend(
-            [
-                "result: pass",
-                f"reason: {details['reason']}",
-            ]
-        )
-    else:
-        log_lines.append("result: pass")
 
+    try:
+        manifest_payload = load_sparkle_verification_manifest()
+    except Exception as exc:
+        details["reason"] = f"failed to load verification manifest: {exc}"
+        log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    details["manifest_schema_version"] = manifest_payload.get("schema_version")
+    if details["manifest_schema_version"] != 2:
+        details["reason"] = "verification manifest does not use schema_version 2"
+        log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    try:
+        export_payload, export_command = export_current_sparkle_backend_metadata()
+    except Exception as exc:
+        details["reason"] = f"failed to export current Sparkle backend metadata: {exc}"
+        log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    details["backend_metadata_command"] = export_command
+    current_metadata = current_sparkle_backend_fingerprints(export_payload)
+    current_metadata["vendor_revision"] = git_head_revision(SPARKLE_PROJECT_DIR / "vendor" / "Sparkle")
+    details["current_backend_metadata"] = current_metadata
+
+    proof_endpoint = manifest_payload.get("proof_endpoint")
+    exact_emit_path = manifest_payload.get("exact_emit_path")
+    mismatches: list[str] = []
+    if not isinstance(proof_endpoint, dict):
+        mismatches.append("missing proof_endpoint object")
+    else:
+        if proof_endpoint.get("kind") != "packed_signal_payload":
+            mismatches.append("proof_endpoint.kind does not equal packed_signal_payload")
+        if proof_endpoint.get("typed_backend_ir") != "Sparkle.IR.AST.Design":
+            mismatches.append("proof_endpoint.typed_backend_ir does not equal Sparkle.IR.AST.Design")
+        if proof_endpoint.get("lean_theorem") != "TinyMLP.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace":
+            mismatches.append("proof_endpoint.lean_theorem does not match the expected theorem")
+        if proof_endpoint.get("decl_name") != current_metadata["decl_name"]:
+            mismatches.append("proof_endpoint.decl_name does not match the current emit declaration")
+
+    if not isinstance(exact_emit_path, dict):
+        mismatches.append("missing exact_emit_path object")
+    else:
+        expected_emit_paths = [relative(path) for path in sparkle_generated_full_core_emit_sources()]
+        declared_subset = manifest_payload.get("declared_emitted_subset")
+        if isinstance(declared_subset, dict) and set(declared_subset.get("emit_source_paths", [])) != set(expected_emit_paths):
+            mismatches.append("declared_emitted_subset.emit_source_paths does not match the current emit source set")
+        comparisons = {
+            "decl_name": current_metadata["decl_name"],
+            "vendor_revision": current_metadata["vendor_revision"],
+            "local_patch_id": current_metadata["local_patch_id"],
+            "top_module": str(export_payload.get("top_module", "")),
+            "module_count": int(export_payload.get("module_count", 0)),
+            "elaborated_design_fingerprint": current_metadata["elaborated_design_fingerprint"],
+            "backend_ast_fingerprint": current_metadata["backend_ast_fingerprint"],
+            "verilog_render_fingerprint": current_metadata["verilog_render_fingerprint"],
+            "raw_artifact_fingerprint": current_metadata["raw_artifact_fingerprint"],
+        }
+        for key, current_value in comparisons.items():
+            if exact_emit_path.get(key) != current_value:
+                mismatches.append(f"exact_emit_path.{key} does not match the current exact emit path")
+
+    feature_slice_problems, feature_slice_hits = check_sparkle_feature_slice(manifest_payload)
+    details["feature_slice_hits"] = feature_slice_hits
+    mismatches.extend(feature_slice_problems)
+
+    if mismatches:
+        details["reason"] = "Sparkle backend proof metadata drifted from the exact current emit path"
+        details["mismatches"] = mismatches
+        log_lines.extend(["", "mismatches:", *[f"- {problem}" for problem in mismatches], "result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
+    log_lines.append("result: pass")
     write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
     return make_step(
-        name="sparkle_proof_source_status",
+        name="sparkle_backend_proof_status",
         result="pass",
-        command="internal Sparkle proof-source status check",
+        command="internal Sparkle backend proof-status check",
         log_path=log_path,
         artifacts=artifacts,
         details=details,
@@ -1017,13 +1256,19 @@ def prepare_baseline_branch(branch_root: Path) -> BranchManifest:
     return manifest
 
 
-def prepare_rtl_synthesis_branch(branch_root: Path, args: argparse.Namespace) -> BranchManifest:
+def prepare_rtl_synthesis_branch(
+    branch_root: Path,
+    args: argparse.Namespace,
+    report_root: Path | None = None,
+) -> BranchManifest:
     ensure_dir(branch_root)
+    report_root = branch_root if report_root is None else report_root
+    ensure_dir(report_root)
     generated_dir = branch_root / "generated"
     logs_dir = branch_root / "logs"
     ensure_dir(generated_dir)
     ensure_dir(logs_dir)
-    summary_path = branch_root / "rtl_synthesis_summary.json"
+    summary_path = report_root / "rtl_synthesis_summary.json"
 
     alias_path = generated_dir / "controller.sv"
     generated_core = generated_dir / "controller_spot_core.sv"
@@ -1140,12 +1385,18 @@ def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
     return manifest
 
 
-def prepare_branch_manifests(args: argparse.Namespace, build_root: Path) -> dict[str, BranchManifest]:
+def prepare_branch_manifests(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, BranchManifest]:
     branch_root = build_root / "branches"
+    branch_report_root = branch_root if report_root is None else report_root / "branches"
     ensure_dir(branch_root)
+    ensure_dir(branch_report_root)
     manifests = {
         "rtl": prepare_baseline_branch(branch_root / "rtl"),
-        "rtl-synthesis": prepare_rtl_synthesis_branch(branch_root / "rtl-synthesis", args),
+        "rtl-synthesis": prepare_rtl_synthesis_branch(branch_root / "rtl-synthesis", args, branch_report_root / "rtl-synthesis"),
         "rtl-formalize-synthesis": prepare_sparkle_branch(branch_root / "rtl-formalize-synthesis"),
     }
     return manifests
@@ -1179,8 +1430,13 @@ def run_contract_preflight_step(log_path: Path) -> dict[str, object]:
     )
 
 
-def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) -> dict[str, object]:
+def run_artifact_consistency_family(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, object]:
     family_root = build_root / "artifact-consistency"
+    family_report_root = family_root if report_root is None else report_root / "artifact-consistency"
     ensure_dir(family_root)
     logs_dir = family_root / "logs"
     ensure_dir(logs_dir)
@@ -1210,7 +1466,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         )
     ]
     results.append(make_sparkle_generated_core_freshness_step(logs_dir / "sparkle_generated_core_freshness.log"))
-    results.append(make_sparkle_proof_source_status_step(logs_dir / "sparkle_proof_source_status.log"))
+    results.append(make_sparkle_backend_proof_status_step(logs_dir / "sparkle_backend_proof_status.log"))
     summary = {
         "generated_at_utc": timestamp_utc(),
         "family": "artifact-consistency",
@@ -1222,8 +1478,8 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         "claim_scope": (
             "checked-in frozen contract and downstream artifacts remain synchronized without rewriting tracked "
             "files, the checked-in Sparkle full-core RTL and wrapper remain aligned with the declared emitted "
-            "subset verification manifest and emit inputs, and proof-source drift is reported separately without "
-            "gating branch freshness"
+            "subset verification manifest and emit inputs, and the exact current Sparkle emit path still matches "
+            "the checked-in backend proof metadata and feature-slice declaration"
         ),
         "tool_versions": {
             "python3": tool_version([["python3", "--version"]]),
@@ -1234,7 +1490,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
             "ann_canonical": relative(ANN_CANONICAL_MANIFEST_PATH),
         },
     }
-    write_family_outputs(family_root, summary, render_family_report(summary))
+    write_family_outputs(family_report_root, summary, render_family_report(summary))
     return summary
 
 
@@ -1279,8 +1535,13 @@ def compare_semantic_bridge(bridge_path: Path) -> tuple[str, dict[str, object]]:
     return ("pass" if not mismatches else "fail"), {"mismatches": mismatches}
 
 
-def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> dict[str, object]:
+def run_semantic_closure_family(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, object]:
     family_root = build_root / "semantic-closure"
+    family_report_root = family_root if report_root is None else report_root / "semantic-closure"
     ensure_dir(family_root)
     logs_dir = family_root / "logs"
     ensure_dir(logs_dir)
@@ -1336,7 +1597,7 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
         )
     )
 
-    overflow_summary = family_root / "contract_overflow_summary.json"
+    overflow_summary = family_report_root / "contract_overflow_summary.json"
     overflow_log = logs_dir / "contract_overflow.log"
     overflow_command = [
         "python3",
@@ -1364,7 +1625,7 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
         )
     )
 
-    equivalence_summary = family_root / "contract_equivalence_summary.json"
+    equivalence_summary = family_report_root / "contract_equivalence_summary.json"
     equivalence_log = logs_dir / "contract_equivalence.log"
     equivalence_command = [
         "python3",
@@ -1408,7 +1669,7 @@ def run_semantic_closure_family(args: argparse.Namespace, build_root: Path) -> d
         },
         "results": results,
     }
-    write_family_outputs(family_root, summary, render_family_report(summary))
+    write_family_outputs(family_report_root, summary, render_family_report(summary))
     return summary
 
 
@@ -1628,13 +1889,18 @@ def run_branch_simulation(args: argparse.Namespace, manifest: BranchManifest, ou
     }
 
 
-def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dict[str, object]:
+def run_branch_compare_family(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, object]:
     family_root = build_root / "branch-compare"
+    family_report_root = family_root if report_root is None else report_root / "branch-compare"
     ensure_dir(family_root)
-    manifests = prepare_branch_manifests(args, build_root)
+    manifests = prepare_branch_manifests(args, build_root, report_root)
     branches: list[dict[str, object]] = []
 
-    baseline_formal_summary = family_root / "rtl_control_summary.json"
+    baseline_formal_summary = family_report_root / "rtl_control_summary.json"
     baseline_formal_log = family_root / "logs" / "rtl_control.log"
     ensure_dir(baseline_formal_log.parent)
     baseline_formal_result = "skip"
@@ -1664,7 +1930,9 @@ def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dic
         if branch_name == "rtl-formalize-synthesis":
             freshness_step = make_sparkle_generated_core_freshness_step(branch_root / "sparkle_generated_core_freshness.log")
             steps.append(freshness_step)
-            if freshness_step["result"] != "pass":
+            proof_step = make_sparkle_backend_proof_status_step(branch_root / "sparkle_backend_proof_status.log")
+            steps.append(proof_step)
+            if freshness_step["result"] != "pass" or proof_step["result"] != "pass":
                 branch_result = {
                     "branch": branch_name,
                     "artifact_kind": manifest.artifact_kind,
@@ -1743,7 +2011,7 @@ def run_branch_compare_family(args: argparse.Namespace, build_root: Path) -> dic
         },
         "branches": branches,
     }
-    write_family_outputs(family_root, summary, render_family_report(summary))
+    write_family_outputs(family_report_root, summary, render_family_report(summary))
     return summary
 
 
@@ -1822,8 +2090,13 @@ def parse_qor_metrics(log_text: str, json_path: Path) -> dict[str, object]:
     }
 
 
-def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, object]:
+def run_qor_family(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, object]:
     family_root = build_root / "qor"
+    family_report_root = family_root if report_root is None else report_root / "qor"
     ensure_dir(family_root)
     liberty_env = os.environ.get("SKY130_FD_SC_HD_LIBERTY")
     liberty_path = Path(liberty_env).resolve() if liberty_env else None
@@ -1852,10 +2125,10 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
                 )
             ],
         }
-        write_family_outputs(family_root, summary, render_family_report(summary))
+        write_family_outputs(family_report_root, summary, render_family_report(summary))
         return summary
 
-    manifests = prepare_branch_manifests(args, build_root)
+    manifests = prepare_branch_manifests(args, build_root, report_root)
 
     results: list[dict[str, object]] = []
     for branch_name, manifest in manifests.items():
@@ -1890,7 +2163,9 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
 
         if branch_name == "rtl-formalize-synthesis":
             freshness_step = make_sparkle_generated_core_freshness_step(branch_root / "sparkle_generated_core_freshness.log")
-            if freshness_step["result"] != "pass":
+            proof_step = make_sparkle_backend_proof_status_step(branch_root / "sparkle_backend_proof_status.log")
+            if freshness_step["result"] != "pass" or proof_step["result"] != "pass":
+                failing_step = freshness_step if freshness_step["result"] != "pass" else proof_step
                 results.append(
                     {
                         "branch": branch_name,
@@ -1903,15 +2178,15 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
                             "full-core RTL, and generated-controller mixed-path RTL"
                         ),
                         "result": "fail",
-                        "command": freshness_step["command"],
-                        "log": freshness_step["log"],
+                        "command": failing_step["command"],
+                        "log": failing_step["log"],
                         "artifacts": {
                             "manifest": relative((build_root / "branches" / branch_name / "manifest.json")),
                         },
                         "metrics": empty_qor_metrics(),
                         "metrics_basis": QOR_METRICS_BASIS,
                         "liberty": relative(liberty_path) if liberty_path is not None else "",
-                        "details": freshness_step["details"],
+                        "details": failing_step["details"],
                     }
                 )
                 continue
@@ -1972,7 +2247,7 @@ def run_qor_family(args: argparse.Namespace, build_root: Path) -> dict[str, obje
         },
         "results": results,
     }
-    write_family_outputs(family_root, summary, render_family_report(summary))
+    write_family_outputs(family_report_root, summary, render_family_report(summary))
     return summary
 
 
@@ -2068,8 +2343,13 @@ def run_gate_level_sim(
     )
 
 
-def run_post_synth_family(args: argparse.Namespace, build_root: Path) -> dict[str, object]:
+def run_post_synth_family(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path | None = None,
+) -> dict[str, object]:
     family_root = build_root / "post-synth"
+    family_report_root = family_root if report_root is None else report_root / "post-synth"
     ensure_dir(family_root)
     results: list[dict[str, object]] = []
 
@@ -2095,10 +2375,10 @@ def run_post_synth_family(args: argparse.Namespace, build_root: Path) -> dict[st
                 )
             ],
         }
-        write_family_outputs(family_root, summary, render_family_report(summary))
+        write_family_outputs(family_report_root, summary, render_family_report(summary))
         return summary
 
-    manifests = prepare_branch_manifests(args, build_root)
+    manifests = prepare_branch_manifests(args, build_root, report_root)
 
     for branch_name, manifest in manifests.items():
         branch_root = family_root / branch_name
@@ -2122,7 +2402,9 @@ def run_post_synth_family(args: argparse.Namespace, build_root: Path) -> dict[st
         if branch_name == "rtl-formalize-synthesis":
             freshness_step = make_sparkle_generated_core_freshness_step(branch_root / "sparkle_generated_core_freshness.log")
             branch_result["steps"].append(freshness_step)
-            if freshness_step["result"] != "pass":
+            proof_step = make_sparkle_backend_proof_status_step(branch_root / "sparkle_backend_proof_status.log")
+            branch_result["steps"].append(proof_step)
+            if freshness_step["result"] != "pass" or proof_step["result"] != "pass":
                 branch_result["result"] = "fail"
                 results.append(branch_result)
                 continue
@@ -2234,13 +2516,17 @@ def run_post_synth_family(args: argparse.Namespace, build_root: Path) -> dict[st
         },
         "results": results,
     }
-    write_family_outputs(family_root, summary, render_family_report(summary))
+    write_family_outputs(family_report_root, summary, render_family_report(summary))
     return summary
 
 
-def run_selected_families(args: argparse.Namespace) -> list[dict[str, object]]:
-    build_root = args.build_root.resolve()
+def run_selected_families(
+    args: argparse.Namespace,
+    build_root: Path,
+    report_root: Path,
+) -> list[dict[str, object]]:
     ensure_dir(build_root)
+    ensure_dir(report_root)
     families: list[dict[str, object]] = []
 
     dispatch = {
@@ -2257,35 +2543,63 @@ def run_selected_families(args: argparse.Namespace) -> list[dict[str, object]]:
         selected = [args.family]
 
     for family_name in selected:
-        families.append(dispatch[family_name](args, build_root))
+        families.append(dispatch[family_name](args, build_root, report_root))
     return families
 
 
 def main() -> int:
     args = parse_args()
-    families = run_selected_families(args)
-    build_root = args.build_root.resolve()
+    snapshot = prepare_snapshot(
+        build_root=args.build_root.resolve(),
+        report_root=args.report_root.resolve(),
+        run_id=args.run_id or build_run_id("experiments", args.family),
+        subpath=".",
+    )
+    build_root = snapshot.build_run_dir
+    report_root = snapshot.report_run_dir
+    families = run_selected_families(args, build_root, report_root)
     family_rows = [
         {
             "family": family["family"],
             "overall_result": family["overall_result"],
-            "summary_path": relative(build_root / family["family"] / "summary.json"),
+            "summary_path": relative(report_root / family["family"] / "summary.json"),
         }
         for family in families
     ]
     if args.family == "all":
+        generated_at_utc = timestamp_utc()
         summary = {
-            "generated_at_utc": timestamp_utc(),
+            "generated_at_utc": generated_at_utc,
             "overall_result": combine_results([family["overall_result"] for family in families]),
             "families": family_rows,
         }
-        write_json(build_root / "summary.json", summary)
-        write_text(build_root / "report.md", render_root_report(summary))
-        print(f"wrote {build_root / 'summary.json'}")
+        write_json(report_root / "summary.json", summary)
+        write_text(report_root / "report.md", render_root_report(summary))
+        promote_snapshot(
+            snapshot,
+            source="experiments_family_suite",
+            created_at_utc=generated_at_utc,
+            inputs={"family": args.family},
+            commands={"driver": f"python3 experiments/run.py --family {args.family}"},
+            tool_versions={},
+            artifacts={"build_root": relative(build_root)},
+            reports={"summary": relative(report_root / "summary.json")},
+        )
+        print(f"wrote {report_root / 'summary.json'}")
         return 0 if summary["overall_result"] not in {"fail", "error"} else 1
 
     family = families[0]
-    print(f"wrote {build_root / family['family'] / 'summary.json'}")
+    promote_snapshot(
+        snapshot,
+        source="experiments_family_suite",
+        created_at_utc=str(family["generated_at_utc"]),
+        inputs={"family": args.family},
+        commands={"driver": f"python3 experiments/run.py --family {args.family}"},
+        tool_versions={},
+        artifacts={"build_root": relative(build_root)},
+        reports={"summary": relative(report_root / family["family"] / "summary.json")},
+    )
+    print(f"wrote {report_root / family['family'] / 'summary.json'}")
     return 0 if family["overall_result"] not in {"fail", "error"} else 1
 
 

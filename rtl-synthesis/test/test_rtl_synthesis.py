@@ -14,6 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+TEST_TMP_ROOT = ROOT / "build" / "tests" / "tmp"
 
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 ANN_RESULTS_DIR = ROOT / "ann" / "results"
@@ -29,6 +30,7 @@ RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
 RTL_SYNTHESIS_CANONICAL_DIR = ROOT / "rtl-synthesis" / "results" / "canonical"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "implementation-branch-comparison.md"
+RUNTIME_ARTIFACTS_TEMPLATE = ROOT / "runtime_artifacts.py"
 RUN_FLOW_PATH = RTL_SYNTHESIS_CONTROLLER_DIR / "run_flow.py"
 RUN_FLOW_SPEC = importlib.util.spec_from_file_location("rtl_synthesis_run_flow", RUN_FLOW_PATH)
 assert RUN_FLOW_SPEC is not None and RUN_FLOW_SPEC.loader is not None
@@ -465,7 +467,8 @@ def _write_executable(path: Path, text: str) -> None:
 
 class ToolPathResolutionTests(unittest.TestCase):
     def test_preferred_tool_path_prefers_vendored_binary(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        TEST_TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=TEST_TMP_ROOT) as tmpdir:
             vendored = Path(tmpdir) / "ltlsynt"
             vendored.write_text("#!/bin/sh\n", encoding="utf-8")
             self.assertEqual(RUN_FLOW.preferred_tool_path(vendored, "__missing_ltlsynt__"), str(vendored))
@@ -480,7 +483,7 @@ class ToolPathResolutionTests(unittest.TestCase):
 
 class RtlSynthesisFlowTests(unittest.TestCase):
     def setUp(self) -> None:
-        build_dir = ROOT / "build"
+        build_dir = TEST_TMP_ROOT
         build_dir.mkdir(parents=True, exist_ok=True)
         self._tmpdir = tempfile.TemporaryDirectory(dir=build_dir)
         self.temp_root = Path(self._tmpdir.name) / "rtl-synthesis-repo"
@@ -490,6 +493,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
+        shutil.copy2(RUNTIME_ARTIFACTS_TEMPLATE, self.temp_root / "runtime_artifacts.py")
         shutil.copytree(ANN_CANONICAL_DIR, self.temp_root / "ann" / "results" / "canonical", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_RESULT_DIR, self.temp_root / "contract" / "results", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
@@ -627,8 +631,8 @@ else:
         smtbmc: Path | None = None,
         solver: Path | None = None,
         solver_name: str = "z3",
-        build_dir: str | Path = "build/rtl-synthesis/spot",
-        summary: str | Path = "build/rtl-synthesis/spot/rtl_synthesis_summary.json",
+        build_dir: str | Path = "build/rtl-synthesis/canonical/flow/spot",
+        summary: str | Path = "reports/rtl-synthesis/canonical/flow/spot/summary.json",
         env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         command = [
@@ -904,7 +908,7 @@ else:
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         generated_dir.mkdir(parents=True, exist_ok=True)
         fake_core_path = generated_dir / "controller_spot_core.sv"
         fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
@@ -948,7 +952,7 @@ else:
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         generated_dir.mkdir(parents=True, exist_ok=True)
         fake_core_path = generated_dir / "controller_spot_core.sv"
         fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
@@ -992,7 +996,7 @@ else:
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         generated_dir.mkdir(parents=True, exist_ok=True)
         fake_core_path = generated_dir / "controller_spot_core.sv"
         fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
@@ -1019,7 +1023,7 @@ else:
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         generated_dir.mkdir(parents=True, exist_ok=True)
         fake_core_path = generated_dir / "controller_spot_core.sv"
         fake_core_path.write_text(textwrap.dedent(FAKE_CONTROLLER_CORE), encoding="utf-8")
@@ -1051,7 +1055,7 @@ else:
         if shutil.which("yosys") is None:
             self.skipTest("missing required tool: yosys")
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         generated_dir.mkdir(parents=True, exist_ok=True)
         aiger_path = generated_dir / "controller_spot.aag"
         map_path = generated_dir / "controller_spot.map"
@@ -1246,7 +1250,7 @@ print("Status: PASSED")
         self.assertIn("PASS controller_interface_equivalence", output)
         self.assertIn("PASS closed_loop_mlp_core_equivalence", output)
 
-        summary_path = self.temp_root / "build" / "rtl-synthesis" / "spot" / "rtl_synthesis_summary.json"
+        summary_path = self.temp_root / "reports" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "summary.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["overall_result"], "pass")
         self.assertEqual(summary["assumption_profile"], "exact_schedule_v1")
@@ -1270,7 +1274,7 @@ print("Status: PASSED")
             ],
         )
 
-        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "spot" / "generated"
+        generated_dir = self.temp_root / "build" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "generated"
         self.assertTrue((generated_dir / "controller_spot_core.sv").exists())
         self.assertTrue((generated_dir / "controller.sv").exists())
         self.assertTrue((generated_dir / "generated_controller.sv").exists())
@@ -1332,7 +1336,7 @@ print("Status: PASSED")
         self.assertIn("verilator --binary --timing", output)
 
     def test_make_rtl_synthesis_rebuilds_when_primary_proof_inputs_change(self) -> None:
-        summary_path = self.temp_root / "build" / "rtl-synthesis" / "spot" / "rtl_synthesis_summary.json"
+        summary_path = self.temp_root / "reports" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "summary.json"
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text("{}\n", encoding="utf-8")
         tracked_dependencies = [

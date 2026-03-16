@@ -63,7 +63,24 @@
       "// Module: TinyMLP.sparkleMlpCorePacked"
     ]
   },
-  "schema_version": 1,
+  "exact_emit_path": {
+    "backend_ast_fingerprint": "sha256:0c38b5bd744a0a5c31d35049983c5f3e33c265990990d32f66b6509a870e3d47",
+    "decl_name": "TinyMLP.Sparkle.sparkleMlpCorePacked",
+    "elaborated_design_fingerprint": "sha256:0c38b5bd744a0a5c31d35049983c5f3e33c265990990d32f66b6509a870e3d47",
+    "local_patch_id": "sha256:51422d0ea6e4add8104df516e09dce2b09c5aa6d1c8d5c65b59f048614e114a4",
+    "module_count": 1,
+    "raw_artifact_fingerprint": "sha256:798e866ed197dcab00edf18ef9d1833a90232f36f5b4ea998824df42dce5bd6b",
+    "top_module": "TinyMLP.Sparkle.sparkleMlpCorePacked",
+    "vendor_revision": "2d3dda875b0aa12d850322f26a2c42a9379931c8",
+    "verilog_render_fingerprint": "sha256:4d36d336a1ad90ed4c53900e21183ac227a6b71d16c925b8d6e2291a5c8ed0ba"
+  },
+  "proof_endpoint": {
+    "decl_name": "TinyMLP.Sparkle.sparkleMlpCorePacked",
+    "kind": "packed_signal_payload",
+    "lean_theorem": "TinyMLP.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace",
+    "typed_backend_ir": "Sparkle.IR.AST.Design"
+  },
+  "schema_version": 2,
   "semantics_preservation_statement": {
     "residual_validation_surfaces": [
       "rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv wrapper reconstruction, packed-field recovery, and FORMAL aliases",
@@ -73,5 +90,20 @@
     "source_model": "Sparkle Signal DSL full-core model emitted by TinyMLPSparkle.Emit",
     "target_artifact": "rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv::TinyMLP_sparkleMlpCorePacked",
     "verification_scope": "The Sparkle lowering/backend claim is verified only for the declared emitted subset exercised by the checked-in TinyMLPSparkle sources and documented TinyMLPSparkle.Emit entrypoint."
+  },
+  "sparkle_feature_slice": {
+    "backend_renderer": "Sparkle.Backend.Verilog.toVerilogDesign",
+    "compiler_entrypoint": "Sparkle.Compiler.Elab.synthesizeHierarchical",
+    "constructs": [
+      "Signal.loop",
+      "Signal.pure",
+      "hw_cond",
+      "BitVec.append",
+      "BitVec.extractLsb'",
+      "BitVec.ult",
+      "declare_signal_state"
+    ],
+    "emit_payload_shape": "bundleAll![state, load_input, clear_acc, do_mac_hidden, do_bias_hidden, do_act_hidden, advance_hidden, do_mac_output, do_bias_output, done, busy, out_bit, hidden_idx, input_idx, acc_reg, mac_acc_out, mac_a, b2_data, input_reg0..input_reg3, hidden_reg0..hidden_reg7, hidden_input_case_hit, output_hidden_case_hit, hidden_weight_case_hit, output_weight_case_hit]",
+    "typed_backend_ir": "Sparkle.IR.AST.Design"
   }
 }

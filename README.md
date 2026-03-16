@@ -378,7 +378,7 @@ make experiments-qor
 make experiments-post-synth
 ```
 
-The experiment runner writes family summaries and reports under `build/experiments/`.
+The experiment runner writes family build artifacts under `build/experiments/{runs,canonical}/` and family summaries plus reports under `reports/experiments/{runs,canonical}/`.
 
 Visualization (generates canonical SVG schematics in `rtl/results/canonical/blueprint/` and refreshes `docs/assets/` copies):
 

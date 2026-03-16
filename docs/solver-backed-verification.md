@@ -262,7 +262,7 @@ make smt
 
 This runs four steps in sequence:
 
-1. **Assumption export** — writes `build/smt/contract_assumptions.json`
+1. **Assumption export** — writes `reports/smt/canonical/contract/assumptions.json`
 2. **RTL control checks** — 5 formal jobs via Yosys + yosys-smtbmc + Z3
 3. **Contract overflow checks** — 8 QF_BV queries via Z3
 4. **Contract equivalence checks** — 6 QF_BV queries via Z3
@@ -273,13 +273,13 @@ Individual steps can be run separately:
 
 ```bash
 # RTL control only
-python3 smt/rtl/check_control.py --summary build/smt/rtl_control_summary.json
+python3 smt/rtl/check_control.py
 
 # Contract overflow only
-python3 smt/contract/overflow/check_bounds.py --summary build/smt/contract_overflow_summary.json
+python3 smt/contract/overflow/check_bounds.py
 
 # Contract equivalence only
-python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contract_equivalence_summary.json
+python3 smt/contract/equivalence/check_equivalence.py
 ```
 
 Every check produces a JSON summary recording the tool versions, assumptions, properties, and pass/fail result. A non-zero exit code on any failure makes `make smt` fail the same way a test failure would.

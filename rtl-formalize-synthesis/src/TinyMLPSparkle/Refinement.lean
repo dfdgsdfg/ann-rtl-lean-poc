@@ -1376,7 +1376,7 @@ theorem canonicalControllerView_refines_timedControlTrace {dom : DomainConfig}
       simpa [phaseSignal, inputIdxSignal] using
         controllerOutputsAt_refines_controlOutputs (timedControlTrace samples t) hs
 
-private def mlpCoreOutputsOfState (s : State) : MlpCoreOutputs :=
+def mlpCoreOutputsOfState (s : State) : MlpCoreOutputs :=
   mlpCoreOutputsAt
     (encodePhase s.phase)
     (BitVec.ofNat stateWidth s.hiddenIdx)

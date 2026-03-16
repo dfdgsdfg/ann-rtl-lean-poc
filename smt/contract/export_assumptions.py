@@ -4,11 +4,19 @@ import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+
 CONTRACT_PATH = ROOT / "contract" / "results" / "canonical" / "weights.json"
-DEFAULT_OUTPUT = ROOT / "build" / "smt" / "contract_assumptions.json"
+DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
+DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
+DEFAULT_OUTPUT = DEFAULT_REPORT_ROOT / "canonical" / "contract" / "assumptions.json"
 
 
 def build_summary() -> dict[str, object]:
@@ -35,8 +43,8 @@ def build_summary() -> dict[str, object]:
             "overflow_rule": contract["arithmetic"]["overflow"],
             "sign_extension_rule": contract["arithmetic"]["sign_extension"],
             "boundedness_scope": contract["boundedness"]["scope"],
-            "overflow_entrypoint": "python3 smt/contract/overflow/check_bounds.py --summary build/smt/contract_overflow_summary.json",
-            "equivalence_entrypoint": "python3 smt/contract/equivalence/check_equivalence.py --summary build/smt/contract_equivalence_summary.json",
+            "overflow_entrypoint": "python3 smt/contract/overflow/check_bounds.py",
+            "equivalence_entrypoint": "python3 smt/contract/equivalence/check_equivalence.py",
         },
     }
 
@@ -44,10 +52,27 @@ def build_summary() -> dict[str, object]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export frozen contract assumptions for SMT flows.")
     parser.add_argument(
+        "--build-root",
+        type=Path,
+        default=DEFAULT_BUILD_ROOT,
+        help="Runtime build root for SMT assumptions snapshots.",
+    )
+    parser.add_argument(
+        "--report-root",
+        type=Path,
+        default=DEFAULT_REPORT_ROOT,
+        help="Runtime report root for SMT assumptions snapshots.",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run id for runtime artifact provenance mode.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
-        default=DEFAULT_OUTPUT,
-        help="JSON path for the exported assumption summary.",
+        default=None,
+        help="Explicit JSON path for the exported assumption summary. Overrides provenance mode.",
     )
     return parser.parse_args()
 
@@ -55,8 +80,28 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     summary = build_summary()
+    snapshot = None
+    if args.output is None:
+        snapshot = prepare_snapshot(
+            build_root=args.build_root.resolve(),
+            report_root=args.report_root.resolve(),
+            run_id=args.run_id or build_run_id("smt", "contract-assumptions"),
+            subpath="contract",
+        )
+        args.output = snapshot.report_run_dir / "assumptions.json"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if snapshot is not None:
+        promote_snapshot(
+            snapshot,
+            source="smt_contract_assumptions",
+            created_at_utc=str(summary["generated_at_utc"]),
+            inputs={"contract": str(CONTRACT_PATH.relative_to(ROOT))},
+            commands={"driver": "python3 smt/contract/export_assumptions.py"},
+            tool_versions={},
+            artifacts={},
+            reports={"assumptions": str(args.output.resolve().relative_to(ROOT))},
+        )
 
     print(f"wrote {args.output}")
     print(

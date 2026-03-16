@@ -506,7 +506,7 @@ The frozen contract's weights and arithmetic rules are encoded as QF_BV queries.
 - no intermediate value overflows its declared width for any `int8` input
 - two different bitvector encodings of the network produce identical results
 
-The explicit assumptions used by these proofs are exported to `build/smt/contract_assumptions.json` for inspection.
+The explicit assumptions used by these proofs are exported to `reports/smt/canonical/contract/assumptions.json` for inspection.
 
 ### What SMT Does Not Cover
 

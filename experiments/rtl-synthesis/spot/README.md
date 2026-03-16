@@ -7,10 +7,10 @@ This directory documents the mixed-path `rtl-synthesis` branch and its fresh-flo
 - `rtl-synthesis/results/canonical/sv/controller_spot_compat.sv` keeps the sampled `controller.sv` port interface used by the mixed-path simulation boundary.
 - `rtl-synthesis/results/canonical/blueprint/controller.svg` shows the stable branch-local controller wrapper boundary.
 - `rtl-synthesis/results/canonical/blueprint/controller_spot_core.svg` shows the raw synthesized controller core state machine.
-- The fresh flow still generates the phase machine into `build/rtl-synthesis/spot/generated/controller_spot_core.sv`.
-- `build/rtl-synthesis/spot/generated/controller.sv` remains a build-only alias used by the equivalence flow.
+- The fresh flow still generates the phase machine into `build/rtl-synthesis/{runs,canonical}/flow/spot/generated/controller_spot_core.sv`.
+- `build/rtl-synthesis/{runs,canonical}/flow/spot/generated/controller.sv` remains a build-only alias used by the equivalence flow.
 - `rtl-synthesis-sim` reuses `simulations/rtl/testbench.sv`; there is no branch-local `simulations/rtl-synthesis/*.sv` bench.
-- `branch-compare` consumes `build/rtl-synthesis/spot/rtl_synthesis_summary.json` and reports the fresh-flow `closed_loop_mlp_core_equivalence` and `controller_interface_equivalence` steps before the shared simulation steps.
+- `branch-compare` consumes `reports/rtl-synthesis/{runs,canonical}/flow/spot/summary.json` and reports the fresh-flow `closed_loop_mlp_core_equivalence` and `controller_interface_equivalence` steps before the shared simulation steps.
 - If the fresh-flow toolchain is unavailable, experiment families record `rtl-synthesis` as `skip`; they do not fall back to a committed snapshot.
 
 Entry points:
