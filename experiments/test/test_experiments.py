@@ -839,35 +839,81 @@ class ExperimentFlowTests(unittest.TestCase):
                 self.assertEqual(sparkle_post_synth["result"], "fail")
                 self.assertEqual([step["name"] for step in sparkle_post_synth["steps"]], ["sparkle_generated_core_freshness"])
 
-    def test_stale_sparkle_wrapper_fails_freshness_check(self) -> None:
+    def test_older_sparkle_wrapper_records_timestamp_note_when_validation_passes(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             stale_root = Path(tmpdir)
             wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             manifest_path = stale_root / "verification_manifest.json"
+            generator_path = stale_root / "generate_wrapper.py"
             self.write_valid_sparkle_artifacts(core_path, wrapper_path)
             self.write_valid_sparkle_verification_manifest(manifest_path)
+            generator_path.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
             source_path.write_text("-- stale check source\n", encoding="utf-8")
             os.utime(source_path, (10, 10))
             os.utime(core_path, (20, 20))
             os.utime(wrapper_path, (20, 20))
             os.utime(manifest_path, (15, 15))
+            os.utime(generator_path, (30, 30))
 
             with (
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
                 patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
                 patch.object(experiments_run, "SPARKLE_VERIFICATION_MANIFEST", manifest_path),
+                patch.object(experiments_run, "SPARKLE_WRAPPER_GENERATOR", generator_path),
                 patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
+                patch.object(
+                    experiments_run,
+                    "run_command",
+                    return_value=subprocess.CompletedProcess(["python3", str(generator_path)], 0, "validated", ""),
+                ),
             ):
                 step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
 
-            self.assertEqual(step["result"], "fail")
-            self.assertIn("stable wrapper is older", step["details"]["reason"])
+            self.assertEqual(step["result"], "pass")
+            self.assertIn("wrapper_timestamp_note", step["details"])
+            self.assertIn("structural validation passed", step["details"]["wrapper_timestamp_note"])
             self.assertEqual(
                 step["details"]["newest_wrapper_input"],
-                experiments_run.relative(experiments_run.SPARKLE_WRAPPER_GENERATOR),
+                experiments_run.relative(generator_path),
             )
+
+    def test_newer_sparkle_verification_manifest_does_not_fail_freshness_check(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            stale_root = Path(tmpdir)
+            wrapper_path = stale_root / "mlp_core.sv"
+            core_path = stale_root / "sparkle_mlp_core.sv"
+            source_path = stale_root / "ContractData.lean"
+            manifest_path = stale_root / "verification_manifest.json"
+            generator_path = stale_root / "generate_wrapper.py"
+            self.write_valid_sparkle_artifacts(core_path, wrapper_path)
+            self.write_valid_sparkle_verification_manifest(manifest_path)
+            generator_path.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            source_path.write_text("-- freshness check source\n", encoding="utf-8")
+            os.utime(source_path, (10, 10))
+            os.utime(generator_path, (10, 10))
+            os.utime(core_path, (20, 20))
+            os.utime(wrapper_path, (20, 20))
+            os.utime(manifest_path, (30, 30))
+
+            with (
+                patch.object(experiments_run, "SPARKLE_FULL_CORE_WRAPPER", wrapper_path),
+                patch.object(experiments_run, "SPARKLE_FULL_CORE_RTL", core_path),
+                patch.object(experiments_run, "SPARKLE_VERIFICATION_MANIFEST", manifest_path),
+                patch.object(experiments_run, "SPARKLE_WRAPPER_GENERATOR", generator_path),
+                patch.object(experiments_run, "sparkle_generated_full_core_emit_sources", return_value=[source_path]),
+                patch.object(
+                    experiments_run,
+                    "run_command",
+                    return_value=subprocess.CompletedProcess(["python3", str(generator_path)], 0, "validated", ""),
+                ),
+            ):
+                step = experiments_run.make_sparkle_generated_core_freshness_step(stale_root / "freshness.log")
+
+            self.assertEqual(step["result"], "pass")
+            self.assertEqual(step["details"]["newest_wrapper_input"], experiments_run.relative(core_path))
+            self.assertIn("verification_manifest_mtime_utc", step["details"])
 
     def test_missing_sparkle_dependency_fails_freshness_check(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:

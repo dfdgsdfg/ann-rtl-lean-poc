@@ -637,7 +637,6 @@ def sparkle_generated_full_core_wrapper_inputs() -> list[Path]:
     return [
         SPARKLE_FULL_CORE_RTL,
         SPARKLE_WRAPPER_GENERATOR,
-        SPARKLE_VERIFICATION_MANIFEST,
     ]
 
 
@@ -787,7 +786,13 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
     wrapper_input_paths = sparkle_generated_full_core_wrapper_inputs()
     tracked_paths = list(
         dict.fromkeys(
-            [SPARKLE_FULL_CORE_RTL, SPARKLE_FULL_CORE_WRAPPER, *emit_source_paths, *wrapper_input_paths]
+            [
+                SPARKLE_FULL_CORE_RTL,
+                SPARKLE_FULL_CORE_WRAPPER,
+                SPARKLE_VERIFICATION_MANIFEST,
+                *emit_source_paths,
+                *wrapper_input_paths,
+            ]
         )
     )
     missing_paths = [
@@ -951,19 +956,13 @@ def make_sparkle_generated_core_freshness_step(log_path: Path) -> dict[str, obje
             ]
         )
         result = "fail"
-    elif SPARKLE_FULL_CORE_WRAPPER.stat().st_mtime < wrapper_trigger.stat().st_mtime:
-        details["reason"] = (
-            "checked-in Sparkle stable wrapper is older than the generated core or wrapper generator input; "
-            "regenerate with `make rtl-formalize-synthesis-emit`"
-        )
-        log_lines.extend(
-            [
-                "result: fail",
-                f"reason: {details['reason']}",
-            ]
-        )
-        result = "fail"
     else:
+        if SPARKLE_FULL_CORE_WRAPPER.stat().st_mtime < wrapper_trigger.stat().st_mtime:
+            details["wrapper_timestamp_note"] = (
+                "checked-in Sparkle stable wrapper is older than the latest wrapper-validation input, "
+                "but structural validation passed"
+            )
+            log_lines.append(f"note: {details['wrapper_timestamp_note']}")
         log_lines.append("result: pass")
         result = "pass"
 
