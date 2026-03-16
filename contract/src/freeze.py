@@ -372,7 +372,7 @@ def validate_contract() -> None:
     validate_canonical_contract_bundle()
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Freeze or validate the implementation contract")
     parser.add_argument(
         "--run-dir",
@@ -381,11 +381,11 @@ def parse_args() -> argparse.Namespace:
         help="Optional ANN run directory under ann/results/runs/<run_id> to promote into canonical results",
     )
     parser.add_argument("--check", action="store_true", help="Validate the current frozen contract without rewriting artifacts")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
     if args.check:
         validate_canonical_contract_bundle()
         print("contract validation passed")

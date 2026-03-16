@@ -284,18 +284,18 @@ def check_witness_coverage() -> None:
     validate_witness_coverage(weights)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate or validate RTL test vectors")
     parser.add_argument(
         "--check-witnesses",
         action="store_true",
         help="Validate that the deterministic candidate pool can synthesize positive/zero/negative score witnesses",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
     if args.check_witnesses:
         check_witness_coverage()
         print("witness coverage validation passed")

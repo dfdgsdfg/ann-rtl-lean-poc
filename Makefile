@@ -11,10 +11,21 @@
        rtl-synthesis-verilator rtl-synthesis-internal-iverilog rtl-synthesis-internal-verilator clean-rtl-synthesis \
        rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-emit-full-core \
        rtl-formalize-synthesis-build rtl-formalize-synthesis-blueprint rtl-formalize-synthesis-canonical rtl-formalize-synthesis-sim rtl-formalize-synthesis-iverilog \
-       rtl-formalize-synthesis-verilator rtl-formalize-synthesis-sim-check-tools clean-rtl-formalize-synthesis \
-       show show-check-tools clean-show
+       rtl-formalize-synthesis-verilator rtl-formalize-synthesis-sim-check-tools clean-rtl-formalize-synthesis
 
-ANN_CLI := python3 -m ann.cli
+ANN_CLI := python3 ann/runners/main.py
+CONTRACT_FREEZE_RUNNER := python3 contract/runners/freeze.py
+SIM_RUNNER := python3 simulations/runners/run.py
+RTL_SYNTHESIS_RUNNER := python3 rtl-synthesis/runners/spot_flow.py
+RTL_SYNTHESIS_BLUEPRINT_RUNNER := python3 rtl-synthesis/runners/blueprint.py
+RTL_FORMALIZE_EMIT_RUNNER := python3 rtl-formalize-synthesis/runners/emit.py
+RTL_FORMALIZE_BLUEPRINT_RUNNER := python3 rtl-formalize-synthesis/runners/blueprint.py
+SMT_ALL_RUNNER := python3 smt/runners/all.py
+SMT_RTL_RUNNER := python3 smt/runners/rtl.py
+SMT_CONTRACT_ASSUMPTIONS_RUNNER := python3 smt/runners/contract_assumptions.py
+SMT_CONTRACT_OVERFLOW_RUNNER := python3 smt/runners/contract_overflow.py
+SMT_CONTRACT_EQUIV_RUNNER := python3 smt/runners/contract_equivalence.py
+EXPERIMENTS_RUNNER := python3 experiments/runners/run.py
 FORMALIZE_PKG_DIR := formalize
 BUILD_ROOT := build
 REPORTS_ROOT := reports
@@ -54,10 +65,10 @@ export:
 	$(ANN_CLI) export $(ARGS)
 
 freeze:
-	python3 -m contract.src.freeze $(ARGS)
+	$(CONTRACT_FREEZE_RUNNER) $(ARGS)
 
 freeze-check:
-	python3 -m contract.src.freeze --check
+	$(CONTRACT_FREEZE_RUNNER) --check
 
 contract-preflight: freeze-check
 
@@ -196,9 +207,11 @@ vendor-openlane-prepare:
 	@command -v curl >/dev/null 2>&1 || { echo "missing required tool: curl"; exit 1; }
 	$(VENDOR_PREPARE_SCRIPT) --tool openlane
 
-sim: contract-preflight sim-check-tools sim-iverilog sim-verilator
+sim: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile shared --simulator all --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
-sim-internal: contract-preflight sim-check-tools sim-internal-iverilog sim-internal-verilator
+sim-internal: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile internal --simulator all --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
 sim-check-tools:
 	@command -v iverilog >/dev/null 2>&1 || { echo "missing required tool: iverilog"; exit 1; }
@@ -207,86 +220,48 @@ sim-check-tools:
 
 sim-vectors: contract-preflight
 
-sim-iverilog: contract-preflight $(IVERILOG_BIN)
-	vvp $(IVERILOG_BIN)
+sim-iverilog: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile shared --simulator iverilog --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
-$(IVERILOG_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(SIM_RTL)
+sim-verilator: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile shared --simulator verilator --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
-sim-verilator: contract-preflight $(VERILATOR_BIN)
-	$(VERILATOR_BIN)
+sim-internal-iverilog: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile internal --simulator iverilog --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
-$(VERILATOR_BIN): $(SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(VERILATOR_DIR)
-	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(VERILATOR_DIR) $(SIM_TB) $(SIM_RTL)
-
-sim-internal-iverilog: contract-preflight $(SIM_INTERNAL_IVERILOG_BIN)
-	vvp $(SIM_INTERNAL_IVERILOG_BIN)
-
-$(SIM_INTERNAL_IVERILOG_BIN): $(SIM_RTL) $(SIM_INTERNAL_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench_internal -o $@ $(SIM_INTERNAL_TB) $(SIM_RTL)
-
-sim-internal-verilator: contract-preflight $(SIM_INTERNAL_VERILATOR_BIN)
-	$(SIM_INTERNAL_VERILATOR_BIN)
-
-$(SIM_INTERNAL_VERILATOR_BIN): $(SIM_RTL) $(SIM_INTERNAL_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(SIM_INTERNAL_VERILATOR_DIR)
-	verilator --binary --timing $(SIM_INCLUDE_DIRS) --top-module testbench_internal --prefix Vtestbench_internal --Mdir $(SIM_INTERNAL_VERILATOR_DIR) $(SIM_INTERNAL_TB) $(SIM_RTL)
+sim-internal-verilator: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl --profile internal --simulator verilator --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
 
 clean-sim:
-	rm -rf $(SIM_BUILD_DIR) $(SIM_INTERNAL_BUILD_DIR)
+	rm -rf $(RTL_BUILD_ROOT) $(RTL_REPORT_ROOT)
 
-rtl-formalize-synthesis-prepare: $(SPARKLE_PREPARE_STAMP)
+rtl-formalize-synthesis-prepare:
+	$(RTL_FORMALIZE_EMIT_RUNNER) --prepare-only
 
-$(SPARKLE_PREPARE_STAMP): $(SPARKLE_PREPARE_SCRIPT) $(SPARKLE_PATCH_FILE)
-	@command -v git >/dev/null 2>&1 || { echo "missing required tool: git"; exit 1; }
-	@mkdir -p $(dir $@)
-	$(SPARKLE_PREPARE_SCRIPT)
-	@touch $@
+rtl-formalize-synthesis-build:
+	$(RTL_FORMALIZE_EMIT_RUNNER) --build-only
 
-rtl-formalize-synthesis-build: $(SPARKLE_PREPARE_STAMP)
-	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
-	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle
+rtl-formalize-synthesis-emit:
+	$(RTL_FORMALIZE_EMIT_RUNNER) --emit
 
-$(SPARKLE_FULL_CORE_ARTIFACT): $(SPARKLE_EMIT_SOURCES) | rtl-formalize-synthesis-prepare
-	@mkdir -p $(SPARKLE_GENERATED_DIR)
-	cd $(SPARKLE_PKG_DIR) && lake build TinyMLPSparkle.Emit
+rtl-formalize-synthesis-emit-full-core:
+	$(RTL_FORMALIZE_EMIT_RUNNER) --emit
 
-$(SPARKLE_VERIFICATION_MANIFEST): $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_BACKEND_METADATA_EXPORT) $(SPARKLE_VERIFICATION_REFRESH) $(SPARKLE_PATCH_FILE) | rtl-formalize-synthesis-prepare
-	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
-	python3 $(SPARKLE_VERIFICATION_REFRESH) --manifest $@
-
-$(SPARKLE_FULL_CORE_WRAPPER): $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_WRAPPER_GENERATOR) $(SPARKLE_VERIFICATION_MANIFEST)
-	@mkdir -p $(SPARKLE_GENERATED_DIR)
-	python3 $(SPARKLE_WRAPPER_GENERATOR) --raw $(SPARKLE_FULL_CORE_ARTIFACT) --wrapper $@ --subset-manifest $(SPARKLE_VERIFICATION_MANIFEST)
-
-rtl-formalize-synthesis-emit: $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_FULL_CORE_WRAPPER)
-
-rtl-formalize-synthesis-emit-full-core: $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_FULL_CORE_WRAPPER)
-
-rtl-formalize-synthesis-blueprint: $(RTL_FORMALIZE_WRAPPER_BLUEPRINT) $(RTL_FORMALIZE_RAW_BLUEPRINT)
+rtl-formalize-synthesis-blueprint:
+	$(RTL_FORMALIZE_BLUEPRINT_RUNNER)
 
 rtl-formalize-synthesis-canonical: rtl-formalize-synthesis-emit rtl-formalize-synthesis-blueprint
 
 rtl-formalize-synthesis-sim-check-tools: sim-check-tools
 
-rtl-formalize-synthesis-sim: contract-preflight rtl-formalize-synthesis-sim-check-tools rtl-formalize-synthesis-iverilog rtl-formalize-synthesis-verilator
+rtl-formalize-synthesis-sim: contract-preflight rtl-formalize-synthesis-sim-check-tools
+	$(SIM_RUNNER) --branch rtl-formalize-synthesis --profile shared --simulator all --build-root $(RTL_FORMALIZE_BUILD_ROOT) --report-root $(RTL_FORMALIZE_REPORT_ROOT)
 
-rtl-formalize-synthesis-iverilog: contract-preflight $(SPARKLE_FULL_CORE_IVERILOG_BIN)
-	vvp $(SPARKLE_FULL_CORE_IVERILOG_BIN)
+rtl-formalize-synthesis-iverilog: contract-preflight rtl-formalize-synthesis-sim-check-tools
+	$(SIM_RUNNER) --branch rtl-formalize-synthesis --profile shared --simulator iverilog --build-root $(RTL_FORMALIZE_BUILD_ROOT) --report-root $(RTL_FORMALIZE_REPORT_ROOT)
 
-$(SPARKLE_FULL_CORE_IVERILOG_BIN): $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
-
-rtl-formalize-synthesis-verilator: contract-preflight $(SPARKLE_FULL_CORE_VERILATOR_BIN)
-	$(SPARKLE_FULL_CORE_VERILATOR_BIN)
-
-$(SPARKLE_FULL_CORE_VERILATOR_BIN): $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(SPARKLE_FULL_CORE_VERILATOR_DIR)
-	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(SPARKLE_FULL_CORE_VERILATOR_DIR) $(SIM_TB) $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
+rtl-formalize-synthesis-verilator: contract-preflight rtl-formalize-synthesis-sim-check-tools
+	$(SIM_RUNNER) --branch rtl-formalize-synthesis --profile shared --simulator verilator --build-root $(RTL_FORMALIZE_BUILD_ROOT) --report-root $(RTL_FORMALIZE_REPORT_ROOT)
 
 clean-rtl-formalize-synthesis:
 	rm -rf $(RTL_FORMALIZE_BUILD_ROOT) $(RTL_FORMALIZE_REPORT_ROOT)
@@ -298,53 +273,38 @@ rtl-synthesis-check-tools:
 	@command -v $(RTL_SYNTHESIS_SMTBMC) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_SMTBMC)"; exit 1; }
 	@command -v $(RTL_SYNTHESIS_Z3) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_Z3)"; exit 1; }
 
-$(RTL_SYNTHESIS_SUMMARY): $(RTL_SYNTHESIS_FLOW_DEPS) | rtl-synthesis-check-tools
-	python3 rtl-synthesis/controller/run_flow.py --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --yosys $(RTL_SYNTHESIS_YOSYS) --smtbmc $(RTL_SYNTHESIS_SMTBMC) --solver $(RTL_SYNTHESIS_Z3) --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
+rtl-synthesis: rtl-synthesis-check-tools
+	$(RTL_SYNTHESIS_RUNNER) --ltlsynt $(RTL_SYNTHESIS_LTLSYNT) --syfco $(RTL_SYNTHESIS_SYFCO) --yosys $(RTL_SYNTHESIS_YOSYS) --smtbmc $(RTL_SYNTHESIS_SMTBMC) --solver $(RTL_SYNTHESIS_Z3) --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-rtl-synthesis: $(RTL_SYNTHESIS_SUMMARY)
-
-rtl-synthesis-canonical: $(RTL_SYNTHESIS_SUMMARY)
+rtl-synthesis-canonical: rtl-synthesis
 	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_SV_DIR)
 	cp $(RTL_SYNTHESIS_GENERATED_DIR)/controller.sv $(RTL_SYNTHESIS_CANONICAL_CONTROLLER)
 	cp $(RTL_SYNTHESIS_GENERATED_DIR)/controller_spot_core.sv $(RTL_SYNTHESIS_CANONICAL_CORE)
 	$(MAKE) rtl-synthesis-blueprint
 
-rtl-synthesis-blueprint: $(RTL_SYNTHESIS_BLUEPRINT) $(RTL_SYNTHESIS_CONTROLLER_BLUEPRINT) $(RTL_SYNTHESIS_CONTROLLER_CORE_BLUEPRINT) $(RTL_SYNTHESIS_REUSED_BLUEPRINT_TARGETS)
+rtl-synthesis-blueprint:
+	$(RTL_SYNTHESIS_BLUEPRINT_RUNNER)
 
 rtl-synthesis-smoke:
 	python3 rtl-synthesis/test/test_rtl_synthesis.py
 
-rtl-synthesis-sim: contract-preflight sim-check-tools rtl-synthesis-iverilog rtl-synthesis-verilator
+rtl-synthesis-sim: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile shared --simulator all --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-rtl-synthesis-sim-internal: contract-preflight sim-check-tools rtl-synthesis-internal-iverilog rtl-synthesis-internal-verilator
+rtl-synthesis-sim-internal: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile internal --simulator all --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-rtl-synthesis-iverilog: contract-preflight $(RTL_SYNTHESIS_IVERILOG_BIN)
-	vvp $(RTL_SYNTHESIS_IVERILOG_BIN)
+rtl-synthesis-iverilog: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile shared --simulator iverilog --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-$(RTL_SYNTHESIS_IVERILOG_BIN): $(RTL_SYNTHESIS_SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench -o $@ $(SIM_TB) $(RTL_SYNTHESIS_SIM_RTL)
+rtl-synthesis-verilator: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile shared --simulator verilator --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-rtl-synthesis-verilator: contract-preflight $(RTL_SYNTHESIS_VERILATOR_BIN)
-	$(RTL_SYNTHESIS_VERILATOR_BIN)
+rtl-synthesis-internal-iverilog: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile internal --simulator iverilog --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
-$(RTL_SYNTHESIS_VERILATOR_BIN): $(RTL_SYNTHESIS_SIM_RTL) $(SIM_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(RTL_SYNTHESIS_VERILATOR_DIR)
-	verilator --binary --timing $(SIM_INCLUDE_DIRS) --Mdir $(RTL_SYNTHESIS_VERILATOR_DIR) $(SIM_TB) $(RTL_SYNTHESIS_SIM_RTL)
-
-rtl-synthesis-internal-iverilog: contract-preflight $(RTL_SYNTHESIS_INTERNAL_IVERILOG_BIN)
-	vvp $(RTL_SYNTHESIS_INTERNAL_IVERILOG_BIN)
-
-$(RTL_SYNTHESIS_INTERNAL_IVERILOG_BIN): $(RTL_SYNTHESIS_SIM_RTL) $(SIM_INTERNAL_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(dir $@)
-	iverilog -g2012 $(SIM_INCLUDE_DIRS) -s testbench_internal -o $@ $(SIM_INTERNAL_TB) $(RTL_SYNTHESIS_SIM_RTL)
-
-rtl-synthesis-internal-verilator: contract-preflight $(RTL_SYNTHESIS_INTERNAL_VERILATOR_BIN)
-	$(RTL_SYNTHESIS_INTERNAL_VERILATOR_BIN)
-
-$(RTL_SYNTHESIS_INTERNAL_VERILATOR_BIN): $(RTL_SYNTHESIS_SIM_RTL) $(SIM_INTERNAL_TB) $(SIM_VECTORS) $(SIM_VECTOR_META)
-	@mkdir -p $(RTL_SYNTHESIS_INTERNAL_VERILATOR_DIR)
-	verilator --binary --timing $(SIM_INCLUDE_DIRS) --top-module testbench_internal --prefix Vtestbench_internal --Mdir $(RTL_SYNTHESIS_INTERNAL_VERILATOR_DIR) $(SIM_INTERNAL_TB) $(RTL_SYNTHESIS_SIM_RTL)
+rtl-synthesis-internal-verilator: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-synthesis --profile internal --simulator verilator --build-root $(RTL_SYNTHESIS_BUILD_ROOT) --report-root $(RTL_SYNTHESIS_REPORT_ROOT)
 
 clean-rtl-synthesis:
 	rm -rf $(RTL_SYNTHESIS_BUILD_ROOT) $(RTL_SYNTHESIS_REPORT_ROOT)
@@ -354,14 +314,8 @@ clean-rtl-synthesis:
 SMT_Z3 ?= z3
 SMT_YOSYS ?= yosys
 SMT_SMTBMC ?= yosys-smtbmc
-SMT_RTL_SUMMARY := $(SMT_REPORT_ROOT)/canonical/rtl/rtl/summary.json
-SMT_SPARKLE_SUMMARY := $(SMT_REPORT_ROOT)/canonical/rtl/rtl-formalize-synthesis/summary.json
-SMT_CONTRACT_SUMMARY := $(SMT_REPORT_ROOT)/canonical/contract/assumptions.json
-SMT_CONTRACT_OVERFLOW_SUMMARY := $(SMT_REPORT_ROOT)/canonical/contract/overflow/summary.json
-SMT_CONTRACT_EQUIV_SUMMARY := $(SMT_REPORT_ROOT)/canonical/contract/equivalence/summary.json
-EXPERIMENTS_RUNNER := python3 experiments/run.py
-
-smt: smt-check-tools smt-contract-assumptions smt-rtl-control smt-rtl-formalize-synthesis smt-contract-overflow smt-contract-equivalence
+smt: smt-check-tools
+	$(SMT_ALL_RUNNER) --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-check-tools:
 	@command -v $(SMT_Z3) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_Z3)"; exit 1; }
@@ -369,19 +323,19 @@ smt-check-tools:
 	@command -v $(SMT_SMTBMC) >/dev/null 2>&1 || { echo "missing required tool: $(SMT_SMTBMC)"; exit 1; }
 
 smt-contract-assumptions:
-	python3 smt/contract/export_assumptions.py
+	$(SMT_CONTRACT_ASSUMPTIONS_RUNNER) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-rtl-control:
-	python3 smt/rtl/check_control.py --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
+	$(SMT_RTL_RUNNER) --branch rtl --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-rtl-formalize-synthesis: rtl-formalize-synthesis-emit
-	python3 smt/rtl/check_control.py --branch rtl-formalize-synthesis --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
+	$(SMT_RTL_RUNNER) --branch rtl-formalize-synthesis --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-contract-overflow:
-	python3 smt/contract/overflow/check_bounds.py --z3 $(SMT_Z3)
+	$(SMT_CONTRACT_OVERFLOW_RUNNER) --z3 $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-contract-equivalence:
-	python3 smt/contract/equivalence/check_equivalence.py --z3 $(SMT_Z3)
+	$(SMT_CONTRACT_EQUIV_RUNNER) --z3 $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 clean-smt:
 	rm -rf $(SMT_BUILD_ROOT) $(SMT_REPORT_ROOT)
@@ -409,70 +363,3 @@ experiments-post-synth:
 
 clean-experiments:
 	rm -rf $(EXPERIMENTS_BUILD_DIR) $(EXPERIMENTS_REPORT_ROOT)
-
-# --- Visualization targets ---
-
-SHOW_BUILD_DIR := $(RTL_BUILD_ROOT)/canonical/schematics
-RTL_SYNTHESIS_SHOW_BUILD_DIR := $(RTL_SYNTHESIS_BUILD_ROOT)/canonical/schematics
-RTL_FORMALIZE_SHOW_BUILD_DIR := $(RTL_FORMALIZE_BUILD_ROOT)/canonical/schematics
-SHOW_BLUEPRINT_DIR := $(RTL_BLUEPRINT_DIR)
-SHOW_DOCS_ASSETS_DIR := docs/assets
-SHOW_MODULES := mlp_core controller mac_unit relu_unit weight_rom
-
-show: show-check-tools $(addprefix $(SHOW_BLUEPRINT_DIR)/,$(addsuffix .svg,$(SHOW_MODULES))) $(addprefix $(SHOW_DOCS_ASSETS_DIR)/,$(addsuffix .svg,$(SHOW_MODULES)))
-	@echo "---"
-	@echo "SVGs written to $(SHOW_BLUEPRINT_DIR)/ and $(SHOW_DOCS_ASSETS_DIR)/"
-	@ls -1 $(SHOW_BLUEPRINT_DIR)/*.svg
-
-show-check-tools:
-	@command -v yosys >/dev/null 2>&1 || { echo "missing required tool: yosys (brew install yosys)"; exit 1; }
-	@command -v netlistsvg >/dev/null 2>&1 || { echo "missing required tool: netlistsvg (npm install -g netlistsvg)"; exit 1; }
-
-$(SHOW_BUILD_DIR)/%.json: $(SIM_RTL)
-	@mkdir -p $(SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(SIM_RTL); hierarchy -check -top $*; proc; opt; write_json $@"
-
-$(SHOW_BUILD_DIR)/%.svg: $(SHOW_BUILD_DIR)/%.json
-	netlistsvg $< -o $@
-
-$(SHOW_BLUEPRINT_DIR)/%.svg: $(SHOW_BUILD_DIR)/%.svg
-	@mkdir -p $(SHOW_BLUEPRINT_DIR)
-	cp $< $@
-
-$(SHOW_DOCS_ASSETS_DIR)/%.svg: $(SHOW_BLUEPRINT_DIR)/%.svg
-	@mkdir -p $(SHOW_DOCS_ASSETS_DIR)
-	cp $< $@
-
-$(RTL_SYNTHESIS_BLUEPRINT): $(RTL_SYNTHESIS_SIM_RTL)
-	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR) $(RTL_SYNTHESIS_SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_SIM_RTL); hierarchy -check -top mlp_core; proc; opt; write_json $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/mlp_core.json"
-	netlistsvg $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/mlp_core.json -o $@
-
-$(RTL_SYNTHESIS_CONTROLLER_BLUEPRINT): $(RTL_SYNTHESIS_ALIAS) $(RTL_SYNTHESIS_COMPAT) $(RTL_SYNTHESIS_CORE)
-	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR) $(RTL_SYNTHESIS_SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_ALIAS) $(RTL_SYNTHESIS_COMPAT) $(RTL_SYNTHESIS_CORE); hierarchy -check -top controller; proc; opt; write_json $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/controller.json"
-	netlistsvg $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/controller.json -o $@
-
-$(RTL_SYNTHESIS_CONTROLLER_CORE_BLUEPRINT): $(RTL_SYNTHESIS_CORE)
-	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR) $(RTL_SYNTHESIS_SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_CORE); hierarchy -check -top controller_spot_core; proc; opt; write_json $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/controller_spot_core.json"
-	netlistsvg $(RTL_SYNTHESIS_SHOW_BUILD_DIR)/controller_spot_core.json -o $@
-
-$(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/%.svg: $(RTL_BLUEPRINT_DIR)/%.svg
-	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)
-	ln -sfn ../../../../rtl/results/canonical/blueprint/$*.svg $@
-
-$(RTL_FORMALIZE_WRAPPER_BLUEPRINT): $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
-	@mkdir -p $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR) $(RTL_FORMALIZE_SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT); hierarchy -check -top mlp_core; proc; opt; write_json $(RTL_FORMALIZE_SHOW_BUILD_DIR)/mlp_core.json"
-	netlistsvg $(RTL_FORMALIZE_SHOW_BUILD_DIR)/mlp_core.json -o $@
-
-$(RTL_FORMALIZE_RAW_BLUEPRINT): $(SPARKLE_FULL_CORE_ARTIFACT)
-	@mkdir -p $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR) $(RTL_FORMALIZE_SHOW_BUILD_DIR)
-	yosys -q -p "read_verilog -sv $(SPARKLE_FULL_CORE_ARTIFACT); hierarchy -check -top TinyMLP_sparkleMlpCorePacked; proc; opt; write_json $(RTL_FORMALIZE_SHOW_BUILD_DIR)/sparkle_mlp_core.json"
-	netlistsvg $(RTL_FORMALIZE_SHOW_BUILD_DIR)/sparkle_mlp_core.json -o $@
-
-clean-show:
-	rm -rf $(SHOW_BUILD_DIR) $(RTL_SYNTHESIS_SHOW_BUILD_DIR) $(RTL_FORMALIZE_SHOW_BUILD_DIR)
-	rm -f $(addprefix $(SHOW_BLUEPRINT_DIR)/,$(addsuffix .svg,$(SHOW_MODULES)))
-	rm -f $(addprefix $(SHOW_DOCS_ASSETS_DIR)/,$(addsuffix .svg,$(SHOW_MODULES)))

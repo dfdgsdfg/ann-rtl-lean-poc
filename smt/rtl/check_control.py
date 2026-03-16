@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
 
 DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
@@ -345,7 +345,7 @@ def run_job(
     )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run RTL-backed SMT control checks with Yosys and yosys-smtbmc.")
     parser.add_argument(
         "--branch",
@@ -397,11 +397,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="JSON path for the pass/fail summary.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     if args.solver_alias:
         args.solver = args.solver_alias
     explicit_output_mode = args.summary is not None
@@ -441,7 +441,7 @@ def main() -> int:
         "branch": args.branch,
         "overall_result": overall_result,
         "tool": {
-            "driver": "python3 smt/rtl/check_control.py",
+            "driver": "python3 smt/runners/rtl.py",
             "yosys": str(args.yosys),
             "yosys_version": yosys_version,
             "yosys_smtbmc": str(args.smtbmc),
@@ -449,7 +449,7 @@ def main() -> int:
             "solver": str(args.solver),
             "solver_version": solver_version,
             "command": (
-                f"python3 smt/rtl/check_control.py --branch {args.branch} --yosys {args.yosys} "
+                f"python3 smt/runners/rtl.py --branch {args.branch} --yosys {args.yosys} "
                 f"--smtbmc {args.smtbmc} --solver {args.solver} --summary {args.summary}"
             ),
         },

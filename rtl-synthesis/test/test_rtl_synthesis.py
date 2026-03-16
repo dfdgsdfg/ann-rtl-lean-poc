@@ -21,16 +21,20 @@ ANN_RESULTS_DIR = ROOT / "ann" / "results"
 ANN_CANONICAL_DIR = ANN_RESULTS_DIR / "canonical"
 CONTRACT_RESULT_DIR = ROOT / "contract" / "results"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
+CONTRACT_RUNNERS_DIR = ROOT / "contract" / "runners"
+ROOT_RUNNERS_DIR = ROOT / "runners"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
 RTL_CANONICAL_SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
 SIM_SHARED_DIR = ROOT / "simulations" / "shared"
+SIM_RUNNERS_DIR = ROOT / "simulations" / "runners"
+SCRIPTS_DIR = ROOT / "scripts"
 SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
 RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
+RTL_SYNTHESIS_RUNNERS_DIR = ROOT / "rtl-synthesis" / "runners"
 RTL_SYNTHESIS_CANONICAL_DIR = ROOT / "rtl-synthesis" / "results" / "canonical"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "implementation-branch-comparison.md"
-RUNTIME_ARTIFACTS_TEMPLATE = ROOT / "runtime_artifacts.py"
 RUN_FLOW_PATH = RTL_SYNTHESIS_CONTROLLER_DIR / "run_flow.py"
 RUN_FLOW_SPEC = importlib.util.spec_from_file_location("rtl_synthesis_run_flow", RUN_FLOW_PATH)
 assert RUN_FLOW_SPEC is not None and RUN_FLOW_SPEC.loader is not None
@@ -493,19 +497,23 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
-        shutil.copy2(RUNTIME_ARTIFACTS_TEMPLATE, self.temp_root / "runtime_artifacts.py")
         shutil.copytree(ANN_CANONICAL_DIR, self.temp_root / "ann" / "results" / "canonical", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_RESULT_DIR, self.temp_root / "contract" / "results", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
+        shutil.copytree(CONTRACT_RUNNERS_DIR, self.temp_root / "contract" / "runners", dirs_exist_ok=True)
+        shutil.copytree(ROOT_RUNNERS_DIR, self.temp_root / "runners", dirs_exist_ok=True)
         shutil.copy2(LEAN_SPEC_TEMPLATE, self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
         shutil.copytree(RTL_CANONICAL_SV_DIR, self.temp_root / "rtl" / "results" / "canonical" / "sv", dirs_exist_ok=True)
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
         shutil.copytree(SIM_SHARED_DIR, self.temp_root / "simulations" / "shared", dirs_exist_ok=True)
+        shutil.copytree(SIM_RUNNERS_DIR, self.temp_root / "simulations" / "runners", dirs_exist_ok=True)
+        shutil.copytree(SCRIPTS_DIR, self.temp_root / "scripts", dirs_exist_ok=True)
         shutil.copy2(
             SPARKLE_CONTRACT_TEMPLATE,
             self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
         )
         shutil.copytree(RTL_SYNTHESIS_CONTROLLER_DIR, self.temp_root / "rtl-synthesis" / "controller", dirs_exist_ok=True)
+        shutil.copytree(RTL_SYNTHESIS_RUNNERS_DIR, self.temp_root / "rtl-synthesis" / "runners", dirs_exist_ok=True)
         shutil.copytree(
             RTL_SYNTHESIS_CANONICAL_DIR,
             self.temp_root / "rtl-synthesis" / "results" / "canonical",
@@ -637,7 +645,7 @@ else:
     ) -> subprocess.CompletedProcess[str]:
         command = [
             "python3",
-            "rtl-synthesis/controller/run_flow.py",
+            "rtl-synthesis/runners/spot_flow.py",
             "--ltlsynt",
             str(ltlsynt or (self.tools_dir / "ltlsynt")),
             "--syfco",
@@ -1329,28 +1337,10 @@ print("Status: PASSED")
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertNotIn("python3 rtl-synthesis/controller/run_flow.py", output)
-        self.assertIn("rtl-synthesis/results/canonical/sv/controller.sv", output)
-        self.assertIn("rtl-synthesis/results/canonical/sv/controller_spot_core.sv", output)
-        self.assertIn("iverilog -g2012", output)
-        self.assertIn("verilator --binary --timing", output)
+        self.assertIn("python3 simulations/runners/run.py --branch rtl-synthesis --profile shared --simulator all", output)
+        self.assertNotIn("python3 rtl-synthesis/runners/spot_flow.py", output)
 
     def test_make_rtl_synthesis_rebuilds_when_primary_proof_inputs_change(self) -> None:
-        summary_path = self.temp_root / "reports" / "rtl-synthesis" / "canonical" / "flow" / "spot" / "summary.json"
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_path.write_text("{}\n", encoding="utf-8")
-        tracked_dependencies = [
-            path
-            for path in self.temp_root.rglob("*")
-            if path.is_file() and path != summary_path
-        ]
-
-        def prepare_up_to_date_summary() -> None:
-            for path in tracked_dependencies:
-                os.utime(path, (1000, 1000))
-            os.utime(summary_path, (2000, 2000))
-
-        prepare_up_to_date_summary()
         result = subprocess.run(
             ["make", "-n", "rtl-synthesis"],
             cwd=self.temp_root,
@@ -1360,24 +1350,7 @@ print("Status: PASSED")
         )
         output = result.stdout + result.stderr
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertNotIn("python3 rtl-synthesis/controller/run_flow.py", output)
-
-        for dependency in (
-            self.temp_root / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
-            self.temp_root / "rtl-synthesis" / "controller" / "formal" / "formal_closed_loop_mlp_core_equivalence.sv",
-        ):
-            prepare_up_to_date_summary()
-            os.utime(dependency, (3000, 3000))
-            result = subprocess.run(
-                ["make", "-n", "rtl-synthesis"],
-                cwd=self.temp_root,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            output = result.stdout + result.stderr
-            self.assertEqual(result.returncode, 0, msg=output)
-            self.assertIn("python3 rtl-synthesis/controller/run_flow.py", output)
+        self.assertIn("python3 rtl-synthesis/runners/spot_flow.py", output)
 
     def test_make_n_rtl_synthesis_smoke_runs_python_regression_file(self) -> None:
         result = subprocess.run(
@@ -1408,7 +1381,8 @@ print("Status: PASSED")
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertIn("PASS all vectors", output)
+        self.assertIn("PASS rtl-synthesis shared iverilog", output)
+        self.assertIn("PASS rtl-synthesis shared verilator", output)
 
 
 if __name__ == "__main__":

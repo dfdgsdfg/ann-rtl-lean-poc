@@ -31,13 +31,13 @@ The contract step should be scriptable with one simple command that freezes a se
 A practical command shape is:
 
 ```text
-python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
+python3 contract/runners/freeze.py --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
 ```
 
 To validate an existing frozen contract without rewriting:
 
 ```text
-python3 -m contract.src.freeze --check
+python3 contract/runners/freeze.py --check
 ```
 
 The main requirement is that downstream domains can consume a frozen contract without manually rewriting constants.

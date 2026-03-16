@@ -101,7 +101,7 @@ PORT_RE = re.compile(
 )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate the stable Sparkle mlp_core wrapper.")
     parser.add_argument("--raw", type=Path, required=True, help="Path to the raw Sparkle-emitted RTL module.")
     parser.add_argument("--wrapper", type=Path, required=True, help="Path to the generated stable wrapper.")
@@ -115,7 +115,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Validate the raw module interface and verify that the wrapper matches the generated output.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def render_slice(hi: int, lo: int) -> str:
@@ -537,8 +537,8 @@ def check_wrapper(wrapper_path: Path, expected_text: str) -> None:
     )
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     raw_text = args.raw.read_text(encoding="utf-8")
     raw_module_name, raw_ports = parse_raw_module(raw_text, args.raw)
     packed_width = validate_raw_ports(raw_ports, args.raw)

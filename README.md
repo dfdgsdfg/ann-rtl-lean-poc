@@ -189,7 +189,7 @@ make evaluate ARGS="--artifact quantized"
 Validate that the frozen contract is still consistent:
 
 ```bash
-python3 -m contract.src.freeze --check
+python3 contract/runners/freeze.py --check
 ```
 
 Run the vanilla Lean proof baseline:
@@ -379,12 +379,6 @@ make experiments-post-synth
 ```
 
 The experiment runner writes family build artifacts under `build/experiments/{runs,canonical}/` and family summaries plus reports under `reports/experiments/{runs,canonical}/`.
-
-Visualization (generates canonical SVG schematics in `rtl/results/canonical/blueprint/` and refreshes `docs/assets/` copies):
-
-```bash
-make show
-```
 
 ## Notes
 

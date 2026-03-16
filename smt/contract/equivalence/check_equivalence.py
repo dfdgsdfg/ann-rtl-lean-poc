@@ -27,7 +27,7 @@ if __package__ in (None, ""):
         write_json,
         z3_version,
     )
-    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
+    from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
 else:
     from ..common import (
         ROOT,
@@ -46,7 +46,7 @@ else:
         write_json,
         z3_version,
     )
-    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+    from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
 
 
 DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
@@ -54,7 +54,7 @@ DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
 DEFAULT_SUMMARY = DEFAULT_REPORT_ROOT / "canonical" / "contract" / "equivalence" / "summary.json"
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Prove arithmetic equivalence between the frozen contract view and the RTL-style bitvector view."
     )
@@ -97,7 +97,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Optional path for the generated SMT-LIB batch query.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def build_checks(contract_path: Path) -> tuple[list[CheckSpec], tuple[str, ...], str]:
@@ -228,8 +228,8 @@ def build_checks(contract_path: Path) -> tuple[list[CheckSpec], tuple[str, ...],
     return checks, tuple(model.lines), build_batch_smt(model.lines, checks)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     snapshot = None
     if args.summary is None:
         snapshot = prepare_snapshot(
@@ -302,9 +302,9 @@ def main() -> int:
             "version": solver_version,
         },
         "reproduction": {
-            "script": repo_relative(Path(__file__).resolve()),
+            "script": repo_relative(ROOT / "smt" / "runners" / "contract_equivalence.py"),
             "command": build_reproduction_command(
-                script_path=Path(__file__).resolve(),
+                script_path=ROOT / "smt" / "runners" / "contract_equivalence.py",
                 summary_path=args.summary.resolve(),
                 z3_binary=args.z3,
                 contract_path=contract.path.resolve(),

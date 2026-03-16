@@ -29,7 +29,7 @@ The freeze step may also write a local historical snapshot under `contract/resul
 
 `ann/results/canonical/manifest.json` records the canonical ANN artifact set and its dataset snapshot SHA-256.
 
-`contract/results/canonical/weights.json` mirrors that canonical ANN provenance. `python3 -m contract.src.freeze --check` proves that the frozen contract still matches `ann/results/canonical/` and that the downstream generated artifacts are in sync.
+`contract/results/canonical/weights.json` mirrors that canonical ANN provenance. `python3 contract/runners/freeze.py --check` proves that the frozen contract still matches `ann/results/canonical/` and that the downstream generated artifacts are in sync.
 
 The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/results/canonical/model.md`.
 
@@ -43,26 +43,26 @@ To create a fresh ANN result and refresh canonical snapshots:
 make train
 ```
 
-If you run the lower-level training module directly:
+If you want a training-only run without refreshing canonical snapshots:
 
 ```bash
-python3 ann/src/train.py
+python3 ann/runners/main.py train --skip-export
 ```
 
-it only writes ANN artifacts under `ann/results/` and does not refresh `ann/results/canonical/`, `contract/results/canonical/`, or the downstream generated files. Run `python3 -m contract.src.freeze --run-dir ...` afterward if you use that lower-level entrypoint.
+it only writes ANN artifacts under `ann/results/` and does not refresh `ann/results/canonical/`, `contract/results/canonical/`, or the downstream generated files. Run `python3 contract/runners/freeze.py --run-dir ...` afterward if you use that training-only path.
 
 ### 2. Freeze the contract
 
 Freeze from the current canonical ANN snapshot:
 
 ```bash
-python3 -m contract.src.freeze
+python3 contract/runners/freeze.py
 ```
 
 Freeze an explicit local ANN run and promote it into canonical ANN and contract snapshots:
 
 ```bash
-python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
+python3 contract/runners/freeze.py --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
 ```
 
 ### 3. Validate the current frozen contract
@@ -70,7 +70,7 @@ python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20
 Check that the canonical contract, canonical ANN snapshot, and generated downstream artifacts are all still in sync:
 
 ```bash
-python3 -m contract.src.freeze --check
+python3 contract/runners/freeze.py --check
 ```
 
 ### 4. Regenerate only the simulation vectors
@@ -78,13 +78,13 @@ python3 -m contract.src.freeze --check
 If the contract is already frozen and you only need to refresh `simulations/shared/test_vectors.mem` and `simulations/shared/test_vectors_meta.svh`:
 
 ```bash
-python3 -m contract.src.gen_vectors
+python3 contract/runners/gen_vectors.py
 ```
 
 Run the separate strict witness check for positive/zero/negative score-class coverage:
 
 ```bash
-python3 -m contract.src.gen_vectors --check-witnesses
+python3 contract/runners/gen_vectors.py --check-witnesses
 ```
 
 ### 5. Read the outputs

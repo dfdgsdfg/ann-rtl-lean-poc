@@ -7,7 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-from ann.cli import __main__ as ann_cli
+from ann.runners import main as ann_cli
 from ann.src import evaluate as ann_evaluate
 from ann.src import train as ann_train
 

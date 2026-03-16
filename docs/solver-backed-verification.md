@@ -273,13 +273,13 @@ Individual steps can be run separately:
 
 ```bash
 # RTL control only
-python3 smt/rtl/check_control.py
+python3 smt/runners/rtl.py --branch rtl
 
 # Contract overflow only
-python3 smt/contract/overflow/check_bounds.py
+python3 smt/runners/contract_overflow.py
 
 # Contract equivalence only
-python3 smt/contract/equivalence/check_equivalence.py
+python3 smt/runners/contract_equivalence.py
 ```
 
 Every check produces a JSON summary recording the tool versions, assumptions, properties, and pass/fail result. A non-zero exit code on any failure makes `make smt` fail the same way a test failure would.

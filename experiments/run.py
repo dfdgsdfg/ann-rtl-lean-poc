@@ -37,7 +37,7 @@ if __package__ in (None, ""):
         write_json,
         write_text,
     )
-    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
+    from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
 else:
     from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json
     from contract.src.downstream_sync import expected_downstream_artifacts
@@ -56,7 +56,7 @@ else:
         write_json,
         write_text,
     )
-    from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+    from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
     ROOT = REPO_ROOT
 
 
@@ -386,7 +386,7 @@ def rtl_synthesis_flow_steps_from_summary(summary: dict[str, object]) -> list[di
 
 def rtl_synthesis_flow_steps_from_manifest(manifest: BranchManifest) -> list[dict[str, object]]:
     source_kind = manifest.provenance.get("source_kind")
-    command = str(manifest.provenance.get("command", "python3 rtl-synthesis/controller/run_flow.py ..."))
+    command = str(manifest.provenance.get("command", "python3 rtl-synthesis/runners/spot_flow.py ..."))
     if source_kind == "fresh_flow_unavailable":
         return [
             {
@@ -429,7 +429,7 @@ def rtl_synthesis_flow_steps_from_manifest(manifest: BranchManifest) -> list[dic
     ]
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run repository experiment families.")
     parser.add_argument(
         "--family",
@@ -450,7 +450,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ltlsynt", default=preferred_tool_path(VENDORED_LTLSYNT, "ltlsynt"))
     parser.add_argument("--syfco", default=preferred_tool_path(VENDORED_SYFCO, "syfco"))
     parser.add_argument("--openlane-flow", default=preferred_tool_path(VENDORED_OPENLANE_FLOW, "flow.tcl"))
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def write_command_log(log_path: Path, proc_output: str) -> None:
@@ -1407,7 +1407,7 @@ def check_contract_without_mutation() -> None:
 
 
 def run_contract_preflight_step(log_path: Path) -> dict[str, object]:
-    command = ["python3", "-m", "contract.src.freeze", "--check"]
+    command = ["python3", "contract/runners/freeze.py", "--check"]
     try:
         check_contract_without_mutation()
     except Exception as exc:
@@ -1442,7 +1442,7 @@ def run_artifact_consistency_family(
     ensure_dir(logs_dir)
 
     freeze_check_log = logs_dir / "freeze_check.log"
-    freeze_check_command = ["python3", "-m", "contract.src.freeze", "--check"]
+    freeze_check_command = ["python3", "contract/runners/freeze.py", "--check"]
     freeze_check_proc = run_command(freeze_check_command, cwd=ROOT)
     freeze_check_output = (freeze_check_proc.stdout or "") + (freeze_check_proc.stderr or "")
     write_command_log(freeze_check_log, freeze_check_output or "(no output)\n")
@@ -1962,7 +1962,7 @@ def run_branch_compare_family(
                 make_step(
                     name="rtl_control_formal",
                     result=baseline_formal_result,
-                    command="python3 smt/rtl/check_control.py ...",
+                    command="python3 smt/runners/rtl.py --branch rtl ...",
                     log_path=baseline_formal_log,
                     artifacts={"summary": baseline_formal_summary} if baseline_formal_summary.exists() else {},
                 )
@@ -2547,8 +2547,8 @@ def run_selected_families(
     return families
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     snapshot = prepare_snapshot(
         build_root=args.build_root.resolve(),
         report_root=args.report_root.resolve(),
@@ -2580,7 +2580,7 @@ def main() -> int:
             source="experiments_family_suite",
             created_at_utc=generated_at_utc,
             inputs={"family": args.family},
-            commands={"driver": f"python3 experiments/run.py --family {args.family}"},
+            commands={"driver": f"python3 experiments/runners/run.py --family {args.family}"},
             tool_versions={},
             artifacts={"build_root": relative(build_root)},
             reports={"summary": relative(report_root / "summary.json")},
@@ -2594,7 +2594,7 @@ def main() -> int:
         source="experiments_family_suite",
         created_at_utc=str(family["generated_at_utc"]),
         inputs={"family": args.family},
-        commands={"driver": f"python3 experiments/run.py --family {args.family}"},
+        commands={"driver": f"python3 experiments/runners/run.py --family {args.family}"},
         tool_versions={},
         artifacts={"build_root": relative(build_root)},
         reports={"summary": relative(report_root / family["family"] / "summary.json")},

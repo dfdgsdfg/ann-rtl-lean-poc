@@ -36,31 +36,31 @@ In practice it expects `python3`, `yosys`, `yosys-smtbmc`, and `z3`.
 Run only the RTL control checks:
 
 ```bash
-python3 smt/rtl/check_control.py
+python3 smt/runners/rtl.py --branch rtl
 ```
 
 Run only the Sparkle full-core RTL checks:
 
 ```bash
-python3 smt/rtl/check_control.py --branch rtl-formalize-synthesis
+python3 smt/runners/rtl.py --branch rtl-formalize-synthesis
 ```
 
 Export the frozen arithmetic assumptions:
 
 ```bash
-python3 smt/contract/export_assumptions.py
+python3 smt/runners/contract_assumptions.py
 ```
 
 Run only the contract overflow checks:
 
 ```bash
-python3 smt/contract/overflow/check_bounds.py
+python3 smt/runners/contract_overflow.py
 ```
 
 Run only the contract equivalence checks:
 
 ```bash
-python3 smt/contract/equivalence/check_equivalence.py
+python3 smt/runners/contract_equivalence.py
 ```
 
 Generated artifacts:
@@ -74,4 +74,4 @@ Generated artifacts:
 
 These summaries record the solver/tool version, the assumptions used for each property family, and a concise pass/fail result suitable for CI or local review.
 
-The Sparkle full-core branch is checked through the same `smt/rtl/check_control.py` runner with a branch-specific source set consisting of the generated wrapper plus raw Sparkle-emitted core. The Lean theorem still stops at Signal DSL semantics; emitted RTL remains validated by SMT, simulation, and synthesis flows rather than proved in Lean alone.
+The Sparkle full-core branch is checked through the same `smt/runners/rtl.py` runner with a branch-specific source set consisting of the generated wrapper plus raw Sparkle-emitted core. The Lean theorem still stops at Signal DSL semantics; emitted RTL remains validated by SMT, simulation, and synthesis flows rather than proved in Lean alone.

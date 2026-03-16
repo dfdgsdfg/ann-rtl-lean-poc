@@ -16,12 +16,16 @@ from contract.src import downstream_sync, gen_vectors
 ROOT = contract_artifacts.ROOT
 RUN_DIR = ROOT / "ann" / "results" / "runs" / "relu_teacher_v2-seed20260312-epoch51"
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
-WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "src" / "weight_rom.sv"
+WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
 SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
 SIM_TESTBENCH_TEMPLATE = ROOT / "simulations" / "rtl" / "testbench.sv"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
-RTL_SRC_DIR = ROOT / "rtl" / "src"
+CONTRACT_RUNNERS_DIR = ROOT / "contract" / "runners"
+ROOT_RUNNERS_DIR = ROOT / "runners"
+RTL_SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
+SCRIPTS_DIR = ROOT / "scripts"
+SIM_RUNNERS_DIR = ROOT / "simulations" / "runners"
 
 
 class FreezeContractTests(unittest.TestCase):
@@ -52,7 +56,7 @@ class FreezeContractTests(unittest.TestCase):
         repo_root = self.temp_root / "repo"
         (repo_root / "ann" / "results" / "runs").mkdir(parents=True, exist_ok=True)
         (repo_root / "formalize" / "src" / "TinyMLP" / "Defs").mkdir(parents=True, exist_ok=True)
-        (repo_root / "rtl" / "src").mkdir(parents=True, exist_ok=True)
+        (repo_root / "rtl" / "results" / "canonical" / "sv").mkdir(parents=True, exist_ok=True)
         (repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "shared").mkdir(parents=True, exist_ok=True)
@@ -60,7 +64,7 @@ class FreezeContractTests(unittest.TestCase):
 
         shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
         shutil.copy2(SIM_TESTBENCH_TEMPLATE, repo_root / "simulations" / "rtl" / "testbench.sv")
-        shutil.copy2(WEIGHT_ROM_TEMPLATE, repo_root / "rtl" / "src" / "weight_rom.sv")
+        shutil.copy2(WEIGHT_ROM_TEMPLATE, repo_root / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv")
         shutil.copy2(LEAN_SPEC_TEMPLATE, repo_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
         shutil.copy2(
             SPARKLE_CONTRACT_TEMPLATE,
@@ -72,7 +76,11 @@ class FreezeContractTests(unittest.TestCase):
             repo_root / "simulations" / "shared" / "test_vectors_meta.svh",
         )
         shutil.copytree(CONTRACT_SRC_DIR, repo_root / "contract" / "src", dirs_exist_ok=True)
-        shutil.copytree(RTL_SRC_DIR, repo_root / "rtl" / "src", dirs_exist_ok=True)
+        shutil.copytree(CONTRACT_RUNNERS_DIR, repo_root / "contract" / "runners", dirs_exist_ok=True)
+        shutil.copytree(ROOT_RUNNERS_DIR, repo_root / "runners", dirs_exist_ok=True)
+        shutil.copytree(RTL_SV_DIR, repo_root / "rtl" / "results" / "canonical" / "sv", dirs_exist_ok=True)
+        shutil.copytree(SCRIPTS_DIR, repo_root / "scripts", dirs_exist_ok=True)
+        shutil.copytree(SIM_RUNNERS_DIR, repo_root / "simulations" / "runners", dirs_exist_ok=True)
         shutil.copytree(RUN_DIR, repo_root / "ann" / "results" / "runs" / RUN_DIR.name, dirs_exist_ok=True)
 
         if include_ann_canonical:
@@ -87,8 +95,7 @@ class FreezeContractTests(unittest.TestCase):
         result = subprocess.run(
             [
                 "python3",
-                "-m",
-                "contract.src.freeze",
+                "contract/runners/freeze.py",
                 "--run-dir",
                 f"ann/results/runs/{RUN_DIR.name}",
             ],
@@ -128,7 +135,7 @@ class FreezeContractTests(unittest.TestCase):
             contract_run_weights,
             contract_run_manifest,
             contract_model_path,
-            repo_root / "rtl" / "src" / "weight_rom.sv",
+            repo_root / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
             repo_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean",
             repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
             repo_root / "simulations" / "shared" / "test_vectors.mem",
@@ -140,7 +147,7 @@ class FreezeContractTests(unittest.TestCase):
         repo_root = self._prepare_repo_root()
 
         result = subprocess.run(
-            ["python3", "-m", "contract.src.freeze", "--check"],
+            ["python3", "contract/runners/freeze.py", "--check"],
             cwd=repo_root,
             text=True,
             capture_output=True,
@@ -157,7 +164,7 @@ class FreezeContractTests(unittest.TestCase):
         snapshot_path.write_text(snapshot_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 
         result = subprocess.run(
-            ["python3", "-m", "contract.src.freeze", "--check"],
+            ["python3", "contract/runners/freeze.py", "--check"],
             cwd=repo_root,
             text=True,
             capture_output=True,
@@ -262,8 +269,7 @@ class FreezeContractTests(unittest.TestCase):
         freeze_result = subprocess.run(
             [
                 "python3",
-                "-m",
-                "contract.src.freeze",
+                "contract/runners/freeze.py",
                 "--run-dir",
                 f"ann/results/runs/{RUN_DIR.name}",
             ],
@@ -285,8 +291,8 @@ class FreezeContractTests(unittest.TestCase):
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertIn("python3 -m contract.src.freeze --check", output)
-        self.assertIn("PASS all vectors", output)
+        self.assertIn("python3 contract/runners/freeze.py --check", output)
+        self.assertIn("PASS rtl shared iverilog", output)
 
 
 if __name__ == "__main__":

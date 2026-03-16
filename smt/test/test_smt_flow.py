@@ -20,7 +20,7 @@ class SmtFlowTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     "python3",
-                    "smt/contract/export_assumptions.py",
+                    "smt/runners/contract_assumptions.py",
                     "--output",
                     str(output_path),
                 ],

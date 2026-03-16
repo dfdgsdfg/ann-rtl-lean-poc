@@ -553,7 +553,7 @@ That claim does not automatically extend to wrapper reconstruction logic, unexer
 The emitted full-core Sparkle RTL is validated by:
 
 - the shared `mlp_core` simulation bench over the committed vector suite
-- the wrapper-backed Sparkle SMT proof set in `smt/rtl/check_control.py --branch rtl-formalize-synthesis`
+- the wrapper-backed Sparkle SMT proof set in `smt/runners/rtl.py --branch rtl-formalize-synthesis`
 - branch-comparison runs against the hand-written baseline
 - QoR and downstream synthesis characterization over the same top-level boundary
 

@@ -24,9 +24,9 @@ make rtl-formalize-synthesis-blueprint
 make rtl-formalize-synthesis-iverilog
 make rtl-formalize-synthesis-verilator
 make smt-rtl-formalize-synthesis
-python3 experiments/run.py --family artifact-consistency
-python3 experiments/run.py --family branch-compare
-python3 experiments/run.py --family qor
+python3 experiments/runners/run.py --family artifact-consistency
+python3 experiments/runners/run.py --family branch-compare
+python3 experiments/runners/run.py --family qor
 ```
 
 `artifact-consistency` is the direct structural-validation path for the checked-in wrapper and declared emitted-subset claim. It runs the wrapper generator in `--check` mode against the raw Sparkle RTL plus `verification_manifest.json`, and catches raw-module interface drift, declared-subset drift, wrapper mismatches, and stale wrapper regeneration inputs.

@@ -4,11 +4,11 @@ This subtree holds the contract-tied SMT entrypoints for the frozen network in [
 
 The proof scripts use the `z3` CLI directly, while the assumption exporter is a pure JSON export. Together they keep the arithmetic source of truth in the frozen contract:
 
-- `python3 smt/contract/export_assumptions.py`
+- `python3 smt/runners/contract_assumptions.py`
   - exports the frozen widths, quantization rules, and boundedness facts used by the other checks
-- `python3 smt/contract/overflow/check_bounds.py`
+- `python3 smt/runners/contract_overflow.py`
   - proves the hidden/output product bounds, hidden/output accumulator bounds, and sign-extension / wide-sum obligations
-- `python3 smt/contract/equivalence/check_equivalence.py`
+- `python3 smt/runners/contract_equivalence.py`
   - proves a layered arithmetic miter between the contract view and an RTL-style bitvector view
 
 One intentional modeling detail is easy to miss in the code: the frozen contract treats hidden products as `int8 x int8 -> int16`, while the RTL-style view mirrors `mlp_core` by sign-extending the hidden input lane to 16 bits before multiply, yielding a 24-bit intermediate product. The overflow and equivalence summaries record that distinction explicitly and prove the two views agree after sign extension into the accumulator.

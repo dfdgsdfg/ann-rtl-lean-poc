@@ -62,10 +62,10 @@ The ANN flow should be operable through a simple CLI so that a finished training
 A practical command shape is:
 
 ```text
-python3 -m ann.cli train --out-dir ann/results/runs/run_001 --skip-export
-python3 -m ann.cli evaluate --run-dir ann/results/runs/run_001 --artifact quantized
-python3 -m ann.cli quantize --run-dir ann/results/runs/run_001 --artifact selected-float
-python3 -m ann.cli export --run-dir ann/results/runs/run_001
+python3 ann/runners/main.py train --out-dir ann/results/runs/run_001 --skip-export
+python3 ann/runners/main.py evaluate --run-dir ann/results/runs/run_001 --artifact quantized
+python3 ann/runners/main.py quantize --run-dir ann/results/runs/run_001 --artifact selected-float
+python3 ann/runners/main.py export --run-dir ann/results/runs/run_001
 ```
 
 The exact filenames and subcommands can vary. What matters is that one short command path can:

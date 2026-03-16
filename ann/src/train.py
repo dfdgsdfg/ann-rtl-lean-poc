@@ -51,10 +51,10 @@ def add_train_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out-dir", type=Path, default=None, help="Output directory for this training run")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the toy ANN and export the selected result")
     add_train_arguments(parser)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def sigmoid(logit: float) -> float:
@@ -514,8 +514,8 @@ def train(args: argparse.Namespace) -> Path:
     return run_dir
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
     run_dir = train(args)
     print(f"wrote training artifacts to {run_dir}")
 

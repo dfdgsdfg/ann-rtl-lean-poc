@@ -54,7 +54,7 @@ def run_experiments(*args: str) -> subprocess.CompletedProcess[str]:
         build_root = Path(command_args[command_args.index("--build-root") + 1])
         command_args.extend(["--report-root", str(report_root_for(build_root))])
     return subprocess.run(
-        ["python3", "experiments/run.py", *command_args],
+        ["python3", "experiments/runners/run.py", *command_args],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -222,7 +222,7 @@ class ExperimentFlowTests(unittest.TestCase):
         provenance: dict[str, object] = {
             "source_kind": source_kind,
             "result": result,
-            "command": "python3 rtl-synthesis/controller/run_flow.py ...",
+            "command": "python3 rtl-synthesis/runners/spot_flow.py ...",
             "usable_source_set": bool(source_paths),
         }
         if summary_path is not None:
@@ -597,7 +597,7 @@ class ExperimentFlowTests(unittest.TestCase):
                     experiments_run.make_step(
                         name="contract_validation",
                         result="pass",
-                        command="python3 -m contract.src.freeze --check",
+                        command="python3 contract/runners/freeze.py --check",
                         log_path=build_root / "contract_validation.log",
                         details={"gating": True},
                     ),
@@ -709,7 +709,7 @@ class ExperimentFlowTests(unittest.TestCase):
             fail_step = experiments_run.make_step(
                 name="contract_validation",
                 result="fail",
-                command="python3 -m contract.src.freeze --check",
+                command="python3 contract/runners/freeze.py --check",
                 log_path=build_root / "contract_validation.log",
                 details={"reason": "broken canonical contract", "gating": True},
             )
@@ -1100,7 +1100,7 @@ class ExperimentFlowTests(unittest.TestCase):
             pass_step = experiments_run.make_step(
                 name="contract_validation",
                 result="pass",
-                command="python3 -m contract.src.freeze --check",
+                command="python3 contract/runners/freeze.py --check",
                 log_path=build_root / "contract_validation.log",
                 details={"gating": True},
             )
@@ -1132,7 +1132,7 @@ class ExperimentFlowTests(unittest.TestCase):
             fail_step = experiments_run.make_step(
                 name="contract_validation",
                 result="fail",
-                command="python3 -m contract.src.freeze --check",
+                command="python3 contract/runners/freeze.py --check",
                 log_path=build_root / "contract_validation.log",
                 details={"reason": "broken canonical contract", "gating": True},
             )

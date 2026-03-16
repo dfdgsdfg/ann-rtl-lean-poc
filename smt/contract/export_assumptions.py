@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
 
 CONTRACT_PATH = ROOT / "contract" / "results" / "canonical" / "weights.json"
 DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
@@ -43,13 +43,13 @@ def build_summary() -> dict[str, object]:
             "overflow_rule": contract["arithmetic"]["overflow"],
             "sign_extension_rule": contract["arithmetic"]["sign_extension"],
             "boundedness_scope": contract["boundedness"]["scope"],
-            "overflow_entrypoint": "python3 smt/contract/overflow/check_bounds.py",
-            "equivalence_entrypoint": "python3 smt/contract/equivalence/check_equivalence.py",
+            "overflow_entrypoint": "python3 smt/runners/contract_overflow.py",
+            "equivalence_entrypoint": "python3 smt/runners/contract_equivalence.py",
         },
     }
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export frozen contract assumptions for SMT flows.")
     parser.add_argument(
         "--build-root",
@@ -74,11 +74,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Explicit JSON path for the exported assumption summary. Overrides provenance mode.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     summary = build_summary()
     snapshot = None
     if args.output is None:
@@ -97,7 +97,7 @@ def main() -> int:
             source="smt_contract_assumptions",
             created_at_utc=str(summary["generated_at_utc"]),
             inputs={"contract": str(CONTRACT_PATH.relative_to(ROOT))},
-            commands={"driver": "python3 smt/contract/export_assumptions.py"},
+            commands={"driver": "python3 smt/runners/contract_assumptions.py"},
             tool_versions={},
             artifacts={},
             reports={"assumptions": str(args.output.resolve().relative_to(ROOT))},

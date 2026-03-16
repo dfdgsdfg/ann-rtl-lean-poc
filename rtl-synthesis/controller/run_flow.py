@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
+from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
 
 DOMAIN_ROOT = ROOT / "rtl-synthesis" / "controller"
 DEFAULT_BUILD_ROOT = ROOT / "build" / "rtl-synthesis"
@@ -527,7 +527,7 @@ def run_equivalence_job(
     )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the rtl-synthesis Spot/ltlsynt flow.")
     parser.add_argument(
         "--ltlsynt",
@@ -588,11 +588,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Explicit JSON path for the synthesis summary. Overrides --report-root provenance mode.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     explicit_output_mode = args.build_dir is not None or args.summary is not None
     snapshot = None
     if explicit_output_mode:
@@ -958,7 +958,7 @@ def main() -> int:
             "syfco_used": input_lowering == "native_tlsf_via_syfco",
         },
         "tool": {
-            "driver": "python3 rtl-synthesis/controller/run_flow.py",
+            "driver": "python3 rtl-synthesis/runners/spot_flow.py",
             "ltlsynt": str(args.ltlsynt),
             "ltlsynt_version": ltlsynt_version,
             "syfco": str(args.syfco),
@@ -971,7 +971,7 @@ def main() -> int:
             "solver_name": args.solver_name,
             "solver_version": solver_version,
             "command": (
-                f"python3 rtl-synthesis/controller/run_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
+                f"python3 rtl-synthesis/runners/spot_flow.py --ltlsynt {args.ltlsynt} --syfco {args.syfco} "
                 f"--yosys {args.yosys} --smtbmc {args.smtbmc} --solver {args.solver} --solver-name {args.solver_name} "
                 f"--build-dir {relative(build_dir)} --summary {relative(summary_path)}"
             ),

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = 1
 RUN_PART_PATTERN = re.compile(r"[^A-Za-z0-9._-]+")
 

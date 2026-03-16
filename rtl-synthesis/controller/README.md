@@ -22,7 +22,7 @@ The current flow records two formal claims:
 - primary: bounded `82`-cycle closed-loop `mlp_core` mixed-path equivalence over a post-reset accepted transaction window, with the hand-written datapath driving both baseline and synthesized-controller assemblies
 - secondary: bounded `80`-cycle sampled controller-interface equivalence through `MAC_OUTPUT`, `BIAS_OUTPUT`, `DONE`, and `DONE` hold/release under `exact_schedule_v1`
 
-`experiments/run.py --family branch-compare` consumes the recorded `reports/rtl-synthesis/canonical/flow/spot/summary.json` summary and surfaces both claims as maintained branch evidence before the shared top-level simulation steps. A passing mixed-path simulation run is not sufficient if either recorded formal step fails. The baseline-oriented internal-observability bench is recorded only as secondary non-gating evidence for branches that still preserve that surface.
+`experiments/runners/run.py --family branch-compare` consumes the recorded `reports/rtl-synthesis/canonical/flow/spot/summary.json` summary and surfaces both claims as maintained branch evidence before the shared top-level simulation steps. A passing mixed-path simulation run is not sufficient if either recorded formal step fails. The baseline-oriented internal-observability bench is recorded only as secondary non-gating evidence for branches that still preserve that surface.
 
 Generated flow artifacts are written under `build/rtl-synthesis/{runs,canonical}/flow/spot/`; the selected summary is written under `reports/rtl-synthesis/{runs,canonical}/flow/spot/summary.json`.
 

@@ -64,14 +64,14 @@ def export_backend_metadata() -> dict[str, object]:
         raise SystemExit(f"failed to parse backend metadata export: {exc}\n{proc.stdout}") from exc
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Refresh the Sparkle verification manifest proof metadata.")
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     payload = json.loads(args.manifest.read_text(encoding="utf-8"))
     export = export_backend_metadata()
 
