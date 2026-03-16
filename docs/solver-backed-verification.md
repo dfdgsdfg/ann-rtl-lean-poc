@@ -311,7 +311,11 @@ The architectural distinction:
 
 The trust question is the key concern. If the solver only accelerates proof search while the Lean kernel still checks the final proof term, `formalize-smt` stays inside the Lean leg of the repository's verification story. If solver answers are accepted as oracles (via `sorry` or unverified axioms), the Lean proofs become only as trustworthy as the solver — weakening the Lean leg rather than creating a new independent verification direction.
 
-The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`. The checked-in implementation now exposes the full mirrored theorem surface under `MlpCoreSmt`, but it still inherits that weaker trust boundary.
+The current `formalize-smt` package has a weaker trust story than the vanilla `formalize/` baseline: its upstream `lean-smt` dependency emits a `sorry` warning during build. That is why it remains explicitly optional and separate from both `formalize/` and `smt/`. The checked-in implementation exposes the full mirrored theorem surface under `MlpCoreSmt` across six proof modules — `SpecArithmetic`, `FixedPoint`, `Invariants`, `Simulation`, `Temporal`, and `Correctness` — but it still inherits that weaker trust boundary.
+
+The actual `smt` tactic usage within `formalize-smt` is narrow: 8 call sites in two private interval-bound helpers (`int8_mul_int8_interval_bounds_smt` and `int16_mul_int8_interval_bounds_smt`) inside `SpecArithmetic.lean`. These helpers prove monotonicity steps for bounded multiplication that `omega` alone cannot close. The remaining ~2000 lines of proof across all six modules use standard Lean tactics (`omega`, `simp`, `native_decide`, `by_cases`, `rfl`). The upper machine, invariant, simulation, temporal, and correctness layers remain readable Lean proofs — SMT is applied only where it reduces real proof burden in the arithmetic base.
+
+Lane swapping between vanilla and SMT-backed proofs is mediated by the `ArithmeticProofProvider` typeclass defined in `formalize/`. Each proof module in `formalize-smt/` binds `local instance : ArithmeticProofProvider := smtArithmeticProofProvider`, keeping the solver choice explicit and scoped. Consumers swap lanes by changing imports, not by rewriting theorem statements.
 
 ### What No Single Method Covers
 

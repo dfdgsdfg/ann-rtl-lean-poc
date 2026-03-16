@@ -620,7 +620,36 @@ The Lean formalization addresses all four at the model level. The simulation val
 
 `formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side proof lane that mirrors the public theorem surface of `formalize` under the `MlpCoreSmt` namespace while using SMT where that reduces real proof burden.
 
-The checked-in implementation now exposes the full mirrored theorem surface in `formalize-smt/`: arithmetic, fixed-point bridge, invariants, simulation, temporal, and top-level correctness theorems are all available through `MlpCoreSmt`. That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
+The checked-in implementation exposes the full mirrored theorem surface across six proof modules in `formalize-smt/`:
+
+| Module | Role | Primary tactics |
+|--------|------|----------------|
+| `SpecArithmetic` | bounded multiplication, width preservation, wraparound elimination, per-neuron bounds | `smt` for 2 multiplication helpers; `omega`, `simp`, `by_cases` elsewhere |
+| `FixedPoint` | weight-matrix bridge, fixed-point-to-spec equivalence | `native_decide` for finite case splits; `simp` chains |
+| `Invariants` | index invariant preservation across `step` and `run` | structural case analysis per phase |
+| `Simulation` | run composition, termination via control projection, symbolic full-transaction correctness | `native_decide` for control automaton; compositional `run_add` |
+| `Temporal` | handshake timing, guard-cycle safety, phase ordering, output stability | `native_decide +revert` for finite windows; structural induction |
+| `Correctness` | top-level correctness goal wrappers | thin delegation to lower layers |
+
+The actual `smt` tactic is invoked in 8 call sites, all within two private interval-bound helpers in `SpecArithmetic.lean`. These helpers prove monotonicity steps for bounded multiplication that `omega` alone cannot close. The remaining ~2000 lines use standard Lean tactics. SMT is applied where it reduces real proof burden in the arithmetic base, not across the board.
+
+Lane swapping is mediated by the `ArithmeticProofProvider` typeclass defined in `formalize/`. Each `formalize-smt/` proof module binds `local instance : ArithmeticProofProvider := smtArithmeticProofProvider`, keeping the solver choice explicit and scoped. Consumers swap lanes by changing imports:
+
+```lean
+-- vanilla lane
+import MlpCore
+example (input : Input8) :
+    @mlpFixed vanillaArithmeticProofProvider input = mlpSpec (toMathInput input) :=
+  MlpCore.fixedPoint_matchesSpec input
+
+-- SMT-backed lane
+import MlpCoreSmt
+example (input : Input8) :
+    @mlpFixed MlpCoreSmt.smtArithmeticProofProvider input = mlpSpec (toMathInput input) :=
+  MlpCoreSmt.fixedPoint_matchesSpec input
+```
+
+That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
 
 So the architectural rule is:
 
