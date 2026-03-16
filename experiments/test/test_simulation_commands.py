@@ -26,6 +26,24 @@ def run_make_dry_run(target: str) -> subprocess.CompletedProcess[str]:
 
 
 class SimulationCommandTests(unittest.TestCase):
+    def test_formalize_target_builds_vanilla_lean_package(self) -> None:
+        result = run_make_dry_run("formalize")
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("command -v lake", output)
+        self.assertIn("cd formalize && lake build", output)
+
+    def test_verify_target_includes_formalize_sim_and_smt(self) -> None:
+        result = run_make_dry_run("verify")
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("cd formalize && lake build", output)
+        self.assertIn("python3 -m contract.src.freeze --check", output)
+        self.assertIn("iverilog -g2012", output)
+        self.assertIn("python3 smt/rtl/check_control.py", output)
+
     def test_top_level_sim_targets_run_contract_preflight(self) -> None:
         for target in ("sim", "rtl-formalize-synthesis-sim", "rtl-synthesis-sim"):
             with self.subTest(target=target):

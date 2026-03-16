@@ -1,4 +1,5 @@
 .PHONY: train evaluate quantize export freeze freeze-check contract-preflight \
+       formalize formalize-check-tools verify \
        vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
        sim sim-internal sim-check-tools sim-iverilog sim-verilator sim-internal-iverilog sim-internal-verilator clean-sim sim-vectors \
        smt smt-check-tools smt-rtl-control smt-rtl-formalize-synthesis \
@@ -13,6 +14,7 @@
        show show-check-tools clean-show
 
 ANN_CLI := python3 -m ann.cli
+FORMALIZE_PKG_DIR := formalize
 
 # --- ANN targets ---
 
@@ -35,6 +37,16 @@ freeze-check:
 	python3 -m contract.src.freeze --check
 
 contract-preflight: freeze-check
+
+# --- Lean proof targets ---
+
+formalize-check-tools:
+	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
+
+formalize: formalize-check-tools
+	cd $(FORMALIZE_PKG_DIR) && lake build
+
+verify: formalize sim smt
 
 # --- Simulation targets ---
 

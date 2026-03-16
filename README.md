@@ -140,6 +140,11 @@ For the SMT flow specifically, `make smt` expects:
 - `yosys-smtbmc` for bounded SMT model checking
 - `z3` as the current backend solver
 
+For the vanilla Lean proof path, `make formalize` expects:
+
+- `lake`
+- a working `elan` installation so the pinned Lean toolchain can be installed on first build
+
 For the Sparkle full-core generation path, `make rtl-formalize-synthesis-build` expects:
 
 - `git` for the Sparkle prepare step
@@ -187,6 +192,12 @@ Validate that the frozen contract is still consistent:
 python3 -m contract.src.freeze --check
 ```
 
+Run the vanilla Lean proof baseline:
+
+```bash
+make formalize
+```
+
 Run the dual-simulator RTL regression:
 
 ```bash
@@ -197,6 +208,12 @@ Run the full solver-backed SMT flow:
 
 ```bash
 make smt
+```
+
+Run the practical proof-plus-regression bundle:
+
+```bash
+make verify
 ```
 
 Run the controller reactive-synthesis experiment:
@@ -214,9 +231,7 @@ Use this when you want to understand or refresh the current repository baseline:
 ```bash
 make train
 make evaluate ARGS="--artifact quantized"
-make freeze-check
-make sim
-make smt
+make verify
 ```
 
 If you want to train into a separate run directory first:
@@ -331,6 +346,13 @@ make sim-vectors
 ```
 
 The freeze/vector-generation path now fails early if it cannot synthesize positive, zero, and negative score witnesses from its deterministic candidate pool, and it emits a broader deterministic suite that exercises per-lane `-128/-127/+127` boundaries plus score/accumulator stress cases.
+
+Proof commands:
+
+```bash
+make formalize
+make verify
+```
 
 Simulation commands:
 
