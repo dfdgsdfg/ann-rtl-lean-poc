@@ -17,15 +17,15 @@ DEFAULT_SUMMARIES = {
 }
 
 BASELINE_RTL_SOURCES = [
-    ROOT / "rtl" / "src" / "controller.sv",
-    ROOT / "rtl" / "src" / "mac_unit.sv",
-    ROOT / "rtl" / "src" / "mlp_core.sv",
-    ROOT / "rtl" / "src" / "relu_unit.sv",
-    ROOT / "rtl" / "src" / "weight_rom.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
 ]
 SPARKLE_RTL_SOURCES = [
-    ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv",
-    ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv",
+    ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
+    ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv",
 ]
 
 COMMON_SPEC_SOURCES = [
@@ -203,7 +203,7 @@ def formal_jobs(branch: str) -> list[FormalJob]:
             assumptions=[
                 "The controller starts from reset with state forced to IDLE.",
                 "start, hidden_idx, and input_idx remain unconstrained after reset release.",
-                "Proof source of truth is rtl/src/controller.sv, not a duplicated Python transition model.",
+                "Proof source of truth is rtl/results/canonical/sv/controller.sv, not a duplicated Python transition model.",
             ],
             properties=[
                 "accepted start leaves IDLE for LOAD_INPUT on the next cycle",
@@ -212,7 +212,7 @@ def formal_jobs(branch: str) -> list[FormalJob]:
                 "load_input, clear_acc, MAC, bias, and advance outputs match the RTL state encoding",
                 "DONE self-holds while start remains high and releases to IDLE when start is low",
             ],
-            rtl_sources=[ROOT / "rtl" / "src" / "controller.sv"],
+            rtl_sources=[ROOT / "rtl" / "results" / "canonical" / "sv" / "controller.sv"],
         ),
         *mlp_core_jobs(
             BASELINE_RTL_SOURCES,

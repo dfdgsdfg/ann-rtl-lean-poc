@@ -1,10 +1,10 @@
 set top mlp_core
 set rtl_files [list \
-  rtl/src/mac_unit.sv \
-  rtl/src/relu_unit.sv \
-  rtl/src/controller.sv \
-  rtl/src/weight_rom.sv \
-  rtl/src/mlp_core.sv \
+  rtl/results/canonical/sv/mac_unit.sv \
+  rtl/results/canonical/sv/relu_unit.sv \
+  rtl/results/canonical/sv/controller.sv \
+  rtl/results/canonical/sv/weight_rom.sv \
+  rtl/results/canonical/sv/mlp_core.sv \
 ]
 
 read_verilog -sv {*}$rtl_files

@@ -21,12 +21,12 @@ ANN_CANONICAL_DIR = ANN_RESULTS_DIR / "canonical"
 CONTRACT_RESULT_DIR = ROOT / "contract" / "results"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
-RTL_SRC_DIR = ROOT / "rtl" / "src"
+RTL_CANONICAL_SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
 SIM_RTL_DIR = ROOT / "simulations" / "rtl"
 SIM_SHARED_DIR = ROOT / "simulations" / "shared"
 SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
 RTL_SYNTHESIS_CONTROLLER_DIR = ROOT / "rtl-synthesis" / "controller"
-RTL_SYNTHESIS_EXPERIMENT_DIR = ROOT / "experiments" / "rtl-synthesis" / "spot"
+RTL_SYNTHESIS_CANONICAL_DIR = ROOT / "rtl-synthesis" / "results" / "canonical"
 RTL_SYNTHESIS_SPEC_DIR = ROOT / "specs" / "rtl-synthesis"
 EXPERIMENT_TRACK_NOTE = ROOT / "experiments" / "implementation-branch-comparison.md"
 RUN_FLOW_PATH = RTL_SYNTHESIS_CONTROLLER_DIR / "run_flow.py"
@@ -494,7 +494,7 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         shutil.copytree(CONTRACT_RESULT_DIR, self.temp_root / "contract" / "results", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
         shutil.copy2(LEAN_SPEC_TEMPLATE, self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
-        shutil.copytree(RTL_SRC_DIR, self.temp_root / "rtl" / "src", dirs_exist_ok=True)
+        shutil.copytree(RTL_CANONICAL_SV_DIR, self.temp_root / "rtl" / "results" / "canonical" / "sv", dirs_exist_ok=True)
         shutil.copytree(SIM_RTL_DIR, self.temp_root / "simulations" / "rtl", dirs_exist_ok=True)
         shutil.copytree(SIM_SHARED_DIR, self.temp_root / "simulations" / "shared", dirs_exist_ok=True)
         shutil.copy2(
@@ -503,8 +503,8 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         )
         shutil.copytree(RTL_SYNTHESIS_CONTROLLER_DIR, self.temp_root / "rtl-synthesis" / "controller", dirs_exist_ok=True)
         shutil.copytree(
-            RTL_SYNTHESIS_EXPERIMENT_DIR,
-            self.temp_root / "experiments" / "rtl-synthesis" / "spot",
+            RTL_SYNTHESIS_CANONICAL_DIR,
+            self.temp_root / "rtl-synthesis" / "results" / "canonical",
             dirs_exist_ok=True,
         )
         shutil.copytree(RTL_SYNTHESIS_SPEC_DIR, self.temp_root / "specs" / "rtl-synthesis", dirs_exist_ok=True)
@@ -666,7 +666,9 @@ else:
         baseline_mlp_core_copy = generated_dir / "baseline_mlp_core.sv"
         generated_mlp_core_copy = generated_dir / "generated_mlp_core.sv"
 
-        baseline_controller_text = (self.temp_root / "rtl" / "src" / "controller.sv").read_text(encoding="utf-8")
+        baseline_controller_text = (
+            self.temp_root / "rtl" / "results" / "canonical" / "sv" / "controller.sv"
+        ).read_text(encoding="utf-8")
         baseline_controller_copy.write_text(
             baseline_controller_text.replace("module controller #(", "module baseline_controller #(", 1),
             encoding="utf-8",
@@ -723,7 +725,9 @@ else:
             encoding="utf-8",
         )
 
-        mlp_core_text = (self.temp_root / "rtl" / "src" / "mlp_core.sv").read_text(encoding="utf-8")
+        mlp_core_text = (
+            self.temp_root / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv"
+        ).read_text(encoding="utf-8")
         baseline_mlp_core_copy.write_text(
             mlp_core_text
             .replace("module mlp_core (", "module baseline_mlp_core (", 1)
@@ -803,7 +807,7 @@ else:
             self.assertIn(f"    {signal};", tlsf_text)
 
         for snippet in (
-            'DESCRIPTION: "Controller-only phase contract for rtl/src/controller.sv with exact_schedule_v1 assumptions"',
+            'DESCRIPTION: "Controller-only phase contract for rtl/results/canonical/sv/controller.sv with exact_schedule_v1 assumptions"',
             "G(!reset && phase_mac_hidden -> (",
             "G(!reset && phase_mac_output -> (",
             "G(!reset && phase_next_hidden -> (",
@@ -820,7 +824,7 @@ else:
             self.assertIn(snippet, tlsf_text)
 
     def test_wrapper_source_records_direct_reset_boundary(self) -> None:
-        wrapper_path = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+        wrapper_path = ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"
         wrapper_text = wrapper_path.read_text(encoding="utf-8")
 
         for snippet in (
@@ -896,8 +900,8 @@ else:
                 "-o",
                 str(out_path),
                 str(tb_path),
-                str(self.temp_root / "rtl" / "src" / "controller.sv"),
-                str(self.temp_root / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
+                str(self.temp_root / "rtl" / "results" / "canonical" / "sv" / "controller.sv"),
+                str(self.temp_root / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"),
                 str(fake_core_path),
             ],
             cwd=self.temp_root,
@@ -940,8 +944,8 @@ else:
                 "-o",
                 str(out_path),
                 str(tb_path),
-                str(self.temp_root / "rtl" / "src" / "controller.sv"),
-                str(self.temp_root / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"),
+                str(self.temp_root / "rtl" / "results" / "canonical" / "sv" / "controller.sv"),
+                str(self.temp_root / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"),
                 str(fake_core_path),
             ],
             cwd=self.temp_root,
@@ -978,7 +982,7 @@ else:
         script_path.write_text(
             textwrap.dedent(
                 f"""\
-                read_verilog -sv -formal rtl/src/controller.sv experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} rtl-synthesis/controller/formal/formal_controller_spot_equivalence.sv
+                read_verilog -sv -formal rtl/results/canonical/sv/controller.sv rtl-synthesis/results/canonical/sv/controller_spot_compat.sv {fake_core_path} rtl-synthesis/controller/formal/formal_controller_spot_equivalence.sv
                 prep -top formal_controller_spot_equivalence
                 async2sync
                 dffunmap
@@ -1011,7 +1015,7 @@ else:
         script_path.write_text(
             textwrap.dedent(
                 f"""\
-                read_verilog -sv -formal rtl/src/mac_unit.sv rtl/src/relu_unit.sv rtl/src/weight_rom.sv {baseline_controller_copy} experiments/rtl-synthesis/spot/controller_spot_compat.sv {fake_core_path} {generated_controller_copy} {baseline_mlp_core_copy} {generated_mlp_core_copy} rtl-synthesis/controller/formal/formal_closed_loop_mlp_core_equivalence.sv
+                read_verilog -sv -formal rtl/results/canonical/sv/mac_unit.sv rtl/results/canonical/sv/relu_unit.sv rtl/results/canonical/sv/weight_rom.sv {baseline_controller_copy} rtl-synthesis/results/canonical/sv/controller_spot_compat.sv {fake_core_path} {generated_controller_copy} {baseline_mlp_core_copy} {generated_mlp_core_copy} rtl-synthesis/controller/formal/formal_closed_loop_mlp_core_equivalence.sv
                 prep -top formal_closed_loop_mlp_core_equivalence
                 async2sync
                 dffunmap
@@ -1271,7 +1275,26 @@ print("Status: PASSED")
         self.assertEqual(summary["tool"]["solver_name"], "z3")
         self.assertIn("--build-dir rel-build", summary["tool"]["command"])
 
-    def test_make_n_rtl_synthesis_sim_resolves_summary_backed_generated_artifacts(self) -> None:
+    def test_run_flow_falls_back_to_local_tlsf_lowering_when_syfco_is_missing(self) -> None:
+        missing_syfco = self.tools_dir / "__missing_syfco__"
+        result = self._run_run_flow(
+            syfco=missing_syfco,
+            build_dir="build/local-lowering",
+            summary="build/local-lowering/summary.json",
+        )
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+
+        summary_path = self.temp_root / "build" / "local-lowering" / "summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["overall_result"], "pass")
+        self.assertEqual(summary["input_lowering"]["kind"], "local_tlsf_lowering")
+        self.assertFalse(summary["input_lowering"]["syfco_used"])
+        self.assertEqual(summary["tool"]["syfco_version"], "not used (local tlsf lowering)")
+        self.assertTrue((self.temp_root / "build" / "local-lowering" / "generated" / "controller_spec.ltl").exists())
+
+    def test_make_n_rtl_synthesis_sim_uses_committed_canonical_artifacts(self) -> None:
         result = subprocess.run(
             ["make", "-n", "rtl-synthesis-sim"],
             cwd=self.temp_root,
@@ -1282,7 +1305,9 @@ print("Status: PASSED")
         output = result.stdout + result.stderr
 
         self.assertEqual(result.returncode, 0, msg=output)
-        self.assertIn("python3 rtl-synthesis/controller/run_flow.py", output)
+        self.assertNotIn("python3 rtl-synthesis/controller/run_flow.py", output)
+        self.assertIn("rtl-synthesis/results/canonical/sv/controller.sv", output)
+        self.assertIn("rtl-synthesis/results/canonical/sv/controller_spot_core.sv", output)
         self.assertIn("iverilog -g2012", output)
         self.assertIn("verilator --binary --timing", output)
 
@@ -1314,7 +1339,7 @@ print("Status: PASSED")
         self.assertNotIn("python3 rtl-synthesis/controller/run_flow.py", output)
 
         for dependency in (
-            self.temp_root / "rtl" / "src" / "mlp_core.sv",
+            self.temp_root / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
             self.temp_root / "rtl-synthesis" / "controller" / "formal" / "formal_closed_loop_mlp_core_equivalence.sv",
         ):
             prepare_up_to_date_summary()

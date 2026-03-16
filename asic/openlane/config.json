@@ -1,11 +1,11 @@
 {
   "DESIGN_NAME": "mlp_core",
   "VERILOG_FILES": [
-    "dir::../../rtl/src/mac_unit.sv",
-    "dir::../../rtl/src/relu_unit.sv",
-    "dir::../../rtl/src/controller.sv",
-    "dir::../../rtl/src/weight_rom.sv",
-    "dir::../../rtl/src/mlp_core.sv"
+    "dir::../../rtl/results/canonical/sv/mac_unit.sv",
+    "dir::../../rtl/results/canonical/sv/relu_unit.sv",
+    "dir::../../rtl/results/canonical/sv/controller.sv",
+    "dir::../../rtl/results/canonical/sv/weight_rom.sv",
+    "dir::../../rtl/results/canonical/sv/mlp_core.sv"
   ],
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 10,

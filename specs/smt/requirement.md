@@ -24,7 +24,7 @@ The `smt` domain is a verification and automation layer that sits beside `rtl`, 
 
 It covers:
 
-- controller and top-level RTL property checking for [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- controller and top-level RTL property checking for [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - QF_BV-style reasoning about fixed widths, wraparound, guards, and bounded traces
 - equivalence-style checks between RTL-level behavior and the frozen contract where practical
 

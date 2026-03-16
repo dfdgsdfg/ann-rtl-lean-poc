@@ -4,8 +4,8 @@
 
 The purpose of this domain is to restate the existing controller contract as a reactive-synthesis problem:
 
-- source contract: [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
-- integration context: [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- source contract: [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
+- integration context: [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - target form: a synthesized controller artifact equivalent to the hand-written FSM under explicit assumptions
 
 The design target is narrow on purpose. We are not synthesizing the neural-network datapath. The generation scope is the controller only.
@@ -29,14 +29,18 @@ At the same time, comparison and downstream tooling should not consume that mixe
 
 ```text
 rtl-synthesis/
-  sv/
-    mlp_core.sv
-    mac_unit.sv
-    relu_unit.sv
-    controller.sv
-    weight_rom.sv
-  blueprint/
-    mlp_core.svg
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        mac_unit.sv
+        relu_unit.sv
+        weight_rom.sv
+        controller.sv
+        controller_spot_compat.sv
+        controller_spot_core.sv
+      blueprint/
+        mlp_core.svg
 ```
 
 In that export tree, generated controller files, reused baseline datapath files, and branch-local overrides must all be visible from the branch path itself.
@@ -80,18 +84,18 @@ So the clean split is:
 - synthesize the controller
 - keep the datapath hand-written
 - integrate the result at the `mlp_core` boundary and compare it against the baseline FSM
-- materialize the compared mixed-path assembly as a branch-local full comparable `sv/` tree rather than relying on implicit reads from `rtl/src/`
+- materialize the compared mixed-path assembly as a branch-local full comparable `sv/` tree rather than relying on implicit reads from `rtl/results/canonical/sv/`
 
 ## 3. Abstraction Strategy
 
 ### 3.1 Problem With the Raw RTL Interface
 
-[`rtl/src/controller.sv`](../../rtl/src/controller.sv) consumes `hidden_idx[3:0]` and `input_idx[3:0]`.
+[`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) consumes `hidden_idx[3:0]` and `input_idx[3:0]`.
 
 That interface is awkward for GR(1)/TLSF for two reasons:
 
 - synthesis tools usually work best over Boolean control predicates, not arbitrary 4-bit arithmetic relations
-- the counters are not owned by the controller; they are updated in [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- the counters are not owned by the controller; they are updated in [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 
 So the synthesis problem must explicitly model a controller reacting to datapath observations, not a closed machine with total control over every state variable.
 
@@ -138,7 +142,7 @@ Control outputs are then constrained as derived signals:
 - `do_mac_hidden <-> phase_mac_hidden && hidden_mac_active`
 - `do_mac_output <-> phase_mac_output && output_mac_active`
 
-The wrapper layer can encode the one-hot phases back into the 4-bit `state` output used by [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv).
+The wrapper layer can encode the one-hot phases back into the 4-bit `state` output used by [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv).
 
 ## 4. GR(1)-Shaped Specification Plan
 
@@ -247,7 +251,7 @@ controller contract
   -> synthesis tool result
   -> translated controller artifact
   -> Verilog/SystemVerilog wrapper
-  -> comparison against rtl/src/controller.sv
+  -> comparison against rtl/results/canonical/sv/controller.sv
 ```
 
 Current repository shape for the implemented flow:
@@ -261,6 +265,15 @@ rtl-synthesis/
     formal/
       formal_controller_spot_equivalence.sv
       formal_closed_loop_mlp_core_equivalence.sv
+  results/
+    canonical/
+      sv/
+        controller.sv
+        controller_spot_compat.sv
+        controller_spot_core.sv
+        mlp_core.sv
+      blueprint/
+        mlp_core.svg
 
 build/
   rtl-synthesis/
@@ -293,14 +306,14 @@ The synthesized controller should be validated in three layers:
 
 2. **Controller-level secondary**
 
-- the synthesized controller agrees with [`rtl/src/controller.sv`](../../rtl/src/controller.sv) on phase ordering
+- the synthesized controller agrees with [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) on phase ordering
 - `busy` and `done` match
 - guard-cycle behavior matches
 - hold-in-`DONE` and release-to-`IDLE` match
 
 3. **Integrated RTL-level primary**
 
-- the wrapped synthesized controller can replace the hand-written controller inside [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- the wrapped synthesized controller can replace the hand-written controller inside [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - the primary formal claim compares baseline and mixed-path `mlp_core` assemblies under the same post-reset external inputs
 - the existing simulation vectors still pass
 - Yosys synthesis can compare QoR against the hand-written baseline

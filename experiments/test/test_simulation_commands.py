@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 TOP_LEVEL_TB = ROOT / "simulations" / "rtl" / "testbench.sv"
 INTERNAL_TB = ROOT / "simulations" / "rtl" / "testbench_internal.sv"
 SPARKLE_VENDOR_GIT = ROOT / "rtl-formalize-synthesis" / "vendor" / "Sparkle" / ".git"
-SPARKLE_RAW = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv"
-SPARKLE_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv"
+SPARKLE_RAW = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv"
+SPARKLE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
 SPARKLE_WRAPPER_GENERATOR = ROOT / "rtl-formalize-synthesis" / "scripts" / "generate_wrapper.py"
 
 
@@ -77,7 +77,7 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertIn("build/rtl-formalize-synthesis/sparkle_prepare.stamp", output)
         self.assertIn("cd rtl-formalize-synthesis && lake build TinyMLPSparkle.Emit", output)
         self.assertIn("python3 rtl-formalize-synthesis/scripts/generate_wrapper.py", output)
-        self.assertIn("sparkle_mlp_core_wrapper.sv", output)
+        self.assertIn("rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv", output)
 
     def test_sparkle_emit_target_executes_without_dirtying_tracked_artifacts(self) -> None:
         if shutil.which("lake") is None:

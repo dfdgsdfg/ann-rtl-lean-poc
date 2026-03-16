@@ -53,7 +53,7 @@ This family becomes required once the ASIC flow produces synthesized netlists or
 This family compares the baseline against alternative implementation paths without collapsing branch-support boundaries.
 
 - Generated RTL from `rtl-formalize-synthesis` versus hand-written `rtl/`
-- Controller-generated reactive synthesis from `rtl-synthesis` versus `rtl/src/controller.sv`
+- Controller-generated reactive synthesis from `rtl-synthesis` versus `rtl/results/canonical/sv/controller.sv`
 - Mixed-path experiments, such as a synthesized controller paired with the hand-written datapath
 - Scope-staged `rtl-formalize-synthesis` experiments: controller-only, primitive path, or full core
 
@@ -106,7 +106,7 @@ The experiment directory structure should default to branch-first organization:
 
 Tool-specific or generator-specific subfolders are acceptable underneath those branch folders when needed.
 
-Cross-branch comparison should treat the normalized `*/sv/` trees as the comparable RTL inputs. If a generated branch still reuses baseline RTL files, that reuse must be represented explicitly inside the branch-local export tree through symlinks or override files rather than by silently pointing comparison commands at `rtl/src/`.
+Cross-branch comparison should treat the normalized `*/sv/` trees as the comparable RTL inputs. If a generated branch still reuses baseline RTL files, that reuse must be represented explicitly inside the branch-local export tree through symlinks or override files rather than by silently pointing comparison commands at `rtl/results/canonical/sv/`.
 
 ## 5. Acceptance Criteria
 

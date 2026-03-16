@@ -2,10 +2,10 @@
 
 This directory holds the branch-local full-core generated RTL artifacts for `rtl-formalize-synthesis`.
 
-Files:
+Canonical files:
 
-- `sparkle_mlp_core.sv`: raw Sparkle-emitted full-core RTL
-- `sparkle_mlp_core_wrapper.sv`: stable generated `mlp_core` boundary used by the shared simulation bench, SMT flow, and experiment families
+- `rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`: raw Sparkle-emitted full-core RTL
+- `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`: stable generated `mlp_core` boundary used by the shared simulation bench, SMT flow, and experiment families
 
 Generation command:
 
@@ -35,8 +35,8 @@ Boundary and trust profile:
 - `evidence_method`: `dual_simulator_regression` in the direct simulation path, with downstream QoR and post-synth families layered on separately
 - `simulation_profile`: shared `simulations/rtl/testbench.sv`, shared vector artifacts, and required dual-simulator replay under Icarus and Verilator
 - internal observability: not required for this branch; the internal bench remains a baseline-oriented secondary check only
-- semantic baseline: `rtl/src/mlp_core.sv`
-- stable downstream module boundary: `sparkle_mlp_core_wrapper.sv`
+- semantic baseline: `rtl/results/canonical/sv/mlp_core.sv`
+- stable downstream module boundary: `mlp_core.sv`
 - proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the actual Sparkle Signal DSL full-core state/view (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`); the Lean theorem stops at Signal DSL semantics
 - backend trust boundary: Sparkle-to-Verilog remains trusted code generation
 - RTL validation: shared `mlp_core` vector regression, branch-comparison summaries, branch-aware SMT checks, QoR characterization, and downstream synthesis flows

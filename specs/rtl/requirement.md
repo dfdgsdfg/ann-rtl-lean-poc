@@ -177,29 +177,37 @@ Allowed implementation styles:
 
 ```text
 rtl/
-  src/
-    mlp_core.sv
-    mac_unit.sv
-    relu_unit.sv
-    controller.sv
-    weight_rom.sv
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        mac_unit.sv
+        relu_unit.sv
+        controller.sv
+        weight_rom.sv
+      blueprint/
+        mlp_core.svg
 ```
 
-The hand-written source tree above is the authoring surface for the baseline branch. For cross-branch comparison and downstream consumption, the baseline branch must also define a normalized export surface:
+The baseline branch keeps its source of truth directly in the canonical `results/canonical/sv/` tree shown above. There is no separate maintained `rtl/src/` authoring tree.
+
+For cross-branch comparison and downstream consumption, the baseline branch therefore uses the same normalized export surface:
 
 ```text
 rtl/
-  sv/
-    mlp_core.sv
-    mac_unit.sv
-    relu_unit.sv
-    controller.sv
-    weight_rom.sv
-  blueprint/
-    mlp_core.svg
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        mac_unit.sv
+        relu_unit.sv
+        controller.sv
+        weight_rom.sv
+      blueprint/
+        mlp_core.svg
 ```
 
-The `sv/` tree is the canonical comparable full-core RTL surface for the baseline branch. `src/` may remain the hand-maintained implementation tree, but branch comparison, documentation, and downstream branch-local artifact contracts should refer to `rtl/results/canonical/sv/` as the normalized export boundary.
+The `sv/` tree is the canonical comparable full-core RTL surface for the baseline branch, and it is also the maintained implementation tree for the branch.
 
 The `blueprint/` tree is the canonical schematic export surface for the baseline branch. Additional SVGs are allowed, but `blueprint/mlp_core.svg` is the minimum required comparable diagram artifact.
 
@@ -213,5 +221,5 @@ The `rtl` domain is complete when:
 4. The architecture and state semantics are stable enough to be consumed by the `formalize` domain.
 5. Boundary transitions at the final MAC and phase edges are explicitly verified by simulation and formalization.
 6. The exact `76`-cycle latency, level-based `done`, level-based `busy`, and `out_bit` validity contract are explicitly verified against the current RTL behavior.
-7. The branch defines a normalized comparable export tree at `rtl/results/canonical/sv/` rather than relying on readers or downstream tools to infer the baseline source layout from `rtl/src/`.
+7. The branch defines a normalized comparable export tree at `rtl/results/canonical/sv/` rather than relying on readers or downstream tools to infer the baseline source layout from `rtl/results/canonical/sv/`.
 8. The branch defines a normalized schematic export tree at `rtl/results/canonical/blueprint/` with at least `mlp_core.svg`.

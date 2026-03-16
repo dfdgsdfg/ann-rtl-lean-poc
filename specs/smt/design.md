@@ -5,7 +5,7 @@
 The SMT domain exists to add fast, automated, width-aware verification on top of the repository's current baseline:
 
 - frozen contract in `contract/results/canonical/`
-- hand-written RTL in `rtl/src/`
+- hand-written RTL in `rtl/results/canonical/sv/`
 - Lean formalization in `formalize/src/`
 - simulation flow in `simulations/`
 
@@ -52,7 +52,7 @@ The first SMT implementation should focus on properties that are already central
 
 ### 4.1 Controller Properties
 
-For [`rtl/src/controller.sv`](../../rtl/src/controller.sv):
+For [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv):
 
 - legal phase ordering
 - one-step transition correctness
@@ -63,7 +63,7 @@ For [`rtl/src/controller.sv`](../../rtl/src/controller.sv):
 
 ### 4.2 Top-Level Integration Properties
 
-For [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv):
+For [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv):
 
 - accepted `start` captures the intended transaction structure
 - hidden and output loop boundaries do not trigger duplicate work

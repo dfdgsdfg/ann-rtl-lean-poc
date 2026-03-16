@@ -52,9 +52,9 @@ The RTL is split into five modules:
 - `controller.sv`: FSM and loop-counter control
 - `weight_rom.sv`: constant storage for weights and biases
 
-For repository organization, this domain has two surfaces:
+For repository organization, this domain has a single maintained RTL surface:
 
-- authoring surface: `rtl/src/`
+- source-of-truth RTL surface: `rtl/results/canonical/sv/`
 - comparable export surface: `rtl/results/canonical/sv/`
 
 The exported `rtl/results/canonical/sv/` tree should mirror the baseline full-core module set so that branch-comparison and downstream consumers do not need branch-specific path logic to locate comparable RTL artifacts.

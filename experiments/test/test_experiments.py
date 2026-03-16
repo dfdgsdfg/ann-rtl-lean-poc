@@ -304,11 +304,11 @@ class ExperimentFlowTests(unittest.TestCase):
             )
             self.assertEqual(
                 sparkle_branch["manifest"]["artifacts"]["generated_wrapper"],
-                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv",
+                "rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv",
             )
             self.assertEqual(
                 sparkle_branch["manifest"]["artifacts"]["generated_core"],
-                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv",
+                "rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv",
             )
             self.assert_boundary_metadata(
                 sparkle_branch["manifest"],
@@ -631,7 +631,7 @@ class ExperimentFlowTests(unittest.TestCase):
             build_root = Path(tmpdir)
             stale_root = build_root / "stale-sparkle"
             stale_root.mkdir(parents=True, exist_ok=True)
-            wrapper_path = stale_root / "sparkle_mlp_core_wrapper.sv"
+            wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             self.write_valid_sparkle_artifacts(core_path, wrapper_path)
@@ -681,7 +681,7 @@ class ExperimentFlowTests(unittest.TestCase):
     def test_stale_sparkle_wrapper_fails_freshness_check(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             stale_root = Path(tmpdir)
-            wrapper_path = stale_root / "sparkle_mlp_core_wrapper.sv"
+            wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             self.write_valid_sparkle_artifacts(core_path, wrapper_path)
@@ -707,7 +707,7 @@ class ExperimentFlowTests(unittest.TestCase):
     def test_missing_sparkle_dependency_fails_freshness_check(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             stale_root = Path(tmpdir)
-            wrapper_path = stale_root / "sparkle_mlp_core_wrapper.sv"
+            wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             missing_dependency = stale_root / "lake-manifest.json"
@@ -728,7 +728,7 @@ class ExperimentFlowTests(unittest.TestCase):
     def test_malformed_sparkle_generated_core_fails_freshness_check(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             stale_root = Path(tmpdir)
-            wrapper_path = stale_root / "sparkle_mlp_core_wrapper.sv"
+            wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             core_path.write_text("module TinyMLP_sparkleMlpCorePacked (input logic clk);\nendmodule\n", encoding="utf-8")
@@ -749,7 +749,7 @@ class ExperimentFlowTests(unittest.TestCase):
     def test_mismatched_sparkle_wrapper_fails_freshness_check(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
             stale_root = Path(tmpdir)
-            wrapper_path = stale_root / "sparkle_mlp_core_wrapper.sv"
+            wrapper_path = stale_root / "mlp_core.sv"
             core_path = stale_root / "sparkle_mlp_core.sv"
             source_path = stale_root / "ContractData.lean"
             self.write_valid_sparkle_artifacts(core_path, wrapper_path)

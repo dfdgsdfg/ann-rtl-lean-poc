@@ -90,7 +90,7 @@ Typical questions:
 
 ### RTL-Synthesis Studies
 
-Compare controller artifacts produced from temporal specifications against `rtl/src/controller.sv`.
+Compare controller artifacts produced from temporal specifications against `rtl/results/canonical/sv/controller.sv`.
 
 Typical questions:
 
@@ -156,7 +156,7 @@ Layout rules:
 - generated artifacts should stay outside the canonical `rtl/` source tree
 - mixed-path experiments should live under the branch that owns the replacement logic, not under the baseline branch
 - if tool-specific subfolders are needed, they should sit underneath the branch folder rather than replacing the branch layer
-- if a generated branch reuses baseline RTL, that reuse should be materialized inside the branch-local `sv/` tree through symlinks or override files instead of hidden direct references to `rtl/src/`
+- if a generated branch reuses baseline RTL, that reuse should be materialized inside the branch-local `sv/` tree through symlinks or override files instead of hidden direct references to `rtl/results/canonical/sv/`
 
 ## 5. Suggested Workflow
 

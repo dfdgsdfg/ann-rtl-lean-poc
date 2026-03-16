@@ -34,7 +34,7 @@ The arithmetic datapath should stay anchored to the frozen contract. Reactive sy
 
 ## Guardrails
 
-- Do not overwrite `rtl/src/*.sv` with generated outputs.
+- Do not overwrite `rtl/results/canonical/sv/*.sv` with generated outputs.
 - Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthesis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
 - Treat `contract/results/canonical/weights.json` as the shared semantic anchor for all implementation variants.
 - Treat `formalize/` as the semantic/proof anchor until a trustworthy generator exists.
@@ -55,7 +55,7 @@ Any implementation-branch comparison should report at least:
 
 ## Reactive-Synthesis Track
 
-The clean experiment is to synthesize a controller equivalent to `rtl/src/controller.sv`, not to synthesize the entire neural-network circuit.
+The clean experiment is to synthesize a controller equivalent to `rtl/results/canonical/sv/controller.sv`, not to synthesize the entire neural-network circuit.
 
 In the current repository terminology this means:
 

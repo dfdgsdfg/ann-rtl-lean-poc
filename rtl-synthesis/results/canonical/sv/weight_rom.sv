@@ -1,0 +1,1 @@
+../../../../rtl/results/canonical/sv/weight_rom.sv

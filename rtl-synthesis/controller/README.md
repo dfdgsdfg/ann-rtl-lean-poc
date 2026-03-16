@@ -5,8 +5,8 @@ This directory contains the committed source inputs for the `rtl-synthesis` cont
 Stable source assets:
 
 - `controller.tlsf`: TLSF contract for the controller phase machine
-- `formal/formal_controller_spot_equivalence.sv`: bounded exact-schedule sampled-interface equivalence harness against `rtl/src/controller.sv`
-- `formal/formal_closed_loop_mlp_core_equivalence.sv`: bounded mixed-path full-core equivalence harness against `rtl/src/mlp_core.sv`
+- `formal/formal_controller_spot_equivalence.sv`: bounded exact-schedule sampled-interface equivalence harness against `rtl/results/canonical/sv/controller.sv`
+- `formal/formal_closed_loop_mlp_core_equivalence.sv`: bounded mixed-path full-core equivalence harness against `rtl/results/canonical/sv/mlp_core.sv`
 - `run_flow.py`: driver that runs `ltlsynt`, translates AIGER with Yosys, and checks both secondary controller-only parity and primary closed-loop parity
 
 The committed TLSF uses the `exact_schedule_v1` assumption profile:
@@ -28,7 +28,7 @@ Generated outputs are written under `build/rtl-synthesis/spot/`.
 
 The committed compatibility wrapper lives in:
 
-- `experiments/rtl-synthesis/spot/controller_spot_compat.sv`
+- `rtl-synthesis/results/canonical/sv/controller_spot_compat.sv`
 
 That wrapper is paired with the build-generated `controller_spot_core.sv` and build-generated `controller.sv` alias for mixed-path simulation. The mixed-path simulation path reuses `simulations/rtl/testbench.sv` as the maintained top-level bench; the optional internal-observability replay reuses `simulations/rtl/testbench_internal.sv`.
 

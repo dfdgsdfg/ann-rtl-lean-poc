@@ -52,8 +52,9 @@ They should also prefer a branch-first layout:
 - branch-local comparable RTL exports should align on `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
 - branch-local blueprint exports should align on `rtl/results/canonical/blueprint/`, `rtl-synthesis/results/canonical/blueprint/`, and `rtl-formalize-synthesis/results/canonical/blueprint/`
 
-The specs should distinguish between authoring-source trees and comparable export trees:
+The specs should distinguish between domain source trees and comparable export trees:
 
-- `rtl/src/`, `rtl-synthesis/controller/`, and `rtl-formalize-synthesis/src/` are domain-internal source locations
+- `rtl/results/canonical/sv/` is both the baseline source-of-truth RTL tree and the comparable export tree
+- `rtl-synthesis/controller/` and `rtl-formalize-synthesis/src/` remain domain-internal source locations
 - `*/sv/` is the normalized branch-local comparable RTL surface consumed by branch comparison and downstream validation
 - `*/blueprint/` is the normalized branch-local schematic surface, with at least `mlp_core.svg` required for each branch

@@ -63,19 +63,19 @@ SIM_TB = ROOT / "simulations" / "rtl" / "testbench.sv"
 SIM_INTERNAL_TB = ROOT / "simulations" / "rtl" / "testbench_internal.sv"
 SIM_INCLUDE_DIR = ROOT / "simulations" / "shared"
 BASELINE_RTL = [
-    ROOT / "rtl" / "src" / "mac_unit.sv",
-    ROOT / "rtl" / "src" / "relu_unit.sv",
-    ROOT / "rtl" / "src" / "controller.sv",
-    ROOT / "rtl" / "src" / "weight_rom.sv",
-    ROOT / "rtl" / "src" / "mlp_core.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
 ]
 BASELINE_RTL_NO_CONTROLLER = [
-    ROOT / "rtl" / "src" / "mac_unit.sv",
-    ROOT / "rtl" / "src" / "relu_unit.sv",
-    ROOT / "rtl" / "src" / "weight_rom.sv",
-    ROOT / "rtl" / "src" / "mlp_core.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
 ]
-SPOT_COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+SPOT_COMPAT_WRAPPER = ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"
 SPARKLE_PROJECT_DIR = ROOT / "rtl-formalize-synthesis"
 SPARKLE_LAKEFILE = SPARKLE_PROJECT_DIR / "lakefile.lean"
 SPARKLE_PREPARE_SCRIPT = SPARKLE_PROJECT_DIR / "scripts" / "prepare_sparkle.sh"
@@ -83,8 +83,8 @@ SPARKLE_WRAPPER_GENERATOR = SPARKLE_PROJECT_DIR / "scripts" / "generate_wrapper.
 SPARKLE_PATCH_PATH = SPARKLE_PROJECT_DIR / "patches" / "sparkle-local.patch"
 SPARKLE_LEAN_TOOLCHAIN = SPARKLE_PROJECT_DIR / "lean-toolchain"
 SPARKLE_LAKE_MANIFEST = SPARKLE_PROJECT_DIR / "lake-manifest.json"
-SPARKLE_FULL_CORE_RTL = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core.sv"
-SPARKLE_FULL_CORE_WRAPPER = ROOT / "experiments" / "rtl-formalize-synthesis" / "sparkle" / "sparkle_mlp_core_wrapper.sv"
+SPARKLE_FULL_CORE_RTL = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv"
+SPARKLE_FULL_CORE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
 SEMANTIC_BRIDGE_SCRIPT = ROOT / "formalize" / "scripts" / "ExportSemanticBridge.lean"
 OPENLANE_TEMPLATE = ROOT / "asic" / "openlane" / "config.json"
 OPENLANE_FLOORPLAN = ROOT / "asic" / "openlane" / "floorplan.tcl"
@@ -283,7 +283,6 @@ def missing_rtl_synthesis_tools(args: argparse.Namespace) -> list[str]:
         label
         for label, tool in (
             ("ltlsynt", args.ltlsynt),
-            ("syfco", args.syfco),
             ("yosys", args.yosys),
             ("yosys-smtbmc", args.smtbmc),
             ("z3", args.z3),

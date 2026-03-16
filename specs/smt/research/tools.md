@@ -232,7 +232,7 @@ This project formalizes a 4-8-1 quantized MLP inference chip. The fixed-point ar
 
 ### Recommended additions to this stack
 
-1. **SymbiYosys**: Add SVA assertions to RTL (`rtl/src/*.sv`), run BMC as CI complement to Lean proofs. Catches shallow bugs fast.
+1. **SymbiYosys**: Add SVA assertions to RTL (`rtl/results/canonical/sv/*.sv`), run BMC as CI complement to Lean proofs. Catches shallow bugs fast.
 2. **lean-smt or querySMT**: Use for arithmetic lemmas in `Defs/SpecCore.lean` bounds proofs (e.g., `int8_mul_int8_bounds`, `hiddenSpecAt8_*_bounds`). Could replace manual `by_cases` + `omega` proofs with automated SMT calls.
 3. **Bitwuzla**: Best choice if standalone QF_BV queries are needed for overflow analysis of the MAC datapath.
 

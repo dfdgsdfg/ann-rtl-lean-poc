@@ -126,7 +126,7 @@ If branch-local simulation support exists, the directory structure must make the
 - `rtl-synthesis` may reuse the baseline bench when it preserves the `mlp_core` boundary
 - `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
 - branch comparison and downstream simulation inputs should resolve through `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
-- if a generated branch reuses baseline RTL, that reuse must appear inside the branch-local `sv/` tree via symlink or override rather than through hidden direct bench references to `rtl/src/`
+- if a generated branch reuses baseline RTL, that reuse must appear inside the branch-local `sv/` tree via symlink or override rather than through hidden direct bench references to `rtl/results/canonical/sv/`
 - each branch should expose at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact paired with the compared RTL tree
 
 ## 7. Acceptance Criteria

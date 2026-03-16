@@ -80,7 +80,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) generates three artifact
 
 ```mermaid
 graph TD
-    W[contract/results/canonical/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
+    W[contract/results/canonical/weights.json] --> ROM["rtl/results/canonical/sv/weight_rom.sv<br/>SystemVerilog ROM constants"]
     W --> SPEC["formalize/src/TinyMLP/Defs/SpecCore.lean<br/>Lean weight definitions"]
     W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
@@ -518,7 +518,7 @@ For the full solver-backed verification story, see [`docs/solver-backed-verifica
 
 Simulation checks the actual Verilog empirically. SMT checks key bounded properties over the committed RTL. The third approach narrows the gap structurally: generate RTL from a Lean-hosted hardware model.
 
-The `rtl-formalize-synthesis/` domain now emits a full-core `mlp_core` implementation through [Sparkle](https://github.com/opencompl/sparkle), a Signal DSL hosted in Lean 4 with a Verilog backend. The stable downstream boundary is [`sparkle_mlp_core_wrapper.sv`](../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv), which preserves the repository's `mlp_core` top-level interface while unpacking the raw Sparkle module output bus.
+The `rtl-formalize-synthesis/` domain now emits a full-core `mlp_core` implementation through [Sparkle](https://github.com/opencompl/sparkle), a Signal DSL hosted in Lean 4 with a Verilog backend. The stable downstream boundary is [`mlp_core.sv`](../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv), which preserves the repository's `mlp_core` top-level interface while unpacking the raw Sparkle module output bus.
 
 ### The Trust Chain
 
@@ -527,7 +527,7 @@ graph LR
     PURE["formalize/<br/>machine + temporal semantics"] --> CTRL["Refinement.lean<br/>controller refinement"]
     CTRL --> DSL["MlpCoreSignal.lean<br/>Sparkle Signal DSL"]
     DSL --> EMIT["Emit.lean<br/>code generation"]
-    EMIT --> WRAP["sparkle_mlp_core_wrapper.sv<br/>stable mlp_core boundary"]
+    EMIT --> WRAP["mlp_core.sv<br/>stable mlp_core boundary"]
     WRAP --> CHECK["shared simulation +<br/>QoR / downstream flow"]
 ```
 
@@ -570,8 +570,8 @@ The previous sections described four independent approaches to the same question
 ```mermaid
 graph LR
     PY["Python Reference<br/>ann/src/model.py"] ---|"same arithmetic<br/>same weights"| LEAN["Lean mlpFixed<br/>FixedPoint.lean"]
-    LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/src/*.sv"]
-    LEAN ---|"Sparkle controller refinement<br/>+ full-core code generation"| GEN["Generated Full Core<br/>sparkle_mlp_core_wrapper"]
+    LEAN ---|"step mirrors FSM<br/>rtl_correct theorem"| RTL["RTL mlp_core<br/>rtl/results/canonical/sv/*.sv"]
+    LEAN ---|"Sparkle controller refinement<br/>+ full-core code generation"| GEN["Generated Full Core<br/>mlp_core.sv"]
     RTL ---|"simulation<br/>test vectors"| PY
     RTL ---|"bounded proofs<br/>over real Verilog"| SMT["SMT / Formal<br/>Yosys + Z3"]
     SMT ---|"contract-tied<br/>QF_BV proofs"| PY

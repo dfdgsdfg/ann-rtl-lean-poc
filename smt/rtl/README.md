@@ -8,13 +8,13 @@ Current entrypoints:
 
 The baseline `check_control.py` flow proves against the real RTL:
 
-- [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
-- [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
+- [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 
 The Sparkle branch uses the same harness family at the shared `mlp_core` boundary, but swaps in these generated sources:
 
-- [`experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv`](../../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv)
-- [`experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv`](../../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv)
+- [`rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv)
+- [`rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`](../../rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv)
 
 Implementation notes:
 

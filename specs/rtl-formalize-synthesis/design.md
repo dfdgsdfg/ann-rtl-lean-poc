@@ -104,6 +104,19 @@ Where:
 
 The final directory names are less important than preserving this separation of concerns.
 
+The current committed downstream comparison surface is:
+
+```text
+rtl-formalize-synthesis/
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        sparkle_mlp_core.sv
+      blueprint/
+        mlp_core.svg
+```
+
 ## 4. Sparkle-Specific Design Rules
 
 Sparkle appears to support a synthesizable Signal DSL, named state helpers, and Verilog/SystemVerilog emission. The design here should lean into those strengths.
@@ -155,7 +168,7 @@ Each emitted artifact should state:
 
 The current repository already uses `contract/src/downstream_sync.py` to generate:
 
-- [`rtl/src/weight_rom.sv`](../../rtl/src/weight_rom.sv)
+- [`rtl/results/canonical/sv/weight_rom.sv`](../../rtl/results/canonical/sv/weight_rom.sv)
 - [`formalize/src/TinyMLP/Defs/SpecCore.lean`](../../formalize/src/TinyMLP/Defs/SpecCore.lean)
 
 The Sparkle path should join that same synchronization flow rather than fork a new manual path.

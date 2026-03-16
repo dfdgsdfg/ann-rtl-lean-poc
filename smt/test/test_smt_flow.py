@@ -81,8 +81,8 @@ class SmtFlowTests(unittest.TestCase):
         self.assertEqual(
             sparkle_summary["sources"]["rtl"],
             [
-                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core_wrapper.sv",
-                "experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv",
+                "rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv",
+                "rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv",
             ],
         )
         self.assertEqual(overflow_summary["encoding"]["contract_hidden_product_bits"], 16)

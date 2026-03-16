@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the requirements for synthesizing the controller contract from [`rtl/src/controller.sv`](../../rtl/src/controller.sv) using a reactive-synthesis workflow.
+This document defines the requirements for synthesizing the controller contract from [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) using a reactive-synthesis workflow.
 
 In this repository, the `rtl-synthesis` domain means:
 
@@ -27,7 +27,7 @@ It covers:
 
 - the `start` / `busy` / `done` handshake contract
 - the FSM phase ordering implemented by `controller.sv`
-- the controller outputs consumed by [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- the controller outputs consumed by [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - the assumptions required because `hidden_idx` and `input_idx` are datapath-owned signals
 
 It does not cover:
@@ -67,7 +67,7 @@ The target FSM states are:
 - `BIAS_OUTPUT`
 - `DONE`
 
-The target transition behavior is the same as [`rtl/src/controller.sv`](../../rtl/src/controller.sv):
+The target transition behavior is the same as [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv):
 
 - `IDLE` -> `LOAD_INPUT` when `start`
 - `IDLE` -> `IDLE` when `!start`
@@ -141,7 +141,7 @@ Those assumptions must include:
 - after `do_bias_output`, the output-loop guard condition remains consistent with the `DONE` entry behavior
 - reset drives the controller back to the `IDLE` contract
 
-If exact `76`-cycle latency is claimed, the assumptions must be strong enough to enforce the concrete counter schedule implemented by [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv), not just eventual loop completion.
+If exact `76`-cycle latency is claimed, the assumptions must be strong enough to enforce the concrete counter schedule implemented by [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv), not just eventual loop completion.
 
 ## 6. Guarantee Requirements
 
@@ -196,21 +196,25 @@ The synthesis flow must produce or record:
 - the translation step from the synthesis-tool artifact into an RTL-consumable form
 - a branch-local comparable full-core RTL export tree under `rtl-synthesis/results/canonical/sv/`
 - a branch-local schematic export tree under `rtl-synthesis/results/canonical/blueprint/`
-- a controller-scoped comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
-- a mixed-path full-core comparison report against [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
+- a controller-scoped comparison report against [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
+- a mixed-path full-core comparison report against [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 
 The normalized branch-local export tree must provide a full `mlp_core`-comparable file layout, even though the generation scope remains controller-only. At minimum, that comparable surface should make these branch-owned paths available:
 
 ```text
 rtl-synthesis/
-  sv/
-    mlp_core.sv
-    mac_unit.sv
-    relu_unit.sv
-    controller.sv
-    weight_rom.sv
-  blueprint/
-    mlp_core.svg
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        mac_unit.sv
+        relu_unit.sv
+        weight_rom.sv
+        controller.sv
+        controller_spot_compat.sv
+        controller_spot_core.sv
+      blueprint/
+        mlp_core.svg
 ```
 
 If the branch reuses baseline RTL modules, that reuse must be explicit inside the branch-local export tree:
@@ -218,7 +222,7 @@ If the branch reuses baseline RTL modules, that reuse must be explicit inside th
 - by checked-in symlinks such as `ln -s ../../../rtl/results/canonical/sv/mac_unit.sv rtl-synthesis/results/canonical/sv/mac_unit.sv`
 - or by branch-local override files that wrap, replace, or pin the reused artifact contract
 
-Implicit downstream consumption of `rtl/src/*.sv` outside the branch-local `rtl-synthesis/results/canonical/sv/` tree is not an acceptable comparison contract.
+Implicit downstream consumption of `rtl/results/canonical/sv/*.sv` outside the branch-local `rtl-synthesis/results/canonical/sv/` tree is not an acceptable comparison contract.
 
 ## 9. Validation Requirements
 
@@ -247,5 +251,5 @@ The `rtl-synthesis` domain is complete when:
 6. The branch materializes a self-contained comparable export tree at `rtl-synthesis/results/canonical/sv/`, with any baseline reuse represented explicitly through branch-local symlinks or override files.
 7. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
 8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact.
-9. The repository also records the secondary controller-scoped comparison against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and keeps its assumption profile explicit.
+9. The repository also records the secondary controller-scoped comparison against [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and keeps its assumption profile explicit.
 10. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.

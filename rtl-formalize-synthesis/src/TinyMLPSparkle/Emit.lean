@@ -31,6 +31,6 @@ abbrev sparkleMlpCorePacked {dom : DomainConfig}
     (in3 : Sparkle.Core.Signal.Signal dom (BitVec 8)) :=
   _root_.TinyMLP.Sparkle.sparkleMlpCorePacked start in0 in1 in2 in3
 
-#writeVerilogDesignNoDRC sparkleMlpCorePacked "../experiments/rtl-formalize-synthesis/sparkle/sparkle_mlp_core.sv"
+#writeVerilogDesignNoDRC sparkleMlpCorePacked "../rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv"
 
 end TinyMLP

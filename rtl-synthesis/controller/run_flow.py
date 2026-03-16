@@ -24,14 +24,14 @@ VENDORED_SYFCO = VENDOR_DIR / "syfco-install" / "bin" / "syfco"
 TLSF_SOURCE = DOMAIN_ROOT / "controller.tlsf"
 FORMAL_INTERFACE_HARNESS = DOMAIN_ROOT / "formal" / "formal_controller_spot_equivalence.sv"
 FORMAL_CLOSED_LOOP_HARNESS = DOMAIN_ROOT / "formal" / "formal_closed_loop_mlp_core_equivalence.sv"
-BASELINE_CONTROLLER = ROOT / "rtl" / "src" / "controller.sv"
-BASELINE_MLP_CORE = ROOT / "rtl" / "src" / "mlp_core.sv"
+BASELINE_CONTROLLER = ROOT / "rtl" / "results" / "canonical" / "sv" / "controller.sv"
+BASELINE_MLP_CORE = ROOT / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv"
 SHARED_DATAPATH_SOURCES = [
-    ROOT / "rtl" / "src" / "mac_unit.sv",
-    ROOT / "rtl" / "src" / "relu_unit.sv",
-    ROOT / "rtl" / "src" / "weight_rom.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
 ]
-COMPAT_WRAPPER = ROOT / "experiments" / "rtl-synthesis" / "spot" / "controller_spot_compat.sv"
+COMPAT_WRAPPER = ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"
 
 SPEC_SOURCES = [
     "specs/rtl-synthesis/requirement.md",
@@ -83,6 +83,17 @@ SECONDARY_CLAIM_SCOPE = (
     "through MAC_OUTPUT, BIAS_OUTPUT, DONE, and DONE hold/release under "
     "exact_schedule_v1 assumptions"
 )
+
+
+@dataclass(frozen=True)
+class LoweredTlsf:
+    inputs: list[str]
+    outputs: list[str]
+    preset: list[str]
+    require: list[str]
+    assertions: list[str]
+    guarantees: list[str]
+    formula: str
 
 
 def preferred_tool_path(vendored_path: Path, executable_name: str) -> str:
@@ -220,6 +231,75 @@ def declared_symbol_lines() -> list[str]:
     lines = [f"i{idx} {name}" for idx, name in enumerate(ABSTRACT_INPUTS)]
     lines.extend(f"o{idx} {name}" for idx, name in enumerate(PHASE_OUTPUTS))
     return lines
+
+
+def extract_braced_block(text: str, label: str) -> str:
+    match = re.search(rf"\b{re.escape(label)}\s*\{{", text)
+    if match is None:
+        raise ValueError(f"missing TLSF section: {label}")
+    idx = match.end()
+    depth = 1
+    start = idx
+    while idx < len(text):
+        char = text[idx]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:idx]
+        idx += 1
+    raise ValueError(f"unterminated TLSF section: {label}")
+
+
+def split_tlsf_entries(text: str) -> list[str]:
+    return [entry.strip() for entry in text.split(";") if entry.strip()]
+
+
+def conjunct(formulas: list[str]) -> str:
+    if not formulas:
+        return "true"
+    if len(formulas) == 1:
+        return f"({formulas[0]})"
+    return "(" + " && ".join(f"({formula})" for formula in formulas) + ")"
+
+
+def normalize_formula_whitespace(formula: str) -> str:
+    return re.sub(r"\s+", " ", formula).strip()
+
+
+def lower_tlsf_spec(path: Path) -> LoweredTlsf:
+    text = path.read_text(encoding="utf-8")
+    main_body = extract_braced_block(text, "MAIN")
+    inputs = split_tlsf_entries(extract_braced_block(main_body, "INPUTS"))
+    outputs = split_tlsf_entries(extract_braced_block(main_body, "OUTPUTS"))
+    preset = split_tlsf_entries(extract_braced_block(main_body, "PRESET"))
+    require = split_tlsf_entries(extract_braced_block(main_body, "REQUIRE"))
+    assertions = split_tlsf_entries(extract_braced_block(main_body, "ASSERT"))
+    guarantees = split_tlsf_entries(extract_braced_block(main_body, "GUARANTEE"))
+    formula = f"({conjunct(require)}) -> ({conjunct([*preset, *assertions, *guarantees])})"
+    return LoweredTlsf(
+        inputs=inputs,
+        outputs=outputs,
+        preset=preset,
+        require=require,
+        assertions=assertions,
+        guarantees=guarantees,
+        formula=formula,
+    )
+
+
+def ltlsynt_problem_args(*, syfco: str, lowered_formula_path: Path, lowered_tlsf: LoweredTlsf) -> tuple[list[str], str]:
+    if tool_exists(syfco):
+        return ["--tlsf", str(TLSF_SOURCE)], "native_tlsf_via_syfco"
+    return [
+        "--file",
+        str(lowered_formula_path),
+        "--ins",
+        ",".join(lowered_tlsf.inputs),
+        "--outs",
+        ",".join(lowered_tlsf.outputs),
+    ], "local_tlsf_lowering"
 
 
 def prepare_solver_env(
@@ -495,8 +575,31 @@ def main() -> int:
     logs_dir = build_dir / "logs"
     generated_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
+    lowered_formula_path = generated_dir / "controller_spec.ltl"
+    lowered_partition_path = generated_dir / "controller_partition.json"
+    lowered_tlsf = lower_tlsf_spec(TLSF_SOURCE)
+    write_text(lowered_formula_path, normalize_formula_whitespace(lowered_tlsf.formula) + "\n")
+    write_text(
+        lowered_partition_path,
+        json.dumps(
+            {
+                "inputs": lowered_tlsf.inputs,
+                "outputs": lowered_tlsf.outputs,
+                "preset": lowered_tlsf.preset,
+                "require": lowered_tlsf.require,
+                "assert": lowered_tlsf.assertions,
+                "guarantee": lowered_tlsf.guarantees,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+    )
 
-    shared_env = tool_env(args.ltlsynt, args.syfco, args.yosys, args.smtbmc, args.solver)
+    env_tools = [args.ltlsynt, args.yosys, args.smtbmc, args.solver]
+    if tool_exists(args.syfco):
+        env_tools.insert(1, args.syfco)
+    shared_env = tool_env(*env_tools)
     shared_env, solver_launcher = prepare_solver_env(
         solver_name=args.solver_name,
         solver_bin=args.solver,
@@ -537,10 +640,15 @@ def main() -> int:
     controller_equivalence_details: dict[str, object] = {}
     closed_loop_equivalence_result = "skip"
     closed_loop_equivalence_details: dict[str, object] = {}
+    problem_args, input_lowering = ltlsynt_problem_args(
+        syfco=args.syfco,
+        lowered_formula_path=lowered_formula_path,
+        lowered_tlsf=lowered_tlsf,
+    )
 
     tool_failures = [
         tool
-        for tool in (args.ltlsynt, args.syfco, args.yosys, args.smtbmc, args.solver)
+        for tool in (args.ltlsynt, args.yosys, args.smtbmc, args.solver)
         if not tool_exists(tool)
     ]
 
@@ -561,7 +669,7 @@ def main() -> int:
         write_text(closed_loop_equivalence_smtbmc_log, "")
     else:
         realisability_proc = run_command(
-            [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--realizability"],
+            [args.ltlsynt, *problem_args, "--realizability"],
             env=shared_env,
         )
         realisability_output = (realisability_proc.stdout + realisability_proc.stderr).strip()
@@ -584,7 +692,7 @@ def main() -> int:
 
         if realisability_result == "pass":
             generate_proc = run_command(
-                [args.ltlsynt, "--tlsf", str(TLSF_SOURCE), "--aiger", "--verify", "--hide-status"],
+                [args.ltlsynt, *problem_args, "--aiger", "--verify", "--hide-status"],
                 env=shared_env,
             )
             generate_output = (generate_proc.stdout or "") + (generate_proc.stderr or "")
@@ -714,7 +822,11 @@ def main() -> int:
             break
 
     ltlsynt_version = tool_version([[args.ltlsynt, "--version"], [args.ltlsynt, "-h"]])
-    syfco_version = tool_version([[args.syfco, "--version"], [args.syfco, "-h"]])
+    syfco_version = (
+        tool_version([[args.syfco, "--version"], [args.syfco, "-h"]])
+        if tool_exists(args.syfco)
+        else "not used (local tlsf lowering)"
+    )
     yosys_version = tool_version([[args.yosys, "-V"]])
     smtbmc_version = tool_version([[args.smtbmc, "-h"]], fallback=f"bundled with {yosys_version}")
     solver_version = tool_version([[args.solver, "-version"], [args.solver, "--version"]])
@@ -723,7 +835,9 @@ def main() -> int:
         CommandArtifact(
             name="realisability",
             result=realisability_result,
-            command=f"{args.ltlsynt} --tlsf {TLSF_SOURCE} --realizability",
+            command=" ".join(
+                [args.ltlsynt, *problem_args, "--realizability"]
+            ),
             log=relative(realisability_log),
             artifacts={},
             details=realisability_details,
@@ -731,7 +845,9 @@ def main() -> int:
         CommandArtifact(
             name="aiger_generation",
             result=synthesis_result,
-            command=f"{args.ltlsynt} --tlsf {TLSF_SOURCE} --aiger --verify --hide-status",
+            command=" ".join(
+                [args.ltlsynt, *problem_args, "--aiger", "--verify", "--hide-status"]
+            ),
             log=relative(generate_log),
             artifacts={
                 "aiger": relative(aiger_path),
@@ -797,6 +913,13 @@ def main() -> int:
         "secondary_claim_scope": SECONDARY_CLAIM_SCOPE,
         "claim_scope": PRIMARY_CLAIM_SCOPE,
         **({"failure_reason": failure_reason} if failure_reason is not None else {}),
+        "input_lowering": {
+            "kind": input_lowering,
+            "formula": relative(lowered_formula_path),
+            "partition": relative(lowered_partition_path),
+            "syfco": str(args.syfco),
+            "syfco_used": input_lowering == "native_tlsf_via_syfco",
+        },
         "tool": {
             "driver": "python3 rtl-synthesis/controller/run_flow.py",
             "ltlsynt": str(args.ltlsynt),
@@ -818,6 +941,8 @@ def main() -> int:
         },
         "sources": {
             "tlsf": relative(TLSF_SOURCE),
+            "lowered_formula": relative(lowered_formula_path),
+            "lowered_partition": relative(lowered_partition_path),
             "baseline_controller": relative(BASELINE_CONTROLLER),
             "baseline_mlp_core": relative(BASELINE_MLP_CORE),
             "compat_wrapper": relative(COMPAT_WRAPPER),

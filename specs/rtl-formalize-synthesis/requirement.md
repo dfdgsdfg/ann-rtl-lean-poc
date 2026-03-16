@@ -20,7 +20,7 @@ This domain is distinct from:
 
 The target is a generated full-core implementation of `mlp_core` derived from Lean.
 
-The normative downstream boundary for this domain is the full top-level module interface currently provided by [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv):
+The normative downstream boundary for this domain is the full top-level module interface currently provided by [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv):
 
 - `clk`
 - `rst_n`
@@ -151,14 +151,13 @@ The normalized export tree should make the branch-comparison surface obvious:
 
 ```text
 rtl-formalize-synthesis/
-  sv/
-    mlp_core.sv
-    mac_unit.sv
-    relu_unit.sv
-    controller.sv
-    weight_rom.sv
-  blueprint/
-    mlp_core.svg
+  results/
+    canonical/
+      sv/
+        mlp_core.sv
+        sparkle_mlp_core.sv
+      blueprint/
+        mlp_core.svg
 ```
 
 The comparable `sv/` tree may contain branch-local generated modules, branch-local wrappers, or explicit symlinked baseline modules when reuse is still required. If reuse exists, it must be expressed inside `rtl-formalize-synthesis/results/canonical/sv/` through branch-local symlinks or override files rather than through implicit direct comparison against files outside the branch tree.

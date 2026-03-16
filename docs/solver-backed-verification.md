@@ -65,11 +65,11 @@ The Python encoder reads the frozen weights and arithmetic rules from `contract/
 
 ## 3. What the RTL Track Proves
 
-The RTL track proves baseline property families over the hand-written `rtl/src/controller.sv` and `rtl/src/mlp_core.sv`.
+The RTL track proves baseline property families over the hand-written `rtl/results/canonical/sv/controller.sv` and `rtl/results/canonical/sv/mlp_core.sv`.
 
 ### Controller Properties
 
-The `controller_interface` family proves against `rtl/src/controller.sv` alone:
+The `controller_interface` family proves against `rtl/results/canonical/sv/controller.sv` alone:
 
 | Property | What it says |
 |----------|-------------|
@@ -83,7 +83,7 @@ These are proved to depth 12 — enough to exercise every state transition.
 
 ### mlp_core Properties
 
-The remaining four families prove against the full `rtl/src/mlp_core.sv` (which instantiates controller, MAC unit, ReLU, and weight ROM):
+The remaining four families prove against the full `rtl/results/canonical/sv/mlp_core.sv` (which instantiates controller, MAC unit, ReLU, and weight ROM):
 
 **boundary_behavior** — Guard cycles and phase transitions:
 

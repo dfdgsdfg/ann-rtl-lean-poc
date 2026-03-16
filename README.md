@@ -93,7 +93,7 @@ In this repository it belongs under `experiments`, not under the canonical `rtl/
 The intended use is experimental:
 
 - synthesize a controller candidate from a temporal specification
-- compare it against `rtl/src/controller.sv`
+- compare it against `rtl/results/canonical/sv/controller.sv`
 - keep the arithmetic datapath and frozen contract as the baseline unless an experiment explicitly replaces them
 
 That means:
@@ -155,7 +155,7 @@ On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
 For the `rtl-synthesis` experiment specifically, `make rtl-synthesis` expects:
 
 - `ltlsynt` from the Spot toolchain
-- `syfco` on `PATH` for TLSF loading
+- optional `syfco` on `PATH` for native TLSF loading; otherwise the repository falls back to local TLSF lowering
 - `yosys`, `yosys-smtbmc`, and `z3`
 
 For `make rtl-synthesis-sim`, you also need:
@@ -255,7 +255,7 @@ The main human-facing outputs are:
 - `contract/results/canonical/manifest.json`
 - `contract/results/canonical/weights.json`
 - `contract/results/canonical/model.md`
-- `rtl/src/weight_rom.sv`
+- `rtl/results/canonical/sv/weight_rom.sv`
 - `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke suite, per-lane arithmetic-boundary sweep, and synthesized score/accumulator stress vectors)
 
 `contract/results/canonical/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
@@ -380,7 +380,7 @@ make experiments-post-synth
 
 The experiment runner writes family summaries and reports under `build/experiments/`.
 
-Visualization (generates SVG schematics in `docs/assets/`):
+Visualization (generates canonical SVG schematics in `rtl/results/canonical/blueprint/` and refreshes `docs/assets/` copies):
 
 ```bash
 make show
