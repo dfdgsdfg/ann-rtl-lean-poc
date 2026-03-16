@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+
 if __package__ in (None, ""):
-    ROOT = Path(__file__).resolve().parents[2]
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
 
@@ -22,6 +24,45 @@ TOP_LEVEL_TB = ROOT / "simulations" / "rtl" / "testbench.sv"
 INTERNAL_TB = ROOT / "simulations" / "rtl" / "testbench_internal.sv"
 VECTORS = ROOT / "simulations" / "shared" / "test_vectors.mem"
 VECTOR_META = ROOT / "simulations" / "shared" / "test_vectors_meta.svh"
+COUNTER_PATTERN = re.compile(r"^(vectors|passes|failures|output|latency|handshake|coverage|boundary):\s*(\d+)\s*$")
+TOP_LEVEL_BENCH_KIND = "shared_full_core_top_level_bench"
+INTERNAL_OBSERVABILITY_BENCH_KIND = "internal_observability_bench"
+
+BRANCH_BLUEPRINTS = {
+    "rtl": ROOT / "rtl" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
+    "rtl-synthesis": ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
+    "rtl-formalize-synthesis": ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
+}
+BRANCH_EXPORT_TREES = {
+    "rtl": ROOT / "rtl" / "results" / "canonical" / "sv",
+    "rtl-synthesis": ROOT / "rtl-synthesis" / "results" / "canonical" / "sv",
+    "rtl-formalize-synthesis": ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv",
+}
+BRANCH_SCOPES = {
+    "rtl": {
+        "generation_scope": "handwritten_full_core_rtl",
+        "integration_scope": "full_core_mlp_core",
+        "validation_scopes": {
+            "shared": "shared_full_core_mlp_core_regression",
+            "internal": "internal_observability_regression",
+        },
+    },
+    "rtl-synthesis": {
+        "generation_scope": "generated_controller_rtl",
+        "integration_scope": "mixed_path_mlp_core",
+        "validation_scopes": {
+            "shared": "shared_full_core_mlp_core_regression",
+            "internal": "mixed_path_internal_observability_regression",
+        },
+    },
+    "rtl-formalize-synthesis": {
+        "generation_scope": "generated_full_core_rtl",
+        "integration_scope": "full_core_mlp_core",
+        "validation_scopes": {
+            "shared": "shared_full_core_mlp_core_regression",
+        },
+    },
+}
 
 BRANCH_BUILD_ROOTS = {
     "rtl": ROOT / "build" / "rtl",
@@ -62,7 +103,11 @@ def timestamp_utc() -> str:
 
 
 def relative(path: Path) -> str:
-    return path.resolve().relative_to(ROOT).as_posix()
+    candidate = path if path.is_absolute() else ROOT / path
+    try:
+        return candidate.relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(candidate)
 
 
 def tool_version(command: list[str], *, fallback: str = "unknown") -> str:
@@ -102,6 +147,68 @@ def write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def first_relevant_line(text: str) -> str | None:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return None
+
+
+def parse_regression_output(output: str) -> dict[str, object]:
+    counts: dict[str, int] = {}
+    failure_summary: str | None = None
+
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = COUNTER_PATTERN.match(stripped)
+        if match is not None:
+            counts[match.group(1)] = int(match.group(2))
+            continue
+        if failure_summary is None and stripped.startswith("FAIL "):
+            failure_summary = stripped
+
+    regression: dict[str, object] = {}
+    if "vectors" in counts:
+        regression["vectors"] = counts.pop("vectors")
+    if "passes" in counts:
+        regression["passes"] = counts.pop("passes")
+    if "failures" in counts:
+        regression["failures"] = counts.pop("failures")
+    if counts:
+        regression["error_counts"] = counts
+    if failure_summary is not None:
+        regression["failure_summary"] = failure_summary
+    return regression
+
+
+def bench_kind_for_profile(profile: str) -> str:
+    return TOP_LEVEL_BENCH_KIND if profile == "shared" else INTERNAL_OBSERVABILITY_BENCH_KIND
+
+
+def ensure_branch_surface(branch: str) -> None:
+    missing: list[str] = []
+    export_tree = BRANCH_EXPORT_TREES[branch]
+    if not export_tree.is_dir():
+        missing.append(relative(export_tree))
+
+    for path in BRANCH_SOURCES[branch]:
+        if not path.exists():
+            missing.append(relative(path))
+
+    blueprint = BRANCH_BLUEPRINTS[branch]
+    if not blueprint.is_file():
+        missing.append(relative(blueprint))
+
+    if missing:
+        raise SystemExit(
+            "missing required branch-local simulation surface for "
+            f"{branch}: {', '.join(missing)}"
+        )
+
+
 def run_command(command: list[str], *, cwd: Path) -> tuple[int, str]:
     result = subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
     return result.returncode, result.stdout + result.stderr
@@ -132,18 +239,23 @@ def run_iverilog(
     code, output = run_command(compile_command, cwd=ROOT)
     write_text(build_dir / "iverilog" / "compile.log", output)
     if code != 0:
-        return {
+        result = {
             "name": "iverilog",
             "result": "fail",
             "compile_command": " ".join(compile_command),
             "compile_log": relative(build_dir / "iverilog" / "compile.log"),
             "binary": relative(bin_path),
         }
+        failure_summary = first_relevant_line(output)
+        if failure_summary is not None:
+            result["failure_summary"] = failure_summary
+        return result
 
     run_command_line = [vvp, str(bin_path)]
     code, output = run_command(run_command_line, cwd=ROOT)
     write_text(build_dir / "iverilog" / "run.log", output)
-    return {
+    regression = parse_regression_output(output)
+    result = {
         "name": "iverilog",
         "result": "pass" if code == 0 else "fail",
         "compile_command": " ".join(compile_command),
@@ -152,6 +264,19 @@ def run_iverilog(
         "run_log": relative(build_dir / "iverilog" / "run.log"),
         "binary": relative(bin_path),
     }
+    if regression:
+        result["regression"] = regression
+    if code != 0:
+        failure_summary = None
+        if regression:
+            parsed_failure = regression.get("failure_summary")
+            if isinstance(parsed_failure, str) and parsed_failure:
+                failure_summary = parsed_failure
+        if failure_summary is None:
+            failure_summary = first_relevant_line(output)
+        if failure_summary is not None:
+            result["failure_summary"] = failure_summary
+    return result
 
 
 def run_verilator(
@@ -180,18 +305,23 @@ def run_verilator(
     write_text(build_dir / "verilator" / "compile.log", output)
     binary = mdir / prefix
     if code != 0:
-        return {
+        result = {
             "name": "verilator",
             "result": "fail",
             "compile_command": " ".join(compile_command),
             "compile_log": relative(build_dir / "verilator" / "compile.log"),
             "binary": relative(binary),
         }
+        failure_summary = first_relevant_line(output)
+        if failure_summary is not None:
+            result["failure_summary"] = failure_summary
+        return result
 
     run_command_line = [str(binary)]
     code, output = run_command(run_command_line, cwd=ROOT)
     write_text(build_dir / "verilator" / "run.log", output)
-    return {
+    regression = parse_regression_output(output)
+    result = {
         "name": "verilator",
         "result": "pass" if code == 0 else "fail",
         "compile_command": " ".join(compile_command),
@@ -200,6 +330,19 @@ def run_verilator(
         "run_log": relative(build_dir / "verilator" / "run.log"),
         "binary": relative(binary),
     }
+    if regression:
+        result["regression"] = regression
+    if code != 0:
+        failure_summary = None
+        if regression:
+            parsed_failure = regression.get("failure_summary")
+            if isinstance(parsed_failure, str) and parsed_failure:
+                failure_summary = parsed_failure
+        if failure_summary is None:
+            failure_summary = first_relevant_line(output)
+        if failure_summary is not None:
+            result["failure_summary"] = failure_summary
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -209,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ensure_tools(args.simulator, iverilog=args.iverilog, vvp=args.vvp, verilator=args.verilator)
     validate_canonical_contract_bundle()
+    ensure_branch_surface(args.branch)
 
     branch_build_root = args.build_root.resolve() if args.build_root is not None else BRANCH_BUILD_ROOTS[args.branch]
     branch_report_root = args.report_root.resolve() if args.report_root is not None else BRANCH_REPORT_ROOTS[args.branch]
@@ -250,13 +394,22 @@ def main(argv: list[str] | None = None) -> int:
 
     generated_at_utc = timestamp_utc()
     overall_result = "pass" if all(item["result"] == "pass" for item in results) else "fail"
+    branch_scope = BRANCH_SCOPES[args.branch]
     summary = {
         "generated_at_utc": generated_at_utc,
         "branch": args.branch,
         "profile": args.profile,
         "overall_result": overall_result,
+        "generation_scope": branch_scope["generation_scope"],
+        "integration_scope": branch_scope["integration_scope"],
+        "validation_scope": branch_scope["validation_scopes"][args.profile],
+        "bench_kind": bench_kind_for_profile(args.profile),
+        "bench_shared_with_baseline": True,
+        "export_tree": relative(BRANCH_EXPORT_TREES[args.branch]),
+        "bench_path": relative(bench),
         "sources": {
             "rtl": [relative(path) for path in BRANCH_SOURCES[args.branch]],
+            "blueprint": relative(BRANCH_BLUEPRINTS[args.branch]),
             "testbench": relative(bench),
             "vectors": [relative(VECTORS), relative(VECTOR_META)],
         },

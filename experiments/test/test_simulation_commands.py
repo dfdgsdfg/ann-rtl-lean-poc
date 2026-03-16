@@ -178,7 +178,7 @@ class SimulationCommandTests(unittest.TestCase):
     def test_canonical_top_level_blueprints_exist_for_all_rtl_branches(self) -> None:
         for branch in ("rtl", "rtl-synthesis", "rtl-formalize-synthesis"):
             with self.subTest(branch=branch):
-                path = ROOT / branch / "results" / "canonical" / "blueprint" / "blueprint.svg"
+                path = ROOT / branch / "results" / "canonical" / "blueprint" / "mlp_core.svg"
                 self.assertTrue(path.exists(), msg=str(path))
                 self.assertGreater(path.stat().st_size, 0)
 
