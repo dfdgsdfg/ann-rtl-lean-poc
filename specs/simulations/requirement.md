@@ -38,7 +38,7 @@ Module-based testbench assertions over DUT state or control must sample post-upd
 The simulation domain must define support for these RTL implementation branches:
 
 - `rtl/`: canonical full-core simulation support against the shared vector-driven `mlp_core` bench
-- `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath and vector format while replacing the controller implementation
+- `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath contract and vector format while replacing the controller implementation, but exposes that compared assembly through a branch-local `rtl-synthesis/sv/` tree
 - `rtl-formalize-synthesis`: full-core simulation support against the shared `mlp_core` bench once the emitted Sparkle wrapper preserves that top-level boundary
 
 Each simulation entry point, summary, or experiment note must state:
@@ -46,6 +46,7 @@ Each simulation entry point, summary, or experiment note must state:
 - which branch is under test
 - the generation scope, integration scope, and validation scope
 - whether the bench is shared with the baseline or branch-local
+- which normalized branch-local export tree supplied the RTL under test
 
 ## 4. Reference Model Requirements
 
@@ -124,6 +125,9 @@ If branch-local simulation support exists, the directory structure must make the
 - `rtl/` must keep a baseline full-core bench
 - `rtl-synthesis` may reuse the baseline bench when it preserves the `mlp_core` boundary
 - `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
+- branch comparison and downstream simulation inputs should resolve through `rtl/sv/`, `rtl-synthesis/sv/`, and `rtl-formalize-synthesis/sv/`
+- if a generated branch reuses baseline RTL, that reuse must appear inside the branch-local `sv/` tree via symlink or override rather than through hidden direct bench references to `rtl/src/`
+- each branch should expose at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact paired with the compared RTL tree
 
 ## 7. Acceptance Criteria
 
@@ -135,3 +139,5 @@ The `simulations` domain is complete when:
 4. Generated regression vectors pass or produce actionable mismatch logs.
 5. The simulation support boundary is explicit for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
 6. Any branch that is not yet full-core end-to-end support is clearly labeled with its generation, integration, and validation scopes rather than described as baseline-equivalent simulation support.
+7. The compared RTL for each branch is discoverable through its branch-local `sv/` export tree.
+8. Each branch exposes at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact.

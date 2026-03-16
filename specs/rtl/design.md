@@ -52,6 +52,13 @@ The RTL is split into five modules:
 - `controller.sv`: FSM and loop-counter control
 - `weight_rom.sv`: constant storage for weights and biases
 
+For repository organization, this domain has two surfaces:
+
+- authoring surface: `rtl/src/`
+- comparable export surface: `rtl/sv/`
+
+The exported `rtl/sv/` tree should mirror the baseline full-core module set so that branch-comparison and downstream consumers do not need branch-specific path logic to locate comparable RTL artifacts.
+
 ### Top-Level Interface
 
 The top-level ports are:
@@ -164,7 +171,16 @@ The ROM exposes direct indexed access to:
 
 ROM contents are auto-generated from the contract weights and embedded directly in the SystemVerilog source (`weight_rom.sv`). The generation is handled by `contract/src/downstream_sync.py`.
 
-## 7. Resolved Design Decisions
+## 7. Exported Artifacts
+
+The baseline branch should also expose normalized comparison artifacts:
+
+- `rtl/sv/`: the comparable full-core RTL tree
+- `rtl/blueprint/mlp_core.svg`: the minimum top-level schematic export
+
+Additional blueprint files are allowed, but `mlp_core.svg` is the required common comparison surface across `rtl/`, `rtl-synthesis/`, and `rtl-formalize-synthesis`.
+
+## 8. Resolved Design Decisions
 
 - **Top-level port naming:** inputs are `in0`..`in3` (separate signed `int8` ports), output is `out_bit`, handshake is `start`/`done`/`busy`.
 - **Handshake semantics:** `done` is a level in `DONE`, not a pulse; `busy` is low in both `IDLE` and `DONE`; the controller remains in `DONE` while `start` stays high.

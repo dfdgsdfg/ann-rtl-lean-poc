@@ -11,7 +11,10 @@ frozen contract
   -> pure Lean spec / machine / temporal semantics
   -> Sparkle Signal DSL full-core model
   -> full-core refinement theorem
-  -> emitted Verilog/SystemVerilog (trusted backend)
+  -> raw emitted Verilog/SystemVerilog (trusted backend)
+  -> stable generated `mlp_core` wrapper/adapter when needed
+  -> normalized branch-local `sv/` export tree
+  -> branch-local `blueprint/mlp_core.svg`
   -> existing simulation and SMT/ASIC comparison flow
 ```
 
@@ -46,7 +49,7 @@ This separation matters because the implementation styles and trust boundaries a
 - temporal specification of controller behavior
 - automatic controller generation from that specification
 
-The semantic center of this domain is the generated top-level `mlp_core`, not an intermediate wrapper boundary.
+The semantic center of this domain is the generated top-level `mlp_core`. A generated wrapper or adapter may still be part of the stable downstream artifact contract when the raw Sparkle-emitted module uses backend-specific packing or reset conventions. For comparison and downstream consumption, that contract should be re-expressed through a normalized branch-local export surface under `rtl-formalize-synthesis/sv/`.
 
 ## 3. Recommended Architecture
 
@@ -65,7 +68,7 @@ The clean architecture is:
 
 3. **Emission layer**
 
-- dedicated synthesis commands emit the full-core Verilog/SystemVerilog artifact
+- dedicated synthesis commands emit the raw full-core Verilog/SystemVerilog artifact and any stable downstream wrapper or adapter artifact
 
 This avoids overloading the `formalize/` files with backend-specific concerns while still closing the pure-spec-to-Signal-DSL gap at the full-core boundary.
 
@@ -141,9 +144,12 @@ The repository should have a stable Lean entry point for full-core emission rath
 Each emitted artifact should state:
 
 - source Lean entry point
+- pinned upstream Sparkle revision and required local patch set
 - contract revision used
 - emission date or reproducible generation command
+- wrapper or adapter generation path when the stable downstream artifact is not the raw Sparkle module
 - stable top-level module boundary
+- normalized comparable branch path in `rtl-formalize-synthesis/sv/`
 
 ## 5. Integration With Existing Contract Flow
 
@@ -184,7 +190,7 @@ The design should therefore preserve:
 - exact guard-cycle behavior
 - exact hidden-index and input-index progression
 - exact `LOAD_INPUT` capture and `BIAS_OUTPUT` finalization timing
-- exact accepted-start to `done` latency
+- exact `76`-cycle latency from the accept cycle to the first cycle where `done` is visible
 
 ### 6.2 Structural Decomposition
 
@@ -206,10 +212,16 @@ Validation should happen in five layers.
 - Lean code compiles
 - Sparkle elaborates the hardware description
 - emission succeeds
+- the prepare flow reproduces the pinned upstream Sparkle revision and required local patch set
+- any stable wrapper or adapter generation step succeeds from committed sources
 
 ### 7.2 Structural Validation
 
 - generated ports match the intended `mlp_core` interface
+- the raw Sparkle-emitted module interface is checked against the repository's wrapper or adapter assumptions
+- any stable wrapper or adapter is mechanically regenerated or checked against committed output
+- packed-field recovery, reset adaptation, and `FORMAL` alias signals used by the SMT harness are validated directly
+- the normalized `rtl-formalize-synthesis/sv/` export tree presents the same comparable top-level module contract expected of the other branches
 - emitted state and control signals are inspectable enough to debug schedule drift
 - reset and sequential logic are emitted in a form acceptable to the downstream simulators
 
@@ -218,7 +230,7 @@ Validation should happen in five layers.
 - the repository's full-core shared simulation vectors pass
 - guard-cycle behavior is preserved
 - handshake timing is preserved
-- the exact `76`-cycle contract is preserved
+- the exact `76`-cycle contract is preserved, measured from the accept cycle to the first cycle where `done` is visible
 
 ### 7.4 Comparison Validation
 

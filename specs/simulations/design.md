@@ -40,14 +40,20 @@ The `train` command with default settings automatically freezes the contract and
 Branch-specific simulation entry points should remain separate from the canonical baseline command:
 
 - `make sim`: full-core regression for the hand-written `rtl/` implementation
-- `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath and shared vectors
+- `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath semantics and shared vectors, but resolves the compared assembly through `rtl-synthesis/sv/`
 - `make rtl-formalize-synthesis-sim`: shared full-core regression for the Sparkle-generated `rtl-formalize-synthesis` wrapper at the `mlp_core` boundary
 
 The simulation layer must say plainly what the branch generates, how it is integrated, and where it is validated:
 
 - full-core generation and full-core `mlp_core` validation
-- controller generation with mixed-path `mlp_core` validation against the baseline datapath
+- controller generation with mixed-path `mlp_core` validation against the baseline datapath contract
 - controller-scoped trace/equivalence validation when a branch-local comparison bench is used
+
+It should also say which normalized branch-local export tree is being simulated:
+
+- `rtl/sv/`
+- `rtl-synthesis/sv/`
+- `rtl-formalize-synthesis/sv/`
 
 The user should not need to manually copy weights or hand-edit vectors after training.
 
@@ -58,7 +64,7 @@ Vector generation should synthesize dedicated positive, zero, and negative score
 The simulation design supports three RTL implementation tracks with different current scopes:
 
 - `rtl/`: the canonical full-core implementation and the source of the shared vector-driven regression bench
-- `rtl-synthesis`: a controller-generated flow that is simulated as a mixed path by reusing the baseline datapath and replacing the controller module boundary
+- `rtl-synthesis`: a controller-generated flow that is simulated as a mixed path by reusing the baseline datapath semantics and replacing the controller module boundary, while still presenting a branch-local full comparable export tree
 - `rtl-formalize-synthesis`: a Sparkle-generated full-core path that is simulated at the shared `mlp_core` boundary
 
 This split is intentional as long as the scope is declared in commands, summaries, and experiment notes.
@@ -146,6 +152,8 @@ Layout rules:
 - `rtl-synthesis` should reuse the shared full-core bench when it is only swapping the controller boundary
 - `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
 - branch-local simulation files should be named so their scope is obvious from the path alone
+- branch-local compared RTL should resolve through aligned `*/sv/` trees rather than through hidden cross-branch source references
+- each branch should pair the compared RTL tree with at least `blueprint/mlp_core.svg`
 
 ## 9. Debugging Plan
 

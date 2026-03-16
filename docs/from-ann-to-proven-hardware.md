@@ -390,7 +390,7 @@ The temporal theorems prove timing properties over `rtlTrace`, which applies `ti
 
 | Theorem | What it says |
 |---------|-------------|
-| `acceptedStart_eventually_done` | Accepted start reaches done in exactly 76 cycles |
+| `acceptedStart_eventually_done` | `done` becomes visible exactly 76 cycles after the accept cycle where `IDLE` samples an accepted `start` |
 | `acceptedStart_capturedInput_correct` | The final output matches the input sampled on the `LOAD_INPUT` cycle |
 | `busy_during_active_window` | Busy is asserted throughout cycles 1..75 |
 | `done_implies_outputValid` | Done implies the output is valid |
@@ -458,7 +458,7 @@ The SystemVerilog testbench (`simulations/rtl/testbench.sv`) drives the DUT and 
 
 **Correctness**: `out_bit` matches the expected classification for each vector.
 
-**Timing**: latency from accepted `start` to `done` is exactly 76 cycles. Any deviation fails.
+**Timing**: `done` must become visible exactly 76 cycles after the accept cycle where `IDLE` samples an accepted `start`. Any deviation fails.
 
 **Handshake**:
 - After accepted start, state is LOAD_INPUT and busy is high

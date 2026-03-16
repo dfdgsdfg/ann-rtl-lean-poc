@@ -25,6 +25,22 @@ This asymmetry is intentional:
 
 The repository is not treating those as mismatched scopes by accident. It is stating that controller generation is the only defensible synthesis target here, while mixed-path `mlp_core` validation is the only defensible primary soundness claim.
 
+At the same time, comparison and downstream tooling should not consume that mixed-path assembly through hidden path coupling. The branch should therefore expose a normalized branch-local export tree:
+
+```text
+rtl-synthesis/
+  sv/
+    mlp_core.sv
+    mac_unit.sv
+    relu_unit.sv
+    controller.sv
+    weight_rom.sv
+  blueprint/
+    mlp_core.svg
+```
+
+In that export tree, generated controller files, reused baseline datapath files, and branch-local overrides must all be visible from the branch path itself.
+
 ## 2. Why Controller-Only
 
 Reactive synthesis is a natural fit for discrete control logic and a poor fit for the arithmetic datapath in this repository.
@@ -64,6 +80,7 @@ So the clean split is:
 - synthesize the controller
 - keep the datapath hand-written
 - integrate the result at the `mlp_core` boundary and compare it against the baseline FSM
+- materialize the compared mixed-path assembly as a branch-local full comparable `sv/` tree rather than relying on implicit reads from `rtl/src/`
 
 ## 3. Abstraction Strategy
 
@@ -252,7 +269,7 @@ build/
       logs/
 ```
 
-The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs are written under `build/rtl-synthesis/spot/`.
+The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/sv/` plus `rtl-synthesis/blueprint/`.
 
 ## 8. Tooling Direction
 

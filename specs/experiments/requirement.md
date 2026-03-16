@@ -60,7 +60,7 @@ This family compares the baseline against alternative implementation paths witho
 The experiment domain must treat the three RTL implementation branches as distinct generation/integration/validation profiles:
 
 - `rtl/`: full-core generation, full-core integration, full-core validation
-- `rtl-synthesis`: controller generation with mixed-path integration unless it explicitly replaces more than the controller
+- `rtl-synthesis`: controller generation with mixed-path integration unless it explicitly replaces more than the controller, but branch-local comparison still happens through a full comparable export tree
 - `rtl-formalize-synthesis`: full-core generated branch or other declared generated scope, but never implicitly baseline-equivalent
 
 ## 3. Reproducibility Requirements
@@ -95,6 +95,8 @@ Experiment results should produce at least one of the following:
 - Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthesis`, or `rtl-synthesis`
 - Post-synthesis simulation logs when the compared artifact is synthesized
 - Scope notes that identify the generation scope, integration scope, validation scope, and validation method for the recorded evidence
+- Branch-local artifact paths that resolve to `rtl/sv/`, `rtl-synthesis/sv/`, or `rtl-formalize-synthesis/sv/` rather than undocumented cross-branch source paths
+- Branch-local diagram paths that resolve to `rtl/blueprint/mlp_core.svg`, `rtl-synthesis/blueprint/mlp_core.svg`, or `rtl-formalize-synthesis/blueprint/mlp_core.svg`
 
 The experiment directory structure should default to branch-first organization:
 
@@ -103,6 +105,8 @@ The experiment directory structure should default to branch-first organization:
 - `experiments/rtl-formalize-synthesis/`
 
 Tool-specific or generator-specific subfolders are acceptable underneath those branch folders when needed.
+
+Cross-branch comparison should treat the normalized `*/sv/` trees as the comparable RTL inputs. If a generated branch still reuses baseline RTL files, that reuse must be represented explicitly inside the branch-local export tree through symlinks or override files rather than by silently pointing comparison commands at `rtl/src/`.
 
 ## 5. Acceptance Criteria
 
@@ -118,3 +122,5 @@ The `experiments` domain is complete when:
 8. Any generated implementation experiment states its integration scope, validation scope, and whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
 9. Cross-branch experiment records also state the branch generation, integration, and validation scopes rather than collapsing them into a single support label.
 10. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.
+11. Cross-branch experiment inputs resolve through `rtl/sv/`, `rtl-synthesis/sv/`, and `rtl-formalize-synthesis/sv/`.
+12. Each compared branch exposes at least `blueprint/mlp_core.svg` as a normalized top-level diagram artifact.

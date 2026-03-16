@@ -20,9 +20,12 @@ make rtl-formalize-synthesis-sim
 make rtl-formalize-synthesis-iverilog
 make rtl-formalize-synthesis-verilator
 make smt-rtl-formalize-synthesis
+python3 experiments/run.py --family artifact-consistency
 python3 experiments/run.py --family branch-compare
 python3 experiments/run.py --family qor
 ```
+
+`artifact-consistency` is the direct structural-validation path for the checked-in wrapper. It runs the wrapper generator in `--check` mode against the raw Sparkle RTL and catches raw-module interface drift, wrapper mismatches, and stale wrapper regeneration inputs.
 
 Boundary and trust profile:
 
@@ -45,4 +48,4 @@ Wrapper mapping:
 - stable downstream module boundary: `mlp_core`
 - wrapper generation path: `make rtl-formalize-synthesis-emit` regenerates both the raw module and this stable wrapper from committed sources
 - artifact freshness policy: generated-core freshness is checked against emit inputs, while proof-only Lean drift is reported separately in artifact-consistency without gating branch freshness
-- current protection level: if Sparkle changes raw packing order, the generated wrapper, shared full-core regression, and branch-aware SMT flow should fail, but there is no separate structural proof of the wrapper bit slices
+- current protection level: `artifact-consistency` directly checks the raw-module interface and wrapper regeneration result, so packing drift or wrapper mismatches fail before shared simulation and branch-aware SMT replay; there is still no separate formal proof of the wrapper bit slices

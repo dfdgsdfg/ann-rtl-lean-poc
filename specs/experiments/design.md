@@ -74,7 +74,7 @@ These experiments should keep the comparison honest:
 Current branch conventions should be recorded as part of the experiment design:
 
 - `rtl/`: full-core generation, full-core integration, full-core validation
-- `rtl-synthesis`: controller generation, mixed-path integration, mixed-path-primary validation by swapping only the controller and reusing the baseline datapath
+- `rtl-synthesis`: controller generation, mixed-path integration, mixed-path-primary validation by swapping only the controller and reusing the baseline datapath, while still exporting a branch-local full comparable `sv/` tree
 - `rtl-formalize-synthesis`: full-core generation, full-core integration, full-core validation once the emitted `mlp_core` path is materialized and validated
 
 ### RTL-Formalize-Synthsis Studies
@@ -132,6 +132,18 @@ experiments/
     ...
 ```
 
+Comparable RTL inputs should come from the aligned branch export surfaces:
+
+- `rtl/sv/`
+- `rtl-synthesis/sv/`
+- `rtl-formalize-synthesis/sv/`
+
+Comparable top-level diagrams should come from:
+
+- `rtl/blueprint/mlp_core.svg`
+- `rtl-synthesis/blueprint/mlp_core.svg`
+- `rtl-formalize-synthesis/blueprint/mlp_core.svg`
+
 Within each branch folder, the experiment files should separate:
 
 - committed wrappers or compatibility shims
@@ -144,6 +156,7 @@ Layout rules:
 - generated artifacts should stay outside the canonical `rtl/` source tree
 - mixed-path experiments should live under the branch that owns the replacement logic, not under the baseline branch
 - if tool-specific subfolders are needed, they should sit underneath the branch folder rather than replacing the branch layer
+- if a generated branch reuses baseline RTL, that reuse should be materialized inside the branch-local `sv/` tree through symlinks or override files instead of hidden direct references to `rtl/src/`
 
 ## 5. Suggested Workflow
 
