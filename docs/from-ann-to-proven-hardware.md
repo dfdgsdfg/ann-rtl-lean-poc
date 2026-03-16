@@ -66,7 +66,7 @@ This reference model is the single source of truth for what "correct" means. Eve
 
 ## 2. The Contract
 
-The contract (`contract/result/weights.json`) freezes one quantized result as the implementation target. It records:
+The contract (`contract/results/canonical/weights.json`) freezes one quantized result as the implementation target. It records:
 
 - the exact integer weights and biases
 - the arithmetic rules (widths, overflow policy, sign-extension requirements)
@@ -80,7 +80,7 @@ The freeze pipeline (`contract/src/downstream_sync.py`) generates three artifact
 
 ```mermaid
 graph TD
-    W[contract/result/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
+    W[contract/results/canonical/weights.json] --> ROM["rtl/src/weight_rom.sv<br/>SystemVerilog ROM constants"]
     W --> SPEC["formalize/src/TinyMLP/Defs/SpecCore.lean<br/>Lean weight definitions"]
     W --> VEC["simulations/shared/test_vectors.mem<br/>packed test vectors + expected scores"]
 ```
@@ -101,7 +101,7 @@ always_comb begin
 end
 ```
 
-The same integers from `contract/result/weights.json` appear here as SystemVerilog signed literals. The RTL controller reads these values one per cycle during MAC operations.
+The same integers from `contract/results/canonical/weights.json` appear here as SystemVerilog signed literals. The RTL controller reads these values one per cycle during MAC operations.
 
 ### The Lean Spec
 

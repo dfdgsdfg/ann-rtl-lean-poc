@@ -9,7 +9,7 @@ from typing import Any, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CONTRACT_PATH = ROOT / "contract" / "result" / "weights.json"
+DEFAULT_CONTRACT_PATH = ROOT / "contract" / "results" / "canonical" / "weights.json"
 
 EXPECTED_OVERFLOW_RULE = "two_complement_wraparound"
 EXPECTED_SIGN_EXTENSION_RULE = "required_between_product_and_accumulator_stages"

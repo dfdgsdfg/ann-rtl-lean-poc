@@ -8,6 +8,11 @@ rel-build/
 *.c
 ann/results/scratch/
 ann/results/tmp/
+ann/results/runs/
+contract/results/runs/
+rtl/results/runs/
+rtl-synthesis/results/runs/
+rtl-formalize-synthesis/results/runs/
 *.log
 vendor/*
 !vendor/.gitkeep

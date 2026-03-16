@@ -31,7 +31,7 @@ It covers:
 It does not cover:
 
 - ANN training or quantization
-- replacement of the frozen contract in `contract/result/`
+- replacement of the frozen contract in `contract/results/canonical/`
 - unrestricted theorem proving outside the Lean kernel
 - proof automation tactics inside `formalize/`
 - generated RTL becoming canonical without separate validation
@@ -67,7 +67,7 @@ If exact `76`-cycle completion is claimed in the SMT layer, the property set mus
 
 ## 5. Arithmetic and Datapath Requirements
 
-The SMT layer may check arithmetic properties over the frozen contract, but those checks must remain tied to the committed quantized payload in [`contract/result/weights.json`](../../contract/result/weights.json).
+The SMT layer may check arithmetic properties over the frozen contract, but those checks must remain tied to the committed quantized payload in [`contract/results/canonical/weights.json`](../../contract/results/canonical/weights.json).
 
 Allowed target properties include:
 

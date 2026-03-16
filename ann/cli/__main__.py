@@ -22,7 +22,7 @@ from ann.src.evaluate import (
 )
 from ann.src.quantize import quantize_float_weights_payload
 from ann.src.train import add_train_arguments, train
-from contract.src.freeze import freeze_contract, resolve_selected_run_dir, validate_canonical_contract_bundle
+from contract.src.freeze import freeze_contract
 
 
 def _default_quantized_output_path(source_path: Path) -> Path:
@@ -52,13 +52,8 @@ def cmd_train(args: argparse.Namespace) -> int:
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:
-    run_dir = args.run_dir
-    if run_dir is None and args.weights is None:
-        validate_canonical_contract_bundle()
-        run_dir = resolve_selected_run_dir()
-
     payload, kind, payload_path = load_evaluation_payload(
-        run_dir=run_dir,
+        run_dir=args.run_dir,
         weights_path=args.weights,
         artifact=args.artifact,
     )
@@ -138,7 +133,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument(
         "--skip-export",
         action="store_true",
-        help="Do not refresh contract/result or downstream generated artifacts after training",
+        help="Do not refresh results/canonical or downstream generated artifacts after training",
     )
     train_parser.set_defaults(func=cmd_train)
 
@@ -175,7 +170,10 @@ def build_parser() -> argparse.ArgumentParser:
     quantize_parser.add_argument("--json", action="store_true", help="Print machine-readable command output")
     quantize_parser.set_defaults(func=cmd_quantize)
 
-    export_parser = subparsers.add_parser("export", help="Freeze a selected run into contract/result and regenerate downstream artifacts")
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Promote an ANN run into ann/results/canonical, refresh contract/results/canonical, and regenerate downstream artifacts",
+    )
     export_parser.add_argument("--run-dir", type=Path, default=None, help="Run directory containing weights_quantized.json")
     export_parser.set_defaults(func=cmd_export)
 

@@ -104,7 +104,7 @@ Required exports:
 - Human-readable training summary
 - Dataset snapshot
 
-These exports live in `ann/results/` and are the ANN domain's output boundary. The `contract` domain is responsible for reading these files, freezing them into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
+These exports live in `ann/results/` and are the ANN domain's output boundary. Local immutable runs belong under `ann/results/runs/<run_id>/`, while the checked-in implementation baseline belongs under `ann/results/canonical/`. The `contract` domain is responsible for reading the canonical ANN snapshot, freezing it into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
 
 ## 7. Reproducibility Requirements
 
@@ -141,13 +141,22 @@ ann/
     params.py
     artifacts.py
   results/
-    latest/
+    canonical/
+      manifest.json
       training_summary.md
       metrics.json
       weights_float.json
       weights_float_selected.json
       weights_quantized.json
       dataset_snapshot.jsonl
+    runs/
+      <run_id>/
+        training_summary.md
+        metrics.json
+        weights_float.json
+        weights_float_selected.json
+        weights_quantized.json
+        dataset_snapshot.jsonl
 ```
 
 Equivalent file names are acceptable if the same responsibilities are covered.
@@ -174,4 +183,4 @@ The current repository implementation fixes the following default choices:
 - Epoch budget: `300`
 - Early stopping patience: `20`
 - Quantization: round-half-away-from-zero followed by signed clipping
-- Default training output directory: auto-created immutable `ann/results/runs/<run_id>/`
+- Default training output directory: auto-created immutable local run under `ann/results/runs/<run_id>/`

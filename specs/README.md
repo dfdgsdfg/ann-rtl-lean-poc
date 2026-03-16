@@ -49,8 +49,8 @@ They should also prefer a branch-first layout:
 
 - `experiments/` should use branch folders directly
 - `simulations/` should keep shared assets separate from branch-local benches
-- branch-local comparable RTL exports should align on `rtl/sv/`, `rtl-synthesis/sv/`, and `rtl-formalize-synthesis/sv/`
-- branch-local blueprint exports should align on `rtl/blueprint/`, `rtl-synthesis/blueprint/`, and `rtl-formalize-synthesis/blueprint/`
+- branch-local comparable RTL exports should align on `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
+- branch-local blueprint exports should align on `rtl/results/canonical/blueprint/`, `rtl-synthesis/results/canonical/blueprint/`, and `rtl-formalize-synthesis/results/canonical/blueprint/`
 
 The specs should distinguish between authoring-source trees and comparable export trees:
 

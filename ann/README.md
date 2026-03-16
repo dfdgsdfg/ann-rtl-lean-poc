@@ -2,45 +2,56 @@
 
 This folder owns the parameter-generation flow for the tiny `4 -> 8 -> 1` MLP.
 
-If you only need to use it, start with the Makefile targets:
-
 ## What This Domain Produces
 
-The ANN flow trains a toy model, selects one quantized checkpoint, and freezes that result for the rest of the repository.
+The ANN flow now has two result surfaces:
 
-Main outputs:
+- local immutable runs under `ann/results/runs/<run_id>/`
+- the checked-in canonical snapshot under `ann/results/canonical/`
+
+Main local run outputs:
 
 - `ann/results/runs/<run_id>/weights_quantized.json`
 - `ann/results/runs/<run_id>/weights_float_selected.json`
 - `ann/results/runs/<run_id>/weights_float.json`
 - `ann/results/runs/<run_id>/metrics.json`
 - `ann/results/runs/<run_id>/training_summary.md`
-- `ann/results/selected_run.json`
-- `contract/result/weights.json`
+- `ann/results/runs/<run_id>/dataset_snapshot.jsonl`
 
-`contract/result/weights.json` is the canonical downstream export.
+Main canonical outputs:
+
+- `ann/results/canonical/manifest.json`
+- `ann/results/canonical/weights_quantized.json`
+- `ann/results/canonical/weights_float_selected.json`
+- `ann/results/canonical/weights_float.json`
+- `ann/results/canonical/metrics.json`
+- `ann/results/canonical/training_summary.md`
+- `ann/results/canonical/dataset_snapshot.jsonl`
+- `contract/results/canonical/weights.json`
+
+`contract/results/canonical/weights.json` is the canonical downstream export.
 
 ## Most Common Commands
 
-Train and refresh downstream artifacts:
+Train and refresh canonical downstream artifacts:
 
 ```bash
 make train
 ```
 
-Train into a separate run directory without touching the frozen contract:
+Train into a separate local run directory without touching canonical snapshots:
 
 ```bash
 make train ARGS="--out-dir ann/results/tmp/run_001 --skip-export"
 ```
 
-Evaluate the currently selected quantized result:
+Evaluate the canonical quantized result:
 
 ```bash
 make evaluate ARGS="--artifact quantized"
 ```
 
-Evaluate the float-shadow checkpoint that produced the selected quantized result:
+Evaluate the canonical float-shadow checkpoint:
 
 ```bash
 make evaluate ARGS="--artifact selected-float"
@@ -52,13 +63,13 @@ Print machine-readable metrics:
 make evaluate ARGS="--artifact quantized --json"
 ```
 
-Re-derive quantized weights from the selected float-shadow artifact:
+Re-derive quantized weights from the canonical float-shadow artifact:
 
 ```bash
 make quantize ARGS="--artifact selected-float"
 ```
 
-Freeze a run into the canonical contract export:
+Promote a local run into `ann/results/canonical/` and refresh the canonical contract:
 
 ```bash
 make export ARGS="--run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51"
@@ -67,9 +78,9 @@ make export ARGS="--run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch5
 ## Typical Human Workflow
 
 1. Run `make train`
-2. Check `ann/results/selected_run.json` and the referenced `ann/results/runs/<run_id>/training_summary.md`
+2. Check `ann/results/canonical/manifest.json` and `ann/results/canonical/training_summary.md`
 3. Run `make evaluate ARGS="--artifact quantized"`
-4. If you trained into a custom run directory, freeze it with `make export ARGS="--run-dir ..."`
+4. If you trained into a custom run directory, promote it with `make export ARGS="--run-dir ..."`
 
 ## Artifact Meanings
 
@@ -78,6 +89,7 @@ make export ARGS="--run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch5
 - `weights_float.json`: best float checkpoint by float validation metrics
 - `metrics.json`: dataset metadata, training config, selected checkpoint data, and full epoch history
 - `training_summary.md`: short human-readable summary
+- `manifest.json`: canonical provenance and default artifact paths
 
 ## Defaults
 
@@ -89,13 +101,13 @@ Repository defaults:
 - optimizer: `Adam`
 - batch size: `64`
 - epoch budget: `300`
-- canonical checked-in run: `ann/results/runs/relu_teacher_v2-seed20260312-epoch51`
+- canonical checked-in ANN snapshot: `ann/results/canonical/`
 - early stopping patience: `20`
 - quantization: round half away from zero, then signed clipping
 
 ## Notes
 
-- `evaluate` and `quantize` use `ann/results/selected_run.json` when you do not pass `--run-dir`.
-- `train` updates `contract/result/weights.json` unless you pass `--skip-export`.
+- `evaluate` and `quantize` use `ann/results/canonical/manifest.json` when you do not pass `--run-dir`.
+- `train` writes a local run under `ann/results/runs/<run_id>/` and refreshes `ann/results/canonical/` plus `contract/results/canonical/` unless you pass `--skip-export`.
 - `train --out-dir` may point outside the repository only when combined with `--skip-export`.
 - The Makefile targets (`make train`, `make evaluate`, etc.) are the preferred entrypoint. The Python modules in `ann/src` are implementation details.

@@ -1,0 +1,15 @@
+{
+  "artifact_dir": "contract/results/canonical",
+  "dataset_snapshot": "ann/results/canonical/dataset_snapshot.jsonl",
+  "dataset_snapshot_sha256": "918d634836373923cbc0f9a6e0112af67f867500e8ee107c24e855f1d53103bb",
+  "model_md": "contract/results/canonical/model.md",
+  "origin_run_path": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51",
+  "schema_version": 1,
+  "selected_epoch": 51,
+  "selected_run_id": "relu_teacher_v2-seed20260312-epoch51",
+  "source": "contract_results_snapshot",
+  "source_ann_artifact_dir": "ann/results/canonical",
+  "source_ann_manifest": "ann/results/canonical/manifest.json",
+  "source_ann_weights": "ann/results/canonical/weights_quantized.json",
+  "weights": "contract/results/canonical/weights.json"
+}

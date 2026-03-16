@@ -61,7 +61,7 @@ graph LR
     Z3 --> R["unsat (safe) / sat (violation)"]
 ```
 
-The Python encoder reads the frozen weights and arithmetic rules from `contract/result/weights.json`, builds a complete bitvector model of the network's forward pass, and asserts the negation of each safety property. If Z3 returns `unsat`, no counterexample exists — the property holds for all valid inputs.
+The Python encoder reads the frozen weights and arithmetic rules from `contract/results/canonical/weights.json`, builds a complete bitvector model of the network's forward pass, and asserts the negation of each safety property. If Z3 returns `unsat`, no counterexample exists — the property holds for all valid inputs.
 
 ## 3. What the RTL Track Proves
 
@@ -141,7 +141,7 @@ The Sparkle full-core branch is not part of the SMT domain's dedicated runner se
 
 ## 4. What the Contract Track Proves
 
-The contract track proves properties over the frozen quantized arithmetic, using the committed weights from `contract/result/weights.json`.
+The contract track proves properties over the frozen quantized arithmetic, using the committed weights from `contract/results/canonical/weights.json`.
 
 ### Overflow and Width Safety (8 checks)
 

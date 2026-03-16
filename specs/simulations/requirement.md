@@ -38,7 +38,7 @@ Module-based testbench assertions over DUT state or control must sample post-upd
 The simulation domain must define support for these RTL implementation branches:
 
 - `rtl/`: canonical full-core simulation support against the shared vector-driven `mlp_core` bench
-- `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath contract and vector format while replacing the controller implementation, but exposes that compared assembly through a branch-local `rtl-synthesis/sv/` tree
+- `rtl-synthesis`: mixed-path simulation support that preserves the baseline datapath contract and vector format while replacing the controller implementation, but exposes that compared assembly through a branch-local `rtl-synthesis/results/canonical/sv/` tree
 - `rtl-formalize-synthesis`: full-core simulation support against the shared `mlp_core` bench once the emitted Sparkle wrapper preserves that top-level boundary
 
 Each simulation entry point, summary, or experiment note must state:
@@ -125,7 +125,7 @@ If branch-local simulation support exists, the directory structure must make the
 - `rtl/` must keep a baseline full-core bench
 - `rtl-synthesis` may reuse the baseline bench when it preserves the `mlp_core` boundary
 - `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
-- branch comparison and downstream simulation inputs should resolve through `rtl/sv/`, `rtl-synthesis/sv/`, and `rtl-formalize-synthesis/sv/`
+- branch comparison and downstream simulation inputs should resolve through `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
 - if a generated branch reuses baseline RTL, that reuse must appear inside the branch-local `sv/` tree via symlink or override rather than through hidden direct bench references to `rtl/src/`
 - each branch should expose at least `blueprint/mlp_core.svg` as the normalized top-level schematic artifact paired with the compared RTL tree
 

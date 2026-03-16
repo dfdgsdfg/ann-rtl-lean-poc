@@ -269,7 +269,7 @@ build/
       logs/
 ```
 
-The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/sv/` plus `rtl-synthesis/blueprint/`.
+The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/results/canonical/sv/` plus `rtl-synthesis/results/canonical/blueprint/`.
 
 ## 8. Tooling Direction
 

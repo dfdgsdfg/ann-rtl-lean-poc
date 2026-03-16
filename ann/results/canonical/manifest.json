@@ -1,0 +1,18 @@
+{
+  "artifact_dir": "ann/results/canonical",
+  "dataset_snapshot": "ann/results/canonical/dataset_snapshot.jsonl",
+  "dataset_snapshot_sha256": "918d634836373923cbc0f9a6e0112af67f867500e8ee107c24e855f1d53103bb",
+  "dataset_version": "relu_teacher_v2",
+  "metrics": "ann/results/canonical/metrics.json",
+  "origin_run_id": "relu_teacher_v2-seed20260312-epoch51",
+  "origin_run_path": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51",
+  "schema_version": 1,
+  "selected_epoch": 51,
+  "selected_run_id": "relu_teacher_v2-seed20260312-epoch51",
+  "source": "ann_results_snapshot",
+  "training_seed": 20260312,
+  "training_summary": "ann/results/canonical/training_summary.md",
+  "weights_float": "ann/results/canonical/weights_float.json",
+  "weights_float_selected": "ann/results/canonical/weights_float_selected.json",
+  "weights_quantized": "ann/results/canonical/weights_quantized.json"
+}

@@ -54,6 +54,8 @@
     "scope": "all_signed_int8_inputs",
     "status": "verified"
   },
+  "dataset_snapshot": "ann/results/canonical/dataset_snapshot.jsonl",
+  "dataset_snapshot_sha256": "918d634836373923cbc0f9a6e0112af67f867500e8ee107c24e855f1d53103bb",
   "dataset_version": "relu_teacher_v2",
   "hidden_size": 8,
   "input_size": 4,
@@ -65,7 +67,7 @@
   },
   "schema_version": 1,
   "selected_epoch": 51,
-  "selected_run": "ann/results/runs/relu_teacher_v2-seed20260312-epoch51",
+  "selected_run": "ann/results/canonical",
   "selected_run_id": "relu_teacher_v2-seed20260312-epoch51",
   "source": "trained_selected_quantized",
   "training_seed": 20260312,

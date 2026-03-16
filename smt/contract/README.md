@@ -1,6 +1,6 @@
 # Contract SMT Checks
 
-This subtree holds the contract-tied SMT entrypoints for the frozen network in [`contract/result/weights.json`](../../contract/result/weights.json).
+This subtree holds the contract-tied SMT entrypoints for the frozen network in [`contract/results/canonical/weights.json`](../../contract/results/canonical/weights.json).
 
 The proof scripts use the `z3` CLI directly, while the assumption exporter is a pure JSON export. Together they keep the arithmetic source of truth in the frozen contract:
 

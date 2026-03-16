@@ -49,7 +49,7 @@ This branch therefore has two distinct surfaces that the spec must keep separate
 - generation surface: controller-only synthesis and translation
 - export surface: a branch-local full comparable `mlp_core` RTL tree used for branch comparison and downstream consumption
 
-The export surface must be self-contained under `rtl-synthesis/sv/` even when the generated branch still reuses baseline datapath modules.
+The export surface must be self-contained under `rtl-synthesis/results/canonical/sv/` even when the generated branch still reuses baseline datapath modules.
 
 ## 3. Behavioral Target
 
@@ -194,8 +194,8 @@ The synthesis flow must produce or record:
 - the realizability result
 - the synthesized controller artifact, such as AIGER, HOA, Mealy/Moore machine, or generated Verilog wrapper input
 - the translation step from the synthesis-tool artifact into an RTL-consumable form
-- a branch-local comparable full-core RTL export tree under `rtl-synthesis/sv/`
-- a branch-local schematic export tree under `rtl-synthesis/blueprint/`
+- a branch-local comparable full-core RTL export tree under `rtl-synthesis/results/canonical/sv/`
+- a branch-local schematic export tree under `rtl-synthesis/results/canonical/blueprint/`
 - a controller-scoped comparison report against [`rtl/src/controller.sv`](../../rtl/src/controller.sv)
 - a mixed-path full-core comparison report against [`rtl/src/mlp_core.sv`](../../rtl/src/mlp_core.sv)
 
@@ -215,10 +215,10 @@ rtl-synthesis/
 
 If the branch reuses baseline RTL modules, that reuse must be explicit inside the branch-local export tree:
 
-- by checked-in symlinks such as `ln -s ../../rtl/sv/mac_unit.sv rtl-synthesis/sv/mac_unit.sv`
+- by checked-in symlinks such as `ln -s ../../../rtl/results/canonical/sv/mac_unit.sv rtl-synthesis/results/canonical/sv/mac_unit.sv`
 - or by branch-local override files that wrap, replace, or pin the reused artifact contract
 
-Implicit downstream consumption of `rtl/src/*.sv` outside the branch-local `rtl-synthesis/sv/` tree is not an acceptable comparison contract.
+Implicit downstream consumption of `rtl/src/*.sv` outside the branch-local `rtl-synthesis/results/canonical/sv/` tree is not an acceptable comparison contract.
 
 ## 9. Validation Requirements
 
@@ -229,11 +229,11 @@ Validation must cover at least:
 - handshake agreement for `start`, `busy`, `done`
 - agreement on guard-cycle behavior in `MAC_HIDDEN` and `MAC_OUTPUT`
 - agreement on hold-in-`DONE` and release-to-`IDLE` behavior
-- integration with the existing datapath contract represented through the branch-local comparable `rtl-synthesis/sv/` export tree, including the shared full-core simulation bench reused by `rtl-synthesis-sim`
+- integration with the existing datapath contract represented through the branch-local comparable `rtl-synthesis/results/canonical/sv/` export tree, including the shared full-core simulation bench reused by `rtl-synthesis-sim`
 
 The maintained experiment report must surface the primary `closed_loop_mlp_core_equivalence` result and the secondary `controller_interface_equivalence` result directly from the fresh-flow summary. It must not downgrade the branch to a passing result when only simulation passes, and it must skip the branch rather than use a committed snapshot fallback when the required fresh-flow toolchain is unavailable.
 
-The maintained comparison contract must make it obvious which files are generated, which files are reused from the baseline, and where override boundaries exist. A reviewer should be able to inspect `rtl-synthesis/sv/` alone and understand the full compared assembly without reverse-engineering implicit path reuse elsewhere in the repository.
+The maintained comparison contract must make it obvious which files are generated, which files are reused from the baseline, and where override boundaries exist. A reviewer should be able to inspect `rtl-synthesis/results/canonical/sv/` alone and understand the full compared assembly without reverse-engineering implicit path reuse elsewhere in the repository.
 
 ## 10. Acceptance Criteria
 
@@ -244,8 +244,8 @@ The `rtl-synthesis` domain is complete when:
 3. The specification documents the required environment assumptions induced by the datapath-owned counters.
 4. A synthesis tool can report realizability for the specification.
 5. A synthesized controller artifact can be translated or wrapped into an RTL-consumable form.
-6. The branch materializes a self-contained comparable export tree at `rtl-synthesis/sv/`, with any baseline reuse represented explicitly through branch-local symlinks or override files.
+6. The branch materializes a self-contained comparable export tree at `rtl-synthesis/results/canonical/sv/`, with any baseline reuse represented explicitly through branch-local symlinks or override files.
 7. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
-8. The branch provides `rtl-synthesis/blueprint/mlp_core.svg` as the minimum comparable diagram artifact.
+8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact.
 9. The repository also records the secondary controller-scoped comparison against [`rtl/src/controller.sv`](../../rtl/src/controller.sv) and keeps its assumption profile explicit.
 10. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.

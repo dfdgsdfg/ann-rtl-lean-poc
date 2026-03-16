@@ -38,7 +38,7 @@ For repository comparison and downstream use, this domain must distinguish:
 
 - authoring sources such as `rtl-formalize-synthesis/src/`
 - intermediate generator outputs such as raw emitted RTL or wrapper-generation inputs
-- the normalized branch-local export surface under `rtl-formalize-synthesis/sv/` and `rtl-formalize-synthesis/blueprint/`
+- the normalized branch-local export surface under `rtl-formalize-synthesis/results/canonical/sv/` and `rtl-formalize-synthesis/results/canonical/blueprint/`
 
 ## 3. Upstream Tool Assumption
 
@@ -66,7 +66,7 @@ The generated full-core implementation must preserve the current contract-domain
 - 8 hidden neurons
 - 1 binary output bit
 - signed fixed-point arithmetic and two's-complement wraparound
-- the same frozen weights and biases as `contract/result/weights.json`
+- the same frozen weights and biases as `contract/results/canonical/weights.json`
 
 The generated full-core implementation must preserve the current handshake and timing contract:
 
@@ -121,7 +121,7 @@ The Lean-to-RTL path must integrate with the existing frozen contract flow.
 
 At minimum, it must consume the same canonical parameter payload used elsewhere in the repository:
 
-- `contract/result/weights.json`
+- `contract/results/canonical/weights.json`
 
 Allowed integration strategies include:
 
@@ -139,8 +139,8 @@ The `rtl-formalize-synthesis` flow must produce or define:
 - Lean source or generated data modules carrying the frozen contract payload needed by the full core
 - a raw emitted Verilog/SystemVerilog artifact produced by the Sparkle backend
 - a stable top-level artifact implementing the repository `mlp_core` boundary used by downstream simulation, SMT, and synthesis flows
-- a normalized comparable full-core RTL export tree under `rtl-formalize-synthesis/sv/`
-- a normalized schematic export tree under `rtl-formalize-synthesis/blueprint/`
+- a normalized comparable full-core RTL export tree under `rtl-formalize-synthesis/results/canonical/sv/`
+- a normalized schematic export tree under `rtl-formalize-synthesis/results/canonical/blueprint/`
 - a documented command path that generates the raw artifact and any stable wrapper or adapter artifact
 - the generated artifact locations
 - the pinned upstream Sparkle revision and any committed local patches required to regenerate the artifacts
@@ -161,7 +161,7 @@ rtl-formalize-synthesis/
     mlp_core.svg
 ```
 
-The comparable `sv/` tree may contain branch-local generated modules, branch-local wrappers, or explicit symlinked baseline modules when reuse is still required. If reuse exists, it must be expressed inside `rtl-formalize-synthesis/sv/` through branch-local symlinks or override files rather than through implicit direct comparison against files outside the branch tree.
+The comparable `sv/` tree may contain branch-local generated modules, branch-local wrappers, or explicit symlinked baseline modules when reuse is still required. If reuse exists, it must be expressed inside `rtl-formalize-synthesis/results/canonical/sv/` through branch-local symlinks or override files rather than through implicit direct comparison against files outside the branch tree.
 
 If the stable downstream `mlp_core` boundary is realized through a generated wrapper or adapter around the raw Sparkle-emitted module, that wrapper contract is part of this domain and must be documented explicitly, including:
 
@@ -200,7 +200,7 @@ Required validation methods:
 - the generated RTL is compared against the hand-written `rtl/` baseline at the full-core boundary
 - comparison checks are strong enough to detect arithmetic, timing, or cycle-schedule drift
 - differences in internal naming or structural decomposition may be documented, but externally visible semantics must remain equivalent
-- the comparison surface is the branch-local `rtl-formalize-synthesis/sv/` tree, not an undocumented mix of raw emitted files and external baseline files
+- the comparison surface is the branch-local `rtl-formalize-synthesis/results/canonical/sv/` tree, not an undocumented mix of raw emitted files and external baseline files
 
 5. **Downstream compatibility validation**
 
@@ -236,9 +236,9 @@ The `rtl-formalize-synthesis` domain is complete when:
 
 1. A Sparkle-based Lean hardware description exists for the full `mlp_core` boundary.
 2. The repository documents the exact command used to emit Verilog/SystemVerilog from that Lean source.
-3. The raw emitted full-core RTL artifact, the stable downstream `mlp_core` artifact, and the normalized comparable export tree under `rtl-formalize-synthesis/sv/` are stored or reproducibly regenerated from committed sources, a pinned Sparkle upstream revision, and the committed local patch set and wrapper-generation logic required by this repository.
+3. The raw emitted full-core RTL artifact, the stable downstream `mlp_core` artifact, and the normalized comparable export tree under `rtl-formalize-synthesis/results/canonical/sv/` are stored or reproducibly regenerated from committed sources, a pinned Sparkle upstream revision, and the committed local patch set and wrapper-generation logic required by this repository.
 4. The generated path consumes the same frozen contract payload as the rest of the repository.
 5. The generated RTL matches the current `mlp_core` interface, handshake contract, cycle schedule, and exact `76`-cycle latency measured from the accept cycle to the first cycle where `done` is visible.
-6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/blueprint/mlp_core.svg`, and any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
+6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`, and any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
 7. A Lean refinement theorem connects the repository's pure Lean full-core semantics to the Sparkle Signal DSL full-core model.
 8. The repository explicitly states that Sparkle-to-Verilog remains a trusted backend boundary and that emitted RTL is validated by simulation, SMT, and synthesis rather than proved in Lean alone.

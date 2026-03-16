@@ -31,7 +31,7 @@ class SmtFlowTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
             exported = json.loads(output_path.read_text(encoding="utf-8"))
 
-            self.assertEqual(exported["source_contract"], "contract/result/weights.json")
+            self.assertEqual(exported["source_contract"], "contract/results/canonical/weights.json")
             self.assertEqual(exported["selected_run_id"], "relu_teacher_v2-seed20260312-epoch51")
             self.assertEqual(exported["arithmetic"]["input_bits"], 8)
             self.assertEqual(exported["arithmetic"]["output_product_bits"], 24)

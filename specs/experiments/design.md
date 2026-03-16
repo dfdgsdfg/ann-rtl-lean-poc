@@ -134,15 +134,15 @@ experiments/
 
 Comparable RTL inputs should come from the aligned branch export surfaces:
 
-- `rtl/sv/`
-- `rtl-synthesis/sv/`
-- `rtl-formalize-synthesis/sv/`
+- `rtl/results/canonical/sv/`
+- `rtl-synthesis/results/canonical/sv/`
+- `rtl-formalize-synthesis/results/canonical/sv/`
 
 Comparable top-level diagrams should come from:
 
-- `rtl/blueprint/mlp_core.svg`
-- `rtl-synthesis/blueprint/mlp_core.svg`
-- `rtl-formalize-synthesis/blueprint/mlp_core.svg`
+- `rtl/results/canonical/blueprint/mlp_core.svg`
+- `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`
+- `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`
 
 Within each branch folder, the experiment files should separate:
 

@@ -53,12 +53,12 @@ DEFAULT_SUMMARY = ROOT / "build" / "smt" / "contract_overflow_summary.json"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Prove frozen width/overflow/sign-extension properties for contract/result/weights.json."
+        description="Prove frozen width/overflow/sign-extension properties for contract/results/canonical/weights.json."
     )
     parser.add_argument(
         "--contract",
         type=Path,
-        default=ROOT / "contract" / "result" / "weights.json",
+        default=ROOT / "contract" / "results" / "canonical" / "weights.json",
         help="Frozen contract JSON to analyze.",
     )
     parser.add_argument(

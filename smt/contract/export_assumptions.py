@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTRACT_PATH = ROOT / "contract" / "result" / "weights.json"
+CONTRACT_PATH = ROOT / "contract" / "results" / "canonical" / "weights.json"
 DEFAULT_OUTPUT = ROOT / "build" / "smt" / "contract_assumptions.json"
 
 

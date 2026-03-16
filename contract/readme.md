@@ -4,11 +4,11 @@
 
 The `contract` folder is the handoff point between ANN training and the downstream implementation work.
 
-It freezes one selected quantized ANN result into a stable contract that the rest of the repository can consume without reinterpreting weights or arithmetic rules independently.
+It freezes one canonical ANN snapshot into a stable contract that the rest of the repository can consume without reinterpreting weights or arithmetic rules independently.
 
 In practical terms, this domain answers:
 
-- Which ANN run is the current implementation target
+- Which ANN result is the current implementation target
 - Which exact quantized tensors are frozen
 - Which arithmetic and quantization assumptions are part of that freeze
 - Which generated files downstream should match the frozen contract
@@ -17,31 +17,31 @@ In practical terms, this domain answers:
 
 Running the freeze step refreshes these files and metadata from the same frozen payload:
 
-- `contract/result/weights.json`
-- `ann/results/selected_run.json`
-- `contract/result/model.md`
+- `contract/results/canonical/manifest.json`
+- `contract/results/canonical/weights.json`
+- `contract/results/canonical/model.md`
 - `rtl/src/weight_rom.sv`
 - `formalize/src/TinyMLP/Defs/SpecCore.lean`
 - `simulations/shared/test_vectors.mem`
 - `simulations/shared/test_vectors_meta.svh`
 
-`ann/results/selected_run.json` records the selected ANN run, its `weights_quantized.json`, and the canonical contract weights file.
+The freeze step may also write a local historical snapshot under `contract/results/runs/<run_id>/`, but the checked-in implementation baseline is always `contract/results/canonical/`.
 
-The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/result/model.md`.
+`ann/results/canonical/manifest.json` records the canonical ANN artifact set and its dataset snapshot SHA-256.
 
-`simulations/shared/test_vectors.mem` is a packed hex memory file consumed directly by the RTL bench. Each record contains the expected signed `int32` score, the expected `out_bit`, and the packed `int8[4]` input vector. The exported file is built from a deterministic suite that combines the fixed smoke vectors, per-lane `-128/-127/+127` arithmetic-boundary sweeps, extreme sign-pattern combinations, and search-pool synthesized score/accumulator stress vectors. A separate strict witness check still verifies that the deterministic candidate pool can synthesize the required positive, zero, and negative score classes for the current frozen model.
+`contract/results/canonical/weights.json` mirrors that canonical ANN provenance. `python3 -m contract.src.freeze --check` proves that the frozen contract still matches `ann/results/canonical/` and that the downstream generated artifacts are in sync.
+
+The frozen contract also records verified safe bounds for the current weights over all signed `int8` inputs. Those bounds back the range-safety claim in `contract/results/canonical/model.md`.
 
 ## How To Use It
 
 ### 1. Train or choose an ANN result
 
-To create a fresh ANN result:
+To create a fresh ANN result and refresh canonical snapshots:
 
 ```bash
 make train
 ```
-
-Those commands train the ANN, export the quantized result, and refresh the frozen contract plus downstream generated artifacts.
 
 If you run the lower-level training module directly:
 
@@ -49,19 +49,17 @@ If you run the lower-level training module directly:
 python3 ann/src/train.py
 ```
 
-it only writes ANN artifacts under `ann/results/` and does not refresh `contract/result/weights.json`, `ann/results/selected_run.json`, or the downstream generated files. Run `python3 -m contract.src.freeze` afterward if you use that lower-level entrypoint.
-
-If you already have a run directory with `weights_quantized.json`, you can freeze that run directly.
+it only writes ANN artifacts under `ann/results/` and does not refresh `ann/results/canonical/`, `contract/results/canonical/`, or the downstream generated files. Run `python3 -m contract.src.freeze --run-dir ...` afterward if you use that lower-level entrypoint.
 
 ### 2. Freeze the contract
 
-Freeze using the currently recorded immutable run if `ann/results/selected_run.json` exists and points to a valid `ann/results/runs/<run_id>` directory. If that metadata file is missing or invalid, freeze fails instead of guessing a mutable default.
+Freeze from the current canonical ANN snapshot:
 
 ```bash
 python3 -m contract.src.freeze
 ```
 
-Freeze an explicit run directory:
+Freeze an explicit local ANN run and promote it into canonical ANN and contract snapshots:
 
 ```bash
 python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20260312-epoch51
@@ -69,7 +67,7 @@ python3 -m contract.src.freeze --run-dir ann/results/runs/relu_teacher_v2-seed20
 
 ### 3. Validate the current frozen contract
 
-Check that the frozen contract, provenance file, and generated downstream artifacts are all still in sync:
+Check that the canonical contract, canonical ANN snapshot, and generated downstream artifacts are all still in sync:
 
 ```bash
 python3 -m contract.src.freeze --check
@@ -93,25 +91,26 @@ python3 -m contract.src.gen_vectors --check-witnesses
 
 For machine-readable data:
 
-- `contract/result/weights.json`
+- `contract/results/canonical/weights.json`
 
 For human-readable documentation:
 
-- `contract/result/model.md`
+- `contract/results/canonical/model.md`
 
 For provenance:
 
-- `ann/results/selected_run.json`
+- `ann/results/canonical/manifest.json`
+- `contract/results/canonical/manifest.json`
 
 ## When To Use This Folder
 
 Use the `contract` CLI when you want to:
 
-- promote one ANN result to the implementation baseline
+- promote one ANN run to the implementation baseline
 - refresh RTL, Lean, simulation, and provenance artifacts from that baseline
-- verify that the repo still matches the currently frozen contract
+- verify that the repo still matches the currently frozen canonical contract
 
-Do not edit `contract/result/weights.json` by hand. Re-freeze from an ANN result instead.
+Do not edit `contract/results/canonical/weights.json` by hand. Re-freeze from an ANN result instead.
 
 ## Specs
 

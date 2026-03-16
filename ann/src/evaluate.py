@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .artifacts import SELECTED_RUN_PATH, read_json, resolve_metadata_path
+    from .artifacts import CANONICAL_MANIFEST_PATH, read_json, resolve_metadata_path, validate_ann_manifest
     from .dataset import (
         DEFAULT_DATASET_SEED,
         DEFAULT_INPUT_HIGH,
@@ -17,7 +17,7 @@ try:
     from .quantize import coerce_float_weights_payload, coerce_int_weights_payload
     from .train import evaluate_float, evaluate_quantized
 except ImportError:
-    from artifacts import SELECTED_RUN_PATH, read_json, resolve_metadata_path
+    from artifacts import CANONICAL_MANIFEST_PATH, read_json, resolve_metadata_path, validate_ann_manifest
     from dataset import (
         DEFAULT_DATASET_SEED,
         DEFAULT_INPUT_HIGH,
@@ -37,19 +37,13 @@ ARTIFACT_PATHS = {
 
 
 def _default_run_dir() -> Path:
-    if not SELECTED_RUN_PATH.exists():
+    if not CANONICAL_MANIFEST_PATH.exists():
         raise FileNotFoundError(
-            "missing selected ANN run metadata; pass --run-dir/--weights or refresh the canonical contract selection"
+            "missing ANN canonical manifest; pass --run-dir/--weights or refresh ann/results/canonical first"
         )
 
-    metadata = read_json(SELECTED_RUN_PATH)
-    selected_run_id = metadata.get("selected_run_id")
-    selected_run = metadata.get("selected_run")
-    if not isinstance(selected_run_id, str) or not selected_run_id:
-        raise ValueError(f"{SELECTED_RUN_PATH} is missing required field 'selected_run_id'")
-    if not isinstance(selected_run, str) or not selected_run:
-        raise ValueError(f"{SELECTED_RUN_PATH} is missing required field 'selected_run'")
-    return resolve_metadata_path(selected_run)
+    metadata = validate_ann_manifest(read_json(CANONICAL_MANIFEST_PATH), label="ANN canonical manifest")
+    return resolve_metadata_path(metadata["artifact_dir"])
 
 
 def resolve_run_artifact(run_dir: Path | None, artifact: str) -> tuple[Path, str]:

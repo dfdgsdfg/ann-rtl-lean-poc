@@ -5,7 +5,7 @@ This directory implements the current SMT scope described in [`specs/smt/require
 Current scope:
 
 - RTL-backed control proofs for the baseline hand-written RTL and the Sparkle full-core branch at the `mlp_core` boundary
-- solver-backed overflow and width checks over the frozen contract in [`contract/result/weights.json`](../contract/result/weights.json)
+- solver-backed overflow and width checks over the frozen contract in [`contract/results/canonical/weights.json`](../contract/results/canonical/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs
 

@@ -58,6 +58,7 @@ It must provide:
 The contract must also record:
 
 - Which training result produced these values
+- Which immutable dataset snapshot was used to produce the selected result
 - Why this result was selected
 - Which exported files correspond to the frozen contract
 - The verified boundedness status and safe intermediate-value bounds for the supported input domain
@@ -88,6 +89,7 @@ The contract must be reproducible from committed sources and documented commands
 The repository should clearly show:
 
 - Which ANN run produced the selected contract
+- Which immutable dataset snapshot and snapshot hash back that selected run
 - Which quantization method was applied
 - Which exported artifacts implement the frozen contract
 - Which downstream domains depend on it
@@ -98,9 +100,9 @@ The `contract` domain must own all code needed to:
 
 - Validate and coerce quantized weight payloads (schema validation)
 - Build the frozen contract payload with arithmetic and quantization metadata
-- Freeze a selected ANN run into `contract/result/weights.json`
+- Freeze a selected ANN run into `contract/results/canonical/weights.json`
 - Validate that frozen artifacts are in sync
-- Generate downstream artifacts: `rtl/src/weight_rom.sv`, `formalize/src/TinyMLP/Defs/SpecCore.lean`, `contract/result/model.md`, `simulations/shared/test_vectors.mem`
+- Generate downstream artifacts: `rtl/src/weight_rom.sv`, `formalize/src/TinyMLP/Defs/SpecCore.lean`, `contract/results/canonical/model.md`, `simulations/shared/test_vectors.mem`
 
 Low-level quantization math (rounding, clipping, range checks) used during validation may be duplicated from or shared with the ANN domain, but the contract domain must not import ANN modules.
 
@@ -108,14 +110,21 @@ Low-level quantization math (rounding, clipping, range checks) used during valid
 
 ```text
 contract/
+  results/
+    canonical/
+      manifest.json
+      weights.json
+      model.md
+    runs/
+      <run_id>/
+        manifest.json
+        weights.json
+        model.md
   src/
     schema.py
     freeze.py
     downstream_sync.py
     gen_vectors.py
-  result/
-    weights.json
-    model.md
 ```
 
 ## 9. Acceptance Criteria

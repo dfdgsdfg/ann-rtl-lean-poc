@@ -106,6 +106,12 @@ def coerce_weights_payload(payload: dict[str, Any], *, label: str) -> dict[str, 
         normalized["selected_run"] = _coerce_string(raw["selected_run"], "selected_run", label)
     if "selected_epoch" in raw:
         normalized["selected_epoch"] = _coerce_int(raw["selected_epoch"], "selected_epoch", label)
+    if "dataset_snapshot" in raw:
+        normalized["dataset_snapshot"] = _coerce_string(raw["dataset_snapshot"], "dataset_snapshot", label)
+    if "dataset_snapshot_sha256" in raw:
+        normalized["dataset_snapshot_sha256"] = _coerce_string(
+            raw["dataset_snapshot_sha256"], "dataset_snapshot_sha256", label
+        )
 
     return normalized
 
@@ -126,6 +132,10 @@ def validate_analysis_payload(payload: dict[str, Any], *, label: str) -> dict[st
         raise ValueError(f"{label} field 'selected_run_id' is required")
     if "selected_run" not in normalized:
         raise ValueError(f"{label} field 'selected_run' is required")
+    if "dataset_snapshot" not in normalized:
+        raise ValueError(f"{label} field 'dataset_snapshot' is required")
+    if "dataset_snapshot_sha256" not in normalized:
+        raise ValueError(f"{label} field 'dataset_snapshot_sha256' is required")
     if str(normalized["source"]) not in ANALYSIS_SOURCES:
         allowed = ", ".join(sorted(ANALYSIS_SOURCES))
         raise ValueError(f"{label} field 'source' must be one of: {allowed}")
@@ -140,6 +150,8 @@ def build_analysis_payload(
     *,
     selected_run_id: str,
     selected_run: str,
+    dataset_snapshot: str,
+    dataset_snapshot_sha256: str,
     source: str = "trained_selected_quantized",
 ) -> dict[str, object]:
     quantized = validate_quantized_source_payload(quantized_payload, label="selected quantized weights")
@@ -159,6 +171,8 @@ def build_analysis_payload(
         "source": source,
         "selected_run_id": selected_run_id,
         "selected_run": selected_run,
+        "dataset_snapshot": dataset_snapshot,
+        "dataset_snapshot_sha256": dataset_snapshot_sha256,
         "input_size": quantized["input_size"],
         "hidden_size": quantized["hidden_size"],
         "dataset_version": quantized["dataset_version"],
@@ -198,6 +212,8 @@ def validate_selected_run_metadata(payload: dict[str, Any], *, label: str = "sel
         "selected_run": _coerce_string(raw.get("selected_run"), "selected_run", label),
         "weights_quantized": _coerce_string(raw.get("weights_quantized"), "weights_quantized", label),
         "contract_weights": _coerce_string(contract_weights, "contract_weights", label),
+        "dataset_snapshot": _coerce_string(raw.get("dataset_snapshot"), "dataset_snapshot", label),
+        "dataset_snapshot_sha256": _coerce_string(raw.get("dataset_snapshot_sha256"), "dataset_snapshot_sha256", label),
     }
     if "selected_epoch" in raw:
         normalized["selected_epoch"] = _coerce_int(raw.get("selected_epoch"), "selected_epoch", label)

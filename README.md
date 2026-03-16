@@ -246,18 +246,19 @@ make export ARGS="--run-dir ann/results/tmp/run_001"
 
 The main human-facing outputs are:
 
-- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/training_summary.md`
-- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/metrics.json`
-- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_float.json`
-- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_float_selected.json`
-- `ann/results/runs/relu_teacher_v2-seed20260312-epoch51/weights_quantized.json`
-- `ann/results/selected_run.json` (canonical immutable selection metadata)
-- `contract/result/weights.json`
-- `contract/result/model.md`
+- `ann/results/canonical/manifest.json`
+- `ann/results/canonical/training_summary.md`
+- `ann/results/canonical/metrics.json`
+- `ann/results/canonical/weights_float.json`
+- `ann/results/canonical/weights_float_selected.json`
+- `ann/results/canonical/weights_quantized.json`
+- `contract/results/canonical/manifest.json`
+- `contract/results/canonical/weights.json`
+- `contract/results/canonical/model.md`
 - `rtl/src/weight_rom.sv`
 - `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke suite, per-lane arithmetic-boundary sweep, and synthesized score/accumulator stress vectors)
 
-`contract/result/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
+`contract/results/canonical/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
 
 ## Repository Map
 

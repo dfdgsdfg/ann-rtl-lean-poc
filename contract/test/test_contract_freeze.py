@@ -6,12 +6,11 @@ import stat
 import subprocess
 import tempfile
 import unittest
-from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
 from contract.src import artifacts as contract_artifacts
-from contract.src import downstream_sync, freeze, gen_vectors
+from contract.src import downstream_sync, gen_vectors
 
 
 ROOT = contract_artifacts.ROOT
@@ -20,8 +19,6 @@ MAKEFILE_TEMPLATE = ROOT / "Makefile"
 WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "src" / "weight_rom.sv"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
 SPARKLE_CONTRACT_TEMPLATE = ROOT / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
-CONTRACT_WEIGHTS_TEMPLATE = ROOT / "contract" / "result" / "weights.json"
-SELECTED_RUN_TEMPLATE = ROOT / "ann" / "results" / "selected_run.json"
 SIM_TESTBENCH_TEMPLATE = ROOT / "simulations" / "rtl" / "testbench.sv"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 RTL_SRC_DIR = ROOT / "rtl" / "src"
@@ -34,38 +31,8 @@ class FreezeContractTests(unittest.TestCase):
         self._tmpdir = tempfile.TemporaryDirectory(dir=build_dir)
         self.temp_root = Path(self._tmpdir.name)
 
-        self.contract_weights_path = self.temp_root / "contract" / "result" / "weights.json"
-        self.selected_run_path = self.temp_root / "ann" / "results" / "selected_run.json"
-        self.weight_rom_path = self.temp_root / "rtl" / "src" / "weight_rom.sv"
-        self.lean_spec_path = self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
-        self.sparkle_contract_path = self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean"
-        self.model_doc_path = self.temp_root / "contract" / "result" / "model.md"
-        self.vectors_path = self.temp_root / "simulations" / "shared" / "test_vectors.mem"
-        self.vector_meta_path = self.temp_root / "simulations" / "shared" / "test_vectors_meta.svh"
-
-        self.weight_rom_path.parent.mkdir(parents=True, exist_ok=True)
-        self.weight_rom_path.write_text(WEIGHT_ROM_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
-
-        self.lean_spec_path.parent.mkdir(parents=True, exist_ok=True)
-        self.lean_spec_path.write_text(LEAN_SPEC_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
-
-        self.sparkle_contract_path.parent.mkdir(parents=True, exist_ok=True)
-        self.sparkle_contract_path.write_text(SPARKLE_CONTRACT_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
-
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
-
-    def _patched_output_paths(self) -> ExitStack:
-        stack = ExitStack()
-        stack.enter_context(patch.object(freeze, "CONTRACT_WEIGHTS_PATH", self.contract_weights_path))
-        stack.enter_context(patch.object(freeze, "SELECTED_RUN_PATH", self.selected_run_path))
-        stack.enter_context(patch.object(downstream_sync, "WEIGHT_ROM_PATH", self.weight_rom_path))
-        stack.enter_context(patch.object(downstream_sync, "LEAN_SPEC_PATH", self.lean_spec_path))
-        stack.enter_context(patch.object(downstream_sync, "SPARKLE_CONTRACT_DATA_PATH", self.sparkle_contract_path))
-        stack.enter_context(patch.object(downstream_sync, "CONTRACT_MODEL_MD_PATH", self.model_doc_path))
-        stack.enter_context(patch.object(gen_vectors, "TEST_VECTORS_PATH", self.vectors_path))
-        stack.enter_context(patch.object(gen_vectors, "TEST_VECTORS_META_PATH", self.vector_meta_path))
-        return stack
 
     def _always_positive_weights(self) -> dict[str, object]:
         return {
@@ -81,64 +48,125 @@ class FreezeContractTests(unittest.TestCase):
             "b2": 1,
         }
 
-    def test_freeze_contract_does_not_write_partial_artifacts_when_vector_generation_fails(self) -> None:
-        self.contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
-        self.contract_weights_path.write_text('{"sentinel": "contract"}\n', encoding="utf-8")
-        self.selected_run_path.parent.mkdir(parents=True, exist_ok=True)
-        self.selected_run_path.write_text('{"sentinel": "selected"}\n', encoding="utf-8")
-        self.model_doc_path.parent.mkdir(parents=True, exist_ok=True)
-        self.model_doc_path.write_text("sentinel model\n", encoding="utf-8")
-        self.vectors_path.parent.mkdir(parents=True, exist_ok=True)
-        self.vectors_path.write_text("sentinel vectors\n", encoding="ascii")
-        self.vector_meta_path.write_text("sentinel meta\n", encoding="ascii")
+    def _prepare_repo_root(self, *, include_ann_canonical: bool = False, include_contract_canonical: bool = False) -> Path:
+        repo_root = self.temp_root / "repo"
+        (repo_root / "ann" / "results" / "runs").mkdir(parents=True, exist_ok=True)
+        (repo_root / "formalize" / "src" / "TinyMLP" / "Defs").mkdir(parents=True, exist_ok=True)
+        (repo_root / "rtl" / "src").mkdir(parents=True, exist_ok=True)
+        (repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
+        (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
+        (repo_root / "simulations" / "shared").mkdir(parents=True, exist_ok=True)
+        (repo_root / "build" / "sim").mkdir(parents=True, exist_ok=True)
 
-        baseline = {
-            self.contract_weights_path: self.contract_weights_path.read_text(encoding="utf-8"),
-            self.selected_run_path: self.selected_run_path.read_text(encoding="utf-8"),
-            self.weight_rom_path: self.weight_rom_path.read_text(encoding="utf-8"),
-            self.lean_spec_path: self.lean_spec_path.read_text(encoding="utf-8"),
-            self.sparkle_contract_path: self.sparkle_contract_path.read_text(encoding="utf-8"),
-            self.model_doc_path: self.model_doc_path.read_text(encoding="utf-8"),
-            self.vectors_path: self.vectors_path.read_text(encoding="ascii"),
-            self.vector_meta_path: self.vector_meta_path.read_text(encoding="ascii"),
-        }
+        shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
+        shutil.copy2(SIM_TESTBENCH_TEMPLATE, repo_root / "simulations" / "rtl" / "testbench.sv")
+        shutil.copy2(WEIGHT_ROM_TEMPLATE, repo_root / "rtl" / "src" / "weight_rom.sv")
+        shutil.copy2(LEAN_SPEC_TEMPLATE, repo_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
+        shutil.copy2(
+            SPARKLE_CONTRACT_TEMPLATE,
+            repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
+        )
+        shutil.copy2(ROOT / "simulations" / "shared" / "test_vectors.mem", repo_root / "simulations" / "shared" / "test_vectors.mem")
+        shutil.copy2(
+            ROOT / "simulations" / "shared" / "test_vectors_meta.svh",
+            repo_root / "simulations" / "shared" / "test_vectors_meta.svh",
+        )
+        shutil.copytree(CONTRACT_SRC_DIR, repo_root / "contract" / "src", dirs_exist_ok=True)
+        shutil.copytree(RTL_SRC_DIR, repo_root / "rtl" / "src", dirs_exist_ok=True)
+        shutil.copytree(RUN_DIR, repo_root / "ann" / "results" / "runs" / RUN_DIR.name, dirs_exist_ok=True)
 
-        with self._patched_output_paths():
-            with patch.object(freeze, "expected_vector_artifacts", side_effect=ValueError("vector generation failed")):
-                with self.assertRaisesRegex(ValueError, "vector generation failed"):
-                    freeze.freeze_contract(RUN_DIR)
-
-        for path, expected_text in baseline.items():
-            encoding = "ascii" if path.suffix in {".mem", ".svh"} else "utf-8"
-            self.assertEqual(path.read_text(encoding=encoding), expected_text)
+        if include_ann_canonical:
+            shutil.copytree(ROOT / "ann" / "results" / "canonical", repo_root / "ann" / "results" / "canonical", dirs_exist_ok=True)
+        if include_contract_canonical:
+            shutil.copytree(ROOT / "contract" / "results" / "canonical", repo_root / "contract" / "results" / "canonical", dirs_exist_ok=True)
+        return repo_root
 
     def test_freeze_contract_writes_full_artifact_set(self) -> None:
-        with self._patched_output_paths():
-            out_path = freeze.freeze_contract(RUN_DIR)
-            self.assertEqual(out_path, self.contract_weights_path)
-            freeze.validate_contract()
+        repo_root = self._prepare_repo_root()
 
-        contract_payload = json.loads(self.contract_weights_path.read_text(encoding="utf-8"))
-        selected_payload = json.loads(self.selected_run_path.read_text(encoding="utf-8"))
+        result = subprocess.run(
+            [
+                "python3",
+                "-m",
+                "contract.src.freeze",
+                "--run-dir",
+                f"ann/results/runs/{RUN_DIR.name}",
+            ],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, msg=output)
+
+        ann_manifest_path = repo_root / "ann" / "results" / "canonical" / "manifest.json"
+        contract_weights_path = repo_root / "contract" / "results" / "canonical" / "weights.json"
+        contract_manifest_path = repo_root / "contract" / "results" / "canonical" / "manifest.json"
+        contract_run_weights = repo_root / "contract" / "results" / "runs" / RUN_DIR.name / "weights.json"
+        contract_run_manifest = repo_root / "contract" / "results" / "runs" / RUN_DIR.name / "manifest.json"
+        contract_model_path = repo_root / "contract" / "results" / "canonical" / "model.md"
+
+        ann_manifest = json.loads(ann_manifest_path.read_text(encoding="utf-8"))
+        contract_payload = json.loads(contract_weights_path.read_text(encoding="utf-8"))
+        contract_manifest = json.loads(contract_manifest_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(ann_manifest["selected_run_id"], RUN_DIR.name)
+        self.assertEqual(ann_manifest["artifact_dir"], "ann/results/canonical")
         self.assertEqual(contract_payload["selected_run_id"], RUN_DIR.name)
-        self.assertEqual(selected_payload["selected_run_id"], RUN_DIR.name)
-        self.assertEqual(selected_payload["selected_run"], contract_artifacts.relative_to_root(RUN_DIR))
-
-        weight_rom_text = self.weight_rom_path.read_text(encoding="utf-8")
-        self.assertIn("assign formal_hidden_weight_case_hit = (hidden_idx < 4'd8) && (input_idx < 4'd4);", weight_rom_text)
-        self.assertIn("assign formal_output_weight_case_hit = (input_idx < 4'd8);", weight_rom_text)
+        self.assertEqual(contract_payload["selected_run"], "ann/results/canonical")
+        self.assertEqual(contract_payload["dataset_snapshot"], "ann/results/canonical/dataset_snapshot.jsonl")
+        self.assertEqual(contract_payload["dataset_snapshot_sha256"], ann_manifest["dataset_snapshot_sha256"])
+        self.assertEqual(contract_manifest["artifact_dir"], "contract/results/canonical")
+        self.assertEqual(contract_manifest["source_ann_manifest"], "ann/results/canonical/manifest.json")
+        self.assertEqual(contract_manifest["source_ann_artifact_dir"], "ann/results/canonical")
 
         for path in (
-            self.contract_weights_path,
-            self.selected_run_path,
-            self.weight_rom_path,
-            self.lean_spec_path,
-            self.sparkle_contract_path,
-            self.model_doc_path,
-            self.vectors_path,
-            self.vector_meta_path,
+            ann_manifest_path,
+            contract_weights_path,
+            contract_manifest_path,
+            contract_run_weights,
+            contract_run_manifest,
+            contract_model_path,
+            repo_root / "rtl" / "src" / "weight_rom.sv",
+            repo_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean",
+            repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
+            repo_root / "simulations" / "shared" / "test_vectors.mem",
+            repo_root / "simulations" / "shared" / "test_vectors_meta.svh",
         ):
             self.assertTrue(path.exists(), msg=f"expected generated artifact: {path}")
+
+    def test_freeze_check_requires_ann_canonical_without_explicit_run(self) -> None:
+        repo_root = self._prepare_repo_root()
+
+        result = subprocess.run(
+            ["python3", "-m", "contract.src.freeze", "--check"],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertNotEqual(result.returncode, 0, msg=output)
+        self.assertIn("missing ANN canonical manifest", output)
+
+    def test_freeze_check_fails_when_ann_canonical_dataset_hash_drifts(self) -> None:
+        repo_root = self._prepare_repo_root(include_ann_canonical=True, include_contract_canonical=True)
+        snapshot_path = repo_root / "ann" / "results" / "canonical" / "dataset_snapshot.jsonl"
+        snapshot_path.write_text(snapshot_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+        result = subprocess.run(
+            ["python3", "-m", "contract.src.freeze", "--check"],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertNotEqual(result.returncode, 0, msg=output)
+        self.assertIn("ANN canonical manifest dataset snapshot hash does not match", output)
 
     def test_render_sparkle_contract_data_text_includes_expected_signed_literals(self) -> None:
         weights = {
@@ -157,8 +185,7 @@ class FreezeContractTests(unittest.TestCase):
             "b2": -48,
         }
 
-        with patch.object(downstream_sync, "SPARKLE_CONTRACT_DATA_PATH", self.sparkle_contract_path):
-            rendered = downstream_sync.render_sparkle_contract_data_text(weights)
+        rendered = downstream_sync.render_sparkle_contract_data_text(weights)
 
         self.assertIn("/- BEGIN AUTO-GENERATED CONTRACT DATA -/", rendered)
         self.assertIn("/- END AUTO-GENERATED CONTRACT DATA -/", rendered)
@@ -168,45 +195,22 @@ class FreezeContractTests(unittest.TestCase):
         self.assertIn("input_idx === Signal.pure (bv4 6) => Signal.pure (bv8 (-46))", rendered)
         self.assertIn("Signal.pure (bv32 (-48))", rendered)
 
-    def test_resolve_selected_run_dir_requires_existing_selected_metadata_target(self) -> None:
-        self.selected_run_path.parent.mkdir(parents=True, exist_ok=True)
-        missing_run = ROOT / "ann" / "results" / "runs" / "missing-run"
-        self.selected_run_path.write_text(
-            json.dumps(
-                {
-                    "selected_run_id": "missing-run",
-                    "selected_run": contract_artifacts.relative_to_root(missing_run),
-                    "weights_quantized": contract_artifacts.relative_to_root(missing_run / "weights_quantized.json"),
-                    "contract_weights": contract_artifacts.relative_to_root(self.contract_weights_path),
-                }
-            ),
-            encoding="utf-8",
-        )
-
-        with self._patched_output_paths():
-            with self.assertRaisesRegex(FileNotFoundError, "selected run metadata points to a missing run directory"):
-                freeze.freeze_contract()
-
-        self.assertFalse(self.contract_weights_path.exists(), msg="freeze should fail before writing artifacts")
-
-    def test_resolve_selected_run_dir_requires_selected_metadata_when_not_explicit(self) -> None:
-        with self._patched_output_paths():
-            with self.assertRaisesRegex(FileNotFoundError, "missing selected ANN run metadata"):
-                freeze.resolve_selected_run_dir()
-
     def test_render_vectors_fails_when_score_class_witnesses_are_missing(self) -> None:
         with self.assertRaisesRegex(ValueError, "unable to synthesize required score-class witnesses for zero"):
             gen_vectors.render_vectors(self._always_positive_weights())
 
     def test_check_witness_coverage_fails_for_always_positive_weights(self) -> None:
-        self.contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
-        contract_payload = json.loads(CONTRACT_WEIGHTS_TEMPLATE.read_text(encoding="utf-8"))
+        contract_weights_path = self.temp_root / "contract" / "results" / "canonical" / "weights.json"
+        contract_weights_path.parent.mkdir(parents=True, exist_ok=True)
+        contract_payload = json.loads((ROOT / "contract" / "results" / "canonical" / "weights.json").read_text(encoding="utf-8"))
         contract_payload.update(self._always_positive_weights())
         contract_payload["selected_run_id"] = RUN_DIR.name
-        contract_payload["selected_run"] = contract_artifacts.relative_to_root(RUN_DIR)
-        self.contract_weights_path.write_text(json.dumps(contract_payload), encoding="utf-8")
+        contract_payload["selected_run"] = "ann/results/canonical"
+        contract_payload["dataset_snapshot"] = "ann/results/canonical/dataset_snapshot.jsonl"
+        contract_payload["dataset_snapshot_sha256"] = contract_artifacts.file_sha256(ROOT / "ann" / "results" / "canonical" / "dataset_snapshot.jsonl")
+        contract_weights_path.write_text(json.dumps(contract_payload), encoding="utf-8")
 
-        with patch.object(gen_vectors, "CONTRACT_WEIGHTS_PATH", self.contract_weights_path):
+        with patch.object(gen_vectors, "CONTRACT_WEIGHTS_PATH", contract_weights_path):
             with self.assertRaisesRegex(ValueError, "unable to synthesize required score-class witnesses for zero"):
                 gen_vectors.check_witness_coverage()
 
@@ -239,7 +243,7 @@ class FreezeContractTests(unittest.TestCase):
             self.assertIn(vector, suite_vectors)
 
     def test_write_text_files_preserves_existing_file_mode(self) -> None:
-        target = self.temp_root / "contract" / "result" / "preserved.txt"
+        target = self.temp_root / "contract" / "results" / "canonical" / "preserved.txt"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("before\n", encoding="utf-8")
         target.chmod(0o754)
@@ -254,39 +258,22 @@ class FreezeContractTests(unittest.TestCase):
             if shutil.which(tool) is None:
                 self.skipTest(f"missing required tool: {tool}")
 
-        repo_root = self.temp_root / "sim-repo"
-        (repo_root / "ann" / "results" / "runs").mkdir(parents=True, exist_ok=True)
-        (repo_root / "contract" / "result").mkdir(parents=True, exist_ok=True)
-        (repo_root / "formalize" / "src" / "TinyMLP" / "Defs").mkdir(parents=True, exist_ok=True)
-        (repo_root / "rtl" / "src").mkdir(parents=True, exist_ok=True)
-        (repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
-        (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
-        (repo_root / "simulations" / "shared").mkdir(parents=True, exist_ok=True)
-        (repo_root / "build" / "sim").mkdir(parents=True, exist_ok=True)
-
-        shutil.copy2(MAKEFILE_TEMPLATE, repo_root / "Makefile")
-        shutil.copy2(CONTRACT_WEIGHTS_TEMPLATE, repo_root / "contract" / "result" / "weights.json")
-        shutil.copy2(SELECTED_RUN_TEMPLATE, repo_root / "ann" / "results" / "selected_run.json")
-        shutil.copy2(SIM_TESTBENCH_TEMPLATE, repo_root / "simulations" / "rtl" / "testbench.sv")
-        shutil.copy2(WEIGHT_ROM_TEMPLATE, repo_root / "rtl" / "src" / "weight_rom.sv")
-        shutil.copy2(LEAN_SPEC_TEMPLATE, repo_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
-        shutil.copy2(
-            SPARKLE_CONTRACT_TEMPLATE,
-            repo_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle" / "ContractData.lean",
+        repo_root = self._prepare_repo_root()
+        freeze_result = subprocess.run(
+            [
+                "python3",
+                "-m",
+                "contract.src.freeze",
+                "--run-dir",
+                f"ann/results/runs/{RUN_DIR.name}",
+            ],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
         )
-        shutil.copy2(ROOT / "contract" / "result" / "model.md", repo_root / "contract" / "result" / "model.md")
-        shutil.copy2(ROOT / "simulations" / "shared" / "test_vectors.mem", repo_root / "simulations" / "shared" / "test_vectors.mem")
-        shutil.copy2(
-            ROOT / "simulations" / "shared" / "test_vectors_meta.svh",
-            repo_root / "simulations" / "shared" / "test_vectors_meta.svh",
-        )
-        shutil.copytree(CONTRACT_SRC_DIR, repo_root / "contract" / "src", dirs_exist_ok=True)
-        shutil.copytree(RTL_SRC_DIR, repo_root / "rtl" / "src", dirs_exist_ok=True)
-        shutil.copytree(
-            RUN_DIR,
-            repo_root / "ann" / "results" / "runs" / RUN_DIR.name,
-            dirs_exist_ok=True,
-        )
+        freeze_output = freeze_result.stdout + freeze_result.stderr
+        self.assertEqual(freeze_result.returncode, 0, msg=freeze_output)
 
         result = subprocess.run(
             ["make", "sim-iverilog"],

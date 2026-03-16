@@ -40,7 +40,7 @@ The `train` command with default settings automatically freezes the contract and
 Branch-specific simulation entry points should remain separate from the canonical baseline command:
 
 - `make sim`: full-core regression for the hand-written `rtl/` implementation
-- `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath semantics and shared vectors, but resolves the compared assembly through `rtl-synthesis/sv/`
+- `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath semantics and shared vectors, but resolves the compared assembly through `rtl-synthesis/results/canonical/sv/`
 - `make rtl-formalize-synthesis-sim`: shared full-core regression for the Sparkle-generated `rtl-formalize-synthesis` wrapper at the `mlp_core` boundary
 
 The simulation layer must say plainly what the branch generates, how it is integrated, and where it is validated:
@@ -51,9 +51,9 @@ The simulation layer must say plainly what the branch generates, how it is integ
 
 It should also say which normalized branch-local export tree is being simulated:
 
-- `rtl/sv/`
-- `rtl-synthesis/sv/`
-- `rtl-formalize-synthesis/sv/`
+- `rtl/results/canonical/sv/`
+- `rtl-synthesis/results/canonical/sv/`
+- `rtl-formalize-synthesis/results/canonical/sv/`
 
 The user should not need to manually copy weights or hand-edit vectors after training.
 

@@ -4,7 +4,7 @@
 
 The SMT domain exists to add fast, automated, width-aware verification on top of the repository's current baseline:
 
-- frozen contract in `contract/result/`
+- frozen contract in `contract/results/canonical/`
 - hand-written RTL in `rtl/src/`
 - Lean formalization in `formalize/src/`
 - simulation flow in `simulations/`

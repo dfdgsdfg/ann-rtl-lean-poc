@@ -26,7 +26,7 @@ This makes the contract step the bridge between ANN training and implementation.
 
 ## 3. Freeze CLI Plan
 
-The contract step should be scriptable with one simple command that freezes a selected ANN result into downstream artifacts.
+The contract step should be scriptable with one simple command that freezes a selected ANN result into downstream artifacts and promotes the corresponding canonical snapshots.
 
 A practical command shape is:
 
@@ -53,6 +53,7 @@ The contract step should produce:
 - Verified safe bounds for intermediate values over the supported input domain
 - Exported constants or generated files for downstream use
 - A short summary of which training result was chosen and why
+- Immutable provenance fields that bind the frozen contract to one ANN run directory, one dataset snapshot path, and one dataset snapshot hash
 
 ## 5. Failure Modes to Catch Early
 
@@ -92,8 +93,10 @@ The `contract` domain must own all code it needs to validate, freeze, and genera
 
 The interface between `ann` and `contract` is the file system:
 
-- `ann` writes immutable run artifacts under `ann/results/runs/<run_id>/...`
-- `ann/results/selected_run.json` records which immutable run is canonical
-- `contract` reads that selected immutable run and produces `contract/result/weights.json` plus downstream generated files
+- `ann` writes local immutable run artifacts under `ann/results/runs/<run_id>/...`
+- `ann/results/canonical/` is the checked-in ANN baseline, with `manifest.json` recording the canonical artifact set and the originating run id
+- `contract` reads `ann/results/canonical/` and produces `contract/results/canonical/` plus downstream generated files
+
+`contract/results/canonical/weights.json` should mirror that provenance so validation can prove that the frozen contract still matches the canonical ANN snapshot and its recorded originating run id and dataset snapshot hash.
 
 Low-level utilities such as integer range checking may be duplicated across domains. This small duplication is preferable to a code-level coupling that would prevent the two domains from being tested and reasoned about independently.

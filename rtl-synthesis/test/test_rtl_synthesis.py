@@ -17,9 +17,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 ANN_RESULTS_DIR = ROOT / "ann" / "results"
-SELECTED_RUN_TEMPLATE = ANN_RESULTS_DIR / "selected_run.json"
-ANN_SELECTED_RUN_DIR = ANN_RESULTS_DIR / "runs" / "relu_teacher_v2-seed20260312-epoch51"
-CONTRACT_RESULT_DIR = ROOT / "contract" / "result"
+ANN_CANONICAL_DIR = ANN_RESULTS_DIR / "canonical"
+CONTRACT_RESULT_DIR = ROOT / "contract" / "results"
 CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 LEAN_SPEC_TEMPLATE = ROOT / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean"
 RTL_SRC_DIR = ROOT / "rtl" / "src"
@@ -491,13 +490,8 @@ class RtlSynthesisFlowTests(unittest.TestCase):
         (self.temp_root / "rtl-formalize-synthesis" / "src" / "TinyMLPSparkle").mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(MAKEFILE_TEMPLATE, self.temp_root / "Makefile")
-        shutil.copy2(SELECTED_RUN_TEMPLATE, self.temp_root / "ann" / "results" / "selected_run.json")
-        shutil.copytree(
-            ANN_SELECTED_RUN_DIR,
-            self.temp_root / "ann" / "results" / "runs" / ANN_SELECTED_RUN_DIR.name,
-            dirs_exist_ok=True,
-        )
-        shutil.copytree(CONTRACT_RESULT_DIR, self.temp_root / "contract" / "result", dirs_exist_ok=True)
+        shutil.copytree(ANN_CANONICAL_DIR, self.temp_root / "ann" / "results" / "canonical", dirs_exist_ok=True)
+        shutil.copytree(CONTRACT_RESULT_DIR, self.temp_root / "contract" / "results", dirs_exist_ok=True)
         shutil.copytree(CONTRACT_SRC_DIR, self.temp_root / "contract" / "src", dirs_exist_ok=True)
         shutil.copy2(LEAN_SPEC_TEMPLATE, self.temp_root / "formalize" / "src" / "TinyMLP" / "Defs" / "SpecCore.lean")
         shutil.copytree(RTL_SRC_DIR, self.temp_root / "rtl" / "src", dirs_exist_ok=True)

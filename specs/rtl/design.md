@@ -55,9 +55,9 @@ The RTL is split into five modules:
 For repository organization, this domain has two surfaces:
 
 - authoring surface: `rtl/src/`
-- comparable export surface: `rtl/sv/`
+- comparable export surface: `rtl/results/canonical/sv/`
 
-The exported `rtl/sv/` tree should mirror the baseline full-core module set so that branch-comparison and downstream consumers do not need branch-specific path logic to locate comparable RTL artifacts.
+The exported `rtl/results/canonical/sv/` tree should mirror the baseline full-core module set so that branch-comparison and downstream consumers do not need branch-specific path logic to locate comparable RTL artifacts.
 
 ### Top-Level Interface
 
@@ -175,8 +175,8 @@ ROM contents are auto-generated from the contract weights and embedded directly 
 
 The baseline branch should also expose normalized comparison artifacts:
 
-- `rtl/sv/`: the comparable full-core RTL tree
-- `rtl/blueprint/mlp_core.svg`: the minimum top-level schematic export
+- `rtl/results/canonical/sv/`: the comparable full-core RTL tree
+- `rtl/results/canonical/blueprint/mlp_core.svg`: the minimum top-level schematic export
 
 Additional blueprint files are allowed, but `mlp_core.svg` is the required common comparison surface across `rtl/`, `rtl-synthesis/`, and `rtl-formalize-synthesis`.
 

@@ -49,7 +49,7 @@ This separation matters because the implementation styles and trust boundaries a
 - temporal specification of controller behavior
 - automatic controller generation from that specification
 
-The semantic center of this domain is the generated top-level `mlp_core`. A generated wrapper or adapter may still be part of the stable downstream artifact contract when the raw Sparkle-emitted module uses backend-specific packing or reset conventions. For comparison and downstream consumption, that contract should be re-expressed through a normalized branch-local export surface under `rtl-formalize-synthesis/sv/`.
+The semantic center of this domain is the generated top-level `mlp_core`. A generated wrapper or adapter may still be part of the stable downstream artifact contract when the raw Sparkle-emitted module uses backend-specific packing or reset conventions. For comparison and downstream consumption, that contract should be re-expressed through a normalized branch-local export surface under `rtl-formalize-synthesis/results/canonical/sv/`.
 
 ## 3. Recommended Architecture
 
@@ -149,7 +149,7 @@ Each emitted artifact should state:
 - emission date or reproducible generation command
 - wrapper or adapter generation path when the stable downstream artifact is not the raw Sparkle module
 - stable top-level module boundary
-- normalized comparable branch path in `rtl-formalize-synthesis/sv/`
+- normalized comparable branch path in `rtl-formalize-synthesis/results/canonical/sv/`
 
 ## 5. Integration With Existing Contract Flow
 
@@ -221,7 +221,7 @@ Validation should happen in five layers.
 - the raw Sparkle-emitted module interface is checked against the repository's wrapper or adapter assumptions
 - any stable wrapper or adapter is mechanically regenerated or checked against committed output
 - packed-field recovery, reset adaptation, and `FORMAL` alias signals used by the SMT harness are validated directly
-- the normalized `rtl-formalize-synthesis/sv/` export tree presents the same comparable top-level module contract expected of the other branches
+- the normalized `rtl-formalize-synthesis/results/canonical/sv/` export tree presents the same comparable top-level module contract expected of the other branches
 - emitted state and control signals are inspectable enough to debug schedule drift
 - reset and sequential logic are emitted in a form acceptable to the downstream simulators
 

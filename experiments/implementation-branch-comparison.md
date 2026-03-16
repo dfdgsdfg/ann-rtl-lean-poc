@@ -36,7 +36,7 @@ The arithmetic datapath should stay anchored to the frozen contract. Reactive sy
 
 - Do not overwrite `rtl/src/*.sv` with generated outputs.
 - Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthesis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
-- Treat `contract/result/weights.json` as the shared semantic anchor for all implementation variants.
+- Treat `contract/results/canonical/weights.json` as the shared semantic anchor for all implementation variants.
 - Treat `formalize/` as the semantic/proof anchor until a trustworthy generator exists.
 - Treat reactive synthesis as controller-generated unless there is a precise story for arithmetic and ROM integration.
 

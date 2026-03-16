@@ -15,9 +15,9 @@ if __package__ in (None, ""):
     ROOT = Path(__file__).resolve().parents[1]
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
-    from contract.src.artifacts import read_json  # type: ignore[import-not-found]
+    from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json  # type: ignore[import-not-found]
     from contract.src.downstream_sync import expected_downstream_artifacts  # type: ignore[import-not-found]
-    from contract.src.freeze import SELECTED_RUN_PATH, validate_contract  # type: ignore[import-not-found]
+    from contract.src.freeze import validate_contract  # type: ignore[import-not-found]
     from contract.src.gen_vectors import (  # type: ignore[import-not-found]
         TEST_VECTORS_META_PATH,
         TEST_VECTORS_PATH,
@@ -37,9 +37,9 @@ if __package__ in (None, ""):
         write_text,
     )
 else:
-    from contract.src.artifacts import read_json
+    from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json
     from contract.src.downstream_sync import expected_downstream_artifacts
-    from contract.src.freeze import SELECTED_RUN_PATH, validate_contract
+    from contract.src.freeze import validate_contract
     from contract.src.gen_vectors import TEST_VECTORS_META_PATH, TEST_VECTORS_PATH, expected_vector_artifacts
     from experiments.common import (
         ROOT as REPO_ROOT,
@@ -1169,7 +1169,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
     write_command_log(freeze_check_log, freeze_check_output or "(no output)\n")
     freeze_check_result = "pass" if freeze_check_proc.returncode == 0 else "fail"
 
-    contract_payload = read_json(ROOT / "contract" / "result" / "weights.json")
+    contract_payload = read_json(ROOT / "contract" / "results" / "canonical" / "weights.json")
     downstream = expected_downstream_artifacts(contract_payload)
     vectors = expected_vector_artifacts(contract_payload)
 
@@ -1182,7 +1182,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
             artifacts={},
             details={
                 "checked_artifacts": [relative(path) for path in [*downstream.keys(), *vectors.keys()]],
-                "selected_run_metadata": relative(SELECTED_RUN_PATH),
+                "ann_canonical_manifest": relative(ANN_CANONICAL_MANIFEST_PATH),
             },
         )
     ]
@@ -1206,8 +1206,8 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
         },
         "results": results,
         "sources": {
-            "contract": "contract/result/weights.json",
-            "selected_run": relative(SELECTED_RUN_PATH),
+            "contract": "contract/results/canonical/weights.json",
+            "ann_canonical": relative(ANN_CANONICAL_MANIFEST_PATH),
         },
     }
     write_family_outputs(family_root, summary, render_family_report(summary))
@@ -1216,7 +1216,7 @@ def run_artifact_consistency_family(args: argparse.Namespace, build_root: Path) 
 
 def compare_semantic_bridge(bridge_path: Path) -> tuple[str, dict[str, object]]:
     bridge = read_json(bridge_path)
-    contract = read_json(ROOT / "contract" / "result" / "weights.json")
+    contract = read_json(ROOT / "contract" / "results" / "canonical" / "weights.json")
     mismatches: list[str] = []
 
     topology = bridge["topology"]

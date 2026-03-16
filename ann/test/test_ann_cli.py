@@ -13,8 +13,8 @@ from ann.src import train as ann_train
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SELECTED_RUN_DIR = ROOT / "ann" / "results" / "runs" / "relu_teacher_v2-seed20260312-epoch51"
-SELECTED_QUANTIZED = SELECTED_RUN_DIR / "weights_quantized.json"
+CANONICAL_DIR = ROOT / "ann" / "results" / "canonical"
+SELECTED_QUANTIZED = CANONICAL_DIR / "weights_quantized.json"
 
 
 def _integral_float_weights_payload() -> dict[str, object]:
@@ -46,9 +46,9 @@ class AnnCliRegressionTests(unittest.TestCase):
         self.assertEqual(result["example_count"], 1)
 
     def test_default_run_dir_requires_selected_run_metadata(self) -> None:
-        missing_path = ROOT / "build" / "missing-selected-run.json"
-        with patch.object(ann_evaluate, "SELECTED_RUN_PATH", missing_path):
-            with self.assertRaisesRegex(FileNotFoundError, "missing selected ANN run metadata"):
+        missing_path = ROOT / "build" / "missing-ann-canonical-manifest.json"
+        with patch.object(ann_evaluate, "CANONICAL_MANIFEST_PATH", missing_path):
+            with self.assertRaisesRegex(FileNotFoundError, "missing ANN canonical manifest"):
                 ann_evaluate.resolve_run_artifact(None, "quantized")
 
     def test_evaluation_helpers_reject_empty_lists(self) -> None:

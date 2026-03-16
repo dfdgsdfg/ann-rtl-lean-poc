@@ -62,10 +62,10 @@ The ANN flow should be operable through a simple CLI so that a finished training
 A practical command shape is:
 
 ```text
-python3 -m ann.cli train --out-dir ann/results/run_001 --skip-export
-python3 -m ann.cli evaluate --run-dir ann/results/run_001 --artifact quantized
-python3 -m ann.cli quantize --run-dir ann/results/run_001 --artifact selected-float
-python3 -m ann.cli export --run-dir ann/results/run_001
+python3 -m ann.cli train --out-dir ann/results/runs/run_001 --skip-export
+python3 -m ann.cli evaluate --run-dir ann/results/runs/run_001 --artifact quantized
+python3 -m ann.cli quantize --run-dir ann/results/runs/run_001 --artifact selected-float
+python3 -m ann.cli export --run-dir ann/results/runs/run_001
 ```
 
 The exact filenames and subcommands can vary. What matters is that one short command path can:
@@ -95,7 +95,12 @@ This is important because quantization mismatch is one of the easiest ways to cr
 
 ## 7. Export Design
 
-The ANN flow should export immutable training results under `ann/results/runs/<run_id>/`. The `contract` domain is responsible for reading the selected immutable run, freezing it into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
+The ANN flow should separate local run history from the checked-in canonical snapshot.
+
+- local immutable runs live under `ann/results/runs/<run_id>/`
+- the checked-in baseline lives under `ann/results/canonical/`
+
+The `contract` domain is responsible for reading the canonical ANN snapshot, freezing it into a canonical contract, and generating downstream artifacts for RTL, Lean, and simulation.
 
 The ANN domain's export boundary is the file system:
 
@@ -104,7 +109,7 @@ dataset
   -> train model
   -> quantize
   -> write results to ann/results/runs/<run_id>/
-  -> refresh ann/results/selected_run.json
+  -> optionally promote to ann/results/canonical/
   -> (contract domain reads and freezes)
 ```
 

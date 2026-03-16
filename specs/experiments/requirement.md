@@ -95,8 +95,8 @@ Experiment results should produce at least one of the following:
 - Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthesis`, or `rtl-synthesis`
 - Post-synthesis simulation logs when the compared artifact is synthesized
 - Scope notes that identify the generation scope, integration scope, validation scope, and validation method for the recorded evidence
-- Branch-local artifact paths that resolve to `rtl/sv/`, `rtl-synthesis/sv/`, or `rtl-formalize-synthesis/sv/` rather than undocumented cross-branch source paths
-- Branch-local diagram paths that resolve to `rtl/blueprint/mlp_core.svg`, `rtl-synthesis/blueprint/mlp_core.svg`, or `rtl-formalize-synthesis/blueprint/mlp_core.svg`
+- Branch-local artifact paths that resolve to `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, or `rtl-formalize-synthesis/results/canonical/sv/` rather than undocumented cross-branch source paths
+- Branch-local diagram paths that resolve to `rtl/results/canonical/blueprint/mlp_core.svg`, `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`, or `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`
 
 The experiment directory structure should default to branch-first organization:
 
@@ -122,5 +122,5 @@ The `experiments` domain is complete when:
 8. Any generated implementation experiment states its integration scope, validation scope, and whether its strongest claim is a theorem-level model comparison, an RTL simulation result, or a synthesis/QoR comparison.
 9. Cross-branch experiment records also state the branch generation, integration, and validation scopes rather than collapsing them into a single support label.
 10. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.
-11. Cross-branch experiment inputs resolve through `rtl/sv/`, `rtl-synthesis/sv/`, and `rtl-formalize-synthesis/sv/`.
+11. Cross-branch experiment inputs resolve through `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`.
 12. Each compared branch exposes at least `blueprint/mlp_core.svg` as a normalized top-level diagram artifact.
