@@ -8,11 +8,10 @@ It takes one toy MLP and pushes it through the full stack:
 
 1. train an actual ANN
 2. freeze one quantized result as the implementation contract
-3. implement the contract in RTL
-4. model the same behavior in Lean
-5. validate with simulation
-6. add SMT-backed control verification
-7. synthesize with an open-source ASIC flow
+3. implement and compare multiple RTL branches
+4. formalize the intended behavior in Lean
+5. validate the RTL with shared simulation and SMT
+6. drive open-source synthesis and downstream experiments from the same frozen result
 
 The model is intentionally small enough to inspect by hand:
 
@@ -30,358 +29,238 @@ The goal is not benchmark performance. The goal is to make the whole path unders
 - a frozen quantized contract that downstream code agrees on
 - a small sequential-MAC RTL design
 - a Lean formalization of the intended behavior
-- simulation and ASIC artifacts tied back to the same frozen result
+- simulation, SMT, and ASIC artifacts tied back to the same frozen result
 
-## Project Process
+## Quick Start
 
-The repository is organized around this process:
+If you only want the baseline canonical flow:
 
-1. `ann`
-Train the toy model, evaluate it, quantize it, and save the results.
+```bash
+make train
+make evaluate ARGS="--artifact quantized"
+make verify
+```
 
-2. `contract`
-Choose one trained result and freeze the exact tensors and arithmetic assumptions that the rest of the repository must use.
+That path uses canonical artifacts by default:
 
-3. `rtl`
-Implement the frozen contract in SystemVerilog.
+- `ann/results/canonical/`
+- `contract/results/canonical/`
+- `rtl/results/canonical/`
 
-4. `formalize`
-Define the mathematical, fixed-point, and machine models in Lean and prove the intended relationships.
+## End-to-End Flow
 
-5. `simulations`
-Generate vectors and compare RTL behavior against the frozen contract.
+```mermaid
+flowchart LR
+  ann["ann<br/>train / evaluate / export<br/>ann/results/canonical/"] --> contract["contract<br/>freeze tensors + arithmetic rules<br/>contract/results/canonical/"]
 
-6. `smt`
-Run solver-backed verification for RTL control properties, frozen-contract overflow bounds, arithmetic equivalence, and the frozen arithmetic-assumption export.
+  contract --> rtl["rtl<br/>baseline handwritten RTL<br/>rtl/results/canonical/"]
+  contract --> rtlsynth["rtl-synthesis<br/>generated controller branch<br/>rtl-synthesis/results/canonical/"]
+  contract --> formalize["formalize<br/>Lean model + proof"]
+  formalize --> sparkle["rtl-formalize-synthesis<br/>Lean/Sparkle generated full-core RTL<br/>rtl-formalize-synthesis/results/canonical/"]
 
-7. `experiments`
-Run optional comparisons such as functional sweeps, latency checks, report comparisons, reactive-synthesis studies, or generated-implementation studies.
+  rtl --> sim["simulations<br/>shared executable regression"]
+  rtlsynth --> sim
+  sparkle --> sim
 
-8. `asic`
-Run synthesis and, later, physical-design steps.
+  rtl --> smt["smt<br/>shared top-level solver-backed checks"]
+  rtlsynth --> smt
+  sparkle --> smt
 
-## Why RTL Is Hard
+  rtl --> experiments["experiments<br/>branch compare / QoR / post-synth"]
+  rtlsynth --> experiments
+  sparkle --> experiments
 
-The arithmetic in this project is small. The harder part is the sequential RTL behavior.
+  rtl --> asic["asic<br/>synthesis / physical-design inputs"]
+  rtlsynth --> asic
+  sparkle --> asic
+```
 
-This RTL is a reactive system:
+## Domains And Branches
 
-- it observes control inputs over time
-- it updates internal state on clock edges
-- it produces outputs based on input history and FSM state, not only current inputs
+### Domains
 
-That means verification is not only about “does the final value match the math?”
+- `ann`: training, evaluation, quantization, export, and run artifacts
+- `contract`: frozen implementation handoff, arithmetic assumptions, and downstream sync
+- `rtl`: baseline handwritten SystemVerilog implementation
+- `formalize`: Lean model and proof baseline
+- `formalize-smt`: optional SMT-assisted Lean proof workflow
+- `simulations`: shared executable validation
+- `smt`: solver-backed validation outside Lean
+- `experiments`: cross-branch comparison, characterization, and reporting
+- `asic`: synthesis and physical-design flow inputs
 
-It is also about:
+### RTL Branches
 
-- cycle-accurate FSM behavior
-- `start` / `busy` / `done` / output timing
-- hidden-to-output phase transitions
-- final-iteration and off-by-one boundaries
-- output validity and stability after completion
+The repository intentionally keeps three RTL implementation styles:
 
-That is why temporal reasoning matters here. End-state correctness is necessary, but not sufficient. We also need bounded progress, phase ordering, and stable-result properties over execution traces.
+| Branch | Style | Canonical surface | Purpose |
+| --- | --- | --- | --- |
+| `rtl` | layered baseline RTL | `rtl/results/canonical/{sv,blueprint}/` | canonical implementation baseline |
+| `rtl-synthesis` | generated controller + reused datapath | `rtl-synthesis/results/canonical/{sv,blueprint}/` | controller-synthesis experiment |
+| `rtl-formalize-synthesis` | monolithic generated full-core + stable wrapper | `rtl-formalize-synthesis/results/canonical/{sv,blueprint}/` | Lean/Sparkle full-core generation experiment |
 
-In this repository, that is the role of the `formalize` domain: connect mathematical correctness to reactive RTL behavior with machine and temporal proofs.
+The common comparison contract is the branch-local `mlp_core` surface, not a forced 3-way per-layer symmetry.
 
-## Reactive-Synthesis Experiments
+## Test Scope And Branch Comparison
 
-Reactive synthesis is separated from the baseline implementation flow.
+The RTL verification stack uses one shared core and branch-specific additions.
 
-In this repository it belongs under `experiments`, not under the canonical `rtl/` path.
+### Common Required Scope
 
-The intended use is experimental:
+Every supported RTL branch is expected to pass:
 
-- synthesize a controller candidate from a temporal specification
-- compare it against `rtl/results/canonical/sv/controller.sv`
-- keep the arithmetic datapath and frozen contract as the baseline unless an experiment explicitly replaces them
+1. `contract-preflight`
+2. branch-local canonical surface existence
+3. shared `mlp_core` dual-simulator regression
+4. shared top-level SMT family at the `mlp_core` boundary
 
-That means:
+### Branch-Specific Required Scope
 
-- reactive synthesis is an experiment track, not the source of truth for the shipped RTL
-- experiment summaries should distinguish `artifact_kind`, `assembly_boundary`, `evidence_boundary`, and `evidence_method` instead of collapsing branch status into a single support label
-- Lean/Sparkle-generated RTL is a full-core experiment branch validated by the shared `mlp_core` regression bench and downstream QoR flows
-- `rtl-formalize-synthesis/` now carries a full-core Lean refinement surface from the pure `rtlTrace` semantics to the Sparkle Signal DSL full-core view; emitted RTL remains downstream-validated rather than proved by Lean alone
-- the Sparkle lowering/backend claim is subset-scoped: the committed emitted subset used by `rtl-formalize-synthesis/` is treated as verified, while wrapper or adapter recovery logic and downstream integration remain validation-backed rather than proved by Lean alone
-- hand-written `rtl/` remains the canonical implementation baseline
+- `rtl`
+  - internal observability bench
+  - `controller_interface` SMT family
+- `rtl-synthesis`
+  - fresh synthesis flow
+  - adapter validation
+  - controller-only equivalence
+  - mixed-path closed-loop equivalence
+- `rtl-formalize-synthesis`
+  - Lean emit
+  - wrapper regeneration / freshness
+  - wrapper structural validation
+  - raw-core review artifact
 
-Relevant docs:
+### Branch Comparison
 
-- [experiments/README.md](experiments/README.md)
-- [experiments/implementation-branch-comparison.md](experiments/implementation-branch-comparison.md)
-- [experiments/rtl-formalize-synthesis/sparkle/README.md](experiments/rtl-formalize-synthesis/sparkle/README.md)
-- [experiments/rtl-synthesis/spot/README.md](experiments/rtl-synthesis/spot/README.md)
-- [rtl-synthesis/controller/README.md](rtl-synthesis/controller/README.md)
-- [specs/rtl-synthesis/requirement.md](specs/rtl-synthesis/requirement.md)
-- [specs/rtl-formalize-synthesis/requirement.md](specs/rtl-formalize-synthesis/requirement.md)
+`experiments` is the reporting and characterization layer above the common verification core. The important families are:
+
+- `branch-compare`: compares maintained branch evidence and shared top-level results
+- `qor`: records branch-local Yosys characterization
+- `post-synth`: records downstream synthesis evidence
+- `artifact-consistency`: checks the Sparkle emitted-subset / wrapper contract
+
+These families are useful and often operationally important, but they are not the same thing as the common required verification core.
+
+## Direct Execution And Canonical Defaults
+
+The public surface is still `make`, but every major path also has a direct Python runner. By default, these runners consume canonical artifacts.
+
+### Baseline Canonical Flow
+
+```bash
+make train
+make evaluate ARGS="--artifact quantized"
+make freeze-check
+make sim
+make smt
+make verify
+```
+
+### Working From An Explicit ANN Run
+
+```bash
+python3 ann/runners/main.py train --out-dir ann/results/runs/run_001 --skip-export
+python3 ann/runners/main.py evaluate --run-dir ann/results/runs/run_001 --artifact quantized
+python3 ann/runners/main.py export --run-dir ann/results/runs/run_001
+```
+
+`evaluate`, `freeze`, shared simulation, and SMT all use canonical inputs when no explicit run or path is provided.
+
+### Branch-Specific Runners
+
+```bash
+# rtl-synthesis
+python3 rtl-synthesis/runners/spot_flow.py
+python3 simulations/runners/run.py --branch rtl-synthesis --profile shared --simulator all
+
+# rtl-formalize-synthesis
+python3 rtl-formalize-synthesis/runners/emit.py --emit
+python3 simulations/runners/run.py --branch rtl-formalize-synthesis --profile shared --simulator all
+
+# experiments
+python3 experiments/runners/run.py --family branch-compare
+python3 experiments/runners/run.py --family qor
+```
+
+## Canonical And Runtime Outputs
+
+Checked-in canonical artifacts live under each domain or branch:
+
+- `ann/results/canonical/`
+- `contract/results/canonical/`
+- `rtl/results/canonical/`
+- `rtl-synthesis/results/canonical/`
+- `rtl-formalize-synthesis/results/canonical/`
+
+Non-committed runtime execution artifacts are separated into:
+
+- `build/`: generated files, tool intermediates, simulator binaries, logs
+- `reports/`: summaries, reports, pass/fail records
+
+Both use `runs/<run_id>/...` plus `canonical/...` snapshots so local executions remain traceable.
 
 ## Dependencies
 
-Install Homebrew packages:
+Install the baseline local toolchain:
 
 ```bash
 brew bundle
 ```
 
-Install the npm visualization tool:
+If you need schematic generation support:
 
 ```bash
 npm install -g netlistsvg
 ```
 
-The committed Brewfile currently installs most of the baseline local toolchain used by this repository:
-`icarus-verilog`, `verilator`, `yosys`, and `z3`.
-Install `python3`, `node`, and `elan` separately if your system does not already provide them.
+The core local tools used by this repository are:
 
-For the SMT flow specifically, `make smt` expects:
-
-- `python3` for the SMT driver scripts
-- `yosys` for RTL elaboration
-- `yosys-smtbmc` for bounded SMT model checking
-- `z3` as the current backend solver
-
-For the vanilla Lean proof path, `make formalize` expects:
-
-- `lake`
-- a working `elan` installation so the pinned Lean toolchain can be installed on first build
-
-For the Sparkle full-core generation path, `make rtl-formalize-synthesis-build` expects:
-
-- `git` for the Sparkle prepare step
-- `lake` to build the full `TinyMLPSparkle` library, then emit the checked-in Sparkle full-core artifact and stable generated `mlp_core` wrapper
-
-On Homebrew, the `yosys` formula provides both `yosys` and `yosys-smtbmc`.
-
-For the `rtl-synthesis` experiment specifically, `make rtl-synthesis` expects:
-
-- `ltlsynt` from the Spot toolchain
-- optional `syfco` on `PATH` for native TLSF loading; otherwise the repository falls back to local TLSF lowering
-- `yosys`, `yosys-smtbmc`, and `z3`
-
-For `make rtl-synthesis-sim`, you also need:
-
+- `python3`
 - `iverilog`
 - `vvp`
 - `verilator`
+- `yosys`
+- `yosys-smtbmc`
+- `z3`
+- `lake`
+- `elan`
 
-Other tools used by the project (install separately if needed):
+Optional branch-specific tools:
 
-| Tool | Purpose | Install |
-|------|---------|---------|
-| Python 3 | ANN training, contract freeze, vector generation | `brew install python@3` or system Python |
-| elan | Lean 4 toolchain manager (formal verification) | `brew install elan-init` |
-| Node.js | Required for netlistsvg | `brew install node` |
+- `ltlsynt` for `rtl-synthesis`
+- `syfco` for native TLSF lowering in `rtl-synthesis`
+- `git` for the Sparkle prepare path
 
-## How To Use It
+Vendor/tool bootstrap helpers remain under `scripts/`, for example:
 
-If you only want the practical starting point, begin with the ANN wrapper:
-
-```bash
-make train
-```
-
-Evaluate the currently selected quantized result:
-
-```bash
-make evaluate ARGS="--artifact quantized"
-```
-
-Validate that the frozen contract is still consistent:
-
-```bash
-python3 contract/runners/freeze.py --check
-```
-
-Run the vanilla Lean proof baseline:
-
-```bash
-make formalize
-```
-
-Run the dual-simulator RTL regression:
-
-```bash
-make sim
-```
-
-Run the full solver-backed SMT flow:
-
-```bash
-make smt
-```
-
-Run the practical proof-plus-regression bundle:
-
-```bash
-make verify
-```
-
-Run the controller reactive-synthesis experiment:
-
-```bash
-make rtl-synthesis-smoke
-make rtl-synthesis
-make rtl-synthesis-sim
-```
-
-### Typical Human Workflow
-
-Use this when you want to understand or refresh the current repository baseline:
-
-```bash
-make train
-make evaluate ARGS="--artifact quantized"
-make verify
-```
-
-If you want to train into a separate run directory first:
-
-```bash
-make train ARGS="--out-dir ann/results/tmp/run_001 --skip-export"
-make evaluate ARGS="--run-dir ann/results/tmp/run_001 --artifact quantized"
-make export ARGS="--run-dir ann/results/tmp/run_001"
-```
-
-## What Gets Generated
-
-The main human-facing outputs are:
-
-- `ann/results/canonical/manifest.json`
-- `ann/results/canonical/training_summary.md`
-- `ann/results/canonical/metrics.json`
-- `ann/results/canonical/weights_float.json`
-- `ann/results/canonical/weights_float_selected.json`
-- `ann/results/canonical/weights_quantized.json`
-- `contract/results/canonical/manifest.json`
-- `contract/results/canonical/weights.json`
-- `contract/results/canonical/model.md`
-- `rtl/results/canonical/sv/weight_rom.sv`
-- `simulations/shared/test_vectors.mem` (packed expected score, class bit, and inputs for the deterministic smoke suite, per-lane arithmetic-boundary sweep, and synthesized score/accumulator stress vectors)
-
-`contract/results/canonical/weights.json` is the canonical frozen payload for downstream use. It also records verified safe intermediate-value bounds for all signed `int8` inputs.
+- `scripts/prepare_vendor_tools.sh`
 
 ## Repository Map
 
-- `ann/`
-Training, evaluation, quantization, export, and saved run artifacts.
+- `ann/`: ANN code and result artifacts
+- `contract/`: frozen contract and downstream sync
+- `rtl/`: baseline canonical RTL
+- `rtl-synthesis/`: controller-synthesis branch
+- `rtl-formalize-synthesis/`: Lean/Sparkle RTL-generation branch
+- `formalize/`: Lean proof baseline
+- `formalize-smt/`: optional proof automation complement
+- `simulations/`: shared benches and simulation runners
+- `smt/`: solver-backed validation
+- `experiments/`: branch comparison and characterization
+- `asic/`: synthesis / physical-design flow source
+- `specs/`: requirements and design documents
+- `runners/`: shared Python runner infrastructure
+- `scripts/`: shell scripts and vendor-preparation utilities
 
-- `contract/`
-The frozen implementation contract and the tooling that regenerates downstream artifacts from it.
+## Where To Read Next
 
-- `rtl/`
-SystemVerilog source for the tiny inference core.
-
-- `rtl-synthesis/`
-Reactive-synthesis source inputs, formal harnesses, and driver scripts for the controller experiment.
-
-- `rtl-formalize-synthesis/`
-Lean/Sparkle source for the generated full-core experiment branch, including the direct full-core refinement bridge from `rtlTrace` into the actual Sparkle Signal DSL view.
-
-- `formalize/`
-Lean source files for the spec, fixed-point model, machine model, invariants, and correctness statements.
-
-- `smt/`
-Solver-backed verification artifacts and frozen-contract assumption exports.
-
-- `simulations/`
-RTL testbench and generated test vectors.
-
-- `experiments/`
-Optional evaluation and comparison work.
-
-- `asic/`
-ASIC synthesis and flow scripts.
-
-- `specs/`
-Human-facing requirements and design documents for each domain.
-
-## Where To Read First
-
-If you want the human documentation first, start here:
-
-- [docs/reactive-systems-beginners-guide.md](docs/reactive-systems-beginners-guide.md)
 - [specs/README.md](specs/README.md)
-- [specs/ann/requirement.md](specs/ann/requirement.md)
-- [specs/contract/requirement.md](specs/contract/requirement.md)
-- [specs/rtl/requirement.md](specs/rtl/requirement.md)
-- [specs/formalize/requirement.md](specs/formalize/requirement.md)
-
-If you want the current implemented training and freeze flow:
-
 - [ann/README.md](ann/README.md)
 - [contract/readme.md](contract/readme.md)
-
-## Current Status
-
-What is already in place:
-
-- ANN training, evaluation, quantization, and export CLI exist
-- frozen contract artifacts exist
-- RTL sources exist
-- simulation sources exist
-- Lean sources exist
-
-What is still in progress:
-
-- the repository is not yet a one-command end-to-end flow across every domain
-- the ASIC flow is present as source artifacts, but not yet wrapped in the same CLI style as the ANN flow
-- generated RTL and reactive-synthesis work are experiment tracks, not the canonical implementation flow
-
-## Current CLI Summary
-
-Available ANN commands:
-
-```bash
-make train
-make evaluate ARGS="--artifact quantized"
-make quantize ARGS="--artifact selected-float"
-make export
-```
-
-Contract freeze tool:
-
-```bash
-make freeze
-make freeze-check
-make sim-vectors
-```
-
-The freeze/vector-generation path now fails early if it cannot synthesize positive, zero, and negative score witnesses from its deterministic candidate pool, and it emits a broader deterministic suite that exercises per-lane `-128/-127/+127` boundaries plus score/accumulator stress cases.
-
-Proof commands:
-
-```bash
-make formalize
-make verify
-```
-
-Simulation commands:
-
-```bash
-make sim
-make sim-iverilog
-make sim-verilator
-make rtl-synthesis-sim
-make rtl-formalize-synthesis-sim
-make rtl-formalize-synthesis-iverilog
-make rtl-formalize-synthesis-verilator
-```
-
-Experiment commands:
-
-```bash
-make experiments
-make experiments-artifact-consistency
-make experiments-semantic-closure
-make experiments-branch-compare
-make experiments-qor
-make experiments-post-synth
-```
-
-The experiment runner writes family build artifacts under `build/experiments/{runs,canonical}/` and family summaries plus reports under `reports/experiments/{runs,canonical}/`.
+- [experiments/README.md](experiments/README.md)
 
 ## Notes
 
-- The repository currently treats the selected trained result as the single source of truth for downstream implementation.
-- Do not edit generated contract weights by hand. Re-freeze them from an ANN result instead.
-- If you are trying to understand the intended architecture rather than the current code state, read `specs/` first.
+- The repository treats the selected trained result as the source of truth for downstream implementation.
+- Do not edit generated contract weights by hand; re-freeze them from an ANN run.
+- The generated RTL branches are experiment tracks. The canonical implementation baseline is still `rtl/`.
