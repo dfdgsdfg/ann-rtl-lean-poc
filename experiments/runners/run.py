@@ -8,7 +8,7 @@ if __package__ in (None, ""):
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
 
-from experiments.run import main as workflow_main
+from experiments.src.run import main as workflow_main
 
 
 def main(argv: list[str] | None = None) -> int:

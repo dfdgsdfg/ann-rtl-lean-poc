@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from experiments import run as experiments_run
+from experiments.src import run as experiments_run
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -191,11 +191,13 @@ class ExperimentFlowTests(unittest.TestCase):
             assembly_boundary="full_core_mlp_core",
             evidence_boundary=experiments_run.TOP_LEVEL_BENCH_KIND,
             evidence_method="dual_simulator_regression",
+            experiment_status=experiments_run.SOFT_GATE_EXPERIMENT,
             claim_scope="shared mlp_core top-level comparison between baseline RTL and Sparkle-generated full-core RTL",
             source_paths=source_paths,
             artifacts={
                 "generated_wrapper": source_paths[0],
                 "generated_core": source_paths[1],
+                "blueprint_mlp_core": experiments_run.SPARKLE_BLUEPRINT,
             },
             provenance={
                 "source_kind": "generated_full_core_wrapper_flow",
@@ -236,9 +238,13 @@ class ExperimentFlowTests(unittest.TestCase):
             assembly_boundary="mixed_path_mlp_core",
             evidence_boundary=experiments_run.TOP_LEVEL_BENCH_KIND,
             evidence_method="closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression",
+            experiment_status=experiments_run.SOFT_GATE_EXPERIMENT,
             claim_scope="bounded mixed-path mlp_core equivalence with controller-scoped secondary proof",
             source_paths=source_paths or [],
-            artifacts={"summary": summary_path} if summary_path is not None else {},
+            artifacts={
+                **({"summary": summary_path} if summary_path is not None else {}),
+                "blueprint_mlp_core": experiments_run.RTL_SYNTHESIS_BLUEPRINT,
+            },
             provenance=provenance,
             simulation_profile=experiments_run.make_simulation_profile(
                 bench_kind=experiments_run.TOP_LEVEL_BENCH_KIND,
@@ -264,6 +270,10 @@ class ExperimentFlowTests(unittest.TestCase):
         self.assertEqual(payload["assembly_boundary"], assembly_boundary)
         self.assertEqual(payload["evidence_boundary"], evidence_boundary)
         self.assertEqual(payload["evidence_method"], evidence_method)
+        self.assertEqual(payload["experiment_status"], experiments_run.SOFT_GATE_EXPERIMENT)
+
+    def assert_blueprint_artifact(self, payload: dict[str, object], expected_path: str) -> None:
+        self.assertEqual(payload["artifacts"]["blueprint_mlp_core"], expected_path)
 
     def assert_simulation_profile(
         self,
@@ -326,6 +336,8 @@ class ExperimentFlowTests(unittest.TestCase):
                 summary["results"][1]["details"]["verification_manifest"],
                 "rtl-formalize-synthesis/results/canonical/verification_manifest.json",
             )
+            report_text = family_report_summary(build_root, "artifact-consistency").with_name("report.md").read_text(encoding="utf-8")
+            self.assertIn("- experiment status: `soft-gate experiment`", report_text)
 
     def test_semantic_closure_family_exports_lean_bridge(self) -> None:
         for tool in ("lake", "z3"):
@@ -385,6 +397,10 @@ class ExperimentFlowTests(unittest.TestCase):
                 evidence_boundary=experiments_run.TOP_LEVEL_BENCH_KIND,
                 evidence_method="closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression",
             )
+            self.assert_blueprint_artifact(
+                rtl_synthesis_branch["manifest"],
+                "rtl-synthesis/results/canonical/blueprint/mlp_core.svg",
+            )
             sparkle_branch = next(item for item in summary["branches"] if item["branch"] == "rtl-formalize-synthesis")
             self.assert_boundary_metadata(
                 sparkle_branch,
@@ -410,6 +426,10 @@ class ExperimentFlowTests(unittest.TestCase):
                 sparkle_branch["manifest"]["artifacts"]["generated_core"],
                 "rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv",
             )
+            self.assert_blueprint_artifact(
+                sparkle_branch["manifest"],
+                "rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg",
+            )
             self.assert_boundary_metadata(
                 sparkle_branch["manifest"],
                 artifact_kind="generated_full_core_rtl",
@@ -424,7 +444,42 @@ class ExperimentFlowTests(unittest.TestCase):
             )
             self.assertNotIn("controller_alias", sparkle_branch["manifest"]["artifacts"])
             rtl_branch = next(item for item in summary["branches"] if item["branch"] == "rtl")
+            self.assert_blueprint_artifact(
+                rtl_branch["manifest"],
+                "rtl/results/canonical/blueprint/mlp_core.svg",
+            )
             self.assertEqual(rtl_branch["secondary_result"], "pass")
+            report_text = family_report_summary(build_root, "branch-compare").with_name("report.md").read_text(encoding="utf-8")
+            self.assertIn("- experiment status: `soft-gate experiment`", report_text)
+
+    def test_prepare_rtl_synthesis_branch_uses_canonical_export_surface_when_fresh_flow_is_usable(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+            branch_root = Path(tmpdir) / "rtl-synthesis"
+
+            with (
+                patch.object(experiments_run, "missing_rtl_synthesis_tools", return_value=[]),
+                patch.object(experiments_run, "run_checked_command", return_value=("pass", "")),
+                patch.object(
+                    experiments_run,
+                    "load_rtl_synthesis_flow_summary",
+                    return_value=({"claim_scope": "primary mixed-path proof", "results": []}, None),
+                ),
+                patch.object(experiments_run, "spot_core_usable", return_value=True),
+            ):
+                manifest = experiments_run.prepare_rtl_synthesis_branch(branch_root, self.make_args())
+
+            self.assertEqual(
+                manifest.source_paths,
+                list(experiments_run.RTL_SYNTHESIS_CANONICAL_RTL),
+            )
+            self.assertEqual(
+                manifest.summary()["source_files"],
+                [experiments_run.relative(path) for path in experiments_run.RTL_SYNTHESIS_CANONICAL_RTL],
+            )
+            self.assert_blueprint_artifact(
+                manifest.summary(),
+                "rtl-synthesis/results/canonical/blueprint/mlp_core.svg",
+            )
 
     def test_branch_compare_family_fails_when_fresh_flow_formal_step_fails(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
@@ -670,6 +725,10 @@ class ExperimentFlowTests(unittest.TestCase):
                 assembly_boundary="full_core_mlp_core",
                 evidence_boundary="yosys_mlp_core_characterization",
                 evidence_method="qor_characterization",
+            )
+            self.assert_blueprint_artifact(
+                results["rtl-synthesis"]["manifest"],
+                "rtl-synthesis/results/canonical/blueprint/mlp_core.svg",
             )
             self.assertNotIn("simulation_profile", results["rtl-formalize-synthesis"])
             self.assertIn(results["rtl-synthesis"]["result"], {"pass", "skip"})
@@ -1087,6 +1146,10 @@ class ExperimentFlowTests(unittest.TestCase):
                 assembly_boundary="full_core_mlp_core",
                 evidence_boundary="openlane_post_synth_flow",
                 evidence_method="post_synthesis_validation",
+            )
+            self.assert_blueprint_artifact(
+                summary["results"][0]["manifest"],
+                "rtl/results/canonical/blueprint/mlp_core.svg",
             )
             self.assert_simulation_profile(
                 summary["results"][0],

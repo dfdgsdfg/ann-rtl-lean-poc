@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 if __package__ in (None, ""):
-    ROOT = Path(__file__).resolve().parents[1]
+    ROOT = Path(__file__).resolve().parents[2]
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json  # type: ignore[import-not-found]
@@ -24,7 +24,7 @@ if __package__ in (None, ""):
         TEST_VECTORS_PATH,
         expected_vector_artifacts,
     )
-    from experiments.common import (  # type: ignore[import-not-found]
+    from experiments.src.common import (  # type: ignore[import-not-found]
         ROOT as REPO_ROOT,
         combine_results,
         command_text,
@@ -43,7 +43,7 @@ else:
     from contract.src.downstream_sync import expected_downstream_artifacts
     from contract.src.freeze import validate_contract
     from contract.src.gen_vectors import TEST_VECTORS_META_PATH, TEST_VECTORS_PATH, expected_vector_artifacts
-    from experiments.common import (
+    from experiments.src.common import (
         ROOT as REPO_ROOT,
         combine_results,
         command_text,
@@ -100,6 +100,7 @@ VENDOR_DIR = ROOT / "vendor"
 VENDORED_LTLSYNT = VENDOR_DIR / "spot-install" / "bin" / "ltlsynt"
 VENDORED_SYFCO = VENDOR_DIR / "syfco-install" / "bin" / "syfco"
 VENDORED_OPENLANE_FLOW = VENDOR_DIR / "OpenLane" / "flow.tcl"
+SOFT_GATE_EXPERIMENT = "soft-gate experiment"
 SPOT_CLAIM_SCOPE = (
     "bounded (82-cycle) closed-loop mlp_core mixed-path equivalence over a post-reset "
     "accepted transaction window, with the hand-written datapath and shared external "
@@ -125,6 +126,18 @@ SPARKLE_FEATURE_SLICE_CONSTRUCTS = [
     "BitVec.ult",
     "declare_signal_state",
 ]
+BASELINE_BLUEPRINT = ROOT / "rtl" / "results" / "canonical" / "blueprint" / "mlp_core.svg"
+RTL_SYNTHESIS_CANONICAL_RTL = [
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_core.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "weight_rom.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
+]
+RTL_SYNTHESIS_BLUEPRINT = ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg"
+SPARKLE_BLUEPRINT = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg"
 
 
 @dataclass(frozen=True)
@@ -134,6 +147,7 @@ class BranchManifest:
     assembly_boundary: str
     evidence_boundary: str
     evidence_method: str
+    experiment_status: str
     claim_scope: str
     source_paths: list[Path]
     artifacts: dict[str, Path]
@@ -147,6 +161,7 @@ class BranchManifest:
             "assembly_boundary": self.assembly_boundary,
             "evidence_boundary": self.evidence_boundary,
             "evidence_method": self.evidence_method,
+            "experiment_status": self.experiment_status,
             "claim_scope": self.claim_scope,
             "source_files": [relative(path) for path in self.source_paths],
             "artifacts": {name: relative(path) for name, path in self.artifacts.items()},
@@ -187,7 +202,12 @@ def make_simulation_profile(
 
 
 def has_boundary_metadata(payload: dict[str, object]) -> bool:
-    return any(key in payload for key, _ in BOUNDARY_METADATA_LABELS) or "claim_scope" in payload or "simulation_profile" in payload
+    return (
+        any(key in payload for key, _ in BOUNDARY_METADATA_LABELS)
+        or "experiment_status" in payload
+        or "claim_scope" in payload
+        or "simulation_profile" in payload
+    )
 
 
 def append_boundary_metadata(lines: list[str], payload: dict[str, object]) -> None:
@@ -195,6 +215,9 @@ def append_boundary_metadata(lines: list[str], payload: dict[str, object]) -> No
         value = payload.get(key)
         if isinstance(value, str) and value:
             lines.append(f"- {label}: `{value}`")
+    experiment_status = payload.get("experiment_status")
+    if isinstance(experiment_status, str) and experiment_status:
+        lines.append(f"- experiment status: `{experiment_status}`")
     if "claim_scope" in payload:
         lines.append(f"- claim scope: {payload['claim_scope']}")
 
@@ -571,6 +594,7 @@ def make_contract_validation_result(
         "assembly_boundary": "contract_downstream_bundle",
         "evidence_boundary": evidence_boundary,
         "evidence_method": evidence_method,
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "claim_scope": claim_scope,
         "command": step["command"],
         "log": step["log"],
@@ -1243,9 +1267,10 @@ def prepare_baseline_branch(branch_root: Path) -> BranchManifest:
         assembly_boundary="full_core_mlp_core",
         evidence_boundary=TOP_LEVEL_BENCH_KIND,
         evidence_method="dual_simulator_regression",
+        experiment_status=SOFT_GATE_EXPERIMENT,
         claim_scope="committed hand-written baseline RTL",
         source_paths=list(BASELINE_RTL),
-        artifacts={},
+        artifacts={"blueprint_mlp_core": BASELINE_BLUEPRINT},
         provenance={"source_kind": "committed_rtl"},
         simulation_profile=make_simulation_profile(
             bench_kind=TOP_LEVEL_BENCH_KIND,
@@ -1278,6 +1303,7 @@ def prepare_rtl_synthesis_branch(
     summary_error: str | None = None
     claim_scope = SPOT_CLAIM_SCOPE
     missing_tools = missing_rtl_synthesis_tools(args)
+    missing_canonical_sources = [path for path in RTL_SYNTHESIS_CANONICAL_RTL if not path.exists()]
 
     if missing_tools:
         write_command_log(log_path, f"missing required fresh-flow tools: {', '.join(missing_tools)}\n")
@@ -1315,11 +1341,16 @@ def prepare_rtl_synthesis_branch(
         and summary is not None
         and summary_error is None
         and spot_core_usable(generated_core)
+        and not missing_canonical_sources
     )
     if usable and not alias_path.exists():
         write_controller_alias_module(alias_path, "controller_spot_compat")
     elif not usable and summary is None and summary_error is not None and "reason" not in provenance:
         provenance["reason"] = summary_error
+    if missing_canonical_sources:
+        provenance["missing_canonical_sources"] = [relative(path) for path in missing_canonical_sources]
+        if "reason" not in provenance:
+            provenance["reason"] = "rtl-synthesis canonical export tree is missing one or more comparable sv files"
 
     manifest = BranchManifest(
         branch="rtl-synthesis",
@@ -1327,6 +1358,7 @@ def prepare_rtl_synthesis_branch(
         assembly_boundary="mixed_path_mlp_core",
         evidence_boundary=TOP_LEVEL_BENCH_KIND,
         evidence_method="closed_loop_formal_plus_controller_formal_plus_dual_simulator_regression",
+        experiment_status=SOFT_GATE_EXPERIMENT,
         claim_scope=(
             claim_scope
             if usable
@@ -1336,12 +1368,13 @@ def prepare_rtl_synthesis_branch(
                 else "rtl-synthesis branch failed because the fresh flow did not produce a usable generated controller core"
             )
         ),
-        source_paths=[alias_path, SPOT_COMPAT_WRAPPER, generated_core, *BASELINE_RTL_NO_CONTROLLER] if usable else [],
+        source_paths=list(RTL_SYNTHESIS_CANONICAL_RTL) if usable else [],
         artifacts={
-            **({"controller_alias": alias_path} if alias_path.exists() else {}),
-            **({"generated_core": generated_core} if generated_core.exists() else {}),
+            "controller_alias": ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller.sv",
+            "generated_core": ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_core.sv",
             **({"summary": summary_path} if summary_path.exists() else {}),
             "compat_wrapper": SPOT_COMPAT_WRAPPER,
+            "blueprint_mlp_core": RTL_SYNTHESIS_BLUEPRINT,
         },
         provenance={**provenance, "usable_source_set": usable},
         simulation_profile=make_simulation_profile(
@@ -1361,11 +1394,13 @@ def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
         assembly_boundary="full_core_mlp_core",
         evidence_boundary=TOP_LEVEL_BENCH_KIND,
         evidence_method="dual_simulator_regression",
+        experiment_status=SOFT_GATE_EXPERIMENT,
         claim_scope="shared mlp_core top-level comparison between baseline RTL and Sparkle-generated full-core RTL",
         source_paths=[SPARKLE_FULL_CORE_WRAPPER, SPARKLE_FULL_CORE_RTL],
         artifacts={
             "generated_wrapper": SPARKLE_FULL_CORE_WRAPPER,
             "generated_core": SPARKLE_FULL_CORE_RTL,
+            "blueprint_mlp_core": SPARKLE_BLUEPRINT,
         },
         provenance={
             "source_kind": "generated_full_core_wrapper_flow",
@@ -1475,6 +1510,7 @@ def run_artifact_consistency_family(
         "assembly_boundary": "contract_downstream_bundle",
         "evidence_boundary": "checked_in_downstream_artifacts",
         "evidence_method": "frozen_contract_consistency_check",
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "claim_scope": (
             "checked-in frozen contract and downstream artifacts remain synchronized without rewriting tracked "
             "files, the checked-in Sparkle full-core RTL and wrapper remain aligned with the declared emitted "
@@ -1661,6 +1697,7 @@ def run_semantic_closure_family(
         "assembly_boundary": "lean_fixed_point_bridge",
         "evidence_boundary": "bridge_export_and_solver_checks",
         "evidence_method": "bridge_export_plus_solver_backed_checks",
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "claim_scope": "Lean fixed-point semantics are exported as a machine-readable artifact, aligned with the frozen contract, and connected to RTL-style datapath equivalence through solver-backed checks",
         "tool_versions": {
             "python3": tool_version([["python3", "--version"]]),
@@ -1939,6 +1976,7 @@ def run_branch_compare_family(
                     "assembly_boundary": manifest.assembly_boundary,
                     "evidence_boundary": manifest.evidence_boundary,
                     "evidence_method": manifest.evidence_method,
+                    "experiment_status": manifest.experiment_status,
                     "claim_scope": manifest.claim_scope,
                     "simulation_profile": manifest.simulation_profile,
                     "simulation_result": "skip",
@@ -1985,6 +2023,7 @@ def run_branch_compare_family(
             "assembly_boundary": manifest.assembly_boundary,
             "evidence_boundary": evidence_boundary,
             "evidence_method": evidence_method,
+            "experiment_status": manifest.experiment_status,
             "claim_scope": manifest.claim_scope,
             "simulation_profile": with_simulator_results(manifest.simulation_profile, steps),
             "simulation_result": simulation.get("simulation_result", simulation.get("overall_result", "fail")),
@@ -2002,6 +2041,7 @@ def run_branch_compare_family(
         "generated_at_utc": timestamp_utc(),
         "family": "branch-compare",
         "overall_result": combine_branch_results([str(branch["overall_result"]) for branch in branches]),
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "tool_versions": {
             "iverilog": tool_version([[args.iverilog, "-V"]]) if tool_exists(args.iverilog) else "missing",
             "verilator": tool_version([[args.verilator, "--version"]]) if tool_exists(args.verilator) else "missing",
@@ -2109,6 +2149,7 @@ def run_qor_family(
             "generated_at_utc": timestamp_utc(),
             "family": "qor",
             "overall_result": "fail",
+            "experiment_status": SOFT_GATE_EXPERIMENT,
             "claim_scope": (
                 "branch-tagged flattened full-core mlp_core QoR data across baseline RTL, Sparkle full-core RTL, "
                 "and mixed-path generated-controller branches"
@@ -2147,6 +2188,7 @@ def run_qor_family(
                     "assembly_boundary": manifest.assembly_boundary,
                     "evidence_boundary": "yosys_mlp_core_characterization",
                     "evidence_method": "qor_characterization",
+                    "experiment_status": manifest.experiment_status,
                     "claim_scope": manifest.claim_scope,
                     "result": "skip",
                     "command": "",
@@ -2154,6 +2196,7 @@ def run_qor_family(
                     "artifacts": {
                         "manifest": relative((build_root / "branches" / branch_name / "manifest.json")),
                     },
+                    "manifest": manifest.summary(),
                     "metrics": empty_qor_metrics(),
                     "metrics_basis": QOR_METRICS_BASIS,
                     "liberty": relative(liberty_path) if liberty_path is not None else "",
@@ -2173,6 +2216,7 @@ def run_qor_family(
                         "assembly_boundary": manifest.assembly_boundary,
                         "evidence_boundary": "yosys_mlp_core_characterization",
                         "evidence_method": "qor_characterization",
+                        "experiment_status": manifest.experiment_status,
                         "claim_scope": (
                             "flattened full-core mlp_core Yosys characterization across baseline RTL, Sparkle "
                             "full-core RTL, and generated-controller mixed-path RTL"
@@ -2183,6 +2227,7 @@ def run_qor_family(
                         "artifacts": {
                             "manifest": relative((build_root / "branches" / branch_name / "manifest.json")),
                         },
+                        "manifest": manifest.summary(),
                         "metrics": empty_qor_metrics(),
                         "metrics_basis": QOR_METRICS_BASIS,
                         "liberty": relative(liberty_path) if liberty_path is not None else "",
@@ -2216,6 +2261,7 @@ def run_qor_family(
                 "assembly_boundary": manifest.assembly_boundary,
                 "evidence_boundary": "yosys_mlp_core_characterization",
                 "evidence_method": "qor_characterization",
+                "experiment_status": manifest.experiment_status,
                 "claim_scope": (
                     "flattened full-core mlp_core Yosys characterization across baseline RTL, Sparkle full-core RTL, "
                     "and generated-controller mixed-path RTL"
@@ -2228,6 +2274,7 @@ def run_qor_family(
                     "json": relative(json_path) if result == "pass" and json_path.exists() else "",
                     "manifest": relative((build_root / "branches" / branch_name / "manifest.json")),
                 },
+                "manifest": manifest.summary(),
                 "metrics": metrics,
                 "metrics_basis": QOR_METRICS_BASIS,
                 "liberty": relative(liberty_path) if liberty_path is not None else "",
@@ -2238,6 +2285,7 @@ def run_qor_family(
         "generated_at_utc": timestamp_utc(),
         "family": "qor",
         "overall_result": combine_results([item["result"] for item in results]),
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "claim_scope": (
             "branch-tagged flattened full-core mlp_core QoR data across baseline RTL, Sparkle full-core RTL, and "
             "mixed-path generated-controller branches"
@@ -2362,6 +2410,7 @@ def run_post_synth_family(
             "generated_at_utc": timestamp_utc(),
             "family": "post-synth",
             "overall_result": "fail",
+            "experiment_status": SOFT_GATE_EXPERIMENT,
             "tool_versions": {
                 "openlane_flow": tool_version([[args.openlane_flow, "--version"]]) if tool_exists(args.openlane_flow) else "missing",
                 "iverilog": tool_version([[args.iverilog, "-V"]]) if tool_exists(args.iverilog) else "missing",
@@ -2389,13 +2438,15 @@ def run_post_synth_family(
             "assembly_boundary": manifest.assembly_boundary,
             "evidence_boundary": "openlane_post_synth_flow",
             "evidence_method": "post_synthesis_validation",
+            "experiment_status": manifest.experiment_status,
             "claim_scope": "OpenLane-oriented post-synthesis setup plus gate-level replay when flow artifacts and library models are available",
             "simulation_profile": make_simulation_profile(
                 bench_kind=GATE_LEVEL_BENCH_KIND,
                 required_simulators=["iverilog"],
             ),
             "result": "skip",
-            "artifacts": {},
+            "artifacts": {"manifest": relative((build_root / "branches" / branch_name / "manifest.json"))},
+            "manifest": manifest.summary(),
             "steps": [],
         }
 
@@ -2510,6 +2561,7 @@ def run_post_synth_family(
         "generated_at_utc": timestamp_utc(),
         "family": "post-synth",
         "overall_result": overall_result,
+        "experiment_status": SOFT_GATE_EXPERIMENT,
         "tool_versions": {
             "openlane_flow": tool_version([[args.openlane_flow, "--version"]]) if tool_exists(args.openlane_flow) else "missing",
             "iverilog": tool_version([[args.iverilog, "-V"]]) if tool_exists(args.iverilog) else "missing",
