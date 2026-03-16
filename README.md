@@ -158,6 +158,14 @@ make smt
 make verify
 ```
 
+Optional SMT-assisted Lean overlay:
+
+```bash
+make formalize-smt
+```
+
+`make verify` remains the baseline required verification core and does not include this optional overlay build.
+
 ### Working From An Explicit ANN Run
 
 ```bash

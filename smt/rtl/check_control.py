@@ -20,6 +20,7 @@ DEFAULT_BUILD_ROOT = ROOT / "build" / "smt"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "smt"
 DEFAULT_SUMMARIES = {
     "rtl": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl" / "summary.json",
+    "rtl-synthesis": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-synthesis" / "summary.json",
     "rtl-formalize-synthesis": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-formalize-synthesis" / "summary.json",
 }
 
@@ -29,6 +30,15 @@ BASELINE_RTL_SOURCES = [
     ROOT / "rtl" / "results" / "canonical" / "sv" / "mlp_core.sv",
     ROOT / "rtl" / "results" / "canonical" / "sv" / "relu_unit.sv",
     ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv",
+]
+RTL_SYNTHESIS_RTL_SOURCES = [
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_core.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "weight_rom.sv",
 ]
 SPARKLE_RTL_SOURCES = [
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
@@ -41,6 +51,10 @@ COMMON_SPEC_SOURCES = [
 ]
 BRANCH_SPEC_SOURCES = {
     "rtl": [],
+    "rtl-synthesis": [
+        "specs/rtl-synthesis/requirement.md",
+        "specs/rtl-synthesis/design.md",
+    ],
     "rtl-formalize-synthesis": [
         "specs/rtl-formalize-synthesis/requirement.md",
         "specs/rtl-formalize-synthesis/design.md",
@@ -193,6 +207,12 @@ def mlp_core_jobs(rtl_sources: list[Path], *, description_prefix: str) -> list[F
 
 def formal_jobs(branch: str) -> list[FormalJob]:
     rtl_dir = ROOT / "smt" / "rtl"
+    if branch == "rtl-synthesis":
+        return mlp_core_jobs(
+            RTL_SYNTHESIS_RTL_SOURCES,
+            description_prefix="RTL-synthesis mixed-path",
+        )
+
     if branch == "rtl-formalize-synthesis":
         return [
             FormalJob(
@@ -246,6 +266,8 @@ def formal_jobs(branch: str) -> list[FormalJob]:
 
 
 def branch_rtl_sources(branch: str) -> list[Path]:
+    if branch == "rtl-synthesis":
+        return RTL_SYNTHESIS_RTL_SOURCES
     if branch == "rtl-formalize-synthesis":
         return SPARKLE_RTL_SOURCES
     return BASELINE_RTL_SOURCES

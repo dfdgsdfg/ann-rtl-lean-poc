@@ -68,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     exit_codes = [
         assumptions_main(assumptions_args),
         rtl_main(["--branch", "rtl", *rtl_args]),
+        rtl_main(["--branch", "rtl-synthesis", *rtl_args]),
         rtl_main(["--branch", "rtl-formalize-synthesis", *rtl_args]),
         overflow_main(overflow_args),
         equivalence_main(overflow_args),

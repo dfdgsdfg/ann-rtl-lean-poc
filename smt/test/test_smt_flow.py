@@ -55,11 +55,13 @@ class SmtFlowTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("rtl controller_interface controller_interface", output)
+        self.assertIn("rtl-synthesis boundary_behavior mlp_core_boundary_behavior", output)
         self.assertIn("rtl-formalize-synthesis boundary_behavior mlp_core_boundary_behavior", output)
         self.assertIn("hidden_products_fit_int16", output)
         self.assertIn("out_bit_equivalent", output)
 
         rtl_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl" / "summary.json").read_text(encoding="utf-8"))
+        rtl_synthesis_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-synthesis" / "summary.json").read_text(encoding="utf-8"))
         sparkle_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-formalize-synthesis" / "summary.json").read_text(encoding="utf-8"))
         contract_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "contract" / "assumptions.json").read_text(encoding="utf-8"))
         overflow_summary = json.loads((ROOT / "reports" / "smt" / "canonical" / "contract" / "overflow" / "summary.json").read_text(encoding="utf-8"))
@@ -67,6 +69,8 @@ class SmtFlowTests(unittest.TestCase):
 
         self.assertEqual(rtl_summary["branch"], "rtl")
         self.assertEqual(rtl_summary["overall_result"], "pass")
+        self.assertEqual(rtl_synthesis_summary["branch"], "rtl-synthesis")
+        self.assertEqual(rtl_synthesis_summary["overall_result"], "pass")
         self.assertEqual(sparkle_summary["branch"], "rtl-formalize-synthesis")
         self.assertEqual(sparkle_summary["overall_result"], "pass")
         self.assertEqual(contract_summary["arithmetic"]["accumulator_bits"], 32)
@@ -75,6 +79,22 @@ class SmtFlowTests(unittest.TestCase):
         self.assertEqual(
             {result["family"] for result in rtl_summary["results"]},
             {"controller_interface", "boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
+        )
+        self.assertEqual(
+            {result["family"] for result in rtl_synthesis_summary["results"]},
+            {"boundary_behavior", "range_safety", "transaction_capture", "bounded_latency"},
+        )
+        self.assertEqual(
+            rtl_synthesis_summary["sources"]["rtl"],
+            [
+                "rtl-synthesis/results/canonical/sv/controller.sv",
+                "rtl-synthesis/results/canonical/sv/controller_spot_compat.sv",
+                "rtl-synthesis/results/canonical/sv/controller_spot_core.sv",
+                "rtl-synthesis/results/canonical/sv/mac_unit.sv",
+                "rtl-synthesis/results/canonical/sv/mlp_core.sv",
+                "rtl-synthesis/results/canonical/sv/relu_unit.sv",
+                "rtl-synthesis/results/canonical/sv/weight_rom.sv",
+            ],
         )
         self.assertEqual(
             {result["family"] for result in sparkle_summary["results"]},

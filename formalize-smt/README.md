@@ -46,8 +46,13 @@ Lane selection:
 - neither the vanilla nor SMT arithmetic provider is exported as a global instance
 - each file that elaborates provider-parameterized fixed-point definitions must bind its intended provider locally
 - importing both proof lanes at once should not silently select either lane by import order
+- the overlay source tree does not import `TinyMLP.ProofsVanilla.SpecArithmetic`; side-by-side vanilla/SMT comparisons belong in consumer code or documentation snippets, not in `formalize-smt/src/`
 
 ## Command
+
+```bash
+make formalize-smt
+```
 
 ```bash
 cd formalize-smt
@@ -57,4 +62,25 @@ lake script run doctor
 ```bash
 cd formalize-smt
 lake build
+```
+
+Example of explicit lane selection outside the overlay package:
+
+```lean
+import TinyMLP.ProofsVanilla.SpecArithmetic
+import TinyMLPSmt
+
+open TinyMLP
+
+section VanillaLane
+local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+example (lhs rhs : Int8) : (mul8x8To16 lhs rhs).toInt = lhs.toInt * rhs.toInt := by
+  rfl
+end VanillaLane
+
+section SmtLane
+local instance : ArithmeticProofProvider := smtArithmeticProofProvider
+example (lhs rhs : Int8) : (mul8x8To16 lhs rhs).toInt = lhs.toInt * rhs.toInt := by
+  rfl
+end SmtLane
 ```

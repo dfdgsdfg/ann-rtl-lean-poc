@@ -35,6 +35,14 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertIn("command -v lake", output)
         self.assertIn("cd formalize && lake build", output)
 
+    def test_formalize_smt_target_builds_optional_overlay_package(self) -> None:
+        result = run_make_dry_run("formalize-smt")
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("command -v lake", output)
+        self.assertIn("cd formalize-smt && lake build", output)
+
     def test_verify_target_includes_formalize_sim_and_smt(self) -> None:
         result = run_make_dry_run("verify")
         output = result.stdout + result.stderr
@@ -44,6 +52,7 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertIn("python3 contract/runners/freeze.py --check", output)
         self.assertIn("python3 simulations/runners/run.py --branch rtl --profile shared --simulator all", output)
         self.assertIn("python3 smt/runners/all.py", output)
+        self.assertNotIn("cd formalize-smt && lake build", output)
 
     def test_top_level_sim_targets_run_contract_preflight(self) -> None:
         for target in ("sim", "rtl-formalize-synthesis-sim", "rtl-synthesis-sim"):

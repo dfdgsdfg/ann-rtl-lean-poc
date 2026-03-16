@@ -4,12 +4,19 @@ This subtree contains the RTL-backed formal runners for the SMT domain.
 
 Current entrypoints:
 
-- `check_control.py` for both the hand-written baseline RTL source set and the Sparkle full-core source set
+- `check_control.py` for the hand-written baseline RTL source set, the `rtl-synthesis` mixed-path source set, and the Sparkle full-core source set
 
 The baseline `check_control.py` flow proves against the real RTL:
 
 - [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
 - [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
+
+The `rtl-synthesis` branch uses the same shared `mlp_core` harness family against its branch-local canonical mixed-path export tree:
+
+- [`rtl-synthesis/results/canonical/sv/controller.sv`](../../rtl-synthesis/results/canonical/sv/controller.sv)
+- [`rtl-synthesis/results/canonical/sv/controller_spot_compat.sv`](../../rtl-synthesis/results/canonical/sv/controller_spot_compat.sv)
+- [`rtl-synthesis/results/canonical/sv/controller_spot_core.sv`](../../rtl-synthesis/results/canonical/sv/controller_spot_core.sv)
+- [`rtl-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-synthesis/results/canonical/sv/mlp_core.sv)
 
 The Sparkle branch uses the same harness family at the shared `mlp_core` boundary, but swaps in these generated sources:
 
@@ -30,7 +37,7 @@ It proves these property families:
 - `transaction_capture`
 - `bounded_latency`
 
-The baseline branch runs all five families. The Sparkle branch runs the four `mlp_core` families against the generated wrapper-backed source set and leaves `controller_interface` on the hand-written controller RTL only.
+The baseline branch runs all five families. The `rtl-synthesis` branch runs the four shared `mlp_core` families against the branch-local mixed-path source set and keeps controller-specific equivalence in the `rtl-synthesis` flow. The Sparkle branch runs the four `mlp_core` families against the generated wrapper-backed source set and leaves `controller_interface` on the hand-written controller RTL only.
 
 `range_safety` proves the real selector and ROM lookup hits used by `mac_a`/`weight_rom`, so the boundary checks are not satisfied by silent default-zero fallthroughs.
 

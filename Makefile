@@ -1,8 +1,8 @@
 .PHONY: train evaluate quantize export freeze freeze-check contract-preflight \
-       formalize formalize-check-tools verify \
+       formalize formalize-check-tools formalize-smt formalize-smt-check-tools verify \
        vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
        sim sim-internal sim-check-tools sim-iverilog sim-verilator sim-internal-iverilog sim-internal-verilator clean-sim sim-vectors rtl-blueprint \
-       smt smt-check-tools smt-rtl-control smt-rtl-formalize-synthesis \
+       smt smt-check-tools smt-rtl-control smt-rtl-synthesis smt-rtl-formalize-synthesis \
        smt-contract-assumptions smt-contract-overflow smt-contract-equivalence clean-smt \
        experiments experiments-artifact-consistency experiments-semantic-closure \
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
@@ -28,6 +28,7 @@ SMT_CONTRACT_OVERFLOW_RUNNER := python3 smt/runners/contract_overflow.py
 SMT_CONTRACT_EQUIV_RUNNER := python3 smt/runners/contract_equivalence.py
 EXPERIMENTS_RUNNER := python3 experiments/runners/run.py
 FORMALIZE_PKG_DIR := formalize
+FORMALIZE_SMT_PKG_DIR := formalize-smt
 BUILD_ROOT := build
 REPORTS_ROOT := reports
 RTL_BUILD_ROOT := $(BUILD_ROOT)/rtl
@@ -80,6 +81,12 @@ formalize-check-tools:
 
 formalize: formalize-check-tools
 	cd $(FORMALIZE_PKG_DIR) && lake build
+
+formalize-smt-check-tools:
+	@command -v lake >/dev/null 2>&1 || { echo "missing required tool: lake"; exit 1; }
+
+formalize-smt: formalize-smt-check-tools
+	cd $(FORMALIZE_SMT_PKG_DIR) && lake build
 
 verify: formalize sim smt
 
@@ -331,6 +338,9 @@ smt-contract-assumptions:
 
 smt-rtl-control:
 	$(SMT_RTL_RUNNER) --branch rtl --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
+
+smt-rtl-synthesis:
+	$(SMT_RTL_RUNNER) --branch rtl-synthesis --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-rtl-formalize-synthesis: rtl-formalize-synthesis-emit
 	$(SMT_RTL_RUNNER) --branch rtl-formalize-synthesis --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)

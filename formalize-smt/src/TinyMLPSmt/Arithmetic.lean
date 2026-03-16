@@ -113,6 +113,11 @@ def smtArithmeticProofProvider : ArithmeticProofProvider where
   int8MulInt8Bounds := int8_mul_int8_bounds_smt
   int16MulInt8Bounds := int16_mul_int8_bounds_smt
 
+example : True := by
+  fail_if_success
+    let _ : ArithmeticProofProvider := inferInstance
+  trivial
+
 section Smoke
 
 local instance : ArithmeticProofProvider := smtArithmeticProofProvider

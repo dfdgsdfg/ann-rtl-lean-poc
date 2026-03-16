@@ -4,7 +4,7 @@ This directory implements the current SMT scope described in [`specs/smt/require
 
 Current scope:
 
-- RTL-backed control proofs for the baseline hand-written RTL and the Sparkle full-core branch at the `mlp_core` boundary
+- RTL-backed shared `mlp_core` proofs for the baseline hand-written RTL, the `rtl-synthesis` mixed-path branch, and the Sparkle full-core branch
 - solver-backed overflow and width checks over the frozen contract in [`contract/results/canonical/weights.json`](../contract/results/canonical/weights.json)
 - solver-backed arithmetic equivalence checks between the frozen contract view and an RTL-style bitvector view
 - explicit export of the frozen arithmetic assumptions used by the contract-side proofs
@@ -37,6 +37,12 @@ Run only the RTL control checks:
 
 ```bash
 python3 smt/runners/rtl.py --branch rtl
+```
+
+Run the shared mixed-path `rtl-synthesis` checks:
+
+```bash
+python3 smt/runners/rtl.py --branch rtl-synthesis
 ```
 
 Run only the Sparkle full-core RTL checks:
@@ -73,5 +79,7 @@ Generated artifacts:
 - `reports/smt/{runs,canonical}/contract/equivalence/summary.json`
 
 These summaries record the solver/tool version, the assumptions used for each property family, and a concise pass/fail result suitable for CI or local review.
+
+The `rtl-synthesis` branch is checked through the same `smt/runners/rtl.py` runner against its branch-local canonical mixed-path export tree, so the shared `mlp_core` property families apply to the generated-controller assembly rather than only to the baseline RTL.
 
 The Sparkle full-core branch is checked through the same `smt/runners/rtl.py` runner with a branch-specific source set consisting of the generated wrapper plus raw Sparkle-emitted core. The Lean theorem still stops at Signal DSL semantics; emitted RTL remains validated by SMT, simulation, and synthesis flows rather than proved in Lean alone.
