@@ -29,6 +29,7 @@ Generated flow artifacts are written under `build/rtl-synthesis/{runs,canonical}
 Committed comparable exports are written under:
 
 - `rtl-synthesis/results/canonical/sv/`
+- `rtl-synthesis/results/canonical/blueprint/blueprint.svg`
 - `rtl-synthesis/results/canonical/blueprint/controller.svg`
 - `rtl-synthesis/results/canonical/blueprint/controller_spot_core.svg`
 - `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`

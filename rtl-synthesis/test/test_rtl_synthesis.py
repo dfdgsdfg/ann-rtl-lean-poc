@@ -863,7 +863,7 @@ else:
                 self.assertEqual(str(path.readlink()), target)
 
     def test_committed_blueprint_tree_includes_controller_views(self) -> None:
-        for name in ("mlp_core.svg", "controller.svg", "controller_spot_core.svg"):
+        for name in ("blueprint.svg", "mlp_core.svg", "controller.svg", "controller_spot_core.svg"):
             with self.subTest(name=name):
                 path = ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / name
                 self.assertTrue(path.exists())

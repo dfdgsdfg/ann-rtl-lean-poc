@@ -101,6 +101,8 @@ The repository intentionally keeps three RTL implementation styles:
 
 The common comparison contract is the branch-local `mlp_core` surface, not a forced 3-way per-layer symmetry.
 
+For simple whole-circuit visual comparison, each branch also exposes `results/canonical/blueprint/blueprint.svg` as a flattened top-level overview artifact. The stable comparable boundary remains `blueprint/mlp_core.svg`.
+
 ## Test Scope And Branch Comparison
 
 The RTL verification stack uses one shared core and branch-specific additions.
@@ -169,12 +171,18 @@ python3 ann/runners/main.py export --run-dir ann/results/runs/run_001
 ### Branch-Specific Runners
 
 ```bash
+# rtl
+python3 rtl/runners/blueprint.py
+python3 simulations/runners/run.py --branch rtl --profile shared --simulator all
+
 # rtl-synthesis
 python3 rtl-synthesis/runners/spot_flow.py
+python3 rtl-synthesis/runners/blueprint.py
 python3 simulations/runners/run.py --branch rtl-synthesis --profile shared --simulator all
 
 # rtl-formalize-synthesis
 python3 rtl-formalize-synthesis/runners/emit.py --emit
+python3 rtl-formalize-synthesis/runners/blueprint.py
 python3 simulations/runners/run.py --branch rtl-formalize-synthesis --profile shared --simulator all
 
 # experiments

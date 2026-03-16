@@ -185,6 +185,7 @@ rtl-formalize-synthesis/
         mlp_core.sv
         sparkle_mlp_core.sv
       blueprint/
+        blueprint.svg
         mlp_core.svg
         sparkle_mlp_core.svg
 ```
@@ -197,7 +198,7 @@ If the stable downstream `mlp_core` boundary is realized through a generated wra
 - packed-bus slicing or field-recovery rules
 - any `FORMAL`-only observability ports relied on by downstream SMT checks
 
-The minimum comparable diagram artifact remains `blueprint/mlp_core.svg`. When that stable wrapper-level diagram is intentionally simple because it only shows a raw-core instantiation and packed-bus unpacking, the branch should also expose `blueprint/sparkle_mlp_core.svg` as a raw implementation-detail view.
+The minimum comparable diagram artifact remains `blueprint/mlp_core.svg`. The branch should also expose `blueprint/blueprint.svg` as a flattened whole-circuit overview artifact. When the stable wrapper-level diagram is intentionally simple because it only shows a raw-core instantiation and packed-bus unpacking, the branch should also expose `blueprint/sparkle_mlp_core.svg` as a raw implementation-detail view.
 
 ## 8. Validation Requirements
 
@@ -286,7 +287,7 @@ The `rtl-formalize-synthesis` domain is complete when:
 3. The raw emitted full-core RTL artifact, the stable downstream `mlp_core` artifact, and the normalized comparable export tree under `rtl-formalize-synthesis/results/canonical/sv/` are stored or reproducibly regenerated from committed sources, a pinned Sparkle upstream revision, and the committed local patch set and wrapper-generation logic required by this repository.
 4. The generated path consumes the same frozen contract payload as the rest of the repository.
 5. The generated RTL matches the current `mlp_core` interface, handshake contract, cycle schedule, and exact `76`-cycle latency measured from the accept cycle to the first cycle where `done` is visible.
-6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`, and when needed also exposes `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg` as the raw implementation-detail schematic, while any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
+6. The generated RTL passes the repository's full-core regression and comparison flow, the branch defines `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg` plus the flattened `rtl-formalize-synthesis/results/canonical/blueprint/blueprint.svg`, and when needed also exposes `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg` as the raw implementation-detail schematic, while any stable wrapper or adapter passes direct validation of its packing, reset adaptation, and `FORMAL` observability contract.
 7. A Lean refinement theorem connects the repository's pure Lean full-core semantics to the Sparkle Signal DSL full-core model.
 8. The repository explicitly states that the Sparkle lowering/backend is verified for the declared emitted subset used by this domain, while wrapper or adapter logic, unexercised Sparkle/backend features, and downstream integration remain validation-backed or assumption-backed exactly as documented.
 9. The branch inherits and documents the repository-wide executable and top-level SMT verification core.

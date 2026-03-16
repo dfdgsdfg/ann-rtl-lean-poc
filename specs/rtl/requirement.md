@@ -211,6 +211,7 @@ rtl/
         controller.sv
         weight_rom.sv
       blueprint/
+        blueprint.svg
         mlp_core.svg
 ```
 
@@ -229,12 +230,13 @@ rtl/
         controller.sv
         weight_rom.sv
       blueprint/
+        blueprint.svg
         mlp_core.svg
 ```
 
 The `sv/` tree is the canonical comparable full-core RTL surface for the baseline branch, and it is also the maintained implementation tree for the branch.
 
-The `blueprint/` tree is the canonical schematic export surface for the baseline branch. Additional SVGs are allowed, but `blueprint/mlp_core.svg` is the minimum required comparable diagram artifact.
+The `blueprint/` tree is the canonical schematic export surface for the baseline branch. `blueprint/mlp_core.svg` is the stable comparable diagram artifact, and `blueprint/blueprint.svg` is the flattened whole-circuit overview artifact used for simple branch-to-branch visual comparison.
 
 ## 7. Verification Integration
 
@@ -263,6 +265,6 @@ The `rtl` domain is complete when:
 5. Boundary transitions at the final MAC and phase edges are explicitly verified by simulation and formalization.
 6. The exact `76`-cycle latency, level-based `done`, level-based `busy`, and `out_bit` validity contract are explicitly verified against the current RTL behavior.
 7. The branch defines a normalized comparable export tree at `rtl/results/canonical/sv/` rather than relying on readers or downstream tools to infer the baseline source layout from `rtl/results/canonical/sv/`.
-8. The branch defines a normalized schematic export tree at `rtl/results/canonical/blueprint/` with at least `mlp_core.svg`.
+8. The branch defines a normalized schematic export tree at `rtl/results/canonical/blueprint/` with `mlp_core.svg` and a flattened `blueprint.svg`.
 9. The branch inherits and documents the repository-wide executable and top-level SMT verification core.
 10. The layered baseline keeps internal observability replay and `controller_interface` SMT as required branch-owned validation, not merely as optional experiments.

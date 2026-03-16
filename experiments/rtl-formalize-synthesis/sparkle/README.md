@@ -7,6 +7,7 @@ Canonical files:
 - `rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`: raw Sparkle-emitted full-core RTL
 - `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`: stable generated `mlp_core` boundary used by the shared simulation bench, SMT flow, and experiment families
 - `rtl-formalize-synthesis/results/canonical/verification_manifest.json`: declared emitted-subset and semantics-preservation statement consumed by wrapper generation and artifact-consistency checks
+- `rtl-formalize-synthesis/results/canonical/blueprint/blueprint.svg`: flattened whole-circuit overview schematic
 - `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`: stable wrapper-level comparable schematic
 - `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg`: raw Sparkle-emitted implementation schematic
 

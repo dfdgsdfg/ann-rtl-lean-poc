@@ -1,7 +1,7 @@
 .PHONY: train evaluate quantize export freeze freeze-check contract-preflight \
        formalize formalize-check-tools verify \
        vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
-       sim sim-internal sim-check-tools sim-iverilog sim-verilator sim-internal-iverilog sim-internal-verilator clean-sim sim-vectors \
+       sim sim-internal sim-check-tools sim-iverilog sim-verilator sim-internal-iverilog sim-internal-verilator clean-sim sim-vectors rtl-blueprint \
        smt smt-check-tools smt-rtl-control smt-rtl-formalize-synthesis \
        smt-contract-assumptions smt-contract-overflow smt-contract-equivalence clean-smt \
        experiments experiments-artifact-consistency experiments-semantic-closure \
@@ -16,6 +16,7 @@
 ANN_CLI := python3 ann/runners/main.py
 CONTRACT_FREEZE_RUNNER := python3 contract/runners/freeze.py
 SIM_RUNNER := python3 simulations/runners/run.py
+RTL_BLUEPRINT_RUNNER := python3 rtl/runners/blueprint.py
 RTL_SYNTHESIS_RUNNER := python3 rtl-synthesis/runners/spot_flow.py
 RTL_SYNTHESIS_BLUEPRINT_RUNNER := python3 rtl-synthesis/runners/blueprint.py
 RTL_FORMALIZE_EMIT_RUNNER := python3 rtl-formalize-synthesis/runners/emit.py
@@ -231,6 +232,9 @@ sim-internal-iverilog: contract-preflight sim-check-tools
 
 sim-internal-verilator: contract-preflight sim-check-tools
 	$(SIM_RUNNER) --branch rtl --profile internal --simulator verilator --build-root $(RTL_BUILD_ROOT) --report-root $(RTL_REPORT_ROOT)
+
+rtl-blueprint:
+	$(RTL_BLUEPRINT_RUNNER)
 
 clean-sim:
 	rm -rf $(RTL_BUILD_ROOT) $(RTL_REPORT_ROOT)

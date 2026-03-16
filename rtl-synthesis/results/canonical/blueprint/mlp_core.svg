@@ -19,38 +19,38 @@
   .splitjoinBody {
     fill:#000;
   }</style>
-  <g s:type="add" transform="translate(1989.3333333333333,5133.5)" s:width="25" s:height="25" id="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59">
+  <g s:type="add" transform="translate(1989.3333333333333,5133.5)" s:width="25" s:height="25" id="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59">
     <s:alias val="$add"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
-    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
-    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
+    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
+    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:193$59"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="add" transform="translate(2594,564)" s:width="25" s:height="25" id="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60">
+  <g s:type="add" transform="translate(2594,564)" s:width="25" s:height="25" id="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60">
     <s:alias val="$add"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
-    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
-    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
+    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
+    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:197$60"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="add" transform="translate(2484,5279)" s:width="25" s:height="25" id="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64">
+  <g s:type="add" transform="translate(2484,5279)" s:width="25" s:height="25" id="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64">
     <s:alias val="$add"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
-    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
-    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
+    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
+    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:211$64"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="add" transform="translate(2484,145.5)" s:width="25" s:height="25" id="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66">
+  <g s:type="add" transform="translate(2484,145.5)" s:width="25" s:height="25" id="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66">
     <s:alias val="$add"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
-    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
-    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
+    <line x1="7.5" x2="17.5" y1="12.5" y2="12.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
+    <line x1="12.5" x2="12.5" y1="7.5" y2="17.5" class="cell_$add$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$66"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
@@ -540,66 +540,66 @@
       <text x="5" y="-4" style="fill:#000; stroke:none" class="cell_$auto$opt_dff.cc:252:make_patterns_logic$595">Y</text>
     </g>
   </g>
-  <g s:type="eq" transform="translate(1989.3333333333333,4893.5)" s:width="25" s:height="25" id="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49">
+  <g s:type="eq" transform="translate(1989.3333333333333,4893.5)" s:width="25" s:height="25" id="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49">
     <s:alias val="$eq"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
-    <line x1="7.5" x2="17.5" y1="10" y2="10" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
-    <line x1="7.5" x2="17.5" y1="15" y2="15" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
+    <line x1="7.5" x2="17.5" y1="10" y2="10" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
+    <line x1="7.5" x2="17.5" y1="15" y2="15" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:136$49"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="eq" transform="translate(2484,5219)" s:width="25" s:height="25" id="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63">
+  <g s:type="eq" transform="translate(2484,5219)" s:width="25" s:height="25" id="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63">
     <s:alias val="$eq"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
-    <line x1="7.5" x2="17.5" y1="10" y2="10" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
-    <line x1="7.5" x2="17.5" y1="15" y2="15" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
+    <line x1="7.5" x2="17.5" y1="10" y2="10" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
+    <line x1="7.5" x2="17.5" y1="15" y2="15" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:207$63"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="not" transform="translate(1330.5,5533.5)" s:width="30" s:height="20" id="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68">
+  <g s:type="not" transform="translate(1330.5,5533.5)" s:width="30" s:height="20" id="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68">
     <s:alias val="$_NOT_"/>
     <s:alias val="$not"/>
     <s:alias val="$logic_not"/>
-    <path d="M0,0 L0,20 L20,10 Z" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68"/>
-    <circle cx="23" cy="10" r="3" class="cell_$eq$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68"/>
+    <path d="M0,0 L0,20 L20,10 Z" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68"/>
+    <circle cx="23" cy="10" r="3" class="cell_$eq$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$68"/>
     <g s:x="0" s:y="10" s:pid="A"/>
     <g s:x="25" s:y="10" s:pid="Y"/>
   </g>
-  <g s:type="gt" transform="translate(2594,114.5)" s:width="25" s:height="25" id="cell_$gt$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67">
+  <g s:type="gt" transform="translate(2594,114.5)" s:width="25" s:height="25" id="cell_$gt$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67">
     <s:alias val="$gt"/>
-    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$gt$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
-    <line x1="7.5" x2="17.5" y1="7.5" y2="12.5" class="cell_$gt$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
-    <line x1="7.5" x2="17.5" y1="17.5" y2="12.5" class="cell_$gt$rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
+    <circle r="12.5" cx="12.5" cy="12.5" class="cell_$gt$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
+    <line x1="7.5" x2="17.5" y1="7.5" y2="12.5" class="cell_$gt$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
+    <line x1="7.5" x2="17.5" y1="17.5" y2="12.5" class="cell_$gt$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:217$67"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="25" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="and" transform="translate(1617.6666666666667,5578.5)" s:width="30" s:height="25" id="cell_$logic_and$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$70">
+  <g s:type="and" transform="translate(1617.6666666666667,5578.5)" s:width="30" s:height="25" id="cell_$logic_and$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$70">
     <s:alias val="$and"/>
     <s:alias val="$logic_and"/>
     <s:alias val="$_AND_"/>
-    <path d="M0,0 L0,25 L15,25 A15 12.5 0 0 0 15,0 Z" class="cell_$logic_and$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$70"/>
+    <path d="M0,0 L0,25 L15,25 A15 12.5 0 0 0 15,0 Z" class="cell_$logic_and$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$70"/>
     <g s:x="0" s:y="5" s:pid="A"/>
     <g s:x="0" s:y="20" s:pid="B"/>
     <g s:x="30" s:y="12.5" s:pid="Y"/>
   </g>
-  <g s:type="not" transform="translate(1330.5,5588.5)" s:width="30" s:height="20" id="cell_$logic_not$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69">
+  <g s:type="not" transform="translate(1330.5,5588.5)" s:width="30" s:height="20" id="cell_$logic_not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69">
     <s:alias val="$_NOT_"/>
     <s:alias val="$not"/>
     <s:alias val="$logic_not"/>
-    <path d="M0,0 L0,20 L20,10 Z" class="cell_$logic_not$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69"/>
-    <circle cx="23" cy="10" r="3" class="cell_$logic_not$rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69"/>
+    <path d="M0,0 L0,20 L20,10 Z" class="cell_$logic_not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69"/>
+    <circle cx="23" cy="10" r="3" class="cell_$logic_not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:222$69"/>
     <g s:x="0" s:y="10" s:pid="A"/>
     <g s:x="25" s:y="10" s:pid="Y"/>
   </g>
-  <g s:type="or" transform="translate(1617.6666666666667,1632.5)" s:width="30" s:height="25" id="cell_$logic_or$rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58">
+  <g s:type="or" transform="translate(1617.6666666666667,1632.5)" s:width="30" s:height="25" id="cell_$logic_or$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58">
     <s:alias val="$or"/>
     <s:alias val="$logic_or"/>
     <s:alias val="$_OR_"/>
-    <path d="M0,25 L0,25 L15,25 A15 12.5 0 0 0 15,0 L0,0" class="cell_$logic_or$rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58"/>
-    <path d="M0,0 A30 25 0 0 1 0,25" class="cell_$logic_or$rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58"/>
+    <path d="M0,25 L0,25 L15,25 A15 12.5 0 0 0 15,0 L0,0" class="cell_$logic_or$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58"/>
+    <path d="M0,0 A30 25 0 0 1 0,25" class="cell_$logic_or$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-synthesis/results/canonical/sv/mlp_core.sv:191$58"/>
     <g s:x="3" s:y="5" s:pid="A"/>
     <g s:x="3" s:y="20" s:pid="B"/>
     <g s:x="30" s:y="12.5" s:pid="Y"/>

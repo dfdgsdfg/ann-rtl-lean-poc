@@ -240,6 +240,7 @@ rtl-synthesis/
         controller_spot_compat.sv
         controller_spot_core.sv
       blueprint/
+        blueprint.svg
         mlp_core.svg
         controller.svg
         controller_spot_core.svg
@@ -297,7 +298,7 @@ The `rtl-synthesis` domain is complete when:
 5. A synthesized controller artifact can be translated or wrapped into an RTL-consumable form.
 6. The branch materializes a self-contained comparable export tree at `rtl-synthesis/results/canonical/sv/`, with any baseline reuse represented explicitly through branch-local symlinks or override files.
 7. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
-8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact, and also records `controller.svg` plus `controller_spot_core.svg` so the wrapper and synthesized core boundaries remain independently reviewable.
+8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the stable comparable diagram artifact, `rtl-synthesis/results/canonical/blueprint/blueprint.svg` as the flattened whole-circuit overview artifact, and also records `controller.svg` plus `controller_spot_core.svg` so the wrapper and synthesized core boundaries remain independently reviewable.
 9. The repository also records the secondary controller-scoped comparison against [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and keeps its assumption profile explicit.
 10. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.
 11. The branch inherits and documents the repository-wide executable and top-level SMT verification core.

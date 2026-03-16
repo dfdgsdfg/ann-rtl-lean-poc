@@ -19,12 +19,12 @@
   .splitjoinBody {
     fill:#000;
   }</style>
-  <g s:type="not" transform="translate(77,402)" s:width="30" s:height="20" id="cell_$not$rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1">
+  <g s:type="not" transform="translate(77,402)" s:width="30" s:height="20" id="cell_$not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1">
     <s:alias val="$_NOT_"/>
     <s:alias val="$not"/>
     <s:alias val="$logic_not"/>
-    <path d="M0,0 L0,20 L20,10 Z" class="cell_$not$rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1"/>
-    <circle cx="23" cy="10" r="3" class="cell_$not$rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1"/>
+    <path d="M0,0 L0,20 L20,10 Z" class="cell_$not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1"/>
+    <circle cx="23" cy="10" r="3" class="cell_$not$/Users/dididi/workspaces/ann-rtl-lean-poc/rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv:66$1"/>
     <g s:x="0" s:y="10" s:pid="A"/>
     <g s:x="25" s:y="10" s:pid="Y"/>
   </g>

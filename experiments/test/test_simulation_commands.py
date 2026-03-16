@@ -159,6 +159,20 @@ class SimulationCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=output)
         self.assertIn("python3 rtl-formalize-synthesis/runners/blueprint.py", output)
 
+    def test_baseline_blueprint_target_exists(self) -> None:
+        result = run_make_dry_run("rtl-blueprint")
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("python3 rtl/runners/blueprint.py", output)
+
+    def test_canonical_top_level_blueprints_exist_for_all_rtl_branches(self) -> None:
+        for branch in ("rtl", "rtl-synthesis", "rtl-formalize-synthesis"):
+            with self.subTest(branch=branch):
+                path = ROOT / branch / "results" / "canonical" / "blueprint" / "blueprint.svg"
+                self.assertTrue(path.exists(), msg=str(path))
+                self.assertGreater(path.stat().st_size, 0)
+
     def test_top_level_bench_does_not_reference_internal_dut_state(self) -> None:
         top_level_bench = TOP_LEVEL_TB.read_text(encoding="utf-8")
         forbidden_tokens = (

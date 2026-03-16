@@ -32,6 +32,28 @@ def run(command: list[str]) -> None:
         raise SystemExit(result.returncode)
 
 
+def render_svg(
+    *,
+    yosys: str,
+    netlistsvg: str,
+    sources: list[Path],
+    top: str,
+    json_path: Path,
+    svg_path: Path,
+    flatten: bool = False,
+) -> None:
+    script = [
+        "read_verilog -sv " + " ".join(str(path) for path in sources),
+        f"hierarchy -check -top {top}",
+        "proc",
+    ]
+    if flatten:
+        script.append("flatten")
+    script.extend(("opt", f"write_json {json_path}"))
+    run([yosys, "-q", "-p", "; ".join(script)])
+    run([netlistsvg, str(json_path), "-o", str(svg_path)])
+
+
 def ensure_symlink(name: str) -> None:
     BLUEPRINT_DIR.mkdir(parents=True, exist_ok=True)
     link_path = BLUEPRINT_DIR / name
@@ -52,41 +74,52 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("mac_unit.svg", "relu_unit.svg", "weight_rom.svg"):
         ensure_symlink(name)
 
-    mlp_json = BUILD_DIR / "mlp_core.json"
-    controller_json = BUILD_DIR / "controller.json"
-    core_json = BUILD_DIR / "controller_spot_core.json"
-    run(
-        [
-            args.yosys,
-            "-q",
-            "-p",
-            "read_verilog -sv "
-            f"{SV_DIR / 'mac_unit.sv'} {SV_DIR / 'relu_unit.sv'} {SV_DIR / 'controller.sv'} "
-            f"{SV_DIR / 'controller_spot_compat.sv'} {SV_DIR / 'controller_spot_core.sv'} "
-            f"{SV_DIR / 'weight_rom.sv'} {SV_DIR / 'mlp_core.sv'}; "
-            f"hierarchy -check -top mlp_core; proc; opt; write_json {mlp_json}",
-        ]
+    top_sources = [
+        SV_DIR / "mac_unit.sv",
+        SV_DIR / "relu_unit.sv",
+        SV_DIR / "controller.sv",
+        SV_DIR / "controller_spot_compat.sv",
+        SV_DIR / "controller_spot_core.sv",
+        SV_DIR / "weight_rom.sv",
+        SV_DIR / "mlp_core.sv",
+    ]
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=top_sources,
+        top="mlp_core",
+        json_path=BUILD_DIR / "mlp_core.json",
+        svg_path=BLUEPRINT_DIR / "mlp_core.svg",
     )
-    run([args.netlistsvg, str(mlp_json), "-o", str(BLUEPRINT_DIR / "mlp_core.svg")])
-    run(
-        [
-            args.yosys,
-            "-q",
-            "-p",
-            f"read_verilog -sv {SV_DIR / 'controller.sv'} {SV_DIR / 'controller_spot_compat.sv'} {SV_DIR / 'controller_spot_core.sv'}; "
-            f"hierarchy -check -top controller; proc; opt; write_json {controller_json}",
-        ]
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=top_sources,
+        top="mlp_core",
+        json_path=BUILD_DIR / "blueprint.json",
+        svg_path=BLUEPRINT_DIR / "blueprint.svg",
+        flatten=True,
     )
-    run([args.netlistsvg, str(controller_json), "-o", str(BLUEPRINT_DIR / "controller.svg")])
-    run(
-        [
-            args.yosys,
-            "-q",
-            "-p",
-            f"read_verilog -sv {SV_DIR / 'controller_spot_core.sv'}; hierarchy -check -top controller_spot_core; proc; opt; write_json {core_json}",
-        ]
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[
+            SV_DIR / "controller.sv",
+            SV_DIR / "controller_spot_compat.sv",
+            SV_DIR / "controller_spot_core.sv",
+        ],
+        top="controller",
+        json_path=BUILD_DIR / "controller.json",
+        svg_path=BLUEPRINT_DIR / "controller.svg",
     )
-    run([args.netlistsvg, str(core_json), "-o", str(BLUEPRINT_DIR / "controller_spot_core.svg")])
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[SV_DIR / "controller_spot_core.sv"],
+        top="controller_spot_core",
+        json_path=BUILD_DIR / "controller_spot_core.json",
+        svg_path=BLUEPRINT_DIR / "controller_spot_core.svg",
+    )
     return 0
 
 

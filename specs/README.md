@@ -89,7 +89,7 @@ The specs should distinguish between domain source trees and comparable export t
 - `rtl/results/canonical/sv/` is both the baseline source-of-truth RTL tree and the comparable export tree
 - `rtl-synthesis/controller/` and `rtl-formalize-synthesis/src/` remain domain-internal source locations
 - `*/sv/` is the normalized branch-local comparable RTL surface consumed by branch comparison and downstream validation
-- `*/blueprint/` is the normalized branch-local schematic surface, with at least `mlp_core.svg` required for each branch
+- `*/blueprint/` is the normalized branch-local schematic surface, with `mlp_core.svg` as the required stable comparable boundary and `blueprint.svg` as the required flattened whole-circuit overview artifact for each branch
 - if a generated branch reuses unchanged baseline artifacts, the branch-local `sv/` and `blueprint/` trees should expose that reuse explicitly through symlinks or override files
 
 ## RTL Branch Styles
@@ -107,4 +107,4 @@ The specs should therefore not require a uniform 3-way per-layer comparison acro
 - `*/results/canonical/sv/mlp_core.sv`
 - `*/results/canonical/blueprint/mlp_core.svg`
 
-Additional internal comparison views such as `controller.svg`, `controller_spot_core.svg`, or `sparkle_mlp_core.svg` are branch-specific review artifacts, not a requirement that every branch expose the same internal layers.
+Additional internal comparison views such as `controller.svg`, `controller_spot_core.svg`, or `sparkle_mlp_core.svg` are branch-specific review artifacts, not a requirement that every branch expose the same internal layers. Separately, `*/results/canonical/blueprint/blueprint.svg` is the normalized flattened whole-circuit review view used for simple side-by-side visual comparison.

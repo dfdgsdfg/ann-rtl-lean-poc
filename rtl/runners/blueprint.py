@@ -12,14 +12,13 @@ if __package__ in (None, ""):
         sys.path.insert(0, str(ROOT))
 
 
-DOMAIN_ROOT = ROOT / "rtl-formalize-synthesis"
-SV_DIR = DOMAIN_ROOT / "results" / "canonical" / "sv"
-BLUEPRINT_DIR = DOMAIN_ROOT / "results" / "canonical" / "blueprint"
-BUILD_DIR = ROOT / "build" / "rtl-formalize-synthesis" / "canonical" / "schematics"
+SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
+BLUEPRINT_DIR = ROOT / "rtl" / "results" / "canonical" / "blueprint"
+BUILD_DIR = ROOT / "build" / "rtl" / "canonical" / "schematics"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate rtl-formalize-synthesis blueprint SVGs.")
+    parser = argparse.ArgumentParser(description="Generate baseline rtl blueprint SVGs.")
     parser.add_argument("--yosys", default=shutil.which("yosys") or "yosys")
     parser.add_argument("--netlistsvg", default=shutil.which("netlistsvg") or "netlistsvg")
     return parser.parse_args(argv)
@@ -62,7 +61,46 @@ def main(argv: list[str] | None = None) -> int:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     BLUEPRINT_DIR.mkdir(parents=True, exist_ok=True)
 
-    top_sources = [SV_DIR / "mlp_core.sv", SV_DIR / "sparkle_mlp_core.sv"]
+    top_sources = [
+        SV_DIR / "mac_unit.sv",
+        SV_DIR / "relu_unit.sv",
+        SV_DIR / "controller.sv",
+        SV_DIR / "weight_rom.sv",
+        SV_DIR / "mlp_core.sv",
+    ]
+
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[SV_DIR / "controller.sv"],
+        top="controller",
+        json_path=BUILD_DIR / "controller.json",
+        svg_path=BLUEPRINT_DIR / "controller.svg",
+    )
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[SV_DIR / "mac_unit.sv"],
+        top="mac_unit",
+        json_path=BUILD_DIR / "mac_unit.json",
+        svg_path=BLUEPRINT_DIR / "mac_unit.svg",
+    )
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[SV_DIR / "relu_unit.sv"],
+        top="relu_unit",
+        json_path=BUILD_DIR / "relu_unit.json",
+        svg_path=BLUEPRINT_DIR / "relu_unit.svg",
+    )
+    render_svg(
+        yosys=args.yosys,
+        netlistsvg=args.netlistsvg,
+        sources=[SV_DIR / "weight_rom.sv"],
+        top="weight_rom",
+        json_path=BUILD_DIR / "weight_rom.json",
+        svg_path=BLUEPRINT_DIR / "weight_rom.svg",
+    )
     render_svg(
         yosys=args.yosys,
         netlistsvg=args.netlistsvg,
@@ -79,14 +117,6 @@ def main(argv: list[str] | None = None) -> int:
         json_path=BUILD_DIR / "blueprint.json",
         svg_path=BLUEPRINT_DIR / "blueprint.svg",
         flatten=True,
-    )
-    render_svg(
-        yosys=args.yosys,
-        netlistsvg=args.netlistsvg,
-        sources=[SV_DIR / "sparkle_mlp_core.sv"],
-        top="TinyMLP_sparkleMlpCorePacked",
-        json_path=BUILD_DIR / "sparkle_mlp_core.json",
-        svg_path=BLUEPRINT_DIR / "sparkle_mlp_core.svg",
     )
     return 0
 
