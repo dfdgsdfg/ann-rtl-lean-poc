@@ -6,6 +6,8 @@ Canonical files:
 
 - `rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`: raw Sparkle-emitted full-core RTL
 - `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`: stable generated `mlp_core` boundary used by the shared simulation bench, SMT flow, and experiment families
+- `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`: stable wrapper-level comparable schematic
+- `rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg`: raw Sparkle-emitted implementation schematic
 
 Generation command:
 
@@ -17,6 +19,7 @@ Validation commands:
 
 ```bash
 make rtl-formalize-synthesis-sim
+make rtl-formalize-synthesis-blueprint
 make rtl-formalize-synthesis-iverilog
 make rtl-formalize-synthesis-verilator
 make smt-rtl-formalize-synthesis
@@ -37,6 +40,8 @@ Boundary and trust profile:
 - internal observability: not required for this branch; the internal bench remains a baseline-oriented secondary check only
 - semantic baseline: `rtl/results/canonical/sv/mlp_core.sv`
 - stable downstream module boundary: `mlp_core.sv`
+- comparable schematic boundary: `mlp_core.svg`
+- implementation-detail schematic boundary: `sparkle_mlp_core.svg`
 - proof boundary: `Refinement.lean` proves the full-core bridge from the pure Lean machine/temporal semantics to the actual Sparkle Signal DSL full-core state/view (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`); the Lean theorem stops at Signal DSL semantics
 - backend trust boundary: Sparkle-to-Verilog remains trusted code generation
 - RTL validation: shared `mlp_core` vector regression, branch-comparison summaries, branch-aware SMT checks, QoR characterization, and downstream synthesis flows

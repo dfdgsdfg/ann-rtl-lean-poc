@@ -115,7 +115,34 @@ rtl-formalize-synthesis/
         sparkle_mlp_core.sv
       blueprint/
         mlp_core.svg
+        sparkle_mlp_core.svg
 ```
+
+`mlp_core.svg` is the stable wrapper-level comparable view. `sparkle_mlp_core.svg` is the optional raw implementation-detail view used when the wrapper-level schematic is intentionally simple because it only shows packed-bus adaptation around the emitted Sparkle core.
+
+### Monolithic Raw-Core Rationale
+
+The current branch intentionally permits a split between layered Lean authoring and monolithic emitted raw RTL.
+
+In practice that means:
+
+- Lean source may stay decomposed into controller, datapath, contract-data, and top-level integration modules
+- the emitted raw RTL may still be one full-core generated module
+- a stable `mlp_core` wrapper or adapter may then recover the repository-facing boundary from that raw full-core artifact
+
+Pros:
+
+- the emitted raw artifact stays close to the full-core proof and emission target
+- the branch avoids introducing extra post-generation hierarchy only for human familiarity
+- the main semantic claim stays centered on the full-core `mlp_core` behavior
+
+Cons:
+
+- per-layer structural comparison against `rtl/` and `rtl-synthesis` is limited
+- review and debug can concentrate around a large raw core plus a small wrapper boundary
+- wrapper packing/reset adaptation becomes a first-class trust and validation surface
+
+The repository accepts those costs. For this branch, proof-aligned full-core emission is more important than reproducing the baseline module boundaries inside the emitted RTL.
 
 ## 4. Sparkle-Specific Design Rules
 
@@ -216,6 +243,8 @@ A practical Sparkle structure is:
 
 This keeps the generated design inspectable without changing the semantic contract.
 
+The key distinction is that this decomposition requirement applies to the Lean authoring layer. It does not imply that the emitted raw RTL must preserve the same hierarchy. A monolithic emitted raw core remains acceptable as long as the full-core semantic contract, wrapper contract, and branch-local comparison surface stay explicit.
+
 ## 7. Validation Strategy
 
 Validation should happen in five layers.
@@ -288,13 +317,15 @@ So the Sparkle path should be a deliberate re-implementation of the hardware, no
 
 ### 9.2 State Explosion in a Monolithic Design
 
-The current core is small, but a monolithic one-function implementation may still become hard to inspect and hard to relate back to the baseline schedule.
+The current core is small, but a monolithic emitted design may still become hard to inspect and hard to relate back to the baseline schedule.
 
-Prefer decomposing the design into:
+The mitigation is not to forbid a monolithic emitted core. It is to keep the Lean authoring layer decomposed into:
 
 - controller logic
 - datapath logic
 - top-level integration
+
+The repository explicitly accepts the emitted-side monolithic cost when that keeps the proof/emission target direct.
 
 ### 9.3 False Confidence From Generation
 

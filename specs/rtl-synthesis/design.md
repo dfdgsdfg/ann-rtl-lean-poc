@@ -41,9 +41,36 @@ rtl-synthesis/
         controller_spot_core.sv
       blueprint/
         mlp_core.svg
+        controller.svg
+        controller_spot_core.svg
 ```
 
 In that export tree, generated controller files, reused baseline datapath files, and branch-local overrides must all be visible from the branch path itself.
+
+### Mixed-Path Adapter Rationale
+
+The current branch is intentionally not "generated full core everywhere." Its design center is a generated controller core wrapped back into the baseline controller contract and then re-integrated with the hand-written datapath.
+
+Concretely:
+
+- `controller_spot_core.sv` is the generated controller core over abstract predicate inputs
+- `controller_spot_compat.sv` is the adapter that restores the baseline controller-facing contract
+- `controller.sv` is the stable controller boundary that `mlp_core.sv` instantiates
+- the datapath modules remain explicit branch-local reuse of the baseline branch
+
+Pros:
+
+- the synthesis problem stays aligned with what GR(1)/TLSF tools handle well
+- branch comparison can still happen at the shared `mlp_core` boundary without pretending the datapath was synthesized
+- existing datapath debugging and review assets stay useful
+
+Cons:
+
+- the adapter is real implementation logic, not just a naming shim
+- the branch is not naturally comparable layer-by-layer to `rtl-formalize-synthesis`
+- some internal review now requires understanding both the generated core and the compatibility layer
+
+The repository accepts those costs. This branch is intentionally optimized for controller generation plus mixed-path validation, not for uniform internal decomposition across all RTL branches.
 
 ## 2. Why Controller-Only
 
@@ -274,6 +301,8 @@ rtl-synthesis/
         mlp_core.sv
       blueprint/
         mlp_core.svg
+        controller.svg
+        controller_spot_core.svg
 
 build/
   rtl-synthesis/
@@ -282,7 +311,7 @@ build/
       logs/
 ```
 
-The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/results/canonical/sv/` plus `rtl-synthesis/results/canonical/blueprint/`.
+The committed source assets live under `rtl-synthesis/controller/`. Generated flow outputs may still be written under `build/rtl-synthesis/spot/` during execution, but the normalized branch-local comparison surface is `rtl-synthesis/results/canonical/sv/` plus `rtl-synthesis/results/canonical/blueprint/`. The blueprint surface should preserve both the mixed-path top-level view (`mlp_core.svg`) and the controller-scoped review views (`controller.svg`, `controller_spot_core.svg`).
 
 ## 8. Tooling Direction
 

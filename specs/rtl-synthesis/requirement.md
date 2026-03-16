@@ -127,6 +127,32 @@ The synthesized artifact must determine:
 
 The preferred synthesis outputs are one-hot phase booleans plus derived control outputs. A wrapper may then reconstruct the 4-bit `state` encoding expected by `mlp_core`.
 
+### Adapter-Based Mixed-Path Style
+
+This branch intentionally uses an adapter-based mixed-path structure rather than trying to present the generated controller core as a direct drop-in replacement for every baseline internal boundary.
+
+The stable branch-local roles are:
+
+- `controller_spot_core.sv`: raw generated controller core over abstract predicates
+- `controller_spot_compat.sv`: adapter that maps baseline reset/counter observations to the generated core and reconstructs baseline-style control outputs
+- `controller.sv`: stable branch-local controller entrypoint consumed by `mlp_core.sv`
+- `mac_unit.sv`, `relu_unit.sv`, `weight_rom.sv`: explicit branch-local reuse of unchanged baseline datapath artifacts
+
+This style is intentional because the generation method naturally targets the controller decision surface, not the full datapath-owned counter and arithmetic interface.
+
+Its main advantages are:
+
+- controller synthesis stays narrow and realistic
+- the branch can still be judged at the mixed-path `mlp_core` boundary
+- unchanged datapath artifacts remain explicit and reviewable in the branch-local tree
+
+Its main costs are:
+
+- the adapter becomes a semantic bridge that must be documented and validated carefully
+- the branch does not offer a uniform 3-way per-layer comparison against every other RTL branch
+
+The repository accepts those costs in `rtl-synthesis`. The primary claim for this branch is mixed-path `mlp_core` equivalence, not perfect internal structural symmetry with the other branches.
+
 ## 5. Environment Assumption Requirements
 
 The synthesized controller is only expected to match the hand-written controller under traces that satisfy datapath-consistency assumptions.
@@ -215,11 +241,14 @@ rtl-synthesis/
         controller_spot_core.sv
       blueprint/
         mlp_core.svg
+        controller.svg
+        controller_spot_core.svg
 ```
 
 If the branch reuses baseline RTL modules, that reuse must be explicit inside the branch-local export tree:
 
-- by checked-in symlinks such as `ln -s ../../../rtl/results/canonical/sv/mac_unit.sv rtl-synthesis/results/canonical/sv/mac_unit.sv`
+- by checked-in symlinks such as `ln -s ../../../../rtl/results/canonical/sv/mac_unit.sv rtl-synthesis/results/canonical/sv/mac_unit.sv`
+- by checked-in blueprint symlinks such as `ln -s ../../../../rtl/results/canonical/blueprint/mac_unit.svg rtl-synthesis/results/canonical/blueprint/mac_unit.svg` when the reused module's schematic export is unchanged
 - or by branch-local override files that wrap, replace, or pin the reused artifact contract
 
 Implicit downstream consumption of `rtl/results/canonical/sv/*.sv` outside the branch-local `rtl-synthesis/results/canonical/sv/` tree is not an acceptable comparison contract.
@@ -250,6 +279,6 @@ The `rtl-synthesis` domain is complete when:
 5. A synthesized controller artifact can be translated or wrapped into an RTL-consumable form.
 6. The branch materializes a self-contained comparable export tree at `rtl-synthesis/results/canonical/sv/`, with any baseline reuse represented explicitly through branch-local symlinks or override files.
 7. The synthesized artifact is compared against the baseline `mlp_core` assembly as the primary soundness claim.
-8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact.
+8. The branch provides `rtl-synthesis/results/canonical/blueprint/mlp_core.svg` as the minimum comparable diagram artifact, and also records `controller.svg` plus `controller_spot_core.svg` so the wrapper and synthesized core boundaries remain independently reviewable.
 9. The repository also records the secondary controller-scoped comparison against [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv) and keeps its assumption profile explicit.
 10. If exact-cycle equivalence is claimed, the repository records the stronger timing assumptions that make that claim true.

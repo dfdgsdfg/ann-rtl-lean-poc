@@ -173,6 +173,31 @@ Allowed implementation styles:
 - SystemVerilog or Verilog constant arrays
 - Memory initialization files behind a ROM wrapper
 
+### Baseline Implementation Style
+
+The baseline `rtl` branch intentionally uses a layered full-core decomposition:
+
+- `controller.sv` owns the FSM and control timing contract
+- `mac_unit.sv` owns the shared multiply-accumulate primitive
+- `relu_unit.sv` owns activation
+- `weight_rom.sv` owns frozen parameter lookup
+- `mlp_core.sv` owns top-level integration
+
+This layered style is a normative baseline design choice, not an accidental implementation detail.
+
+Its main advantages are:
+
+- direct review of controller, datapath, and ROM boundaries
+- straightforward reuse by other branches through explicit symlinks or overrides
+- simpler waveform-level debugging when schedule or arithmetic drift appears
+
+Its main costs are:
+
+- manual coordination across module boundaries
+- more verbose artifact management than a monolithic full-core implementation
+
+The repository accepts those costs in the baseline branch because `rtl/` is the human-auditable semantic anchor for the other RTL branches.
+
 ## 6. Required RTL Files
 
 ```text

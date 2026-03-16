@@ -58,3 +58,21 @@ The specs should distinguish between domain source trees and comparable export t
 - `rtl-synthesis/controller/` and `rtl-formalize-synthesis/src/` remain domain-internal source locations
 - `*/sv/` is the normalized branch-local comparable RTL surface consumed by branch comparison and downstream validation
 - `*/blueprint/` is the normalized branch-local schematic surface, with at least `mlp_core.svg` required for each branch
+- if a generated branch reuses unchanged baseline artifacts, the branch-local `sv/` and `blueprint/` trees should expose that reuse explicitly through symlinks or override files
+
+## RTL Branch Styles
+
+The repository intentionally does not force the three RTL branches into one internal decomposition style. The common comparison contract is the branch-local `mlp_core` surface; deeper internal review artifacts may differ by branch.
+
+| Branch | Internal style | Stable comparable surface | Main pros | Main cons | Repository position |
+| --- | --- | --- | --- | --- | --- |
+| `rtl` | layered full-core RTL | explicit `controller/mac/relu/weight_rom/mlp_core` modules | inspectable, direct per-module review, good baseline for reuse | verbose manual coordination across module boundaries | accepted; baseline clarity and debuggability matter more than minimizing module count |
+| `rtl-synthesis` | adapter-based mixed path | generated controller core plus compatibility wrapper plus reused baseline datapath | generation scope stays narrow, mixed-path proof target is explicit, existing datapath benches remain usable | internal layers are not uniformly 3-way comparable, adapter logic becomes a semantic bridge | accepted; the branch is judged primarily at the mixed-path `mlp_core` boundary, not by per-layer symmetry |
+| `rtl-formalize-synthesis` | monolithic raw full-core plus stable wrapper | raw emitted full-core module plus stable `mlp_core` adapter | proof/emission target aligns with full-core semantics, fewer human-imposed internal boundaries | per-layer comparison is weak, wrapper packing/reset contract must be documented and checked, localized debug is harder | accepted; this branch optimizes for full-core semantic alignment rather than for per-layer structural parity |
+
+The specs should therefore not require a uniform 3-way per-layer comparison across all RTL branches. The mandatory common comparison surface is:
+
+- `*/results/canonical/sv/mlp_core.sv`
+- `*/results/canonical/blueprint/mlp_core.svg`
+
+Additional internal comparison views such as `controller.svg`, `controller_spot_core.svg`, or `sparkle_mlp_core.svg` are branch-specific review artifacts, not a requirement that every branch expose the same internal layers.

@@ -26,6 +26,13 @@ The current flow records two formal claims:
 
 Generated outputs are written under `build/rtl-synthesis/spot/`.
 
+Committed comparable exports are written under:
+
+- `rtl-synthesis/results/canonical/sv/`
+- `rtl-synthesis/results/canonical/blueprint/controller.svg`
+- `rtl-synthesis/results/canonical/blueprint/controller_spot_core.svg`
+- `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`
+
 The committed compatibility wrapper lives in:
 
 - `rtl-synthesis/results/canonical/sv/controller_spot_compat.sv`

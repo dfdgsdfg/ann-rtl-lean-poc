@@ -156,6 +156,16 @@ class SimulationCommandTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, msg=output)
                 self.assertIn(expected, output)
 
+    def test_sparkle_blueprint_target_builds_wrapper_and_raw_views(self) -> None:
+        result = run_make_dry_run("rtl-formalize-synthesis-blueprint")
+        output = result.stdout + result.stderr
+
+        self.assertEqual(result.returncode, 0, msg=output)
+        self.assertIn("rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg", output)
+        self.assertIn("rtl-formalize-synthesis/results/canonical/blueprint/sparkle_mlp_core.svg", output)
+        self.assertIn("hierarchy -check -top mlp_core", output)
+        self.assertIn("hierarchy -check -top TinyMLP_sparkleMlpCorePacked", output)
+
     def test_top_level_bench_does_not_reference_internal_dut_state(self) -> None:
         top_level_bench = TOP_LEVEL_TB.read_text(encoding="utf-8")
         forbidden_tokens = (

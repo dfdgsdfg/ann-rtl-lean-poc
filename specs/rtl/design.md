@@ -59,6 +59,23 @@ For repository organization, this domain has a single maintained RTL surface:
 
 The exported `rtl/results/canonical/sv/` tree should mirror the baseline full-core module set so that branch-comparison and downstream consumers do not need branch-specific path logic to locate comparable RTL artifacts.
 
+### Layered Baseline Rationale
+
+This branch deliberately keeps the controller, datapath primitive, activation, and ROM as separate modules instead of collapsing them into a single full-core artifact.
+
+Pros:
+
+- the baseline remains easy for humans to inspect at the exact boundaries that later branches reuse, replace, or compare
+- controller timing bugs and datapath arithmetic bugs can be localized without reverse-engineering a packed full-core blob
+- the explicit module set provides a stable reuse target for `rtl-synthesis`
+
+Cons:
+
+- the implementation is more verbose than a monolithic full-core design
+- maintaining module boundaries creates some manual coordination cost
+
+The repository accepts those costs here. The baseline branch is intentionally optimized for legibility, reuse, and debug, not for minimum module count.
+
 ### Top-Level Interface
 
 The top-level ports are:

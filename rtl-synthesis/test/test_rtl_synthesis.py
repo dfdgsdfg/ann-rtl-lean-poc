@@ -837,6 +837,26 @@ else:
         ):
             self.assertIn(snippet, wrapper_text)
 
+    def test_committed_blueprint_tree_reuses_baseline_datapath_diagrams_via_symlink(self) -> None:
+        expected_targets = {
+            "mac_unit.svg": "../../../../rtl/results/canonical/blueprint/mac_unit.svg",
+            "relu_unit.svg": "../../../../rtl/results/canonical/blueprint/relu_unit.svg",
+            "weight_rom.svg": "../../../../rtl/results/canonical/blueprint/weight_rom.svg",
+        }
+
+        for name, target in expected_targets.items():
+            with self.subTest(name=name):
+                path = ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / name
+                self.assertTrue(path.is_symlink())
+                self.assertEqual(str(path.readlink()), target)
+
+    def test_committed_blueprint_tree_includes_controller_views(self) -> None:
+        for name in ("mlp_core.svg", "controller.svg", "controller_spot_core.svg"):
+            with self.subTest(name=name):
+                path = ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / name
+                self.assertTrue(path.exists())
+                self.assertGreater(path.stat().st_size, 0)
+
     def test_formal_controller_interface_harness_records_sampled_interface_checks(self) -> None:
         harness_path = ROOT / "rtl-synthesis" / "controller" / "formal" / "formal_controller_spot_equivalence.sv"
         harness_text = harness_path.read_text(encoding="utf-8")

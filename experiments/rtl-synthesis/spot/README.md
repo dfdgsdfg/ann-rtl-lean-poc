@@ -3,7 +3,10 @@
 This directory documents the mixed-path `rtl-synthesis` branch and its fresh-flow evidence.
 
 - The committed comparable snapshot lives under `rtl-synthesis/results/canonical/sv/`.
+- The committed comparable blueprint snapshot lives under `rtl-synthesis/results/canonical/blueprint/`.
 - `rtl-synthesis/results/canonical/sv/controller_spot_compat.sv` keeps the sampled `controller.sv` port interface used by the mixed-path simulation boundary.
+- `rtl-synthesis/results/canonical/blueprint/controller.svg` shows the stable branch-local controller wrapper boundary.
+- `rtl-synthesis/results/canonical/blueprint/controller_spot_core.svg` shows the raw synthesized controller core state machine.
 - The fresh flow still generates the phase machine into `build/rtl-synthesis/spot/generated/controller_spot_core.sv`.
 - `build/rtl-synthesis/spot/generated/controller.sv` remains a build-only alias used by the equivalence flow.
 - `rtl-synthesis-sim` reuses `simulations/rtl/testbench.sv`; there is no branch-local `simulations/rtl-synthesis/*.sv` bench.

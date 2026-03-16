@@ -150,6 +150,12 @@ RTL_SYNTHESIS_INTERNAL_VERILATOR_BIN := $(RTL_SYNTHESIS_INTERNAL_VERILATOR_DIR)/
 RTL_SYNTHESIS_CANONICAL_CONTROLLER := $(RTL_SYNTHESIS_CANONICAL_SV_DIR)/controller.sv
 RTL_SYNTHESIS_CANONICAL_CORE := $(RTL_SYNTHESIS_CANONICAL_SV_DIR)/controller_spot_core.sv
 RTL_SYNTHESIS_BLUEPRINT := $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/mlp_core.svg
+RTL_SYNTHESIS_CONTROLLER_BLUEPRINT := $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/controller.svg
+RTL_SYNTHESIS_CONTROLLER_CORE_BLUEPRINT := $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/controller_spot_core.svg
+RTL_SYNTHESIS_REUSED_BLUEPRINTS := mac_unit relu_unit weight_rom
+RTL_SYNTHESIS_REUSED_BLUEPRINT_TARGETS := $(addprefix $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/,$(addsuffix .svg,$(RTL_SYNTHESIS_REUSED_BLUEPRINTS)))
+RTL_FORMALIZE_WRAPPER_BLUEPRINT := $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR)/mlp_core.svg
+RTL_FORMALIZE_RAW_BLUEPRINT := $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR)/sparkle_mlp_core.svg
 RTL_SYNTHESIS_LTLSYNT ?= $(if $(wildcard $(VENDOR_LTLSYNT_BIN)),$(VENDOR_LTLSYNT_BIN),ltlsynt)
 RTL_SYNTHESIS_SYFCO ?= $(if $(wildcard $(VENDOR_SYFCO_BIN)),$(VENDOR_SYFCO_BIN),syfco)
 RTL_SYNTHESIS_YOSYS ?= yosys
@@ -238,7 +244,7 @@ rtl-formalize-synthesis-emit: $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_FULL_CORE_
 
 rtl-formalize-synthesis-emit-full-core: $(SPARKLE_FULL_CORE_ARTIFACT) $(SPARKLE_FULL_CORE_WRAPPER)
 
-rtl-formalize-synthesis-blueprint: $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR)/mlp_core.svg
+rtl-formalize-synthesis-blueprint: $(RTL_FORMALIZE_WRAPPER_BLUEPRINT) $(RTL_FORMALIZE_RAW_BLUEPRINT)
 
 rtl-formalize-synthesis-canonical: rtl-formalize-synthesis-emit rtl-formalize-synthesis-blueprint
 
@@ -281,7 +287,7 @@ rtl-synthesis-canonical: $(RTL_SYNTHESIS_SUMMARY)
 	cp $(RTL_SYNTHESIS_GENERATED_DIR)/controller_spot_core.sv $(RTL_SYNTHESIS_CANONICAL_CORE)
 	$(MAKE) rtl-synthesis-blueprint
 
-rtl-synthesis-blueprint: $(RTL_SYNTHESIS_BLUEPRINT)
+rtl-synthesis-blueprint: $(RTL_SYNTHESIS_BLUEPRINT) $(RTL_SYNTHESIS_CONTROLLER_BLUEPRINT) $(RTL_SYNTHESIS_CONTROLLER_CORE_BLUEPRINT) $(RTL_SYNTHESIS_REUSED_BLUEPRINT_TARGETS)
 
 rtl-synthesis-smoke:
 	python3 rtl-synthesis/test/test_rtl_synthesis.py
@@ -420,10 +426,29 @@ $(RTL_SYNTHESIS_BLUEPRINT): $(RTL_SYNTHESIS_SIM_RTL)
 	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_SIM_RTL); hierarchy -check -top mlp_core; proc; opt; write_json $(SHOW_BUILD_DIR)/rtl-synthesis/mlp_core.json"
 	netlistsvg $(SHOW_BUILD_DIR)/rtl-synthesis/mlp_core.json -o $@
 
-$(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR)/mlp_core.svg: $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
+$(RTL_SYNTHESIS_CONTROLLER_BLUEPRINT): $(RTL_SYNTHESIS_ALIAS) $(RTL_SYNTHESIS_COMPAT) $(RTL_SYNTHESIS_CORE)
+	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR) $(SHOW_BUILD_DIR)/rtl-synthesis
+	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_ALIAS) $(RTL_SYNTHESIS_COMPAT) $(RTL_SYNTHESIS_CORE); hierarchy -check -top controller; proc; opt; write_json $(SHOW_BUILD_DIR)/rtl-synthesis/controller.json"
+	netlistsvg $(SHOW_BUILD_DIR)/rtl-synthesis/controller.json -o $@
+
+$(RTL_SYNTHESIS_CONTROLLER_CORE_BLUEPRINT): $(RTL_SYNTHESIS_CORE)
+	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR) $(SHOW_BUILD_DIR)/rtl-synthesis
+	yosys -q -p "read_verilog -sv $(RTL_SYNTHESIS_CORE); hierarchy -check -top controller_spot_core; proc; opt; write_json $(SHOW_BUILD_DIR)/rtl-synthesis/controller_spot_core.json"
+	netlistsvg $(SHOW_BUILD_DIR)/rtl-synthesis/controller_spot_core.json -o $@
+
+$(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)/%.svg: $(RTL_BLUEPRINT_DIR)/%.svg
+	@mkdir -p $(RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR)
+	ln -sfn ../../../../rtl/results/canonical/blueprint/$*.svg $@
+
+$(RTL_FORMALIZE_WRAPPER_BLUEPRINT): $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT)
 	@mkdir -p $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR) $(SHOW_BUILD_DIR)/rtl-formalize-synthesis
 	yosys -q -p "read_verilog -sv $(SPARKLE_FULL_CORE_WRAPPER) $(SPARKLE_FULL_CORE_ARTIFACT); hierarchy -check -top mlp_core; proc; opt; write_json $(SHOW_BUILD_DIR)/rtl-formalize-synthesis/mlp_core.json"
 	netlistsvg $(SHOW_BUILD_DIR)/rtl-formalize-synthesis/mlp_core.json -o $@
+
+$(RTL_FORMALIZE_RAW_BLUEPRINT): $(SPARKLE_FULL_CORE_ARTIFACT)
+	@mkdir -p $(RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR) $(SHOW_BUILD_DIR)/rtl-formalize-synthesis
+	yosys -q -p "read_verilog -sv $(SPARKLE_FULL_CORE_ARTIFACT); hierarchy -check -top TinyMLP_sparkleMlpCorePacked; proc; opt; write_json $(SHOW_BUILD_DIR)/rtl-formalize-synthesis/sparkle_mlp_core.json"
+	netlistsvg $(SHOW_BUILD_DIR)/rtl-formalize-synthesis/sparkle_mlp_core.json -o $@
 
 clean-show:
 	rm -rf $(SHOW_BUILD_DIR)
