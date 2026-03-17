@@ -47,8 +47,8 @@ def write_subset_manifest(path: Path, *, raw_module_name: str = "MlpCore_sparkle
             "lean_namespace": "MlpCore",
             "package": "formalize",
             "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-            "trust_profile": "baseline",
-            "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+            "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+            "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
             "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
         },
         "proof_endpoint": {

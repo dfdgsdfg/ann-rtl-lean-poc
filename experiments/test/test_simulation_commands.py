@@ -14,11 +14,22 @@ SPARKLE_RAW = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" 
 SPARKLE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
 SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 SPARKLE_WRAPPER_GENERATOR = ROOT / "rtl-formalize-synthesis" / "scripts" / "generate_wrapper.py"
+SPARKLE_DRC_WARNING = "[DRC] Module 'MlpCore.sparkleMlpCorePacked': output 'out' is not driven by a register"
 
 
 def run_make_dry_run(target: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["make", "-Bn", target],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def git_diff_for_paths(*paths: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "diff", "--", *(str(path.relative_to(ROOT)) for path in paths)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -92,6 +103,8 @@ class SimulationCommandTests(unittest.TestCase):
         if not SPARKLE_VENDOR_GIT.exists():
             self.skipTest("missing prepared Sparkle vendor checkout")
 
+        diff_before = git_diff_for_paths(SPARKLE_RAW, SPARKLE_WRAPPER, SPARKLE_VERIFICATION_MANIFEST)
+
         emit = subprocess.run(
             ["make", "rtl-formalize-synthesis-emit", "ARGS=--proof-lane vanilla"],
             cwd=ROOT,
@@ -101,6 +114,7 @@ class SimulationCommandTests(unittest.TestCase):
         )
         emit_output = emit.stdout + emit.stderr
         self.assertEqual(emit.returncode, 0, msg=emit_output)
+        self.assertNotIn(SPARKLE_DRC_WARNING, emit_output)
 
         wrapper_check = subprocess.run(
             [
@@ -122,22 +136,13 @@ class SimulationCommandTests(unittest.TestCase):
         wrapper_check_output = wrapper_check.stdout + wrapper_check.stderr
         self.assertEqual(wrapper_check.returncode, 0, msg=wrapper_check_output)
 
-        diff = subprocess.run(
-            [
-                "git",
-                "diff",
-                "--exit-code",
-                "--",
-                str(SPARKLE_RAW.relative_to(ROOT)),
-                str(SPARKLE_WRAPPER.relative_to(ROOT)),
-            ],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
+        diff_after = git_diff_for_paths(SPARKLE_RAW, SPARKLE_WRAPPER, SPARKLE_VERIFICATION_MANIFEST)
+        self.assertEqual(diff_after.returncode, 0, msg=diff_after.stdout + diff_after.stderr)
+        self.assertEqual(
+            diff_after.stdout,
+            diff_before.stdout,
+            msg=diff_after.stdout + diff_after.stderr,
         )
-        diff_output = diff.stdout + diff.stderr
-        self.assertEqual(diff.returncode, 0, msg=diff_output)
 
     def test_sparkle_branch_aggregate_target_runs_both_simulators(self) -> None:
         result = run_make_dry_run("rtl-formalize-synthesis-sim")

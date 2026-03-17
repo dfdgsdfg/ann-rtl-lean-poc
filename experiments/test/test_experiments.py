@@ -94,8 +94,8 @@ class ExperimentFlowTests(unittest.TestCase):
                 "lean_namespace": "MlpCore",
                 "package": "formalize",
                 "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-                "trust_profile": "baseline",
-                "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+                "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+                "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
                 "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
             },
             "proof_endpoint": {
@@ -1028,8 +1028,8 @@ class ExperimentFlowTests(unittest.TestCase):
                 "proof_namespace": "MlpCore",
                 "proof_package": "formalize",
                 "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-                "trust_profile": "baseline",
-                "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+                "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+                "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
             }
             current_metadata = {
                 "decl_name": "MlpCore.Sparkle.sparkleMlpCorePacked",
@@ -1050,8 +1050,8 @@ class ExperimentFlowTests(unittest.TestCase):
                     "lean_namespace": "MlpCore",
                     "package": "formalize",
                     "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-                    "trust_profile": "baseline",
-                    "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+                    "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+                    "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
                     "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
                 },
                 "proof_endpoint": {
@@ -1118,8 +1118,8 @@ class ExperimentFlowTests(unittest.TestCase):
                 "proof_namespace": "MlpCore",
                 "proof_package": "formalize",
                 "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-                "trust_profile": "baseline",
-                "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+                "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+                "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
             }
             current_metadata = {
                 "decl_name": "MlpCore.Sparkle.sparkleMlpCorePacked",
@@ -1140,8 +1140,8 @@ class ExperimentFlowTests(unittest.TestCase):
                     "lean_namespace": "MlpCore",
                     "package": "formalize",
                     "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
-                    "trust_profile": "baseline",
-                    "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+                    "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+                    "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
                     "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
                 },
                 "proof_endpoint": {

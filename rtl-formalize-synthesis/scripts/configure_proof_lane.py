@@ -14,8 +14,12 @@ LANE_CONFIG = {
         "namespace": "MlpCore",
         "package": "formalize",
         "provider": "MlpCore.vanillaArithmeticProofProvider",
-        "trust_profile": "baseline",
-        "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+        "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge",
+        "trust_note": (
+            "Actual Sparkle synth-path refinement relies on vendored Sparkle's local "
+            "`Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded "
+            "next-state network to `timedStep`."
+        ),
     },
     "smt": {
         "imports": ["MlpCore", "MlpCoreSmt"],

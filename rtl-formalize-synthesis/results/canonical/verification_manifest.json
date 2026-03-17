@@ -64,15 +64,15 @@
     ]
   },
   "exact_emit_path": {
-    "backend_ast_fingerprint": "sha256:058ca336ecaa016ad2f59b3fd6c323ecc1a90d4489a6ca57d8fdd3fd49c5fafd",
+    "backend_ast_fingerprint": "sha256:1047b93480a20ed205498055d9b28aea2c743e371d5e05ce85c9ce3c5c6c299d",
     "decl_name": "MlpCore.Sparkle.sparkleMlpCorePacked",
-    "elaborated_design_fingerprint": "sha256:058ca336ecaa016ad2f59b3fd6c323ecc1a90d4489a6ca57d8fdd3fd49c5fafd",
-    "local_patch_id": "sha256:51422d0ea6e4add8104df516e09dce2b09c5aa6d1c8d5c65b59f048614e114a4",
+    "elaborated_design_fingerprint": "sha256:1047b93480a20ed205498055d9b28aea2c743e371d5e05ce85c9ce3c5c6c299d",
+    "local_patch_id": "sha256:c55d50ddfbb811cbd37769543f4d4fe663f7aeb84e0e870c006df897f80acec9",
     "module_count": 1,
-    "raw_artifact_fingerprint": "sha256:c21213c55747232d7b555ec443fca2e77b075dcb97d78d42bbe8b08c8368d30f",
+    "raw_artifact_fingerprint": "sha256:2f4bda4775686f83de7f6ecbf2cf5e1f5f6a82e789145dfa2cdccb58f1dcf5b4",
     "top_module": "MlpCore.Sparkle.sparkleMlpCorePacked",
     "vendor_revision": "2d3dda875b0aa12d850322f26a2c42a9379931c8",
-    "verilog_render_fingerprint": "sha256:4cdf75590dc39cb21aa2d98c1c59541f3c62fa79d51d91a28872d07e57b8da28"
+    "verilog_render_fingerprint": "sha256:5a0c24d4b49159cf22489cd5140f3811ac4ad60268ed4d1bfcb7f773561edc73"
   },
   "proof_endpoint": {
     "decl_name": "MlpCore.Sparkle.sparkleMlpCorePacked",
@@ -86,8 +86,8 @@
     "name": "vanilla",
     "package": "formalize",
     "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
-    "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
-    "trust_profile": "baseline"
+    "trust_note": "Actual Sparkle synth-path refinement relies on vendored Sparkle's local `Signal.loop_unfold` axiom plus one local axiom bridging the pure encoded next-state network to `timedStep`.",
+    "trust_profile": "vendor-loop-unfold-plus-nextstate-bridge"
   },
   "schema_version": 2,
   "semantics_preservation_statement": {

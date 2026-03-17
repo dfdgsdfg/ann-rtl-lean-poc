@@ -127,7 +127,7 @@ def trace {dom : DomainConfig}
     (in3 : Signal dom (BitVec 8)) : Nat → State :=
   rtlTrace (sampleAt start in0 in1 in2 in3)
 
-def body {dom : DomainConfig}
+def nextState {dom : DomainConfig}
     (start : Signal dom Bool)
     (in0 : Signal dom (BitVec 8))
     (in1 : Signal dom (BitVec 8))
@@ -267,28 +267,59 @@ def body {dom : DomainConfig}
     | do_bias_output => gtZero32 biasOutputAccOut
 
   bundleAll! [
-    Signal.register stIdle nextPhase,
-    Signal.register 0#4 nextHiddenIdx,
-    Signal.register 0#4 nextInputIdx,
-    Signal.register 0#8 nextInputReg0,
-    Signal.register 0#8 nextInputReg1,
-    Signal.register 0#8 nextInputReg2,
-    Signal.register 0#8 nextInputReg3,
-    Signal.register 0#16 nextHiddenReg0,
-    Signal.register 0#16 nextHiddenReg1,
-    Signal.register 0#16 nextHiddenReg2,
-    Signal.register 0#16 nextHiddenReg3,
-    Signal.register 0#16 nextHiddenReg4,
-    Signal.register 0#16 nextHiddenReg5,
-    Signal.register 0#16 nextHiddenReg6,
-    Signal.register 0#16 nextHiddenReg7,
-    Signal.register 0#32 nextAccReg,
-    Signal.register false nextOutReg
+    nextPhase,
+    nextHiddenIdx,
+    nextInputIdx,
+    nextInputReg0,
+    nextInputReg1,
+    nextInputReg2,
+    nextInputReg3,
+    nextHiddenReg0,
+    nextHiddenReg1,
+    nextHiddenReg2,
+    nextHiddenReg3,
+    nextHiddenReg4,
+    nextHiddenReg5,
+    nextHiddenReg6,
+    nextHiddenReg7,
+    nextAccReg,
+    nextOutReg
   ]
+
+def registerState {dom : DomainConfig}
+    (nextState : Signal dom MlpCoreState) : Signal dom MlpCoreState :=
+  bundleAll! [
+    Signal.register stIdle (MlpCoreState.phase nextState),
+    Signal.register 0#4 (MlpCoreState.hidden_idx nextState),
+    Signal.register 0#4 (MlpCoreState.input_idx nextState),
+    Signal.register 0#8 (MlpCoreState.input_reg0 nextState),
+    Signal.register 0#8 (MlpCoreState.input_reg1 nextState),
+    Signal.register 0#8 (MlpCoreState.input_reg2 nextState),
+    Signal.register 0#8 (MlpCoreState.input_reg3 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg0 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg1 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg2 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg3 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg4 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg5 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg6 nextState),
+    Signal.register 0#16 (MlpCoreState.hidden_reg7 nextState),
+    Signal.register 0#32 (MlpCoreState.acc_reg nextState),
+    Signal.register false (MlpCoreState.out_reg nextState)
+  ]
+
+def body {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8))
+    (state : Signal dom MlpCoreState) : Signal dom MlpCoreState :=
+  registerState (nextState start in0 in1 in2 in3 state)
 
 end MlpCore
 
-private def encodeSampleInput (x : Int8) : BitVec 8 :=
+def encodeSampleInput (x : Int8) : BitVec 8 :=
   BitVec.ofInt 8 x.toInt
 
 def sparkleMlpCoreStateStep (sample : CtrlSample) (state : MlpCoreState) : MlpCoreState :=
@@ -450,14 +481,6 @@ private def sparkleMlpCoreStateTrace {dom : DomainConfig}
       sparkleMlpCoreStateStep
         (MlpCore.sampleAt start in0 in1 in2 in3 n)
         (sparkleMlpCoreStateTrace start in0 in1 in2 in3 n)
-
-private def sparkleMlpCoreStateSynth {dom : DomainConfig}
-    (start : Signal dom Bool)
-    (in0 : Signal dom (BitVec 8))
-    (in1 : Signal dom (BitVec 8))
-    (in2 : Signal dom (BitVec 8))
-    (in3 : Signal dom (BitVec 8)) : Signal dom MlpCoreState :=
-  Signal.loop fun state => MlpCore.body start in0 in1 in2 in3 state
 
 structure MlpCoreView (dom : DomainConfig) where
   state : Signal dom (BitVec stateWidth)
@@ -714,6 +737,204 @@ private def packMlpCoreState {dom : DomainConfig}
     output_weight_case_hit
   ]
 
+theorem packMlpCoreState_eq_packMlpCoreView {dom : DomainConfig}
+    (state : Signal dom (BitVec stateWidth))
+    (hidden_idx : Signal dom (BitVec stateWidth))
+    (input_idx : Signal dom (BitVec stateWidth))
+    (input_reg0 : Signal dom (BitVec 8))
+    (input_reg1 : Signal dom (BitVec 8))
+    (input_reg2 : Signal dom (BitVec 8))
+    (input_reg3 : Signal dom (BitVec 8))
+    (hidden_reg0 : Signal dom (BitVec 16))
+    (hidden_reg1 : Signal dom (BitVec 16))
+    (hidden_reg2 : Signal dom (BitVec 16))
+    (hidden_reg3 : Signal dom (BitVec 16))
+    (hidden_reg4 : Signal dom (BitVec 16))
+    (hidden_reg5 : Signal dom (BitVec 16))
+    (hidden_reg6 : Signal dom (BitVec 16))
+    (hidden_reg7 : Signal dom (BitVec 16))
+    (acc_reg : Signal dom (BitVec 32))
+    (out_reg : Signal dom Bool) :
+    packMlpCoreState
+      state
+      hidden_idx
+      input_idx
+      input_reg0
+      input_reg1
+      input_reg2
+      input_reg3
+      hidden_reg0
+      hidden_reg1
+      hidden_reg2
+      hidden_reg3
+      hidden_reg4
+      hidden_reg5
+      hidden_reg6
+      hidden_reg7
+      acc_reg
+      out_reg =
+    packMlpCoreView
+      (mlpCoreViewOfState
+        state
+        hidden_idx
+        input_idx
+        input_reg0
+        input_reg1
+        input_reg2
+        input_reg3
+        hidden_reg0
+        hidden_reg1
+        hidden_reg2
+        hidden_reg3
+        hidden_reg4
+        hidden_reg5
+        hidden_reg6
+        hidden_reg7
+        acc_reg
+        out_reg) := by
+  rfl
+
+def packMlpCoreStateSignal {dom : DomainConfig}
+    (core : Signal dom MlpCoreState) : Signal dom MlpCorePackedPayload :=
+  packMlpCoreState
+    (MlpCoreState.phase core)
+    (MlpCoreState.hidden_idx core)
+    (MlpCoreState.input_idx core)
+    (MlpCoreState.input_reg0 core)
+    (MlpCoreState.input_reg1 core)
+    (MlpCoreState.input_reg2 core)
+    (MlpCoreState.input_reg3 core)
+    (MlpCoreState.hidden_reg0 core)
+    (MlpCoreState.hidden_reg1 core)
+    (MlpCoreState.hidden_reg2 core)
+    (MlpCoreState.hidden_reg3 core)
+    (MlpCoreState.hidden_reg4 core)
+    (MlpCoreState.hidden_reg5 core)
+    (MlpCoreState.hidden_reg6 core)
+    (MlpCoreState.hidden_reg7 core)
+    (MlpCoreState.acc_reg core)
+    (MlpCoreState.out_reg core)
+
+def packEncodedMlpCoreState (state : MlpCoreState) : MlpCorePackedPayload :=
+  let core : Signal defaultDomain MlpCoreState := Signal.pure state
+  (packMlpCoreStateSignal core).atTime 0
+
+def packedInitState : MlpCorePackedPayload :=
+  packEncodedMlpCoreState (encodeState idleState)
+
+def packMlpCoreStateBitsSignal {dom : DomainConfig}
+    (core : Signal dom MlpCoreState) : Signal dom (BitVec mlpCorePackedWidth) :=
+  (packMlpCorePackedBits ·) <$> packMlpCoreStateSignal core
+
+def packedInitBits : BitVec mlpCorePackedWidth :=
+  packMlpCorePackedBits packedInitState
+
+private def packBoolSignalBit {dom : DomainConfig}
+    (b : Signal dom Bool) : Signal dom (BitVec 1) :=
+  Signal.mux b (Signal.pure 1#1) (Signal.pure 0#1)
+
+private def appendBitsSignal {dom : DomainConfig} {m n : Nat}
+    (a : Signal dom (BitVec m))
+    (b : Signal dom (BitVec n)) : Signal dom (BitVec (m + n)) :=
+  (BitVec.append · ·) <$> a <*> b
+
+def packMlpCoreStateBitsSynth {dom : DomainConfig}
+    (core : Signal dom MlpCoreState) : Signal dom (BitVec mlpCorePackedWidth) :=
+  let state := MlpCoreState.phase core
+  let hidden_idx := MlpCoreState.hidden_idx core
+  let input_idx := MlpCoreState.input_idx core
+  let input_reg0 := MlpCoreState.input_reg0 core
+  let input_reg1 := MlpCoreState.input_reg1 core
+  let input_reg2 := MlpCoreState.input_reg2 core
+  let input_reg3 := MlpCoreState.input_reg3 core
+  let hidden_reg0 := MlpCoreState.hidden_reg0 core
+  let hidden_reg1 := MlpCoreState.hidden_reg1 core
+  let hidden_reg2 := MlpCoreState.hidden_reg2 core
+  let hidden_reg3 := MlpCoreState.hidden_reg3 core
+  let hidden_reg4 := MlpCoreState.hidden_reg4 core
+  let hidden_reg5 := MlpCoreState.hidden_reg5 core
+  let hidden_reg6 := MlpCoreState.hidden_reg6 core
+  let hidden_reg7 := MlpCoreState.hidden_reg7 core
+  let acc_reg := MlpCoreState.acc_reg core
+  let out_reg := MlpCoreState.out_reg core
+  let isIdle := state === (stIdle : Signal dom _)
+  let load_input := state === (stLoadInput : Signal dom _)
+  let clear_acc := load_input
+  let do_mac_hidden := (state === (stMacHidden : Signal dom _)) &&&
+    ((BitVec.ult · ·) <$> input_idx <*> (Signal.pure inputCount4b))
+  let do_bias_hidden := state === (stBiasHidden : Signal dom _)
+  let do_act_hidden := state === (stActHidden : Signal dom _)
+  let advance_hidden := state === (stNextHidden : Signal dom _)
+  let do_mac_output := (state === (stMacOutput : Signal dom _)) &&&
+    ((BitVec.ult · ·) <$> input_idx <*> (Signal.pure hiddenCount4b))
+  let do_bias_output := state === (stBiasOutput : Signal dom _)
+  let done := state === (stDone : Signal dom _)
+  let busy := ((fun value => !value) <$> isIdle) &&& ((fun value => !value) <$> done)
+  let isMacOutput := state === (stMacOutput : Signal dom _)
+  let hidden_input_case_hit := ((fun value => !value) <$> isMacOutput) &&&
+    ((BitVec.ult · ·) <$> input_idx <*> (Signal.pure inputCount4b))
+  let output_hidden_case_hit := isMacOutput &&&
+    ((BitVec.ult · ·) <$> input_idx <*> (Signal.pure hiddenCount4b))
+  let hidden_weight_case_hit := ((BitVec.ult · ·) <$> hidden_idx <*> (Signal.pure hiddenCount4b)) &&&
+    ((BitVec.ult · ·) <$> input_idx <*> (Signal.pure inputCount4b))
+  let output_weight_case_hit := (BitVec.ult · ·) <$> input_idx <*> (Signal.pure hiddenCount4b)
+  let selectedInput := selectInputReg input_idx input_reg0 input_reg1 input_reg2 input_reg3
+  let selectedHidden := selectHiddenReg
+    input_idx
+    hidden_reg0 hidden_reg1 hidden_reg2 hidden_reg3
+    hidden_reg4 hidden_reg5 hidden_reg6 hidden_reg7
+  let selectedInputSign := selectedInput.map (BitVec.extractLsb' 7 1 ·)
+  let selectedInputUpper := Signal.mux
+    (selectedInputSign === Signal.pure 1#1)
+    (Signal.pure (BitVec.ofInt 8 (-1)))
+    (Signal.pure 0#8)
+  let mac_a_hidden : Signal dom (BitVec 16) := (BitVec.append · ·) <$> selectedInputUpper <*> selectedInput
+  let mac_a : Signal dom (BitVec 16) := Signal.mux isMacOutput selectedHidden mac_a_hidden
+  let hiddenMacAccOut := acc_reg + hiddenMacTerm32 selectedInput (w1Data hidden_idx input_idx)
+  let outputMacAccOut := acc_reg + outputMacTerm32 selectedHidden (w2Data input_idx)
+  let mac_acc_out := Signal.mux isMacOutput outputMacAccOut hiddenMacAccOut
+  let s0 := appendBitsSignal state (packBoolSignalBit load_input)
+  let s1 := appendBitsSignal s0 (packBoolSignalBit clear_acc)
+  let s2 := appendBitsSignal s1 (packBoolSignalBit do_mac_hidden)
+  let s3 := appendBitsSignal s2 (packBoolSignalBit do_bias_hidden)
+  let s4 := appendBitsSignal s3 (packBoolSignalBit do_act_hidden)
+  let s5 := appendBitsSignal s4 (packBoolSignalBit advance_hidden)
+  let s6 := appendBitsSignal s5 (packBoolSignalBit do_mac_output)
+  let s7 := appendBitsSignal s6 (packBoolSignalBit do_bias_output)
+  let s8 := appendBitsSignal s7 (packBoolSignalBit done)
+  let s9 := appendBitsSignal s8 (packBoolSignalBit busy)
+  let s10 := appendBitsSignal s9 (packBoolSignalBit out_reg)
+  let s11 := appendBitsSignal s10 hidden_idx
+  let s12 := appendBitsSignal s11 input_idx
+  let s13 := appendBitsSignal s12 acc_reg
+  let s14 := appendBitsSignal s13 mac_acc_out
+  let s15 := appendBitsSignal s14 mac_a
+  let s16 := appendBitsSignal s15 (b2Data (dom := dom))
+  let s17 := appendBitsSignal s16 input_reg0
+  let s18 := appendBitsSignal s17 input_reg1
+  let s19 := appendBitsSignal s18 input_reg2
+  let s20 := appendBitsSignal s19 input_reg3
+  let s21 := appendBitsSignal s20 hidden_reg0
+  let s22 := appendBitsSignal s21 hidden_reg1
+  let s23 := appendBitsSignal s22 hidden_reg2
+  let s24 := appendBitsSignal s23 hidden_reg3
+  let s25 := appendBitsSignal s24 hidden_reg4
+  let s26 := appendBitsSignal s25 hidden_reg5
+  let s27 := appendBitsSignal s26 hidden_reg6
+  let s28 := appendBitsSignal s27 hidden_reg7
+  let s29 := appendBitsSignal s28 (packBoolSignalBit hidden_input_case_hit)
+  let s30 := appendBitsSignal s29 (packBoolSignalBit output_hidden_case_hit)
+  let s31 := appendBitsSignal s30 (packBoolSignalBit hidden_weight_case_hit)
+  appendBitsSignal s31 (packBoolSignalBit output_weight_case_hit)
+
+def sparkleMlpCoreStateSynth {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) : Signal dom MlpCoreState :=
+  Signal.loop (MlpCore.body start in0 in1 in2 in3)
+
 def sparkleMlpCoreView {dom : DomainConfig}
     (start : Signal dom Bool)
     (in0 : Signal dom (BitVec 8))
@@ -757,12 +978,12 @@ def sparkleMlpCoreView {dom : DomainConfig}
     acc_reg
     out_reg
 
-def sparkleMlpCorePacked {dom : DomainConfig}
+def sparkleMlpCoreViewSynth {dom : DomainConfig}
     (start : Signal dom Bool)
     (in0 : Signal dom (BitVec 8))
     (in1 : Signal dom (BitVec 8))
     (in2 : Signal dom (BitVec 8))
-    (in3 : Signal dom (BitVec 8)) :=
+    (in3 : Signal dom (BitVec 8)) : MlpCoreView dom :=
   let core := sparkleMlpCoreStateSynth start in0 in1 in2 in3
   let phase := MlpCoreState.phase core
   let hidden_idx := MlpCoreState.hidden_idx core
@@ -781,7 +1002,7 @@ def sparkleMlpCorePacked {dom : DomainConfig}
   let hidden_reg7 := MlpCoreState.hidden_reg7 core
   let acc_reg := MlpCoreState.acc_reg core
   let out_reg := MlpCoreState.out_reg core
-  packMlpCoreState
+  mlpCoreViewOfState
     phase
     hidden_idx
     input_idx
@@ -799,5 +1020,15 @@ def sparkleMlpCorePacked {dom : DomainConfig}
     hidden_reg7
     acc_reg
     out_reg
+
+def sparkleMlpCorePacked {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) : Signal dom (BitVec mlpCorePackedWidth) :=
+  let core := sparkleMlpCoreStateSynth start in0 in1 in2 in3
+  let nextCore := MlpCore.nextState start in0 in1 in2 in3 core
+  Signal.register packedInitBits (packMlpCoreStateBitsSynth nextCore)
 
 end MlpCore.Sparkle

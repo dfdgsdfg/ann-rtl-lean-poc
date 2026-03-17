@@ -12,6 +12,9 @@ open MlpCoreSparkle.ProofConfig
 
 local instance : ArithmeticProofProvider := selectedArithmeticProofProvider
 
+set_option maxRecDepth 65536
+set_option maxHeartbeats 64000000
+
 abbrev inputCount4b : BitVec stateWidth := BitVec.ofNat stateWidth inputCount
 abbrev hiddenCount4b : BitVec stateWidth := BitVec.ofNat stateWidth hiddenCount
 abbrev lastHiddenIdx4b : BitVec stateWidth := BitVec.ofNat stateWidth (hiddenCount - 1)
@@ -120,6 +123,54 @@ def MlpCoreView.sample {dom : DomainConfig} (view : MlpCoreView dom) (t : Nat) :
   , hidden_weight_case_hit := view.hidden_weight_case_hit.atTime t
   , output_weight_case_hit := view.output_weight_case_hit.atTime t
   }
+
+def packMlpCoreOutputsBundle (outputs : MlpCoreOutputs) :=
+  let packed : Signal defaultDomain _ :=
+    bundleAll! [
+      Signal.pure outputs.state,
+      Signal.pure outputs.load_input,
+      Signal.pure outputs.clear_acc,
+      Signal.pure outputs.do_mac_hidden,
+      Signal.pure outputs.do_bias_hidden,
+      Signal.pure outputs.do_act_hidden,
+      Signal.pure outputs.advance_hidden,
+      Signal.pure outputs.do_mac_output,
+      Signal.pure outputs.do_bias_output,
+      Signal.pure outputs.done,
+      Signal.pure outputs.busy,
+      Signal.pure outputs.out_bit,
+      Signal.pure outputs.hidden_idx,
+      Signal.pure outputs.input_idx,
+      Signal.pure outputs.acc_reg,
+      Signal.pure outputs.mac_acc_out,
+      Signal.pure outputs.mac_a,
+      Signal.pure outputs.b2_data,
+      Signal.pure outputs.input_reg0,
+      Signal.pure outputs.input_reg1,
+      Signal.pure outputs.input_reg2,
+      Signal.pure outputs.input_reg3,
+      Signal.pure outputs.hidden_reg0,
+      Signal.pure outputs.hidden_reg1,
+      Signal.pure outputs.hidden_reg2,
+      Signal.pure outputs.hidden_reg3,
+      Signal.pure outputs.hidden_reg4,
+      Signal.pure outputs.hidden_reg5,
+      Signal.pure outputs.hidden_reg6,
+      Signal.pure outputs.hidden_reg7,
+      Signal.pure outputs.hidden_input_case_hit,
+      Signal.pure outputs.output_hidden_case_hit,
+      Signal.pure outputs.hidden_weight_case_hit,
+      Signal.pure outputs.output_weight_case_hit
+    ]
+  packed.atTime 0
+
+def packMlpCoreOutputsBits (outputs : MlpCoreOutputs) : BitVec mlpCorePackedWidth :=
+  packMlpCorePackedBits (packMlpCoreOutputsBundle outputs)
+
+theorem packMlpCoreView_sample_bundle {dom : DomainConfig} (view : MlpCoreView dom) (t : Nat) :
+    (packMlpCoreView view).atTime t = packMlpCoreOutputsBundle (view.sample t) := by
+  cases view
+  rfl
 
 private theorem mlpCoreOutputs_ext
     {a b : MlpCoreOutputs}
@@ -695,6 +746,35 @@ private theorem controllerPhaseNext_atTime {dom : DomainConfig}
                     · simp [controllerPhaseNextComb, hDone, hStart]
                     · simp [controllerPhaseNextComb, hDone, hStart]
                   · simp [controllerPhaseNextComb, hIdle, hLoad, hMacHidden, hBiasHidden, hActHidden, hNextHidden, hMacOutput, hBiasOutput, hDone]
+
+private theorem controllerPhaseNext_val {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (hidden_idx : Signal dom (BitVec stateWidth))
+    (input_idx : Signal dom (BitVec stateWidth))
+    (inputNeurons4b : Signal dom (BitVec stateWidth))
+    (hiddenNeurons4b : Signal dom (BitVec stateWidth))
+    (lastHiddenIdx : Signal dom (BitVec stateWidth))
+    (state : Signal dom (BitVec stateWidth))
+    (t : Nat) :
+    (controllerPhaseNext start hidden_idx input_idx inputNeurons4b hiddenNeurons4b lastHiddenIdx state).val t =
+      controllerPhaseNextComb
+        (start.val t)
+        (hidden_idx.val t)
+        (input_idx.val t)
+        (inputNeurons4b.val t)
+        (hiddenNeurons4b.val t)
+        (lastHiddenIdx.val t)
+        (state.val t) := by
+  simpa [Signal.atTime] using
+    controllerPhaseNext_atTime
+      start
+      hidden_idx
+      input_idx
+      inputNeurons4b
+      hiddenNeurons4b
+      lastHiddenIdx
+      state
+      t
 
 theorem phaseSignal_satisfies_controller_equation_at {dom : DomainConfig}
     (samples : Nat → CtrlSample) (t : Nat) :
@@ -1510,6 +1590,10 @@ private theorem encodeInputReg_sampleAt3 {dom : DomainConfig}
     encodeInputReg (MlpCore.sampleAt start in0 in1 in2 in3 t).inputs 3 = in3.atTime t := by
   simp [encodeInputReg, MlpCore.sampleAt, decodeInput, Input8.getInt8Nat, Input8.getNat]
 
+@[simp] private theorem encodeSampleInput_decodeInput (x : BitVec 8) :
+    encodeSampleInput (decodeInput x) = x := by
+  simp [encodeSampleInput, decodeInput]
+
 private def mlpCoreOutputsOfEncodedState (state : MlpCoreState) : MlpCoreOutputs :=
   mlpCoreOutputsAt
     (phaseOf state)
@@ -1579,6 +1663,240 @@ private theorem mlpCoreView_sample_of_core {dom : DomainConfig} (core : Signal d
       (MlpCoreState.out_reg core)
       t
 
+theorem packMlpCoreStateSignal_refines_state {dom : DomainConfig}
+    (core : Signal dom MlpCoreState) (s : State) (t : Nat)
+    (hcore : core.atTime t = encodeState s) :
+    (packMlpCoreStateSignal core).atTime t =
+      packMlpCoreOutputsBundle (mlpCoreOutputsOfState s) := by
+  calc
+    (packMlpCoreStateSignal core).atTime t =
+      packMlpCoreOutputsBundle (mlpCoreOutputsOfEncodedState (core.atTime t)) := by
+        calc
+          (packMlpCoreStateSignal core).atTime t =
+            (packMlpCoreView
+              (mlpCoreViewOfState
+                (MlpCoreState.phase core)
+                (MlpCoreState.hidden_idx core)
+                (MlpCoreState.input_idx core)
+                (MlpCoreState.input_reg0 core)
+                (MlpCoreState.input_reg1 core)
+                (MlpCoreState.input_reg2 core)
+                (MlpCoreState.input_reg3 core)
+                (MlpCoreState.hidden_reg0 core)
+                (MlpCoreState.hidden_reg1 core)
+                (MlpCoreState.hidden_reg2 core)
+                (MlpCoreState.hidden_reg3 core)
+                (MlpCoreState.hidden_reg4 core)
+                (MlpCoreState.hidden_reg5 core)
+                (MlpCoreState.hidden_reg6 core)
+                (MlpCoreState.hidden_reg7 core)
+                (MlpCoreState.acc_reg core)
+                (MlpCoreState.out_reg core))).atTime t := by
+                  simp [packMlpCoreStateSignal, packMlpCoreState_eq_packMlpCoreView]
+          _ =
+            packMlpCoreOutputsBundle
+              ((mlpCoreViewOfState
+                (MlpCoreState.phase core)
+                (MlpCoreState.hidden_idx core)
+                (MlpCoreState.input_idx core)
+                (MlpCoreState.input_reg0 core)
+                (MlpCoreState.input_reg1 core)
+                (MlpCoreState.input_reg2 core)
+                (MlpCoreState.input_reg3 core)
+                (MlpCoreState.hidden_reg0 core)
+                (MlpCoreState.hidden_reg1 core)
+                (MlpCoreState.hidden_reg2 core)
+                (MlpCoreState.hidden_reg3 core)
+                (MlpCoreState.hidden_reg4 core)
+                (MlpCoreState.hidden_reg5 core)
+                (MlpCoreState.hidden_reg6 core)
+                (MlpCoreState.hidden_reg7 core)
+                (MlpCoreState.acc_reg core)
+                (MlpCoreState.out_reg core)).sample t) := by
+                  simpa using
+                    packMlpCoreView_sample_bundle
+                      (view :=
+                        mlpCoreViewOfState
+                          (MlpCoreState.phase core)
+                          (MlpCoreState.hidden_idx core)
+                          (MlpCoreState.input_idx core)
+                          (MlpCoreState.input_reg0 core)
+                          (MlpCoreState.input_reg1 core)
+                          (MlpCoreState.input_reg2 core)
+                          (MlpCoreState.input_reg3 core)
+                          (MlpCoreState.hidden_reg0 core)
+                          (MlpCoreState.hidden_reg1 core)
+                          (MlpCoreState.hidden_reg2 core)
+                          (MlpCoreState.hidden_reg3 core)
+                          (MlpCoreState.hidden_reg4 core)
+                          (MlpCoreState.hidden_reg5 core)
+                          (MlpCoreState.hidden_reg6 core)
+                          (MlpCoreState.hidden_reg7 core)
+                          (MlpCoreState.acc_reg core)
+                          (MlpCoreState.out_reg core))
+                      t
+          _ = packMlpCoreOutputsBundle (mlpCoreOutputsOfEncodedState (core.atTime t)) := by
+                rw [mlpCoreView_sample_of_core]
+    _ = packMlpCoreOutputsBundle (mlpCoreOutputsOfEncodedState (encodeState s)) := by
+      rw [hcore]
+    _ = packMlpCoreOutputsBundle (mlpCoreOutputsOfState s) := by
+      simp
+
+theorem packEncodedMlpCoreState_refines_state (s : State) :
+    packEncodedMlpCoreState (encodeState s) =
+      packMlpCoreOutputsBundle (mlpCoreOutputsOfState s) := by
+  calc
+    packEncodedMlpCoreState (encodeState s) =
+      (packMlpCoreStateSignal (Signal.pure (dom := defaultDomain) (encodeState s))).atTime 0 := by
+        rfl
+    _ = packMlpCoreOutputsBundle (mlpCoreOutputsOfState s) := by
+      simpa using
+        packMlpCoreStateSignal_refines_state
+          (core := Signal.pure (dom := defaultDomain) (encodeState s))
+          (s := s)
+          (t := 0)
+          rfl
+
+theorem packMlpCoreStateBitsSignal_refines_state {dom : DomainConfig}
+    (core : Signal dom MlpCoreState) (s : State) (t : Nat)
+    (hcore : core.atTime t = encodeState s) :
+    (packMlpCoreStateBitsSignal core).atTime t =
+      packMlpCoreOutputsBits (mlpCoreOutputsOfState s) := by
+  calc
+    (packMlpCoreStateBitsSignal core).atTime t =
+      packMlpCorePackedBits ((packMlpCoreStateSignal core).atTime t) := by
+        rfl
+    _ = packMlpCorePackedBits (packMlpCoreOutputsBundle (mlpCoreOutputsOfState s)) := by
+      rw [packMlpCoreStateSignal_refines_state (core := core) (s := s) (t := t) hcore]
+    _ = packMlpCoreOutputsBits (mlpCoreOutputsOfState s) := by
+      rfl
+
+theorem packEncodedMlpCoreStateBits_refines_state (s : State) :
+    packMlpCorePackedBits (packEncodedMlpCoreState (encodeState s)) =
+      packMlpCoreOutputsBits (mlpCoreOutputsOfState s) := by
+  rw [packEncodedMlpCoreState_refines_state (s := s)]
+  rfl
+
+@[simp] private theorem bundle2_atTime_fst {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    ((bundle2 a b).atTime t).fst = a.atTime t := by
+  rfl
+
+@[simp] private theorem bundle2_atTime {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    (bundle2 a b).atTime t = (a.atTime t, b.atTime t) := by
+  rfl
+
+@[simp] private theorem bundle2_atTime_snd {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    ((bundle2 a b).atTime t).snd = b.atTime t := by
+  rfl
+
+@[simp] private theorem pairSignal_atTime_fst {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    ((((fun x1 x2 => (x1, x2)) <$> a <*> b).atTime t).fst) = a.atTime t := by
+  rfl
+
+@[simp] private theorem pairSignal_atTime {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    (((fun x1 x2 => (x1, x2)) <$> a <*> b).atTime t) = (a.atTime t, b.atTime t) := by
+  rfl
+
+@[simp] private theorem pairSignal_atTime_snd {dom : DomainConfig} {α β : Type}
+    (a : Signal dom α) (b : Signal dom β) (t : Nat) :
+    ((((fun x1 x2 => (x1, x2)) <$> a <*> b).atTime t).snd) = b.atTime t := by
+  rfl
+
+private theorem signal_ext {dom : DomainConfig} {α : Type}
+    {a b : Signal dom α} (h : ∀ t : Nat, a.atTime t = b.atTime t) :
+    a = b := by
+  cases a with
+  | mk aval =>
+      cases b with
+      | mk bval =>
+          have hfun : aval = bval := by
+            funext t
+            exact h t
+          cases hfun
+          rfl
+
+private theorem nextState_atTime_eq_pure {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8))
+    (state : Signal dom MlpCoreState)
+    (t : Nat) :
+    (MlpCore.nextState start in0 in1 in2 in3 state).atTime t =
+      (MlpCore.nextState
+        (Signal.pure (dom := dom) (start.atTime t))
+        (Signal.pure (dom := dom) (in0.atTime t))
+        (Signal.pure (dom := dom) (in1.atTime t))
+        (Signal.pure (dom := dom) (in2.atTime t))
+        (Signal.pure (dom := dom) (in3.atTime t))
+        (Signal.pure (dom := dom) (state.atTime t))).atTime 0 := by
+  cases start
+  cases in0
+  cases in1
+  cases in2
+  cases in3
+  cases state
+  rfl
+
+private theorem packMlpCoreStateSignal_atTime {dom : DomainConfig}
+    (core : Signal dom MlpCoreState)
+    (t : Nat) :
+    (packMlpCoreStateSignal core).atTime t =
+      packEncodedMlpCoreState (core.atTime t) := by
+  cases core
+  rfl
+
+private theorem body_at_zero {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8))
+    (state : Signal dom MlpCoreState) :
+    (MlpCore.body start in0 in1 in2 in3 state).atTime 0 = encodeState idleState := by
+  rfl
+
+private theorem sparkleMlpCoreStateSynth_unfold {dom : DomainConfig}
+    (start : Signal dom Bool)
+    (in0 : Signal dom (BitVec 8))
+    (in1 : Signal dom (BitVec 8))
+    (in2 : Signal dom (BitVec 8))
+    (in3 : Signal dom (BitVec 8)) :
+    sparkleMlpCoreStateSynth start in0 in1 in2 in3 =
+      MlpCore.body start in0 in1 in2 in3
+        (sparkleMlpCoreStateSynth start in0 in1 in2 in3) := by
+  simpa [sparkleMlpCoreStateSynth] using
+    (Signal.loop_unfold (MlpCore.body start in0 in1 in2 in3))
+
+/--
+Remaining local trust bridge: the pure next-state network over encoded Sparkle
+state matches the checked-in `timedStep` semantics on invariant states.
+-/
+private axiom nextState_pure_eq_timedStep {dom : DomainConfig}
+    (sample : CtrlSample) (s : State) :
+    (MlpCore.nextState
+      (Signal.pure (dom := dom) sample.start)
+      (Signal.pure (dom := dom) (encodeSampleInput sample.inputs.x0))
+      (Signal.pure (dom := dom) (encodeSampleInput sample.inputs.x1))
+      (Signal.pure (dom := dom) (encodeSampleInput sample.inputs.x2))
+      (Signal.pure (dom := dom) (encodeSampleInput sample.inputs.x3))
+      (Signal.pure (dom := dom) (encodeState s))).atTime 0 =
+        encodeState (timedStep sample s)
+
+theorem packMlpCoreStateBitsSynth_atTime {dom : DomainConfig}
+    (core : Signal dom MlpCoreState)
+    (t : Nat) :
+    (packMlpCoreStateBitsSynth core).atTime t =
+      (packMlpCoreStateBitsSignal core).atTime t := by
+  cases core
+  rfl
+
 theorem sparkleMlpCoreState_refines_rtlTrace {dom : DomainConfig}
     (samples : Nat → CtrlSample) (t : Nat) :
     (sparkleMlpCoreState
@@ -1590,6 +1908,200 @@ theorem sparkleMlpCoreState_refines_rtlTrace {dom : DomainConfig}
         encodeState (rtlTrace samples t) := by
   simpa [sparkleMlpCoreState] using
     congrArg encodeState (sparkleMlpCoreTrace_refines_rtlTrace (dom := dom) samples t)
+
+theorem sparkleMlpCoreStateSynth_refines_rtlTrace {dom : DomainConfig}
+    (samples : Nat → CtrlSample) (t : Nat) :
+    (sparkleMlpCoreStateSynth
+      (startSignal (dom := dom) samples)
+      (input0Signal (dom := dom) samples)
+      (input1Signal (dom := dom) samples)
+      (input2Signal (dom := dom) samples)
+      (input3Signal (dom := dom) samples)).atTime t =
+        encodeState (rtlTrace samples t) := by
+  induction t with
+  | zero =>
+      calc
+        (sparkleMlpCoreStateSynth
+          (startSignal (dom := dom) samples)
+          (input0Signal (dom := dom) samples)
+          (input1Signal (dom := dom) samples)
+          (input2Signal (dom := dom) samples)
+          (input3Signal (dom := dom) samples)).atTime 0 =
+            (MlpCore.body
+              (startSignal (dom := dom) samples)
+              (input0Signal (dom := dom) samples)
+              (input1Signal (dom := dom) samples)
+              (input2Signal (dom := dom) samples)
+              (input3Signal (dom := dom) samples)
+              (sparkleMlpCoreStateSynth
+                (startSignal (dom := dom) samples)
+                (input0Signal (dom := dom) samples)
+                (input1Signal (dom := dom) samples)
+                (input2Signal (dom := dom) samples)
+                (input3Signal (dom := dom) samples))).atTime 0 := by
+                  simpa using congrArg
+                    (fun s => s.atTime 0)
+                    (sparkleMlpCoreStateSynth_unfold
+                      (dom := dom)
+                      (startSignal (dom := dom) samples)
+                      (input0Signal (dom := dom) samples)
+                      (input1Signal (dom := dom) samples)
+                      (input2Signal (dom := dom) samples)
+                      (input3Signal (dom := dom) samples))
+        _ = encodeState idleState := by
+          simpa using body_at_zero
+            (startSignal (dom := dom) samples)
+            (input0Signal (dom := dom) samples)
+            (input1Signal (dom := dom) samples)
+            (input2Signal (dom := dom) samples)
+            (input3Signal (dom := dom) samples)
+            (sparkleMlpCoreStateSynth
+              (startSignal (dom := dom) samples)
+              (input0Signal (dom := dom) samples)
+              (input1Signal (dom := dom) samples)
+              (input2Signal (dom := dom) samples)
+              (input3Signal (dom := dom) samples))
+        _ = encodeState (rtlTrace samples 0) := by
+          simp [rtlTrace]
+  | succ n ih =>
+      calc
+        (sparkleMlpCoreStateSynth
+          (startSignal (dom := dom) samples)
+          (input0Signal (dom := dom) samples)
+          (input1Signal (dom := dom) samples)
+          (input2Signal (dom := dom) samples)
+          (input3Signal (dom := dom) samples)).atTime (n + 1) =
+            (MlpCore.body
+              (startSignal (dom := dom) samples)
+              (input0Signal (dom := dom) samples)
+              (input1Signal (dom := dom) samples)
+              (input2Signal (dom := dom) samples)
+              (input3Signal (dom := dom) samples)
+              (sparkleMlpCoreStateSynth
+                (startSignal (dom := dom) samples)
+                (input0Signal (dom := dom) samples)
+                (input1Signal (dom := dom) samples)
+                (input2Signal (dom := dom) samples)
+                (input3Signal (dom := dom) samples))).atTime (n + 1) := by
+                  simpa using congrArg
+                    (fun s => s.atTime (n + 1))
+                    (sparkleMlpCoreStateSynth_unfold
+                      (dom := dom)
+                      (startSignal (dom := dom) samples)
+                      (input0Signal (dom := dom) samples)
+                      (input1Signal (dom := dom) samples)
+                      (input2Signal (dom := dom) samples)
+                      (input3Signal (dom := dom) samples))
+        _ =
+            (MlpCore.nextState
+              (Signal.pure (dom := dom) (samples n).start)
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x0))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x1))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x2))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x3))
+              (Signal.pure (dom := dom)
+                ((sparkleMlpCoreStateSynth
+                  (startSignal (dom := dom) samples)
+                  (input0Signal (dom := dom) samples)
+                  (input1Signal (dom := dom) samples)
+                  (input2Signal (dom := dom) samples)
+                  (input3Signal (dom := dom) samples)).atTime n))).atTime 0 := by
+                    simpa [MlpCore.body, MlpCore.registerState] using
+                      nextState_atTime_eq_pure
+                        (startSignal (dom := dom) samples)
+                        (input0Signal (dom := dom) samples)
+                        (input1Signal (dom := dom) samples)
+                        (input2Signal (dom := dom) samples)
+                        (input3Signal (dom := dom) samples)
+                        (sparkleMlpCoreStateSynth
+                          (startSignal (dom := dom) samples)
+                          (input0Signal (dom := dom) samples)
+                          (input1Signal (dom := dom) samples)
+                          (input2Signal (dom := dom) samples)
+                          (input3Signal (dom := dom) samples))
+                        n
+        _ =
+            (MlpCore.nextState
+              (Signal.pure (dom := dom) (samples n).start)
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x0))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x1))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x2))
+              (Signal.pure (dom := dom) (encodeSampleInput (samples n).inputs.x3))
+              (Signal.pure (dom := dom) (encodeState (rtlTrace samples n)))).atTime 0 := by
+                rw [ih]
+        _ = encodeState (timedStep (samples n) (rtlTrace samples n)) := by
+          simpa using nextState_pure_eq_timedStep (dom := dom) (samples n) (rtlTrace samples n)
+        _ = encodeState (rtlTrace samples (n + 1)) := by
+          simp [rtlTrace]
+
+theorem sparkleMlpCoreNextStateSynth_refines_rtlTrace {dom : DomainConfig}
+    (samples : Nat → CtrlSample) (t : Nat) :
+    (MlpCore.nextState
+      (startSignal (dom := dom) samples)
+      (input0Signal (dom := dom) samples)
+      (input1Signal (dom := dom) samples)
+      (input2Signal (dom := dom) samples)
+      (input3Signal (dom := dom) samples)
+      (sparkleMlpCoreStateSynth
+        (startSignal (dom := dom) samples)
+        (input0Signal (dom := dom) samples)
+        (input1Signal (dom := dom) samples)
+        (input2Signal (dom := dom) samples)
+        (input3Signal (dom := dom) samples))).atTime t =
+        encodeState (rtlTrace samples (t + 1)) := by
+  calc
+    (MlpCore.nextState
+      (startSignal (dom := dom) samples)
+      (input0Signal (dom := dom) samples)
+      (input1Signal (dom := dom) samples)
+      (input2Signal (dom := dom) samples)
+      (input3Signal (dom := dom) samples)
+      (sparkleMlpCoreStateSynth
+        (startSignal (dom := dom) samples)
+        (input0Signal (dom := dom) samples)
+        (input1Signal (dom := dom) samples)
+        (input2Signal (dom := dom) samples)
+        (input3Signal (dom := dom) samples))).atTime t =
+        (MlpCore.nextState
+          (Signal.pure (dom := dom) (samples t).start)
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x0))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x1))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x2))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x3))
+          (Signal.pure (dom := dom)
+            ((sparkleMlpCoreStateSynth
+              (startSignal (dom := dom) samples)
+              (input0Signal (dom := dom) samples)
+              (input1Signal (dom := dom) samples)
+              (input2Signal (dom := dom) samples)
+              (input3Signal (dom := dom) samples)).atTime t))).atTime 0 := by
+                simpa using
+                  nextState_atTime_eq_pure
+                    (startSignal (dom := dom) samples)
+                    (input0Signal (dom := dom) samples)
+                    (input1Signal (dom := dom) samples)
+                    (input2Signal (dom := dom) samples)
+                    (input3Signal (dom := dom) samples)
+                    (sparkleMlpCoreStateSynth
+                      (startSignal (dom := dom) samples)
+                      (input0Signal (dom := dom) samples)
+                      (input1Signal (dom := dom) samples)
+                      (input2Signal (dom := dom) samples)
+                      (input3Signal (dom := dom) samples))
+                    t
+    _ =
+        (MlpCore.nextState
+          (Signal.pure (dom := dom) (samples t).start)
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x0))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x1))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x2))
+          (Signal.pure (dom := dom) (encodeSampleInput (samples t).inputs.x3))
+          (Signal.pure (dom := dom) (encodeState (rtlTrace samples t)))).atTime 0 := by
+            rw [sparkleMlpCoreStateSynth_refines_rtlTrace (dom := dom) samples t]
+    _ = encodeState (timedStep (samples t) (rtlTrace samples t)) := by
+      simpa using nextState_pure_eq_timedStep (dom := dom) (samples t) (rtlTrace samples t)
+    _ = encodeState (rtlTrace samples (t + 1)) := by
+      simp [rtlTrace]
 
 theorem sparkleMlpCoreView_refines_rtlTrace {dom : DomainConfig}
     (samples : Nat → CtrlSample) (t : Nat) :
@@ -1617,6 +2129,37 @@ theorem sparkleMlpCoreView_refines_rtlTrace {dom : DomainConfig}
       (input3Signal (dom := dom) samples)).sample t =
         mlpCoreOutputsOfEncodedState (core.atTime t) := by
           simpa [sparkleMlpCoreView, core] using mlpCoreView_sample_of_core (dom := dom) core t
+    _ = mlpCoreOutputsOfEncodedState (encodeState (rtlTrace samples t)) := by
+      rw [hcore]
+    _ = mlpCoreOutputsOfState (rtlTrace samples t) := by
+      simp
+
+theorem sparkleMlpCoreViewSynth_refines_rtlTrace {dom : DomainConfig}
+    (samples : Nat → CtrlSample) (t : Nat) :
+    (sparkleMlpCoreViewSynth
+      (startSignal (dom := dom) samples)
+      (input0Signal (dom := dom) samples)
+      (input1Signal (dom := dom) samples)
+      (input2Signal (dom := dom) samples)
+      (input3Signal (dom := dom) samples)).sample t =
+        mlpCoreOutputsOfState (rtlTrace samples t) := by
+  let core := sparkleMlpCoreStateSynth
+    (startSignal (dom := dom) samples)
+    (input0Signal (dom := dom) samples)
+    (input1Signal (dom := dom) samples)
+    (input2Signal (dom := dom) samples)
+    (input3Signal (dom := dom) samples)
+  have hcore : core.atTime t = encodeState (rtlTrace samples t) := by
+    simpa [core] using sparkleMlpCoreStateSynth_refines_rtlTrace (dom := dom) samples t
+  calc
+    (sparkleMlpCoreViewSynth
+      (startSignal (dom := dom) samples)
+      (input0Signal (dom := dom) samples)
+      (input1Signal (dom := dom) samples)
+      (input2Signal (dom := dom) samples)
+      (input3Signal (dom := dom) samples)).sample t =
+        mlpCoreOutputsOfEncodedState (core.atTime t) := by
+          simpa [sparkleMlpCoreViewSynth, core] using mlpCoreView_sample_of_core (dom := dom) core t
     _ = mlpCoreOutputsOfEncodedState (encodeState (rtlTrace samples t)) := by
       rw [hcore]
     _ = mlpCoreOutputsOfState (rtlTrace samples t) := by

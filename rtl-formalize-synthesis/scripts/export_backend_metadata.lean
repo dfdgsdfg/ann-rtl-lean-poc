@@ -4,6 +4,9 @@ import Sparkle.Compiler.Elab
 import MlpCoreSparkle
 import MlpCoreSparkle.ProofConfig
 
+set_option maxRecDepth 65536
+set_option maxHeartbeats 64000000
+
 open Lean
 
 private def jsonEscape (text : String) : String :=
@@ -17,7 +20,14 @@ private def exactEmitDecl : Name := ``MlpCore.Sparkle.sparkleMlpCorePacked
 
 def main (_args : List String) : IO UInt32 := do
   let env ← Lean.importModules #[{ module := `MlpCoreSparkle }] {} (trustLevel := 1024)
-  let coreCtx : Lean.Core.Context := { fileName := "<export_backend_metadata>", fileMap := default }
+  let options :=
+    Lean.maxHeartbeats.set (Lean.maxRecDepth.set {} 65536) 64000000
+  let coreCtx : Lean.Core.Context := {
+    fileName := "<export_backend_metadata>",
+    fileMap := default,
+    maxRecDepth := Lean.maxRecDepth.get options,
+    options
+  }
   let coreState : Lean.Core.State := { env := env }
   let (design, _, _) ← Lean.Meta.MetaM.toIO
     (Sparkle.Compiler.Elab.synthesizeHierarchical exactEmitDecl)

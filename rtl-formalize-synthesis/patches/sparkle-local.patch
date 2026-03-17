@@ -1,16 +1,30 @@
-diff --git a/lean-toolchain b/lean-toolchain
-index 155e2df..7d56fef 100644
---- a/lean-toolchain
-+++ b/lean-toolchain
-@@ -1 +1 @@
--leanprover/lean4:v4.28.0-rc1
-+leanprover/lean4:v4.28.0
+diff --git a/Sparkle/Core/Signal.lean b/Sparkle/Core/Signal.lean
+index 8912faf..2b6b255 100644
+--- a/Sparkle/Core/Signal.lean
++++ b/Sparkle/Core/Signal.lean
+@@ -589,6 +589,17 @@ private unsafe def loopImpl [Inhabited α] (f : Signal dom α → Signal dom α)
+ @[implemented_by loopImpl]
+ opaque loop [Inhabited α] (f : Signal dom α → Signal dom α) : Signal dom α
+ 
++/--
++  Trusted fixed-point law for `Signal.loop`.
++
++  This is intentionally provided as an axiom because `loop` is an opaque
++  simulation primitive backed by a recursive runtime implementation. Downstream
++  developments can use this law to reason about the actual synth path while
++  making the additional trust boundary explicit.
++-/
++axiom loop_unfold [Inhabited α] (f : Signal dom α → Signal dom α) :
++  loop f = f (loop f)
++
+ /--
+   Memoized fixed-point combinator for feedback loops.
+ 
 diff --git a/Sparkle/Verification/Temporal.lean b/Sparkle/Verification/Temporal.lean
-index 602465c..e45e8f6 100644
+index f8cd440..65d752e 100644
 --- a/Sparkle/Verification/Temporal.lean
 +++ b/Sparkle/Verification/Temporal.lean
 @@ -188,7 +188,13 @@ theorem stableFor_induction {d : DomainConfig} {α : Type} [BEq α]
-     (s : Signal d α) (v : α) (n : Nat) :
    s.atTime 0 == v →
    (∀ (t : Nat), t < n → s.atTime t == v → s.atTime (t + 1) == v) →
    stableFor s v (n + 1) := by
@@ -25,3 +39,10 @@ index 602465c..e45e8f6 100644
  
  /--
    Composition lemma: If P always holds and P implies Q, then Q always holds.
+diff --git a/lean-toolchain b/lean-toolchain
+index 4bafde2..4c685fa 100644
+--- a/lean-toolchain
++++ b/lean-toolchain
+@@ -1 +1 @@
+-leanprover/lean4:v4.28.0-rc1
++leanprover/lean4:v4.28.0
