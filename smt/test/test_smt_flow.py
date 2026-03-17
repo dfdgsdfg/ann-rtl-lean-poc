@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-TEST_TMP_ROOT = ROOT / "build" / "tests" / "tmp"
+TEST_TMP_ROOT = ROOT / "build" / "tmp" / "tests"
 
 
 class SmtFlowTests(unittest.TestCase):
@@ -73,6 +73,8 @@ class SmtFlowTests(unittest.TestCase):
         self.assertEqual(rtl_synthesis_summary["overall_result"], "pass")
         self.assertEqual(sparkle_summary["branch"], "rtl-formalize-synthesis")
         self.assertEqual(sparkle_summary["overall_result"], "pass")
+        self.assertIn(sparkle_summary["proof_lane"]["name"], {"vanilla", "smt"})
+        self.assertIn("arithmetic_provider", sparkle_summary["proof_lane"])
         self.assertEqual(contract_summary["arithmetic"]["accumulator_bits"], 32)
         self.assertEqual(overflow_summary["overall_result"], "pass")
         self.assertEqual(equivalence_summary["overall_result"], "pass")

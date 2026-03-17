@@ -1,12 +1,14 @@
 import MlpCoreSparkle.Refinement
-import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCoreSparkle.ProofConfig
 
 open Sparkle.Core.Domain
 open Sparkle.Core.Signal
 
 namespace MlpCore.Sparkle
 
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+open MlpCoreSparkle.ProofConfig
+
+local instance : ArithmeticProofProvider := selectedArithmeticProofProvider
 
 def packMlpCoreOutputsBundle (outputs : MlpCoreOutputs) :=
   let packed : Signal defaultDomain _ :=

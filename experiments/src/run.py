@@ -37,6 +37,10 @@ if __package__ in (None, ""):
         write_json,
         write_text,
     )
+    from runners.sparkle_proof_lane import (  # type: ignore[import-not-found]
+        build_sparkle_proof_lane_env,
+        load_selected_sparkle_proof_lane,
+    )
     from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot  # type: ignore[import-not-found]
 else:
     from contract.src.artifacts import ANN_CANONICAL_MANIFEST_PATH, read_json
@@ -56,6 +60,7 @@ else:
         write_json,
         write_text,
     )
+    from runners.sparkle_proof_lane import build_sparkle_proof_lane_env, load_selected_sparkle_proof_lane
     from runners.runtime_artifacts import build_run_id, prepare_snapshot, promote_snapshot
     ROOT = REPO_ROOT
 
@@ -80,8 +85,11 @@ BASELINE_RTL_NO_CONTROLLER = [
 ]
 SPOT_COMPAT_WRAPPER = ROOT / "rtl-synthesis" / "results" / "canonical" / "sv" / "controller_spot_compat.sv"
 SPARKLE_PROJECT_DIR = ROOT / "rtl-formalize-synthesis"
+FORMALIZE_SMT_ROOT = ROOT / "formalize-smt"
 SPARKLE_LAKEFILE = SPARKLE_PROJECT_DIR / "lakefile.lean"
 SPARKLE_PREPARE_SCRIPT = SPARKLE_PROJECT_DIR / "scripts" / "prepare_sparkle.sh"
+SPARKLE_PROOF_CONFIG = SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "ProofConfig.lean"
+SPARKLE_PROOF_LANE_CONFIG_SCRIPT = SPARKLE_PROJECT_DIR / "scripts" / "configure_proof_lane.py"
 SPARKLE_WRAPPER_GENERATOR = SPARKLE_PROJECT_DIR / "scripts" / "generate_wrapper.py"
 SPARKLE_BACKEND_METADATA_EXPORT = SPARKLE_PROJECT_DIR / "scripts" / "export_backend_metadata.lean"
 SPARKLE_VERIFICATION_REFRESH = SPARKLE_PROJECT_DIR / "scripts" / "refresh_verification_manifest.py"
@@ -626,8 +634,10 @@ def sparkle_generated_full_core_emit_sources() -> list[Path]:
 def sparkle_generated_full_core_proof_sources() -> list[Path]:
     return [
         SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle.lean",
+        SPARKLE_PROOF_CONFIG,
         SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "Refinement.lean",
         SPARKLE_PROJECT_DIR / "src" / "MlpCoreSparkle" / "BackendSemantics.lean",
+        SPARKLE_PROOF_LANE_CONFIG_SCRIPT,
         SPARKLE_BACKEND_METADATA_EXPORT,
         SPARKLE_VERIFICATION_REFRESH,
     ]
@@ -647,6 +657,49 @@ def load_sparkle_verification_manifest() -> dict[str, object]:
     return payload
 
 
+def sparkle_proof_lane_from_manifest_payload(payload: dict[str, object]) -> dict[str, str]:
+    proof_lane = payload.get("proof_lane")
+    if not isinstance(proof_lane, dict):
+        raise ValueError("verification manifest is missing proof_lane metadata")
+
+    normalized: dict[str, str] = {}
+    for key in ("name", "lean_namespace", "package", "arithmetic_provider", "trust_profile", "trust_note"):
+        value = proof_lane.get(key)
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"verification manifest proof_lane.{key} must be a non-empty string")
+        normalized[key] = value
+
+    selected_config = proof_lane.get("selected_config")
+    if isinstance(selected_config, str) and selected_config:
+        normalized["selected_config"] = selected_config
+    return normalized
+
+
+def maybe_load_sparkle_proof_lane() -> dict[str, str] | None:
+    try:
+        return sparkle_proof_lane_from_manifest_payload(load_sparkle_verification_manifest())
+    except Exception:
+        return None
+
+
+def current_sparkle_proof_lane(export_payload: dict[str, object]) -> dict[str, str]:
+    current: dict[str, str] = {}
+    for key, export_key in (
+        ("name", "proof_lane"),
+        ("lean_namespace", "proof_namespace"),
+        ("package", "proof_package"),
+        ("arithmetic_provider", "arithmetic_provider"),
+        ("trust_profile", "trust_profile"),
+        ("trust_note", "trust_note"),
+    ):
+        value = export_payload.get(export_key)
+        if not isinstance(value, str) or not value:
+            raise RuntimeError(f"backend metadata export did not provide a valid {export_key}")
+        current[key] = value
+    current["selected_config"] = relative(SPARKLE_PROOF_CONFIG)
+    return current
+
+
 def export_current_sparkle_backend_metadata() -> tuple[dict[str, object], str]:
     command = [
         "lake",
@@ -655,7 +708,11 @@ def export_current_sparkle_backend_metadata() -> tuple[dict[str, object], str]:
         "--run",
         str(SPARKLE_BACKEND_METADATA_EXPORT),
     ]
-    proc = run_command(command, cwd=SPARKLE_PROJECT_DIR)
+    proc = run_command(
+        command,
+        cwd=SPARKLE_PROJECT_DIR,
+        env=build_sparkle_proof_lane_env(root=ROOT),
+    )
     output = ((proc.stdout or "") + (proc.stderr or "")).strip()
     if proc.returncode != 0:
         raise RuntimeError(output or "backend metadata export failed")
@@ -1061,9 +1118,41 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
     log_lines.append(f"newest proof source: {details['newest_proof_source']}")
     log_lines.append(f"newest proof source mtime (utc): {details['newest_proof_source_mtime_utc']}")
 
+    selected_proof_lane = load_selected_sparkle_proof_lane(ROOT)
+    details["selected_proof_lane_from_config"] = selected_proof_lane
+    if selected_proof_lane == "smt":
+        smt_build_command = ["lake", "build"]
+        details["formalize_smt_build_command"] = command_text(smt_build_command)
+        smt_build_proc = run_command(smt_build_command, cwd=FORMALIZE_SMT_ROOT)
+        smt_build_output = ((smt_build_proc.stdout or "") + (smt_build_proc.stderr or "")).strip()
+        log_lines.extend(
+            [
+                "",
+                f"$ {details['formalize_smt_build_command']}  # cwd=formalize-smt",
+                smt_build_output or "(no output)",
+            ]
+        )
+        if smt_build_proc.returncode != 0:
+            details["reason"] = "formalize-smt failed to build for the selected Sparkle proof lane"
+            details["formalize_smt_build_output"] = smt_build_output
+            log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+            write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+            return make_step(
+                name="sparkle_backend_proof_status",
+                result="fail",
+                command="internal Sparkle backend proof-status check",
+                log_path=log_path,
+                artifacts=artifacts,
+                details=details,
+            )
+
     build_command = ["lake", "build", "MlpCoreSparkle.BackendSemantics"]
     details["proof_build_command"] = command_text(build_command)
-    build_proc = run_command(build_command, cwd=SPARKLE_PROJECT_DIR)
+    build_proc = run_command(
+        build_command,
+        cwd=SPARKLE_PROJECT_DIR,
+        env=build_sparkle_proof_lane_env(root=ROOT, proof_lane=selected_proof_lane),
+    )
     build_output = ((build_proc.stdout or "") + (build_proc.stderr or "")).strip()
     log_lines.extend(
         [
@@ -1101,7 +1190,23 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
             details=details,
         )
 
+    try:
+        manifest_proof_lane = sparkle_proof_lane_from_manifest_payload(manifest_payload)
+    except Exception as exc:
+        details["reason"] = f"failed to load verification manifest proof lane: {exc}"
+        log_lines.extend(["result: fail", f"reason: {details['reason']}"])
+        write_text(log_path, "\n".join(log_lines).rstrip() + "\n")
+        return make_step(
+            name="sparkle_backend_proof_status",
+            result="fail",
+            command="internal Sparkle backend proof-status check",
+            log_path=log_path,
+            artifacts=artifacts,
+            details=details,
+        )
+
     details["manifest_schema_version"] = manifest_payload.get("schema_version")
+    details["manifest_proof_lane"] = manifest_proof_lane
     if details["manifest_schema_version"] != 2:
         details["reason"] = "verification manifest does not use schema_version 2"
         log_lines.extend(["result: fail", f"reason: {details['reason']}"])
@@ -1134,6 +1239,16 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
     current_metadata = current_sparkle_backend_fingerprints(export_payload)
     current_metadata["vendor_revision"] = git_head_revision(SPARKLE_PROJECT_DIR / "vendor" / "Sparkle")
     details["current_backend_metadata"] = current_metadata
+    current_proof_lane = current_sparkle_proof_lane(export_payload)
+    details["current_proof_lane"] = current_proof_lane
+    log_lines.append(
+        f"manifest proof lane: {manifest_proof_lane['name']} ({manifest_proof_lane['package']}, "
+        f"{manifest_proof_lane['arithmetic_provider']})"
+    )
+    log_lines.append(
+        f"current proof lane: {current_proof_lane['name']} ({current_proof_lane['package']}, "
+        f"{current_proof_lane['arithmetic_provider']})"
+    )
 
     proof_endpoint = manifest_payload.get("proof_endpoint")
     exact_emit_path = manifest_payload.get("exact_emit_path")
@@ -1149,6 +1264,10 @@ def make_sparkle_backend_proof_status_step(log_path: Path) -> dict[str, object]:
             mismatches.append("proof_endpoint.lean_theorem does not match the expected theorem")
         if proof_endpoint.get("decl_name") != current_metadata["decl_name"]:
             mismatches.append("proof_endpoint.decl_name does not match the current emit declaration")
+
+    for key, current_value in current_proof_lane.items():
+        if manifest_proof_lane.get(key) != current_value:
+            mismatches.append(f"proof_lane.{key} does not match the current selected proof lane")
 
     if not isinstance(exact_emit_path, dict):
         mismatches.append("missing exact_emit_path object")
@@ -1387,6 +1506,7 @@ def prepare_rtl_synthesis_branch(
 
 def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
     ensure_dir(branch_root)
+    proof_lane = maybe_load_sparkle_proof_lane()
     manifest = BranchManifest(
         branch="rtl-formalize-synthesis",
         artifact_kind="generated_full_core_rtl",
@@ -1407,6 +1527,10 @@ def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
             "wrapper": relative(SPARKLE_FULL_CORE_WRAPPER),
             "wrapper_generator": relative(SPARKLE_WRAPPER_GENERATOR),
             "emit_command": "make rtl-formalize-synthesis-emit",
+            "proof_lane": proof_lane["name"] if proof_lane is not None else "unknown",
+            "proof_namespace": proof_lane["lean_namespace"] if proof_lane is not None else "unknown",
+            "arithmetic_provider": proof_lane["arithmetic_provider"] if proof_lane is not None else "unknown",
+            "verification_manifest": relative(SPARKLE_VERIFICATION_MANIFEST),
             "generated_core_exists": SPARKLE_FULL_CORE_RTL.exists(),
             "wrapper_exists": SPARKLE_FULL_CORE_WRAPPER.exists(),
         },

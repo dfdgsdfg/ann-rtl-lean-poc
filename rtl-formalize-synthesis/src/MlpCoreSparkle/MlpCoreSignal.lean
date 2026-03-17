@@ -2,7 +2,7 @@ import Sparkle.Core.Domain
 import Sparkle.Core.Signal
 import Sparkle.Core.StateMacro
 import MlpCore.Defs.TemporalCore
-import MlpCore.ProofsVanilla.SpecArithmetic
+import MlpCoreSparkle.ProofConfig
 import MlpCoreSparkle.Types
 import MlpCoreSparkle.ControllerSignal
 import MlpCoreSparkle.ContractData
@@ -13,7 +13,9 @@ open Sparkle.Core.Signal
 
 namespace MlpCore.Sparkle
 
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+open MlpCoreSparkle.ProofConfig
+
+local instance : ArithmeticProofProvider := selectedArithmeticProofProvider
 
 declare_signal_state MlpCoreState
   | phase : BitVec 4 := 0#4

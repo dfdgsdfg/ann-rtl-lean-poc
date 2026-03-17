@@ -1,6 +1,5 @@
 import MlpCore.Defs.TemporalCore
-import MlpCore.ProofsVanilla.SpecArithmetic
-import MlpCore.ProofsVanilla.Temporal
+import MlpCoreSparkle.ProofConfig
 import MlpCoreSparkle.ControllerSignal
 import MlpCoreSparkle.MlpCoreSignal
 
@@ -9,7 +8,9 @@ open Sparkle.Core.Signal
 
 namespace MlpCore.Sparkle
 
-local instance : ArithmeticProofProvider := vanillaArithmeticProofProvider
+open MlpCoreSparkle.ProofConfig
+
+local instance : ArithmeticProofProvider := selectedArithmeticProofProvider
 
 abbrev inputCount4b : BitVec stateWidth := BitVec.ofNat stateWidth inputCount
 abbrev hiddenCount4b : BitVec stateWidth := BitVec.ofNat stateWidth hiddenCount

@@ -4,13 +4,7 @@ This document describes what the solver-backed verification layer in this reposi
 
 ## 1. The Gap Solvers Address
 
-The repository has two verification methods that reason about different objects:
-
-- **Lean formalization** proves unbounded theorems about a Lean model of the hardware. The `step` and `timedStep` functions in `Machine.lean` and `Temporal.lean` are manual mirrors of the RTL behavior. The proofs are kernel-checked and hold over all inputs and all environment behaviors. But they reason about a hand-written model, not the Verilog source. A transcription error — a missing edge case, a swapped index — would not be caught.
-
-- **Simulation** exercises the actual Verilog with deterministic test vectors. It catches disagreements for the tested inputs, but the test suite is finite. It cannot prove the absence of corner-case failures across all 2^32 input combinations.
-
-The gap between them has a precise shape. Lean provides _universal_ statements over a _model_. Simulation provides _existential_ witnesses over the _implementation_. Neither provides universal statements over the implementation.
+Lean proves unbounded theorems over a hand-written model; simulation exercises the actual Verilog on finite test vectors (see [`from-ann-to-proven-hardware.md`](from-ann-to-proven-hardware.md) §5–§7 for details). Neither provides universal statements over the implementation.
 
 Solver-backed verification occupies that position:
 

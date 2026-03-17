@@ -5,10 +5,16 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from runners.sparkle_proof_lane import build_sparkle_proof_lane_env
+
 SPARKLE_PROJECT_DIR = ROOT / "rtl-formalize-synthesis"
 DEFAULT_MANIFEST = SPARKLE_PROJECT_DIR / "results" / "canonical" / "verification_manifest.json"
 EXPORT_SCRIPT = SPARKLE_PROJECT_DIR / "scripts" / "export_backend_metadata.lean"
@@ -52,6 +58,7 @@ def export_backend_metadata() -> dict[str, object]:
     proc = subprocess.run(
         ["lake", "env", "lean", "--run", str(EXPORT_SCRIPT)],
         cwd=SPARKLE_PROJECT_DIR,
+        env=build_sparkle_proof_lane_env(root=ROOT),
         text=True,
         capture_output=True,
         check=False,
@@ -78,6 +85,15 @@ def main(argv: list[str] | None = None) -> int:
     design_repr = str(export["design_repr"])
     verilog_text = str(export["verilog_text"])
     payload["schema_version"] = 2
+    payload["proof_lane"] = {
+        "name": str(export["proof_lane"]),
+        "lean_namespace": str(export["proof_namespace"]),
+        "package": str(export["proof_package"]),
+        "arithmetic_provider": str(export["arithmetic_provider"]),
+        "trust_profile": str(export["trust_profile"]),
+        "trust_note": str(export["trust_note"]),
+        "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
+    }
     payload["proof_endpoint"] = {
         "kind": "packed_signal_payload",
         "typed_backend_ir": str(export["typed_backend_ir"]),

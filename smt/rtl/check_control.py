@@ -44,6 +44,7 @@ SPARKLE_RTL_SOURCES = [
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv",
 ]
+SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 
 COMMON_SPEC_SOURCES = [
     "specs/smt/requirement.md",
@@ -112,6 +113,19 @@ def tool_version(command: list[str], fallback: str = "unknown") -> str:
         check=False,
     )
     return first_output_line(proc) or fallback
+
+
+def load_sparkle_proof_lane() -> dict[str, object] | None:
+    if not SPARKLE_VERIFICATION_MANIFEST.exists():
+        return None
+    try:
+        payload = json.loads(SPARKLE_VERIFICATION_MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    proof_lane = payload.get("proof_lane")
+    return proof_lane if isinstance(proof_lane, dict) else None
 
 
 def mlp_core_jobs(rtl_sources: list[Path], *, description_prefix: str) -> list[FormalJob]:
@@ -482,6 +496,11 @@ def main(argv: list[str] | None = None) -> int:
         },
         "results": [asdict(item) for item in results],
     }
+    if args.branch == "rtl-formalize-synthesis":
+        proof_lane = load_sparkle_proof_lane()
+        if proof_lane is not None:
+            summary["proof_lane"] = proof_lane
+            summary["sources"]["verification_manifest"] = relative(SPARKLE_VERIFICATION_MANIFEST)
 
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -247,16 +247,16 @@ clean-sim:
 	rm -rf $(RTL_BUILD_ROOT) $(RTL_REPORT_ROOT)
 
 rtl-formalize-synthesis-prepare:
-	$(RTL_FORMALIZE_EMIT_RUNNER) --prepare-only
+	$(RTL_FORMALIZE_EMIT_RUNNER) --prepare-only $(ARGS)
 
 rtl-formalize-synthesis-build:
-	$(RTL_FORMALIZE_EMIT_RUNNER) --build-only
+	$(RTL_FORMALIZE_EMIT_RUNNER) --build-only $(ARGS)
 
 rtl-formalize-synthesis-emit:
-	$(RTL_FORMALIZE_EMIT_RUNNER) --emit
+	$(RTL_FORMALIZE_EMIT_RUNNER) --emit $(ARGS)
 
 rtl-formalize-synthesis-emit-full-core:
-	$(RTL_FORMALIZE_EMIT_RUNNER) --emit
+	$(RTL_FORMALIZE_EMIT_RUNNER) --emit $(ARGS)
 
 rtl-formalize-synthesis-blueprint:
 	$(RTL_FORMALIZE_BLUEPRINT_RUNNER)

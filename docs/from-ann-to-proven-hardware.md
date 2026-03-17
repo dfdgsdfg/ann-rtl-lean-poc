@@ -360,58 +360,20 @@ This is proved by symbolic simulation: unfolding `run` in chunks and equating in
 
 The correctness proof shows _what_ the machine computes. The temporal layer shows _when_ and _how_ it interacts with the outside world.
 
-The operational `step`/`run` model assumes a preloaded transaction input. It does not model external `start` sampling, `LOAD_INPUT` data capture, or DONE hold behavior. The temporal layer adds those interface semantics.
+The `timedStep` function wraps `step` with external signal semantics: it handles `start` sampling in IDLE, input capture in LOAD_INPUT, hold/release in DONE, and delegates to `step` during active computation phases. `rtlTrace` builds a complete execution trace by applying `timedStep` at each cycle.
 
-```lean
-def timedStep (sample : CtrlSample) (s : State) : State :=
-  match s.phase with
-  | .idle =>
-      if sample.start then
-        { s with phase := .loadInput }
-      else
-        { s with hiddenIdx := 0, inputIdx := 0 }
-  | .loadInput =>
-      { s with regs := sample.inputs, hidden := Hidden16.zero,
-               accumulator := Acc32.zero, hiddenIdx := 0,
-               inputIdx := 0, output := false, phase := .macHidden }
-  | .done => if sample.start then s else { s with phase := .idle }
-  | _     => step s
-```
-
-This models the RTL's handshake contract from §4:
-- In IDLE with start low, stay idle and clean `hiddenIdx`/`inputIdx` back to zero
-- In IDLE with start high, accept the transaction and move to `LOAD_INPUT`
-- In LOAD_INPUT, capture the external input bus into `regs`
-- In DONE with start high, hold
-- In DONE with start low, return to IDLE
-- In any active state, run the operational step
-
-The temporal theorems prove timing properties over `rtlTrace`, which applies `timedStep` at each cycle:
+The temporal theorems prove timing properties over `rtlTrace`:
 
 | Theorem | What it says |
 |---------|-------------|
-| `acceptedStart_eventually_done` | `done` becomes visible exactly 76 cycles after the accept cycle where `IDLE` samples an accepted `start` |
+| `acceptedStart_eventually_done` | `done` becomes visible exactly 76 cycles after accepted `start` |
 | `acceptedStart_capturedInput_correct` | The final output matches the input sampled on the `LOAD_INPUT` cycle |
 | `busy_during_active_window` | Busy is asserted throughout cycles 1..75 |
-| `done_implies_outputValid` | Done implies the output is valid |
 | `output_stable_while_done` | Output doesn't change while machine stays in done |
-| `done_hold_while_start_high` | Machine stays in done while start is held high |
-| `done_to_idle_when_start_low` | Machine returns to idle when start drops |
-| `idle_wait_cleans_controller_indices` | Idle waiting preserves datapath contents while cleaning `hiddenIdx` and `inputIdx` to zero |
-| `phase_ordering_ok` | Every transition follows the allowed phase graph |
 
-The boundary theorems prove that guard cycles are safe:
+The boundary theorems prove that guard cycles are safe — no spurious MAC, no out-of-range access, and correct phase transitions at every counter boundary.
 
-| Theorem | What it says |
-|---------|-------------|
-| `hiddenGuard_no_mac_work` | Guard cycle in MAC_HIDDEN changes only the phase |
-| `hiddenGuard_no_out_of_range_reads` | No memory access during the guard cycle |
-| `hiddenBoundary_no_duplicate_or_skip_work` | Last MAC + guard = correct accumulator, correct next phase |
-| `outputGuard_no_mac_work` | Same for output layer |
-| `outputBoundary_no_duplicate_or_skip_work` | Same for output layer |
-| `biasOutput_registers_result` | BIAS_OUTPUT computes the final output; DONE is first valid cycle |
-
-For the full temporal verification story — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md).
+The full temporal theorem surface also covers hold/release behavior, idle cleanup, phase ordering, and index safety. For the complete treatment — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md).
 
 ### Index Safety
 
@@ -428,27 +390,13 @@ def IndexInvariant (s : State) : Prop :=
 
 This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that the ROM reads and hidden-register accesses in §4's architecture never use out-of-range indices, regardless of the environment's behavior.
 
-## 6. The Gap: Models vs. Reality
+## 6. Trust Boundaries
 
-The Lean formalization in §5 proves that a hand-written model of the FSM computes the correct output with correct timing. These proofs are kernel-checked and hold over all possible inputs and environment behaviors.
+The Lean formalization proves that a hand-written model of the FSM computes the correct output with correct timing. These proofs are kernel-checked and hold over all possible inputs and environment behaviors. But they reason about a Lean model, not the SystemVerilog source directly.
 
-But Lean proofs don't run on actual Verilog.
+The Lean `step` and `timedStep` functions mirror the RTL behavior by design: every `match` branch corresponds to a case in the RTL controller, and every width annotation corresponds to a wire declaration. That correspondence is not itself a theorem — it is a design discipline checked by the verification methods in the following sections.
 
-The Lean `step` and `timedStep` functions are manual mirrors of the RTL behavior, not a formal equivalence proof against the SystemVerilog source. Every `match` branch in the Lean `step` function corresponds to a case in `controller.sv`, and every width annotation corresponds to a wire declaration. The correspondence is maintained by design, but it is not itself a theorem. A transcription bug — a missing edge case, a swapped index — would not be caught by the Lean proofs.
-
-This gap is fundamental to all hardware formalization that uses a proof assistant to reason about an independent hardware description. The Lean model and the SystemVerilog source are separate artifacts written in separate languages.
-
-Three complementary approaches address this gap:
-
-1. **Simulation** (§7) exercises the actual Verilog with deterministic test vectors and checks functional agreement. It catches disagreements for the tested inputs but cannot cover all 2^32 input combinations.
-
-2. **SMT on real Verilog** (§8) uses Yosys to elaborate the SystemVerilog into an SMT model and proves properties directly over the elaborated design. This covers all inputs within a bounded trace window but cannot see beyond the trace depth.
-
-3. **Generated controller** (§9) narrows the gap structurally by generating RTL from a proved Lean model via Sparkle. This replaces the manual transcription with code generation for the controller — though the code generator itself becomes a new trust boundary.
-
-No single approach eliminates the gap. Together, they reduce it from different directions.
-
-## 7. Closing the Gap: Simulation
+## 7. Simulation
 
 The simulation flow exercises the actual Verilog with the test vectors from §3.
 
@@ -486,7 +434,7 @@ The testbench samples on `negedge clk` to observe post-update register values, a
 
 Simulation checks the actual Verilog — not a model of it. But the test suite is finite. It cannot check all 2^32 input combinations, so it cannot prove the absence of corner-case failures. The handshake and timing checks are thorough but only exercise the specific test vectors.
 
-## 8. Closing the Gap: SMT on Real Verilog
+## 8. SMT on Real Verilog
 
 Where simulation checks specific inputs, SMT checks prove properties over _all_ inputs within a bounded trace window.
 
@@ -514,11 +462,9 @@ SMT bounded proofs cannot see beyond their trace depth. The current RTL control 
 
 For the full solver-backed verification story, see [`docs/solver-backed-verification.md`](solver-backed-verification.md).
 
-## 9. Closing the Gap: Generated RTL
+## 9. Generated RTL via Sparkle
 
-Simulation checks the actual Verilog empirically. SMT checks key bounded properties over the committed RTL. The third approach narrows the gap structurally: generate RTL from a Lean-hosted hardware model.
-
-The `rtl-formalize-synthesis/` domain now emits a full-core `mlp_core` implementation through [Sparkle](https://github.com/opencompl/sparkle), a Signal DSL hosted in Lean 4 with a Verilog backend. The stable downstream boundary is [`mlp_core.sv`](../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv), which preserves the repository's `mlp_core` top-level interface while unpacking the raw Sparkle module output bus.
+The `rtl-formalize-synthesis/` domain emits a full-core `mlp_core` implementation through [Sparkle](https://github.com/opencompl/sparkle), a Signal DSL hosted in Lean 4 with a Verilog backend. The stable downstream boundary is [`mlp_core.sv`](../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv), which preserves the repository's `mlp_core` top-level interface while unpacking the raw Sparkle module output bus.
 
 ### The Trust Chain
 
@@ -594,13 +540,13 @@ Each pair is connected by a different method:
 
 - **Python ↔ SMT**: contract arithmetic proofs. Z3 proves that no intermediate value overflows its declared width and that two different bitvector encodings produce identical results.
 
-### What No Single Method Covers
+### Remaining Trust Boundaries
 
-- Simulation can't check all 2^32 inputs
-- Lean proofs don't run on actual Verilog
-- The Python model doesn't prove timing properties
-- SMT bounded proofs can't see beyond their trace depth
-- Generated controller covers the FSM only, not the datapath
+- Simulation checks finite inputs, not all 2^32 combinations
+- Lean proofs reason about a model, not the SystemVerilog source directly
+- SMT bounded proofs cannot see beyond their trace depth
+- The Sparkle backend is verified for the declared emitted subset; wrapper bus mapping remains a validation surface
+- The Python reference model is the oracle for "correct" — no independent specification exists above it
 
 ### What Makes This Hard
 
@@ -614,49 +560,13 @@ The arithmetic in this project is small. The hard parts are:
 
 **Handshake semantics**: `done` being a level (not a pulse), `busy` being low in both IDLE and DONE, the DONE-hold-while-start-high behavior — these are the properties that determine whether downstream logic can safely sample the output. Getting them wrong is a hardware bug even if the arithmetic is perfect.
 
-The Lean formalization addresses all four at the model level. The simulation validates the first two against actual Verilog on selected vectors. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The generated controller tightens the Lean ↔ RTL correspondence for the FSM. The combination is what makes the end-to-end case credible, even though the repository still has explicit trust boundaries between the Lean models and the Verilog implementations.
+The Lean formalization addresses all four at the model level. The simulation validates the first two against actual Verilog on selected vectors. The solver-backed formal checks prove the control and boundary properties directly against the real RTL, and confirm the arithmetic width safety over the frozen contract. The generated full-core RTL tightens the Lean ↔ RTL correspondence structurally. The combination is what makes the end-to-end case credible, even though the repository still has explicit trust boundaries between the Lean models and the Verilog implementations.
 
 ### formalize-smt as a Parallel Lean-SMT Lane
 
-`formalize-smt` is not a fifth verification direction. It is a separate optional Lean-side proof lane that mirrors the public theorem surface of `formalize` under the `MlpCoreSmt` namespace while using SMT where that reduces real proof burden.
+`formalize-smt` is a separate optional Lean-side proof lane that mirrors the full theorem surface of `formalize` under the `MlpCoreSmt` namespace, using SMT tactics where they reduce real proof burden (8 call sites in arithmetic bound helpers). It is not a fifth verification direction — it stays inside the Lean leg of the verification story. The upstream `lean-smt` dependency currently emits a `sorry` warning, so its trust story is weaker than the vanilla baseline.
 
-The checked-in implementation exposes the full mirrored theorem surface across six proof modules in `formalize-smt/`:
-
-| Module | Role | Primary tactics |
-|--------|------|----------------|
-| `SpecArithmetic` | bounded multiplication, width preservation, wraparound elimination, per-neuron bounds | `smt` for 2 multiplication helpers; `omega`, `simp`, `by_cases` elsewhere |
-| `FixedPoint` | weight-matrix bridge, fixed-point-to-spec equivalence | `native_decide` for finite case splits; `simp` chains |
-| `Invariants` | index invariant preservation across `step` and `run` | structural case analysis per phase |
-| `Simulation` | run composition, termination via control projection, symbolic full-transaction correctness | `native_decide` for control automaton; compositional `run_add` |
-| `Temporal` | handshake timing, guard-cycle safety, phase ordering, output stability | `native_decide +revert` for finite windows; structural induction |
-| `Correctness` | top-level correctness goal wrappers | thin delegation to lower layers |
-
-The actual `smt` tactic is invoked in 8 call sites, all within two private interval-bound helpers in `SpecArithmetic.lean`. These helpers prove monotonicity steps for bounded multiplication that `omega` alone cannot close. The remaining ~2000 lines use standard Lean tactics. SMT is applied where it reduces real proof burden in the arithmetic base, not across the board.
-
-Lane swapping is mediated by the `ArithmeticProofProvider` typeclass defined in `formalize/`. Each `formalize-smt/` proof module binds `local instance : ArithmeticProofProvider := smtArithmeticProofProvider`, keeping the solver choice explicit and scoped. Consumers swap lanes by changing imports:
-
-```lean
--- vanilla lane
-import MlpCore
-example (input : Input8) :
-    @mlpFixed vanillaArithmeticProofProvider input = mlpSpec (toMathInput input) :=
-  MlpCore.fixedPoint_matchesSpec input
-
--- SMT-backed lane
-import MlpCoreSmt
-example (input : Input8) :
-    @mlpFixed MlpCoreSmt.smtArithmeticProofProvider input = mlpSpec (toMathInput input) :=
-  MlpCoreSmt.fixedPoint_matchesSpec input
-```
-
-That package remains separate from the external `smt/` domain and separate from the canonical `formalize/` baseline.
-
-So the architectural rule is:
-
-- if SMT is used only to help construct Lean theorems that are still kernel-checked, it stays inside the Lean leg of the four-way story
-- if the project ever accepted solver answers as an oracle, that would weaken the Lean leg rather than create a new independent one
-
-The current `formalize-smt` package should still be treated as experimental. Its upstream `lean-smt` dependency currently emits a `sorry` warning during build, so its trust story is weaker than the vanilla `formalize/` baseline even though it remains useful as an experimental SMT-backed proof lane.
+For the architectural distinction between `smt/` (external solver evidence on real Verilog) and `formalize-smt/` (Lean-internal SMT tactics), see [`docs/solver-backed-verification.md` §6](solver-backed-verification.md).
 
 ## 11. Seeing the Hardware
 

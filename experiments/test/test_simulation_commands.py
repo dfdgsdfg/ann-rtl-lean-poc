@@ -93,7 +93,7 @@ class SimulationCommandTests(unittest.TestCase):
             self.skipTest("missing prepared Sparkle vendor checkout")
 
         emit = subprocess.run(
-            ["make", "rtl-formalize-synthesis-emit"],
+            ["make", "rtl-formalize-synthesis-emit", "ARGS=--proof-lane vanilla"],
             cwd=ROOT,
             text=True,
             capture_output=True,

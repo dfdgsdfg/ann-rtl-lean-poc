@@ -10,6 +10,12 @@ from simulations.runners import run as simulation_run
 
 
 ROOT = Path(__file__).resolve().parents[2]
+TEST_TMP_ROOT = ROOT / "build" / "tmp" / "tests"
+
+
+def build_tempdir() -> tempfile.TemporaryDirectory[str]:
+    TEST_TMP_ROOT.mkdir(parents=True, exist_ok=True)
+    return tempfile.TemporaryDirectory(dir=TEST_TMP_ROOT)
 
 
 class SimulationRunnerTests(unittest.TestCase):
@@ -48,7 +54,7 @@ class SimulationRunnerTests(unittest.TestCase):
         )
 
     def test_run_iverilog_compile_failure_reports_failure_summary(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        with build_tempdir() as tmpdir:
             build_dir = Path(tmpdir)
             with patch.object(simulation_run, "run_command", return_value=(1, "syntax error\nat line 12\n")):
                 result = simulation_run.run_iverilog(
@@ -80,7 +86,7 @@ class SimulationRunnerTests(unittest.TestCase):
             ]
         )
 
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        with build_tempdir() as tmpdir:
             build_dir = Path(tmpdir)
             with patch.object(
                 simulation_run,
@@ -117,7 +123,7 @@ class SimulationRunnerTests(unittest.TestCase):
         )
 
     def test_main_writes_summary_with_branch_metadata_and_branch_local_sources(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        with build_tempdir() as tmpdir:
             tmp_root = Path(tmpdir)
             build_root = tmp_root / "build-root"
             report_root = tmp_root / "report-root"
@@ -179,7 +185,7 @@ class SimulationRunnerTests(unittest.TestCase):
         self.assertEqual(summary["tools"]["driver"], "python3 simulations/runners/run.py --branch rtl-synthesis --profile shared --simulator all")
 
     def test_main_internal_profile_uses_internal_scope_metadata(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        with build_tempdir() as tmpdir:
             tmp_root = Path(tmpdir)
             build_root = tmp_root / "build-root"
             report_root = tmp_root / "report-root"
@@ -218,8 +224,60 @@ class SimulationRunnerTests(unittest.TestCase):
         self.assertEqual(summary["bench_path"], "simulations/rtl/testbench_internal.sv")
         self.assertEqual(summary["sources"]["testbench"], "simulations/rtl/testbench_internal.sv")
 
+    def test_main_records_sparkle_proof_lane_when_manifest_is_available(self) -> None:
+        with build_tempdir() as tmpdir:
+            tmp_root = Path(tmpdir)
+            build_root = tmp_root / "build-root"
+            report_root = tmp_root / "report-root"
+            with (
+                patch.object(simulation_run, "ensure_tools"),
+                patch.object(simulation_run, "validate_canonical_contract_bundle"),
+                patch.object(simulation_run, "tool_version", side_effect=lambda *_args, **_kwargs: "tool 1.0"),
+                patch.object(
+                    simulation_run,
+                    "run_iverilog",
+                    return_value={"name": "iverilog", "result": "pass", "regression": {"vectors": 2, "passes": 2, "failures": 0}},
+                ),
+                patch.object(simulation_run, "timestamp_utc", return_value="2026-03-16T00:00:00+00:00"),
+                patch.object(
+                    simulation_run,
+                    "load_sparkle_proof_lane",
+                    return_value={
+                        "name": "smt",
+                        "lean_namespace": "MlpCoreSmt",
+                        "package": "formalize-smt",
+                        "arithmetic_provider": "MlpCoreSmt.smtArithmeticProofProvider",
+                    },
+                ),
+            ):
+                exit_code = simulation_run.main(
+                    [
+                        "--branch",
+                        "rtl-formalize-synthesis",
+                        "--profile",
+                        "shared",
+                        "--simulator",
+                        "iverilog",
+                        "--build-root",
+                        str(build_root),
+                        "--report-root",
+                        str(report_root),
+                        "--run-id",
+                        "unit-sparkle-shared",
+                    ]
+                )
+                summary = self.load_summary(report_root, "shared")
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(summary["proof_lane"]["name"], "smt")
+        self.assertEqual(summary["proof_lane"]["arithmetic_provider"], "MlpCoreSmt.smtArithmeticProofProvider")
+        self.assertEqual(
+            summary["sources"]["verification_manifest"],
+            "rtl-formalize-synthesis/results/canonical/verification_manifest.json",
+        )
+
     def test_ensure_branch_surface_requires_mlp_core_blueprint(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as tmpdir:
+        with build_tempdir() as tmpdir:
             temp_root = Path(tmpdir)
             export_tree = temp_root / "sv"
             export_tree.mkdir(parents=True)

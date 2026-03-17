@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-TEST_TMP_ROOT = ROOT / "build" / "tests" / "tmp"
+TEST_TMP_ROOT = ROOT / "build" / "tmp" / "tests"
 
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 ANN_RESULTS_DIR = ROOT / "ann" / "results"

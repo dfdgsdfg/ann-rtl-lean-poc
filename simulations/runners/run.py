@@ -96,6 +96,7 @@ BRANCH_SOURCES = {
         ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv",
     ],
 }
+SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 
 
 def timestamp_utc() -> str:
@@ -145,6 +146,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def load_sparkle_proof_lane() -> dict[str, object] | None:
+    if not SPARKLE_VERIFICATION_MANIFEST.exists():
+        return None
+    try:
+        payload = json.loads(SPARKLE_VERIFICATION_MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    proof_lane = payload.get("proof_lane")
+    return proof_lane if isinstance(proof_lane, dict) else None
 
 
 def first_relevant_line(text: str) -> str | None:
@@ -421,6 +435,11 @@ def main(argv: list[str] | None = None) -> int:
         },
         "results": results,
     }
+    if args.branch == "rtl-formalize-synthesis":
+        proof_lane = load_sparkle_proof_lane()
+        if proof_lane is not None:
+            summary["proof_lane"] = proof_lane
+            summary["sources"]["verification_manifest"] = relative(SPARKLE_VERIFICATION_MANIFEST)
     report_dir.mkdir(parents=True, exist_ok=True)
     summary_path = report_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")

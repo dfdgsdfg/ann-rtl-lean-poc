@@ -80,6 +80,15 @@
     "lean_theorem": "MlpCore.Sparkle.sparkleMlpCoreBackendPayload_refines_rtlTrace",
     "typed_backend_ir": "Sparkle.IR.AST.Design"
   },
+  "proof_lane": {
+    "arithmetic_provider": "MlpCore.vanillaArithmeticProofProvider",
+    "lean_namespace": "MlpCore",
+    "name": "vanilla",
+    "package": "formalize",
+    "selected_config": "rtl-formalize-synthesis/src/MlpCoreSparkle/ProofConfig.lean",
+    "trust_note": "Baseline Lean proof lane backed by the checked-in formalize package.",
+    "trust_profile": "baseline"
+  },
   "schema_version": 2,
   "semantics_preservation_statement": {
     "residual_validation_surfaces": [

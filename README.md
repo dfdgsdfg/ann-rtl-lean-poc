@@ -190,6 +190,7 @@ python3 simulations/runners/run.py --branch rtl-synthesis --profile shared --sim
 
 # rtl-formalize-synthesis
 python3 rtl-formalize-synthesis/runners/emit.py --emit
+python3 rtl-formalize-synthesis/runners/emit.py --emit --proof-lane smt
 python3 rtl-formalize-synthesis/runners/blueprint.py
 python3 simulations/runners/run.py --branch rtl-formalize-synthesis --profile shared --simulator all
 
@@ -207,6 +208,8 @@ Checked-in canonical artifacts live under each domain or branch:
 - `rtl/results/canonical/`
 - `rtl-synthesis/results/canonical/`
 - `rtl-formalize-synthesis/results/canonical/`
+
+For `rtl-formalize-synthesis`, the checked-in `verification_manifest.json` now records the selected Lean proof lane under `proof_lane` and downstream simulation/SMT/experiment summaries surface the same provenance. The default emitted lane remains vanilla; use `make rtl-formalize-synthesis-emit ARGS="--proof-lane smt"` or the equivalent runner flag to switch to `MlpCoreSmt`.
 
 Non-committed runtime execution artifacts are separated into:
 

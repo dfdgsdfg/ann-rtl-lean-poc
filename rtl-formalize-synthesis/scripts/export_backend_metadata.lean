@@ -2,6 +2,7 @@ import Lean
 import Sparkle.Backend.Verilog
 import Sparkle.Compiler.Elab
 import MlpCoreSparkle
+import MlpCoreSparkle.ProofConfig
 
 open Lean
 
@@ -29,6 +30,12 @@ def main (_args : List String) : IO UInt32 := do
     s!"  \"typed_backend_ir\": \"Sparkle.IR.AST.Design\",\n" ++
     s!"  \"top_module\": \"{jsonEscape design.topModule}\",\n" ++
     s!"  \"module_count\": {design.modules.length},\n" ++
+    s!"  \"proof_lane\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedProofLane}\",\n" ++
+    s!"  \"proof_namespace\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedProofNamespace}\",\n" ++
+    s!"  \"proof_package\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedProofPackage}\",\n" ++
+    s!"  \"arithmetic_provider\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedArithmeticProviderDecl}\",\n" ++
+    s!"  \"trust_profile\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedTrustProfile}\",\n" ++
+    s!"  \"trust_note\": \"{jsonEscape MlpCoreSparkle.ProofConfig.selectedTrustNote}\",\n" ++
     s!"  \"design_repr\": \"{jsonEscape designRepr}\",\n" ++
     s!"  \"verilog_text\": \"{jsonEscape verilog}\"\n" ++
     "}"

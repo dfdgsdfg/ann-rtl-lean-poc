@@ -14,6 +14,7 @@ from contract.src import downstream_sync, gen_vectors
 
 
 ROOT = contract_artifacts.ROOT
+TEST_TMP_ROOT = ROOT / "build" / "tmp" / "tests"
 RUN_DIR = ROOT / "ann" / "results" / "runs" / "relu_teacher_v2-seed20260312-epoch51"
 MAKEFILE_TEMPLATE = ROOT / "Makefile"
 WEIGHT_ROM_TEMPLATE = ROOT / "rtl" / "results" / "canonical" / "sv" / "weight_rom.sv"
@@ -31,9 +32,8 @@ SIM_RUNNERS_DIR = ROOT / "simulations" / "runners"
 
 class FreezeContractTests(unittest.TestCase):
     def setUp(self) -> None:
-        build_dir = ROOT / "build"
-        build_dir.mkdir(parents=True, exist_ok=True)
-        self._tmpdir = tempfile.TemporaryDirectory(dir=build_dir)
+        TEST_TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        self._tmpdir = tempfile.TemporaryDirectory(dir=TEST_TMP_ROOT)
         self.temp_root = Path(self._tmpdir.name)
 
     def tearDown(self) -> None:
