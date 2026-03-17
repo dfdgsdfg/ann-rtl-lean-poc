@@ -20,9 +20,9 @@ The formal verification in this repository addresses the same hardware through f
 | Mathematical spec (`SpecCore.lean`) | Unbounded integer arithmetic | First-order arithmetic over ℤ |
 | Fixed-point model (`FixedPoint.lean`) | Finite-width wrapping arithmetic | Quotient ring ℤ/2ⁿℤ |
 | Machine model (`Machine.lean`) | FSM state transitions | Finite automata |
-| Temporal model (`Temporal.lean`) | Reactive traces | Presheaves (functors over time) |
+| Temporal model (`Temporal.lean`) | Reactive traces | Time-indexed traces with a presheaf-style semantics |
 
-These layers are **not independent**. The legal state space at each layer depends on state from other layers. For example, the valid index range in the MAC_HIDDEN phase (inputIdx ≤ 4) differs from the valid range in the BIAS_HIDDEN phase (inputIdx = 4). This **phase-dependent invariant** is precisely the total category of a Grothendieck construction.
+These layers are **not independent**. The legal state space at each layer depends on state from other layers. For example, the valid index range in the MAC_HIDDEN phase (inputIdx ≤ 4) differs from the valid range in the BIAS_HIDDEN phase (inputIdx = 4). This **phase-dependent invariant** is naturally modeled by the total space/category associated with a Grothendieck construction.
 
 The Grothendieck construction is the universal tool for "assembling fibers that vary over a base into a single category." This document shows why it serves as a unifying language that cuts across combinational logic, sequential logic, FSMs, temporal logic, arithmetic theories, and type theory.
 
@@ -33,7 +33,7 @@ graph TB
         SPEC["SpecCore.lean<br/>ℤ — unbounded integers"]
         FP["FixedPoint.lean<br/>ℤ/2ⁿℤ — bitvectors"]
         MACH["Machine.lean<br/>FSM states + step"]
-        TEMP["Temporal.lean<br/>rtlTrace — reactive presheaf"]
+        TEMP["Temporal.lean<br/>rtlTrace — time-indexed trace"]
     end
 
     SPEC -->|"quotient map<br/>mlpFixed_eq_mlpSpec"| FP
@@ -83,7 +83,7 @@ G(f) ∘ η_X = η_Y ∘ F(f)
 
 A presheaf on a category **C** is a contravariant functor F : **C**ᵒᵖ → **Set**. The presheaf category **Set**^(**C**ᵒᵖ) is the category of all presheaves on **C** with natural transformations as morphisms.
 
-The most direct hardware example: viewing time as the natural number category **ℕ**, a signal `Signal dom α` is a functor **ℕ** → **Set**. It assigns a value of type α to each clock cycle t. This is the semantics used by the Sparkle Signal DSL in this repository.
+The most direct hardware example is a time-indexed signal. Written naively, a signal assigns a value to each clock cycle, i.e. it looks like a stream `ℕ → Set`. If one wants literal presheaf language in the sense above, one can equivalently reverse the time category and work contravariantly. This is the semantic viewpoint used for the Sparkle Signal DSL in this repository.
 
 ---
 
@@ -264,15 +264,15 @@ end
 
 The gap between Sparkle's synchronous Signal DSL semantics and the RTL's asynchronous reset is why the reset bridging logic in `controller_spot_compat.sv` is necessary. See [`generated-rtl.md` §5](generated-rtl.md) for the adapter layer design.
 
-### 5.4 Categorical Model of Sequential Logic: Presheaves over Time
+### 5.4 Categorical Model of Sequential Logic: Time-Indexed Semantics
 
-The natural model for synchronous sequential circuits is a presheaf over the natural number category **ℕ**. Viewing **ℕ** as a category whose objects are natural numbers and whose sole morphisms are successors s : n → n+1:
+One convenient model for synchronous sequential circuits is a time-indexed semantics over the natural numbers. Written covariantly, this is a stream over **ℕ**. If one wants literal presheaf semantics in the sense of §2.4, one may equivalently reverse the time category and work contravariantly. Viewing **ℕ** as a category whose objects are natural numbers and whose sole morphisms are successors s : n → n+1:
 
 - State stream: **ℕ** → **State** — assigns a state to each cycle
 - Input stream: **ℕ** → **Input** — assigns an input to each cycle
 - Output stream: **ℕ** → **Output** — assigns an output to each cycle
 
-The `rtlTrace` in this repository has exactly this structure:
+The `rtlTrace` in this repository has this stream-like structure:
 
 ```lean
 def rtlTrace (samples : Nat → CtrlSample) : Nat → State
@@ -280,11 +280,11 @@ def rtlTrace (samples : Nat → CtrlSample) : Nat → State
   | n + 1 => timedStep (samples n) (rtlTrace samples n)
 ```
 
-This is a functor T : **ℕ** → **State**, assigning a machine state to each natural number (cycle).
+This is a covariant time-indexed semantics T : **ℕ** → **State**, assigning a machine state to each natural number (cycle). After reversing time, the same data can be organized in presheaf form.
 
 ```mermaid
 graph LR
-    subgraph "Sequential logic = presheaf over time"
+    subgraph "Sequential logic = time-indexed trace"
         direction LR
         T0["cycle 0<br/>State₀<br/>(idle)"]
         T1["cycle 1<br/>State₁<br/>(loadInput)"]
@@ -308,7 +308,7 @@ graph LR
     S2 -.-> T2
 ```
 
-Unlike combinational logic, sequential logic has **state that persists across cycles**. The machine at cycle n+1 depends on the machine at cycle n. This is a presheaf: a functor from time to states.
+Unlike combinational logic, sequential logic has **state that persists across cycles**. The machine at cycle n+1 depends on the machine at cycle n. This is naturally a time-indexed stream, and after reversing time it can be organized as a presheaf in the categorical sense.
 
 ### 5.5 A Monad/Comonad Lens on State and Observation
 
@@ -511,15 +511,15 @@ The guard cycle is the "door" between two fibers. The proof `hiddenGuard_no_mac_
 
 ---
 
-## 7. Cartesian Fibrations and the Control Projection
+## 7. Fibrational Readings and the Control Projection
 
 ### 7.1 Definition of a Cartesian Fibration
 
 A functor π : **E** → **B** is a **Cartesian fibration** if, for every morphism f : b → b' in **B** and every object e' in **E** over b', there exists a Cartesian lift f̃ : e → e' with π(f̃) = f. A morphism f̃ is **Cartesian** if for every g : e'' → e' with π(g) = f ∘ h, there exists a unique h̄ : e'' → e with π(h̄) = h and f̃ ∘ h̄ = g.
 
-### 7.2 The Cartesian Fibration in This Repository
+### 7.2 A Cartesian-Fibration Reading in This Repository
 
-The projection `controlOf : State → ControlState` defines a Cartesian fibration:
+The projection `controlOf : State → ControlState` admits a strong fibrational reading:
 
 ```
          step
@@ -538,7 +538,7 @@ theorem control_step_agrees (s : State) :
     controlOf (step s) = controlStep (controlOf s)
 ```
 
-**Why Cartesian**: the control transition (controlStep) does not depend on datapath values (registers, accumulator, hidden activations). The FSM is **data-independent**. This means the fiber coordinate does not influence the base dynamics — precisely the condition for a Cartesian fibration.
+**Why Cartesian-like**: the control transition (controlStep) does not depend on datapath values (registers, accumulator, hidden activations). The FSM is **data-independent**. This means the fiber coordinate does not influence the base dynamics, which is exactly the kind of situation for which Cartesian-fibration language is useful.
 
 ```mermaid
 graph TB
@@ -564,7 +564,7 @@ The key insight: the **bottom row** (control) evolves identically regardless of 
 
 ### 7.3 Practical Significance of the Control Projection
 
-The key consequence of a Cartesian fibration: **properties that depend only on the base can be proved on the base alone.**
+The key consequence of this projection-based reduction: **properties that depend only on the base can be proved on the base alone.**
 
 The base category **ControlState** is finite (9 phases × 9 hiddenIdx × 9 inputIdx = at most 729 reachable states). The full state space **State** is infinite (32-bit accumulator, eight 16-bit hidden registers, etc.). Thanks to the control projection, phase-related properties (active window, phase ordering, index safety) can be decided by `native_decide` on the finite space.
 
@@ -575,7 +575,7 @@ private theorem controlRun_active_window (k : Fin totalCycles) (hpos : 0 < k.1) 
   native_decide +revert
 ```
 
-This means forgetting the infinite fiber and computing on the finite base — precisely the reduction that a Cartesian fibration permits. See [`temporal-verification-of-reactive-hardware.md` §8](temporal-verification-of-reactive-hardware.md) for the full control projection technique and its use in the active window proof.
+This means forgetting the infinite fiber and computing on the finite base — exactly the kind of reduction that a fibrational viewpoint is meant to justify. See [`temporal-verification-of-reactive-hardware.md` §8](temporal-verification-of-reactive-hardware.md) for the full control projection technique and its use in the active window proof.
 
 ### 7.4 Projection, Sections, and Quantification
 
@@ -671,7 +671,7 @@ In a general topos, the law of excluded middle P ∨ ¬P **may fail**. This is i
 | Intuitionistic logic | Constructive proofs — proving existence extracts a value | Program extraction in Lean/Coq |
 | Internal logic | Reasoning inside a topos — context-dependent truth | Temporal reasoning over presheaves |
 
-In this repository, **temporal properties** can be interpreted in the internal logic of the presheaf topos. "Done at cycle 76" is a truth value at time index 76, which is an element of the presheaf Ω.
+In this repository, **temporal properties** can be read through the internal logic of a presheaf topos. "Done at cycle 76" is then understood as a stagewise truth value at time index 76, represented in the subobject-classifier presheaf Ω.
 
 ```mermaid
 graph TB
@@ -825,11 +825,11 @@ G(!reset && phase_mac_hidden && guard -> X phase_bias_hidden)
 
 ### 10.3 Presheaf Interpretation of Temporal Logic
 
-LTL formulas are naturally interpreted in the internal logic of the presheaf topos **Set**^(**ℕ**ᵒᵖ).
+LTL formulas admit a presheaf-style interpretation, and after reversing the time category they can be phrased in the internal logic of the presheaf topos **Set**^(**ℕ**ᵒᵖ).
 
-Given a state trace T : **ℕ** → **State**:
-- **G** φ is `∀ n : ℕ, φ(T(n))` — a global section of the presheaf
-- **F** φ is `∃ n : ℕ, φ(T(n))` — existential quantification
+Given a time-indexed trace T : **ℕ** → **State**:
+- **G** φ is `∀ n : ℕ, φ(T(n))` — global truth along the trace
+- **F** φ is `∃ n : ℕ, φ(T(n))` — existential quantification along the trace
 - **X** φ is `φ(T(n+1))` — evaluation at the successor
 - φ **U** ψ is `∃ k, ψ(T(k)) ∧ ∀ j < k, φ(T(j))` — bounded universal + existential
 
@@ -882,7 +882,7 @@ Modal logic is a generalization of temporal logic. In Kripke semantics:
 
 In temporal logic, W = ℕ (time), R = successor relation. In hardware, W = reachable states, R = FSM transitions.
 
-A Kripke frame (W, R) is a model of a presheaf topos. The modal operators □, ◇ correspond to universal/existential quantification in the internal logic over presheaves.
+A Kripke frame (W, R) gives the standard relational semantics for modal logic. By passing to the category/poset generated by that accessibility structure and then considering presheaves on it, one obtains a related categorical semantics. In that sense, the modal operators □, ◇ can be compared with universal/existential structure in an internal-logic setting.
 
 ### 10.5 Connection to Hoare Logic
 
@@ -1050,7 +1050,7 @@ The quotient map q : ℤ → ℤ/2ⁿℤ is a ring homomorphism. Categorically:
 
 - ℤ and ℤ/2ⁿℤ are objects in the category **Ring**
 - q : ℤ → ℤ/2ⁿℤ is a morphism in **Ring**
-- The "injective range" is the complement of the kernel of q
+- An "injective range" means a chosen subset on which q has no collisions; it is not the complement of the kernel
 
 In the layer-by-layer MLP computation, each layer operates at a different bit width:
 
@@ -1175,7 +1175,7 @@ input_idx[3:0]  →  { hidden_mac_active, hidden_mac_guard,
                      output_mac_active, output_mac_guard, last_hidden }
 ```
 
-This is categorically a **fibration**. The full state space (9 phases × 16 × 16 counter values) projects onto a boolean predicate base. Since control decisions depend only on the base, this is the same structure as the Cartesian fibration in §7 — only Lean's `controlOf` and TLSF's predicate abstraction express the same mathematical object in different languages.
+This admits a **fibrational reading**. The full state space (9 phases × 16 × 16 counter values) projects onto a boolean predicate base. Since control decisions depend only on the base, this mirrors the same control-relevant abstraction pattern discussed in §7 — only Lean's `controlOf` and TLSF's predicate abstraction express it in different languages.
 
 ### 13.5 A Game-Semantic Lens
 
@@ -1219,7 +1219,7 @@ The verification in this repository is a practical application of the local-to-g
 - Correctness over 76 cycles (`rtl_correct`)
 - Temporal correctness of the full transaction (`acceptedStart_eventually_done`)
 
-This assembly process is precisely how the sheaf condition works: if local data (proofs at each transition) are compatible (each transition connects), they glue into a global proof.
+This assembly process is not literally a proved sheaf condition on a chosen site, but it is a sheaf-like local-to-global pattern: if local data (proofs at each transition) are compatible (each transition connects), they glue into a global proof.
 
 ```mermaid
 graph LR
@@ -1254,7 +1254,7 @@ graph LR
 
 ### 14.3 Relationship Between the Grothendieck Construction and Sheaves
 
-The Grothendieck construction ∫F of a presheaf F : **C**ᵒᵖ → **Set** is the total category. The sheaf condition reads as a **gluing property** of this total category: sections defined locally along a cover glue uniquely into a global section.
+The Grothendieck construction ∫F of a presheaf F : **C**ᵒᵖ → **Set** is the total category. In genuine sheaf theory, the sheaf condition is a gluing statement for compatible local sections over a chosen site. In this repository, the comparison is heuristic: guard-cycle compatibility and induction play the role of gluing data.
 
 In the context of this repository:
 - Base category **C** = phase category (FSM transition graph)
@@ -1378,7 +1378,7 @@ One reason this repository chose Lean is that dependent types naturally express 
 
 The contract proofs in this repository use **QF_BV (quantifier-free bitvector)** logic. QF_BV is quantifier-free arithmetic over finite-width bitvectors.
 
-Multiplication by a fixed constant `w * x` (w constant, x variable) reduces to repeated addition `x + x + ... + x`. Therefore, the MLP forward pass with frozen weights is essentially **finite-width Presburger arithmetic**. Z3's bit-blasting decision procedure is complete for this fragment.
+Multiplication by a fixed constant `w * x` (w constant, x variable) reduces to repeated addition `x + x + ... + x`. Therefore, the MLP forward pass with frozen weights yields a decidable **QF_BV** problem built from fixed-width additions and constant multiplications. Z3's bit-blasting decision procedure is complete for the resulting QF_BV formulas.
 
 ### 17.3 Bounded Model Checking and Category Theory
 
@@ -1460,7 +1460,7 @@ graph TB
 
 A stack is "fibration + descent condition." Descent is the categorified version of the sheaf condition: locally defined objects glue into a global object, uniquely up to isomorphism.
 
-In this repository, the three RTL implementations (hand-written, reactive synthesis, Sparkle) meeting at the same `mlp_core` boundary is a practical example of descent: they have different internal structures but are compatible at the "cover" of the `mlp_core` port interface.
+In this repository, the three RTL implementations (hand-written, reactive synthesis, Sparkle) meeting at the same `mlp_core` boundary are better understood as a descent-flavored analogy: they have different internal structures but are compared on a shared observable interface.
 
 ```mermaid
 graph TB
@@ -1489,7 +1489,7 @@ graph TB
     style EQUIV fill:#d4edda
 ```
 
-Internally different, externally the same — like three open sets that look different locally but agree on their overlaps. That agreement is descent. See [`generated-rtl.md` §16–§22](generated-rtl.md) for the structural comparison and trust analysis of the three implementations.
+Internally different, externally the same — like three open sets that look different locally but agree on their overlaps. That agreement is descent-flavored rather than a literal descent theorem. See [`generated-rtl.md` §16–§22](generated-rtl.md) for the structural comparison and trust analysis of the three implementations.
 
 ---
 
@@ -1521,7 +1521,7 @@ graph LR
     end
 
     comb -.->|"no memory<br/>= morphism"| CAT1["CCC morphism"]
-    seq -.->|"state over time<br/>= presheaf"| CAT2["Presheaf ℕ → State"]
+    seq -.->|"state over time<br/>= stream / presheaf-style semantics"| CAT2["Time-indexed semantics"]
 ```
 
 Sparkle's `Signal dom α` is a time-indexed stream:
@@ -1534,7 +1534,7 @@ Sparkle's `Signal dom α` is a time-indexed stream:
 ```
 
 Categorically:
-- `Signal dom α` = functor **ℕ** → **Set** (presheaf)
+- `Signal dom α` = time-indexed signal, with a presheaf-style reading after reversing time
 - `Signal.register` = explicit one-cycle state delay / register
 - `Signal.loop` = explicit feedback operator on signals
 - `hw_cond` = case split / mux, suggestive of coproduct structure
@@ -1640,23 +1640,23 @@ graph TB
 | Hardware concept | Categorical counterpart | Realization in this repository |
 |-----------------|------------------------|-------------------------------|
 | Combinational logic | Morphisms in a CCC | Weight ROM, combinational MAC parts |
-| Sequential logic | Presheaf ℕ → State | `rtlTrace`, `Signal dom α` |
+| Sequential logic | Time-indexed stream / presheaf-style semantics | `rtlTrace`, `Signal dom α` |
 | FSM phase | Object of the base category | `Phase` inductive type |
 | Phase transition | Morphism of the base category | `AllowedPhaseTransition` |
-| Index invariant | Grothendieck construction ∫F | `IndexInvariant` |
+| Index invariant | Σ-shaped legal space plus characteristic predicate | `IndexInvariant` |
 | Guard cycle | Cross-fiber transition morphism | `hiddenGuard_no_mac_work` |
-| Control projection | Cartesian fibration | `controlOf` / `controlStep` |
+| Control projection | Fibrational / Cartesian-like reduction | `controlOf` / `controlStep` |
 | Moore output | Function on the base | `busyOf`, `doneOf` |
 | Mealy output | Function on the total space | `doMacHidden` |
 | Synchronous clock | Successor morphism in ℕ | Application of `timedStep` |
 | Asynchronous reset | Forced projection to the base | Reset bridging logic |
 | Fixed-point arithmetic | Quotient ring ℤ/2ⁿℤ | `mlpFixed`, `wrap16`, `wrap32` |
 | Overflow safety | Injectivity of the quotient map | `mlpFixed_eq_mlpSpec` |
-| Temporal properties | Internal logic of the presheaf | `busy_during_active_window`, etc. |
+| Temporal properties | Presheaf-style / internal-logic reading | `busy_during_active_window`, etc. |
 | BMC (bounded model checking) | Universal quantification over Fin k | yosys-smtbmc depth 82 |
 | Reactive synthesis | Construction of a winning strategy | ltlsynt / TLSF |
-| Predicate abstraction | Base projection of a fibration | Boolean predicates in TLSF |
-| Three RTL implementations | Descent over a shared boundary | `mlp_core` port interface |
+| Predicate abstraction | Fibrational abstraction pattern | Boolean predicates in TLSF |
+| Three RTL implementations | Descent-flavored shared-boundary analogy | `mlp_core` port interface |
 | Lean CIC | Internal language of an LCCC | Dependent types + inductive types |
 | QF_BV decision | Finite-width Presburger decision | Z3 bit-blasting |
 | State updates (registers) | State-transforming computation lens | `Signal.register`, `step` |
@@ -1678,13 +1678,13 @@ graph TB
         HW["Hardware Design<br/>(MLP inference accelerator)"]
 
         HW --> COMB["§4 Combinational Logic<br/>= CCC morphisms<br/>(ROM, MAC, ReLU)"]
-        HW --> SEQ["§5 Sequential Logic<br/>= presheaf over ℕ<br/>(rtlTrace)"]
+        HW --> SEQ["§5 Sequential Logic<br/>= time-indexed semantics<br/>(rtlTrace)"]
         HW --> FSM_BOX["§6 FSM<br/>= transition category<br/>(Moore + Mealy)"]
 
         FSM_BOX --> GROTH["§6.4 Grothendieck Construction<br/>∫F = phase-dependent invariant<br/>(IndexInvariant)"]
         FSM_BOX --> CART["§7 Cartesian Fibration<br/>controlOf projection<br/>(finite decidability)"]
 
-        SEQ --> TEMP["§10 Temporal Logic<br/>= presheaf internal logic<br/>(G, F, U properties)"]
+        SEQ --> TEMP["§10 Temporal Logic<br/>= presheaf-style internal logic<br/>(G, F, U properties)"]
         SEQ --> BRIDGE["§15 Bridge Theorem<br/>= partial natural iso<br/>(run ↔ rtlTrace)"]
 
         GROTH --> DEP["§9 Dependent Types<br/>Σ-type = ∫F<br/>(Lean encoding)"]
@@ -1708,14 +1708,37 @@ graph TB
 ### 20.3.1 Key Relationships in One Sentence Each
 
 1. The **Grothendieck construction** assembles the phase-dependent index spaces of the FSM into a single category.
-2. The **Cartesian fibration** ensures that control logic is independent of data, enabling decision on a finite space.
-3. **Presheaves** are state traces over time and provide the natural semantics of temporal logic.
+2. A **fibrational / Cartesian-like reading** captures why control logic is independent of data and why decision on a finite base is possible.
+3. **Presheaf-style semantics** provide one categorical reading of state traces over time and temporal logic.
 4. **Quotient ring geometry** describes the conditions under which finite-width arithmetic agrees with unbounded arithmetic.
-5. The **sheaf condition** is the principle for assembling a global proof (full trace) from local proofs (individual transitions).
+5. A **sheaf-like local-to-global principle** helps explain how the global proof (full trace) is assembled from local proofs (individual transitions).
 6. **Dependent types** are the type-theoretic realization of the Grothendieck construction and are expressed naturally in Lean.
 7. A **state/observation lens** can be applied to registers and outputs, though the repository does not formalize monad/comonad laws for that lens.
 8. The **adjoint triple** `Σ_f ⊣ f* ⊣ Π_f` is useful background for dependent types and quantification, while `native_decide` here relies more directly on control-only properties factoring through `controlOf`.
 9. **Game semantics** provides an interpretive perspective on reactive synthesis, but the repository currently uses it as semantic background rather than as a formal strategy category.
+
+---
+
+## 21. Open Questions
+
+The preceding sections organize mathematical structure that is already visible in this repository. They also point toward several open directions that are still better understood as open questions than as established results. A longer companion note is available at [`research/hardware-mathematics-open-questions.md`](research/hardware-mathematics-open-questions.md).
+
+### 21.1 Smaller Topics
+
+- make the current sheaf/descent language literal rather than heuristic
+- extend the single-transaction `run` / `rtlTrace` bridge to multi-transaction semantics
+- formalize abstraction/concretization between `controlOf` and TLSF predicate abstraction
+- understand the boundary where control becomes data-dependent
+- generalize quotient geometry beyond the injective-safe overflow regime
+
+### 21.2 Larger Topics
+
+- recast the machine and branch equivalence story coalgebraically
+- move from closed-system semantics to open-system composition laws
+- enrich the semantics of time beyond plain discrete traces over `ℕ`
+- compare synthesis artifacts and proof objects more directly
+
+The first three smaller topics are the ones most directly tied to the repository's current proof artifacts. The companion note above gives the detailed mathematical framing and literature map.
 
 ---
 

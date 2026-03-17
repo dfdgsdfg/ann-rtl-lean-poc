@@ -1,0 +1,497 @@
+[archive]
+root = "build/papers"
+updated = "2026-03-17"
+format_version = 1
+
+[[paper]]
+id = "schultz-spivak-2017-temporal-type-theory"
+title = "Temporal Type Theory: A topos-theoretic approach to systems and behavior"
+authors = ["Patrick Schultz", "David I. Spivak"]
+year = 2017
+primary_rq = "rq1"
+secondary_rqs = ["rq2"]
+topic = "sheaf-time-semantics"
+source_url = "https://arxiv.org/abs/1710.10258"
+pdf_path = "build/papers/rq1/schultz-2017-temporal-type-theory.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Foundational ambient semantics for time-indexed behavior; not the closest case-study match for the repository."
+
+[[paper]]
+id = "felber-flores-galeana-2025-task-sheaf"
+title = "A Sheaf-Theoretic Characterization of Tasks in Distributed Systems"
+authors = ["Stephan Felber", "Bernardo Hummes Flores", "Hugo Rincon Galeana"]
+year = 2025
+primary_rq = "rq1"
+secondary_rqs = []
+topic = "sheaf-descent"
+source_url = "https://arxiv.org/abs/2503.02556"
+pdf_path = "build/papers/rq1/felber-2025-sheaf-theoretic-characterization-tasks-distributed-systems.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "high"
+representativeness = "frontier"
+verdict = "primary"
+notes = "Closest recent analogue for turning local-to-global solvability into a literal global-section theorem; cross-domain rather than hardware-native."
+
+[[paper]]
+id = "attiya-castaneda-nowak-2023-task-solvability-general-models"
+title = "Topological Characterization of Task Solvability in General Models of Computation"
+authors = ["Hagit Attiya", "Armando Castaneda", "Thomas Nowak"]
+year = 2023
+primary_rq = "rq1"
+secondary_rqs = []
+topic = "task-solvability-topology"
+source_url = "https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.DISC.2023.5"
+pdf_path = "build/papers/rq1/attiya-castaneda-nowak-2023-topological-characterization-task-solvability.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Representative task-solvability foundation behind the local-to-global story; stronger as foundation than the newer sheaf recasting."
+
+[[paper]]
+id = "peressotti-2025-infinite-traces-by-finality"
+title = "Infinite Traces by Finality: a Sheaf-Theoretic Approach"
+authors = ["Marco Peressotti"]
+year = 2025
+primary_rq = "rq2"
+secondary_rqs = ["rq1", "background"]
+topic = "trace-semantics"
+source_url = "https://arxiv.org/abs/2507.22536"
+pdf_path = "build/papers/rq2/peressotti-2025-infinite-traces-by-finality.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium-high"
+representativeness = "frontier"
+verdict = "demote"
+notes = "Useful semantic guide for coherent trace assembly, but too abstract to anchor the repository's hardware-facing multi-transaction problem on its own."
+
+[[paper]]
+id = "winkler-2025-ltlf-lookback"
+title = "First-Order LTLf Synthesis with Lookback (Extended Version)"
+authors = ["Sarah Winkler"]
+year = 2025
+primary_rq = "rq2"
+secondary_rqs = []
+topic = "finite-trace-synthesis"
+source_url = "https://arxiv.org/abs/2508.18149"
+pdf_path = "build/papers/rq2/winkler-2025-first-order-ltlf-synthesis-lookback.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium-high"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Best recent finite-trace and cross-instant signal, but it sits on older finite-trace and modulo-theories foundations rather than replacing them."
+
+[[paper]]
+id = "ehlers-khalimov-2024-fgr1"
+title = "Fully Generalized Reactivity(1) Synthesis"
+authors = ["Rudiger Ehlers", "Ayrat Khalimov"]
+year = 2024
+primary_rq = "rq2"
+secondary_rqs = ["rq3"]
+topic = "reactive-synthesis"
+source_url = "https://arxiv.org/abs/2402.02979"
+pdf_path = "build/papers/rq2/ehlers-khalimov-2024-fully-generalized-reactivity1-synthesis.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Useful post-GR(1) synthesis context, but no longer central to the repository's main RQ2 citation chain."
+
+[[paper]]
+id = "geatti-gianola-gigante-2022-ltlf-modulo-theories"
+title = "Linear Temporal Logic Modulo Theories over Finite Traces"
+authors = ["Luca Geatti", "Alessandro Gianola", "Nicola Gigante"]
+year = 2022
+primary_rq = "rq2"
+secondary_rqs = ["rq3"]
+topic = "finite-trace-modulo-theories"
+source_url = "https://www.ijcai.org/proceedings/2022/366"
+pdf_path = "build/papers/rq2/geatti-gianola-gigante-2022-ltlf-modulo-theories-finite-traces.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Best semantic foundation for the LTLf-modulo-theories side of the transaction-composition question."
+
+[[paper]]
+id = "de-giacomo-vardi-2015-synthesis-finite-traces"
+title = "Synthesis for LTL and LDL on Finite Traces"
+authors = ["Giuseppe De Giacomo", "Moshe Y. Vardi"]
+year = 2015
+primary_rq = "rq2"
+secondary_rqs = []
+topic = "finite-trace-synthesis"
+source_url = "https://www.diag.uniroma1.it/degiacom/papers/2015/IJCAI15dv.pdf"
+pdf_path = "build/papers/rq2/de-giacomo-vardi-2015-synthesis-ltl-ldl-finite-traces.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Foundational finite-trace synthesis reference underneath the hardware-facing move from one accepted transaction to repeated finite executions."
+
+[[paper]]
+id = "rodriguez-sanchez-2023-boolean-abstractions-realizability-modulo-theories"
+title = "Boolean Abstractions for Realizability Modulo Theories"
+authors = ["Andoni Rodriguez", "Cesar Sanchez"]
+year = 2023
+primary_rq = "rq3"
+secondary_rqs = ["rq2"]
+topic = "abstraction-synthesis"
+source_url = "https://arxiv.org/abs/2310.17292"
+pdf_path = "build/papers/rq3/rodriguez-sanchez-2023-boolean-abstractions-realizability-modulo-theories.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "very_high"
+representativeness = "recent_representative"
+verdict = "primary"
+notes = "Direct abstraction-theorem anchor for relating control projections to Boolean predicate abstractions."
+
+[[paper]]
+id = "rodriguez-gorostiaga-sanchez-2024-ltlt-functional-synthesis"
+title = "Predictable and Performant Reactive Synthesis Modulo Theories via Functional Synthesis"
+authors = ["Andoni Rodriguez", "Felipe Gorostiaga", "Cesar Sanchez"]
+year = 2024
+primary_rq = "rq3"
+secondary_rqs = ["rq2", "rq4"]
+topic = "abstraction-synthesis"
+source_url = "https://arxiv.org/abs/2407.09348"
+pdf_path = "build/papers/rq3/rodriguez-gorostiaga-sanchez-2024-reactive-synthesis-modulo-theories-functional-synthesis.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "very_high"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Follow-on synthesis construction built on top of the Boolean-abstraction layer; no longer the primary abstraction-theorem anchor."
+
+[[paper]]
+id = "walker-ryzhyk-2014-predicate-abstraction-reactive-synthesis"
+title = "Predicate Abstraction for Reactive Synthesis"
+authors = ["Adam Walker", "Leonid Ryzhyk"]
+year = 2014
+primary_rq = "rq3"
+secondary_rqs = []
+topic = "predicate-abstraction"
+source_url = "https://www.cs.utexas.edu/~hunt/fmcad/fmcad14/proceedings/35_walker.pdf"
+pdf_path = "build/papers/rq3/walker-ryzhyk-2014-predicate-abstraction-reactive-synthesis.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "medium"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "General predicate-abstraction background cited by the modulo-theories work; broader than the repository's specific abstraction question."
+
+[[paper]]
+id = "akshay-basa-chakraborty-fried-2024-dependent-variables"
+title = "On Dependent Variables in Reactive Synthesis"
+authors = ["S. Akshay", "Eliyahu Basa", "Supratik Chakraborty", "Dror Fried"]
+year = 2024
+primary_rq = "rq4"
+secondary_rqs = ["rq3"]
+topic = "data-dependence"
+source_url = "https://arxiv.org/abs/2401.11290"
+pdf_path = "build/papers/rq4/akshay-basa-chakraborty-fried-2024-dependent-variables-reactive-synthesis.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "high"
+representativeness = "recent_representative"
+verdict = "primary"
+notes = "Best match for the current control/data separation hypothesis and its likely failure modes."
+
+[[paper]]
+id = "rath-eisenhofer-kaufmann-bjorner-kovacs-2024-polysat"
+title = "POLYSAT: Word-level Bit-vector Reasoning in Z3"
+authors = ["Jakob Rath", "Clemens Eisenhofer", "Daniela Kaufmann", "Nikolaj Bjorner", "Laura Kovacs"]
+year = 2024
+primary_rq = "rq5"
+secondary_rqs = []
+topic = "bit-vector-arithmetic"
+source_url = "https://arxiv.org/abs/2406.04696"
+pdf_path = "build/papers/rq5/rath-et-al-2024-polysat-word-level-bit-vector-reasoning-z3.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium-high"
+representativeness = "recent_representative"
+verdict = "primary"
+notes = "Best arithmetic-semantics anchor for overflow-active reasoning; stronger on solver semantics than on end-to-end hardware-proof workflows."
+
+[[paper]]
+id = "graham-lengrand-jovanovic-dutertre-2020-mcsat-bitvectors"
+title = "Solving bitvectors with MCSAT: explanations from bits and pieces"
+authors = ["Stephane Graham-Lengrand", "Dejan Jovanovic", "Bruno Dutertre"]
+year = 2020
+primary_rq = "rq5"
+secondary_rqs = []
+topic = "bit-vector-mcsat"
+source_url = "https://arxiv.org/abs/2004.07940"
+pdf_path = "build/papers/rq5/graham-lengrand-jovanovic-dutertre-2020-solving-bitvectors-mcsat.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium-high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Most direct cited predecessor for word-level bitvector explanations and conflict-analysis techniques behind POLYSAT."
+
+[[paper]]
+id = "ates-beyer-chien-lee-2024-moxichecker"
+title = "MoXIchecker: An Extensible Model Checker for MoXI"
+authors = ["Salih Ates", "Dirk Beyer", "Po-Chun Chien", "Nian-Ze Lee"]
+year = 2024
+primary_rq = "rq5"
+secondary_rqs = []
+topic = "theory-rich-verification"
+source_url = "https://arxiv.org/abs/2407.15551"
+pdf_path = "build/papers/rq5/ates-beyer-chien-lee-2024-moxichecker.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "workflow_representative"
+verdict = "supporting"
+notes = "Useful for the verification-language and richer-theory side of the arithmetic story, but not itself a quotient-semantics paper."
+
+[[paper]]
+id = "adam-beyer-chien-lee-sirrenberg-2024-btor2-cert"
+title = "Btor2-Cert: A Certifying Hardware-Verification Framework Using Software Analyzers"
+authors = ["Zsofia Adam", "Dirk Beyer", "Po-Chun Chien", "Nian-Ze Lee", "Nils Sirrenberg"]
+year = 2024
+primary_rq = "rq5"
+secondary_rqs = []
+topic = "hardware-certification"
+source_url = "https://www.sosy-lab.org/research/btor2-cert/"
+pdf_path = "build/papers/rq5/adam-et-al-2024-btor2-cert.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "medium"
+representativeness = "workflow_representative"
+verdict = "supporting"
+notes = "Best hardware-proof workflow reference among the RQ5 candidates, but not a direct paper on overflow-active arithmetic semantics."
+
+[[paper]]
+id = "cosler-hahn-omar-schmitt-2024-neurosynt"
+title = "NeuroSynt: A Neuro-symbolic Portfolio Solver for Reactive Synthesis"
+authors = ["Matthias Cosler", "Christopher Hahn", "Ayham Omar", "Frederik Schmitt"]
+year = 2024
+primary_rq = "background"
+secondary_rqs = []
+topic = "portfolio-synthesis"
+source_url = "https://arxiv.org/abs/2401.12131"
+pdf_path = "build/papers/background/cosler-et-al-2024-neurosynt.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "low"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Background signal for solver trends; not central to the repository's mathematical agenda."
+
+[[paper]]
+id = "froleyks-yu-biere-heljanko-2024-certifying-phase-abstraction"
+title = "Certifying Phase Abstraction"
+authors = ["Nils Froleyks", "Emily Yu", "Armin Biere", "Keijo Heljanko"]
+year = 2024
+primary_rq = "background"
+secondary_rqs = ["rq5"]
+topic = "certified-preprocessing"
+source_url = "https://arxiv.org/abs/2405.04297"
+pdf_path = "build/papers/background/froleyks-yu-biere-heljanko-2024-certifying-phase-abstraction.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Useful support for certificate-oriented preprocessing in hardware verification."
+
+[[paper]]
+id = "bryant-tan-heule-2025-certifying-projected-knowledge-compilation"
+title = "Certifying Projected Knowledge Compilation"
+authors = ["Randal E. Bryant", "Yong Kiam Tan", "Marijn J. H. Heule"]
+year = 2025
+primary_rq = "background"
+secondary_rqs = ["rq5"]
+topic = "certifying-infrastructure"
+source_url = "https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SAT.2025.8"
+pdf_path = "build/papers/background/bryant-tan-heule-2025-certifying-projected-knowledge-compilation.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Cross-domain support for independently checkable proof artifacts."
+
+[[paper]]
+id = "kori-watanabe-rot-katsumata-2024-composing-codensity-bisimulations"
+title = "Composing Codensity Bisimulations"
+authors = ["Mayuko Kori", "Kazuki Watanabe", "Jurriaan Rot", "Shin-ya Katsumata"]
+year = 2024
+primary_rq = "background"
+secondary_rqs = []
+topic = "coalgebra"
+source_url = "https://arxiv.org/abs/2404.08308"
+pdf_path = "build/papers/background/kori-et-al-2024-composing-codensity-bisimulations.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Good compositional-equivalence reference for the coalgebra branch of the note."
+
+[[paper]]
+id = "luckhardt-beohar-kupke-2025-bisimulation-pseudometrics"
+title = "Expressivity of bisimulation pseudometrics over analytic state spaces"
+authors = ["Daniel Luckhardt", "Harsh Beohar", "Clemens Kupke"]
+year = 2025
+primary_rq = "background"
+secondary_rqs = []
+topic = "coalgebra"
+source_url = "https://arxiv.org/abs/2505.23635"
+pdf_path = "build/papers/background/luckhardt-beohar-kupke-2025-expressivity-bisimulation-pseudometrics.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Background for the quantitative turn in coalgebraic equivalence."
+
+[[paper]]
+id = "schmid-2026-coalgebraic-path-constraints"
+title = "Coalgebraic Path Constraints"
+authors = ["Todd Schmid"]
+year = 2026
+primary_rq = "background"
+secondary_rqs = []
+topic = "coalgebra"
+source_url = "https://arxiv.org/abs/2603.12204"
+pdf_path = "build/papers/background/schmid-2026-coalgebraic-path-constraints.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "low-medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Very recent signal for algebra-flavored behavioural specification, not yet central to the main document."
+
+[[paper]]
+id = "libkind-myers-2025-double-operadic-theory-systems"
+title = "Towards a double operadic theory of systems"
+authors = ["Sophie Libkind", "David Jaz Myers"]
+year = 2025
+primary_rq = "background"
+secondary_rqs = []
+topic = "open-systems"
+source_url = "https://arxiv.org/abs/2505.18329"
+pdf_path = "build/papers/background/libkind-myers-2025-double-operadic-theory-of-systems.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Good current reference for open-system composition with Moore-machine examples."
+
+[[paper]]
+id = "baez-2025-double-categories-open-systems"
+title = "Double Categories of Open Systems: the Cospan Approach"
+authors = ["John C. Baez"]
+year = 2025
+primary_rq = "background"
+secondary_rqs = []
+topic = "open-systems"
+source_url = "https://arxiv.org/abs/2509.22584"
+pdf_path = "build/papers/background/baez-2025-double-categories-of-open-systems-cospan-approach.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Useful overview reference for the cospan/double-category strand of categorical systems theory."
+
+[[paper]]
+id = "baez-fong-2015-passive-linear-networks"
+title = "A Compositional Framework for Passive Linear Networks"
+authors = ["John C. Baez", "Brendan Fong"]
+year = 2015
+primary_rq = "background"
+secondary_rqs = []
+topic = "open-systems"
+source_url = "https://arxiv.org/abs/1504.05625"
+pdf_path = "build/papers/background/baez-fong-2015-compositional-framework-passive-linear-networks.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Foundational compositional-systems background rather than an immediate hardware-proof match."
+
+[[paper]]
+id = "bakirtzis-fleming-vasilakopoulou-2020-categorical-semantics-cps"
+title = "Categorical Semantics of Cyber-Physical Systems Theory"
+authors = ["Georgios Bakirtzis", "Cody H. Fleming", "Christina Vasilakopoulou"]
+year = 2020
+primary_rq = "background"
+secondary_rqs = []
+topic = "cyber-physical-semantics"
+source_url = "https://arxiv.org/abs/2010.08003"
+pdf_path = "build/papers/background/bakirtzis-fleming-vasilakopoulou-2020-categorical-semantics-cyber-physical-systems-theory.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Background reference for richer model relationships and composition in cyber-physical settings."
+
+[[paper]]
+id = "myers-2020-double-categories-open-dynamical-systems"
+title = "Double Categories of Open Dynamical Systems (Extended Abstract)"
+authors = ["David Jaz Myers"]
+year = 2020
+primary_rq = "background"
+secondary_rqs = []
+topic = "open-systems"
+source_url = "https://arxiv.org/abs/2005.05956"
+pdf_path = "build/papers/background/myers-2020-double-categories-open-dynamical-systems.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Shorter open-systems reference; useful background but not a central anchor."
+
+[[paper]]
+id = "smithe-2022-open-dynamical-systems-polynomial-functors"
+title = "Open Dynamical Systems as Coalgebras for Polynomial Functors, with Application to Predictive Processing"
+authors = ["Toby St. Clere Smithe"]
+year = 2022
+primary_rq = "background"
+secondary_rqs = []
+topic = "open-systems"
+source_url = "https://arxiv.org/abs/2206.03868"
+pdf_path = "build/papers/background/smithe-2022-open-dynamical-systems-coalgebras-polynomial-functors.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Background bridge between coalgebra and open dynamical systems."
+
+[[paper]]
+id = "rutten-2000-universal-coalgebra"
+title = "Universal Coalgebra: a theory of systems"
+authors = ["Jan J. M. M. Rutten"]
+year = 2000
+primary_rq = "background"
+secondary_rqs = []
+topic = "coalgebra"
+source_url = "https://doi.org/10.1016/S0304-3975(00)00056-6"
+pdf_path = ""
+source_kind = "doi_only"
+status = "metadata_only"
+relevance = "medium"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Foundational coalgebra reference cited for background; no archival PDF stored in build/papers."

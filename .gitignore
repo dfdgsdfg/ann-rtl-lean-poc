@@ -1,6 +1,7 @@
 .lake/
 .lake-build/
 build/
+build/papers/
 reports/
 rel-build/
 **/__pycache__/
