@@ -310,7 +310,25 @@ graph LR
 
 Unlike combinational logic, sequential logic has **state that persists across cycles**. The machine at cycle n+1 depends on the machine at cycle n. This is a presheaf: a functor from time to states.
 
-### 5.5 The Emergence of the Grothendieck Construction: Phase-Dependent State Spaces
+### 5.5 A Monad/Comonad Lens on State and Observation
+
+The transition function `step : State → State` is an endomorphism, and `run n` is its n-fold iteration. That concrete structure is what the repository actually uses in proofs. There is also a useful algebraic lens for thinking about the same behavior.
+
+One may view state-transforming computation through the usual **state monad** `T(X) = State → State × X`, and state-indexed observation through the **store comonad** `W(X) = State × (State → X)`. With that lens:
+
+- register and next-state updates resemble Kleisli-style stateful computation
+- read-only predicates such as `busyOf` and `doneOf` resemble observations of state
+- Sparkle primitives such as `Signal.register` and `Signal.loop` make state threading and feedback explicit
+
+```
+step, run n                      -- concrete state evolution used in proofs
+Signal.register, Signal.loop     -- explicit update / feedback primitives
+busyOf, doneOf                   -- read-only observations of state
+```
+
+This monad/comonad language should be read as an **interpretive perspective**, not as part of the checked proof boundary. The repository does not define these monads for the hardware model or prove monad-algebra / coKleisli laws for Sparkle.
+
+### 5.6 The Emergence of the Grothendieck Construction: Phase-Dependent State Spaces
 
 The point where sequential circuits go beyond simple presheaves is when **the state space itself depends on the phase**. In this repository's FSM:
 
@@ -559,6 +577,37 @@ private theorem controlRun_active_window (k : Fin totalCycles) (hpos : 0 < k.1) 
 
 This means forgetting the infinite fiber and computing on the finite base — precisely the reduction that a Cartesian fibration permits. See [`temporal-verification-of-reactive-hardware.md` §8](temporal-verification-of-reactive-hardware.md) for the full control projection technique and its use in the active window proof.
 
+### 7.4 Projection, Sections, and Quantification
+
+The map `controlOf : State → ControlState` is first of all a **projection**: it forgets datapath values and keeps only phase and indices.
+
+A useful auxiliary idea is to choose a default-fill section `lift0 : ControlState → State` that reintroduces datapath fields with canonical zeros. Such a map would satisfy:
+
+```
+controlOf : State → ControlState      (forget datapath fields)
+lift0     : ControlState → State      (chosen zero-filled representative)
+
+controlOf ∘ lift0 = id
+```
+
+This captures the informal idea that one can forget data and then choose a representative full state over the same control point.
+
+However, the repository does **not** define a canonical `lift0` or prove an adjunction `lift0 ⊣ controlOf`, and the Cartesian fibration result in §7.2 does not depend on such an adjunction. The formal fact actually used is `control_step_agrees`: stepping commutes with projection, so control-only properties can be proved on the finite base and then read back on the full state space.
+
+More generally, presheaf and dependent-type semantics organize substitution and quantification through adjoint triples such as:
+
+```
+f_! ⊣ f* ⊣ f_*
+```
+
+or, in type-theoretic notation,
+
+```
+Σ_f ⊣ f* ⊣ Π_f
+```
+
+That is useful background for the later sections, but it is **background structure**, not a theorem instantiated here for `controlOf`, and it is not the direct reason `native_decide` works in this repository.
+
 ---
 
 ## 8. Grothendieck Topoi and Internal Logic
@@ -694,7 +743,7 @@ graph TB
 
 ### 9.3 Realization in This Repository
 
-Lean 4's `IndexInvariant` is the propositional version of a dependent type:
+Lean 4's `IndexInvariant` is a phase-indexed legality predicate written as a function `State → Prop`:
 
 ```lean
 def IndexInvariant (s : State) : Prop :=
@@ -704,7 +753,7 @@ def IndexInvariant (s : State) : Prop :=
   -- ...
 ```
 
-This is `Π(p : Phase), Prop`, a dependent function assigning a proposition to each phase. The totality of states satisfying `IndexInvariant` is `Σ(p : Phase), F(p)` — the Grothendieck construction ∫F.
+For each phase, this defines the local fiber condition on the index coordinates. The direct Grothendieck object is the Σ-shaped total space `Σ(p : Phase), F(p)`. By contrast, `IndexInvariant` is the proposition that a concrete state lands in that total space. In other words, the total legal control space is Σ-shaped, and `IndexInvariant` is its characteristic predicate on `State`.
 
 Sparkle's `encodeState` must respect this structure:
 
@@ -722,6 +771,29 @@ Hardware correspondences:
 - Context = current FSM phase + index state
 - Substitution = index transformation accompanying a phase transition
 - Dependent type = valid index range that varies with phase
+
+### 9.5 Σ and Π as Adjunctions
+
+The dependent sum and dependent product are not independent operations — they form an **adjoint triple** with substitution (base change). For a morphism f : Δ → Γ in the context category:
+
+```
+Σ_f  ⊣  f*  ⊣  Π_f
+```
+
+where:
+- f* : Ty(Γ) → Ty(Δ) is **substitution** — pulling a type back along f
+- Σ_f : Ty(Δ) → Ty(Γ) is **dependent sum** — existential quantification along f
+- Π_f : Ty(Δ) → Ty(Γ) is **dependent product** — universal quantification along f
+
+This is the same general background as the presheaf-level `f_! ⊣ f* ⊣ f_*`. The point is that changing context and quantifying over fibers are linked operations.
+
+In the setting of this repository:
+
+- `Σ (p : Phase), F(p)` is the direct type-theoretic analogue of the total legal control space
+- a family of data or proofs indexed by every phase would be Π-shaped
+- `IndexInvariant` itself is not the Π-type; it is a predicate on `State` expressing membership in the Σ-shaped total space
+
+The guard-cycle lemmas can be read as local compatibility facts for these phase-dependent fibers. That is the level at which the adjoint-triple background is relevant here.
 
 ---
 
@@ -1105,6 +1177,24 @@ input_idx[3:0]  →  { hidden_mac_active, hidden_mac_guard,
 
 This is categorically a **fibration**. The full state space (9 phases × 16 × 16 counter values) projects onto a boolean predicate base. Since control decisions depend only on the base, this is the same structure as the Cartesian fibration in §7 — only Lean's `controlOf` and TLSF's predicate abstraction express the same mathematical object in different languages.
 
+### 13.5 A Game-Semantic Lens
+
+Reactive synthesis invites a game-semantic reading. The environment supplies input behavior, the system responds with control outputs, and the temporal specification marks which infinite traces count as winning.
+
+With that lens:
+
+- `ltlsynt` searches for a winning controller strategy
+- the Lean theorem from §13.3 verifies that a particular machine meets the same universally quantified obligation over all environment behaviors
+- predicate abstraction can be viewed as reducing a larger control problem to a smaller control-relevant one
+
+This is a useful **conceptual bridge** to the game-semantics literature, but the repository does not define a full strategy category, identify strategies with functors `Env → Sys`, or reduce realizability to non-emptiness of a specific Hom-set. The precise formal content used here remains the universally quantified statement from §13.3:
+
+```
+∀ (samples : ℕ → CtrlSample), acceptedStart ... → doneOf (rtlTrace samples totalCycles)
+```
+
+Synthesis approaches that obligation constructively by building a controller; verification approaches it analytically by proving that a fixed controller satisfies it. Abramsky–Jagadeesan-style game semantics is relevant as background, but it is not the formal API used in this repository.
+
 ---
 
 ## 14. The Sheaf Condition and the Local-to-Global Principle
@@ -1445,9 +1535,22 @@ Sparkle's `Signal dom α` is a time-indexed stream:
 
 Categorically:
 - `Signal dom α` = functor **ℕ** → **Set** (presheaf)
-- `Signal.register` = fixed point of the state monad
-- `Signal.loop` = least fixed point of a recursive equation
-- `hw_cond` = universal property of the coproduct
+- `Signal.register` = explicit one-cycle state delay / register
+- `Signal.loop` = explicit feedback operator on signals
+- `hw_cond` = case split / mux, suggestive of coproduct structure
+
+A further state/observation lens from §5.5 can also be applied to Sparkle. `Signal.register` and `Signal.loop` make state evolution and feedback explicit, while observable views (`done`, `busy`, `out_bit`, packed outputs) are read-only projections of the signal state.
+
+This is semantic intuition rather than a proved monad/comonad interface for Sparkle. The repository does not formalize Sparkle registers as monad algebras or prove coKleisli laws for these observations.
+
+```
+Signal.register  ↔  explicit register / state update
+Signal.loop      ↔  explicit feedback
+hw_cond          ↔  case split on a condition
+view extraction  ↔  read-only projection of signal state
+```
+
+The refinement theorem `sparkleMlpCoreState_refines_rtlTrace` says something more concrete and weaker than a monad-algebra statement: at each time index, the Signal DSL state agrees with `encodeState (rtlTrace ...)`. That pointwise state correspondence is the formal content used by the repository.
 
 ### 19.3 Synthesis and Place & Route
 
@@ -1556,6 +1659,14 @@ graph TB
 | Three RTL implementations | Descent over a shared boundary | `mlp_core` port interface |
 | Lean CIC | Internal language of an LCCC | Dependent types + inductive types |
 | QF_BV decision | Finite-width Presburger decision | Z3 bit-blasting |
+| State updates (registers) | State-transforming computation lens | `Signal.register`, `step` |
+| Output observations | Read-only state observation lens | `busyOf`, `doneOf`, view extraction |
+| Feedback loops | Explicit feedback / fixed-point intuition | `Signal.loop` |
+| Control projection + lifting | Projection plus optional chosen representative | `controlOf` / zero-fill section if chosen |
+| ∀/∃ over datapath | General adjoint-triple background `Σ_f ⊣ f* ⊣ Π_f` | Dependent-type semantics |
+| Winning strategy | Game-semantic lens on synthesis | ltlsynt controller construction |
+| Realizability | Existence of a controller satisfying the spec | ltlsynt `--realizability` check |
+| Refinement | Pointwise state correspondence | `sparkleMlpCoreState_refines_rtlTrace` |
 
 ### 20.3 How Everything Connects
 
@@ -1602,6 +1713,9 @@ graph TB
 4. **Quotient ring geometry** describes the conditions under which finite-width arithmetic agrees with unbounded arithmetic.
 5. The **sheaf condition** is the principle for assembling a global proof (full trace) from local proofs (individual transitions).
 6. **Dependent types** are the type-theoretic realization of the Grothendieck construction and are expressed naturally in Lean.
+7. A **state/observation lens** can be applied to registers and outputs, though the repository does not formalize monad/comonad laws for that lens.
+8. The **adjoint triple** `Σ_f ⊣ f* ⊣ Π_f` is useful background for dependent types and quantification, while `native_decide` here relies more directly on control-only properties factoring through `controlOf`.
+9. **Game semantics** provides an interpretive perspective on reactive synthesis, but the repository currently uses it as semantic background rather than as a formal strategy category.
 
 ---
 
@@ -1641,5 +1755,9 @@ graph TB
 | Cartesian fibrations | Grothendieck (SGA 1) | Data-independent control reasoning |
 | Presburger arithmetic | Presburger (1929) | Decidable linear arithmetic |
 | Gödel incompleteness | Gödel (1931) | Limits of arithmetic with multiplication |
+| Monads | Moggi (1991) | Computational effects as monads |
+| Store comonad | Uustalu–Vene (2008) | Comonadic models of context-dependent computation |
+| Game semantics | Abramsky–Jagadeesan (1994) | Categorical game semantics for linear logic |
+| Traced monoidal categories | Joyal–Street–Verity (1996) | Feedback as trace operator |
 | BMC | Biere et al. (1999) | Bounded-depth model checking |
 | Kripke semantics | Kripke (1959) | Models for modal/temporal logic |
