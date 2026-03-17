@@ -26,6 +26,7 @@ CONTRACT_SRC_DIR = ROOT / "contract" / "src"
 CONTRACT_RUNNERS_DIR = ROOT / "contract" / "runners"
 ROOT_RUNNERS_DIR = ROOT / "runners"
 RTL_SV_DIR = ROOT / "rtl" / "results" / "canonical" / "sv"
+RTL_BLUEPRINT_DIR = ROOT / "rtl" / "results" / "canonical" / "blueprint"
 SCRIPTS_DIR = ROOT / "scripts"
 SIM_RUNNERS_DIR = ROOT / "simulations" / "runners"
 
@@ -59,6 +60,7 @@ class FreezeContractTests(unittest.TestCase):
         (repo_root / "formalize" / "src" / "MlpCore" / "Defs").mkdir(parents=True, exist_ok=True)
         (repo_root / "formalize" / "src" / "MlpCore" / "Generated").mkdir(parents=True, exist_ok=True)
         (repo_root / "rtl" / "results" / "canonical" / "sv").mkdir(parents=True, exist_ok=True)
+        (repo_root / "rtl" / "results" / "canonical" / "blueprint").mkdir(parents=True, exist_ok=True)
         (repo_root / "rtl-formalize-synthesis" / "src" / "MlpCoreSparkle").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "rtl").mkdir(parents=True, exist_ok=True)
         (repo_root / "simulations" / "shared").mkdir(parents=True, exist_ok=True)
@@ -82,6 +84,11 @@ class FreezeContractTests(unittest.TestCase):
         shutil.copytree(CONTRACT_RUNNERS_DIR, repo_root / "contract" / "runners", dirs_exist_ok=True)
         shutil.copytree(ROOT_RUNNERS_DIR, repo_root / "runners", dirs_exist_ok=True)
         shutil.copytree(RTL_SV_DIR, repo_root / "rtl" / "results" / "canonical" / "sv", dirs_exist_ok=True)
+        shutil.copytree(
+            RTL_BLUEPRINT_DIR,
+            repo_root / "rtl" / "results" / "canonical" / "blueprint",
+            dirs_exist_ok=True,
+        )
         shutil.copytree(SCRIPTS_DIR, repo_root / "scripts", dirs_exist_ok=True)
         shutil.copytree(SIM_RUNNERS_DIR, repo_root / "simulations" / "runners", dirs_exist_ok=True)
         shutil.copytree(RUN_DIR, repo_root / "ann" / "results" / "runs" / RUN_DIR.name, dirs_exist_ok=True)
