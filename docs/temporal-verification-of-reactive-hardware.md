@@ -134,7 +134,7 @@ theorem mlpFixed_eq_mlpSpec (input : Input8) :
     mlpFixed input = mlpSpec (toMathInput input)
 ```
 
-**Model-theoretic reading.** The bridge theorem says: for the frozen weights, the MLP computation evaluates identically in unbounded ℤ and in the quotient ring ℤ/2ⁿℤ — the quotient map is injective on the actual computation range, so wrapping is a no-op. This exactness is instance-specific: it holds only for these frozen weights. For the full two-model analysis, the quotient geometry, and the QF_BV wide-sum checks that confirm this at the bitvector level, see [`from-ann-to-proven-hardware.md` §5](from-ann-to-proven-hardware.md) and [`solver-backed-verification.md` §5](solver-backed-verification.md).
+**Arithmetic reading.** The bridge theorem says: for the frozen weights, the fixed-width computation agrees with unbounded integer arithmetic on the actual computation range, so wrapping is a no-op for this instance. This exactness is instance-specific: it holds only for these frozen weights. For the full two-model analysis and the QF_BV wide-sum checks that confirm the same fact at the bitvector level, see [`from-ann-to-proven-hardware.md` §5](from-ann-to-proven-hardware.md) and [`solver-backed-verification.md` §5](solver-backed-verification.md).
 
 ### The Reactive Model: `timedStep` / `rtlTrace`
 
@@ -187,14 +187,14 @@ The proof proceeds by induction on `n`. The base case shows that two cycles of `
 
 This is the key structural insight: a reactive system that ignores its environment during active processing can be analyzed as a closed system during that window.
 
-**Categorical reading.** Define two functors from the natural numbers (viewed as a category with successor morphisms) to the state space:
+**Trace-level reading.** Define two time-indexed state traces:
 
 ```
 R : ℕ → State         R(n) = run n (initialState input)
 T : ℕ → State         T(n) = rtlTrace samples n
 ```
 
-The bridge theorem establishes that `R` and `T` agree on the interval `[2, 76]` — a _partial natural isomorphism_. They diverge outside this window precisely at the reactive interface: at `n ∈ {0, 1}`, `timedStep` handles `start` and `loadInput` differently from `step`; at `n > 76`, it handles the hold/release protocol while `step` is a fixed point. The active window lemma provides the enabling condition: for `n ∈ [2, 75]`, the phase is active, so `timedStep` degenerates to `step`, and the natural transformation becomes an identity.
+The bridge theorem establishes that `R` and `T` agree on the interval `[2, 76]`. They diverge outside this window precisely at the reactive interface: at `n ∈ {0, 1}`, `timedStep` handles `start` and `loadInput` differently from `step`; at `n > 76`, it handles the hold/release protocol while `step` is a fixed point. The active window lemma provides the enabling condition: for `n ∈ [2, 75]`, the phase is active, so `timedStep` reduces to `step`.
 
 ### The Active Window Lemma
 
@@ -397,7 +397,7 @@ def IndexInvariant (s : State) : Prop :=
 
 This is not a global invariant but a _phase-dependent_ one. The legal range for `inputIdx` changes as the machine moves through phases. In macHidden, `inputIdx ≤ 4` (counting up to the guard). In macOutput, `inputIdx ≤ 8` (counting through hidden neurons). In biasHidden, `inputIdx = 4` exactly (the guard value is frozen).
 
-**Grothendieck construction.** This phase-dependent predicate is a dependent type indexed by phase — or equivalently, a Grothendieck construction. Define a functor `F : Phase → Set` assigning each phase its legal index space:
+**Phase-indexed view.** This phase-dependent predicate can be organized as an indexed family over `Phase`. Define `F : Phase → Set` by assigning each phase its legal index space:
 
 ```
 F(macHidden)  = { (h, i) ∈ ℕ² | h < 8 ∧ i ≤ 4 }
@@ -408,13 +408,13 @@ F(done)       = { (h, i) ∈ ℕ² | h = 0 ∧ i = 8 }
 ...
 ```
 
-The total space ∫F = { (p, h, i) | p ∈ Phase, (h, i) ∈ F(p) } is the set of legal control configurations. The `IndexInvariant` is the characteristic function of ∫F. The full machine state is a pair of a point in ∫F and a datapath record.
+The total collection `{ (p, h, i) | p ∈ Phase, (h, i) ∈ F(p) }` is the set of legal control configurations. The `IndexInvariant` checks membership in that phase-indexed control space. The full machine state is a control point paired with a datapath record.
 
-The preservation theorem says `step` is an endomorphism of ∫F × Datapath. The guard cycle proofs verify that transition maps respect the fiber boundaries: when the phase moves from macHidden to biasHidden, the index pair moves from `F(macHidden)` to `F(biasHidden)`, and the guard proof confirms the image lands in the correct fiber.
+The preservation theorem says `step` keeps the machine inside this legal control space. The guard cycle proofs verify that the phase transition from `macHidden` to `biasHidden` carries the index pair from the `macHidden` range into the `biasHidden` range without doing extra MAC work.
 
 ```mermaid
 graph LR
-    subgraph "∫F: Grothendieck construction"
+    subgraph "Phase-indexed legal index space"
         direction TB
         MH["F(macHidden)<br/>h < 8, i ≤ 4"]
         BH["F(biasHidden)<br/>h < 8, i = 4"]
@@ -467,7 +467,7 @@ For example, the active window property requires showing that for all `k ∈ {1,
 
 This is not a proof by exhaustion of the _hardware_ state space (which is far too large). It is a proof by exhaustion of the _control schedule_, which is finite because the indices are bounded and the phase transitions are deterministic given the control state.
 
-**Cartesian fibration.** The soundness of this reduction has a precise categorical characterization. The projection `controlOf : State → ControlState` defines a fibered structure where the fiber over each control state `cs` is the set of all compatible datapath configurations `π⁻¹(cs) = { (regs, hidden, acc, out) | arbitrary }`. The commutation theorem says the diagram commutes:
+**Control/data separation.** The soundness of this reduction comes from the projection `controlOf : State → ControlState`. For a fixed control state `cs`, many datapath configurations may sit underneath it, but the commutation theorem says the control step still respects the following diagram:
 
 ```
          step
@@ -479,7 +479,7 @@ ControlState ──→ ControlState
        controlStep
 ```
 
-This is a Cartesian fibration: the control evolution is independent of the fiber coordinate. The dynamics on the base space (control) are deterministic and data-independent; the dynamics on the fiber (datapath) are determined by the base point. In type-theoretic terms, `State` is a dependent pair `Σ (cs : ControlState), Fiber cs`, and `step` acts on the base and fiber components while preserving the dependency structure.
+Operationally, the point is that control evolution is data-independent. The control schedule is deterministic, while the datapath values evolve underneath that schedule. In type-theoretic terms, one can view `State` as control data paired with compatible datapath data.
 
 Any property that depends only on the phase and indices can therefore be decided by evaluating `controlRun` on the (finite) base space, without reasoning about the (infinite) fiber.
 
@@ -551,16 +551,18 @@ The core technical elements are:
 
 These elements compose into a theorem surface that covers liveness, safety, stability, phase ordering, and index safety — the properties that determine whether a reactive hardware module can be safely integrated into a larger system.
 
-### Mathematical Correspondences
+### Optional Mathematical Correspondences
+
+These correspondences are interpretive commentary on the proof structure. They are not additional formal machinery used by the Lean development.
 
 | Proof Structure | Mathematical Concept | Role in Verification |
 |----------------|---------------------|---------------------|
-| `IndexInvariant` | Grothendieck construction ∫F | Legal state space as a fibered set over Phase |
-| `controlOf` projection | Cartesian fibration | Data-independent control reasoning |
-| `mlpFixed_eq_mlpSpec` | Model-theoretic lifting (ℤ ↔ ℤ/2ⁿℤ) | Bounded arithmetic matches unbounded |
-| `run` vs `rtlTrace` bridge | Partial natural isomorphism | Closed-system proof ↔ reactive trace |
-| Guard cycle boundary proofs | Fiber transition maps | Correct cross-fiber index evolution |
-| `∀ samples, ...` quantification | Dependent product / game quantifier | Property holds against all environments |
+| `IndexInvariant` | Phase-indexed family | Legal state space varies by FSM phase |
+| `controlOf` projection | Control/data separation | Data-independent control reasoning |
+| `mlpFixed_eq_mlpSpec` | Agreement between fixed-width and unbounded arithmetic on the checked range | Bounded arithmetic matches unbounded |
+| `run` vs `rtlTrace` bridge | Trace agreement on the active window | Closed-system proof ↔ reactive trace |
+| Guard cycle boundary proofs | Compatibility of adjacent phase ranges | Correct counter-boundary evolution |
+| `∀ samples, ...` quantification | Universal environment quantification | Property holds against all environments |
 | `AllowedPhaseTransition` | Graph morphism / transition system | Phase dynamics as a directed graph |
 
-For a self-contained treatment of the category theory behind these correspondences — Grothendieck construction, Cartesian fibrations, presheaf semantics, quotient ring geometry, topos-theoretic internal logic, and their connection to combinational/sequential logic, Moore/Mealy machines, and HDL — see [`docs/hardware-mathematics.md`](hardware-mathematics.md).
+For optional category-theoretic commentary related to these correspondences, see [`docs/hardware-mathematics.md`](hardware-mathematics.md).

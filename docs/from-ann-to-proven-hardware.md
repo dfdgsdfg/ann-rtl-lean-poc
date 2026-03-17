@@ -353,11 +353,11 @@ The temporal theorems prove timing properties over `rtlTrace`:
 
 The boundary theorems prove that guard cycles are safe — no spurious MAC, no out-of-range access, and correct phase transitions at every counter boundary.
 
-The full temporal theorem surface also covers hold/release behavior, idle cleanup, phase ordering, and index safety. For the complete treatment — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md). For the underlying category theory — Grothendieck construction, Cartesian fibrations, presheaf semantics, and their connection to hardware design concepts — see [`docs/hardware-mathematics.md`](hardware-mathematics.md).
+The full temporal theorem surface also covers hold/release behavior, idle cleanup, phase ordering, and index safety. For the complete treatment — including the two-model bridge, active window lemma, and control projection technique — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md). For optional category-theoretic commentary on these constructions, see [`docs/hardware-mathematics.md`](hardware-mathematics.md).
 
 ### Index Safety
 
-The `IndexInvariant` defines legal index ranges per phase — the allowed (hiddenIdx, inputIdx) pairs differ for each FSM state. It is proved preserved by `step`, `run`, and `timedStep`, guaranteeing that ROM reads and register accesses never use out-of-range indices regardless of environment behavior. For the full definition, Grothendieck construction interpretation, and preservation proofs, see [`temporal-verification-of-reactive-hardware.md` §7](temporal-verification-of-reactive-hardware.md).
+The `IndexInvariant` defines legal index ranges per phase — the allowed (hiddenIdx, inputIdx) pairs differ for each FSM state. It is proved preserved by `step`, `run`, and `timedStep`, guaranteeing that ROM reads and register accesses never use out-of-range indices regardless of environment behavior. For the full definition, a phase-indexed view of the invariant, and the preservation proofs, see [`temporal-verification-of-reactive-hardware.md` §7](temporal-verification-of-reactive-hardware.md).
 
 ## 6. Trust Boundaries
 
