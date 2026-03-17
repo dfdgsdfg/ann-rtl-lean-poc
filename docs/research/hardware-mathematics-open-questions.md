@@ -13,6 +13,7 @@ The smaller questions are:
 - can Lean's `controlOf` reduction and the synthesis-side predicate abstraction be related by a genuine abstraction theory?
 - what replaces the current control-only reduction once control becomes data-dependent?
 - what semantics emerges when modular overflow is treated as active dynamics rather than an excluded case?
+- can the current Lean-to-RTL trust boundary be replaced by a semantics-preserving bridge down to a carefully delimited synthesizable RTL subset?
 
 The larger topics are:
 
@@ -219,7 +220,46 @@ References:
 - What carries over and what does not: these are solver papers, not RTL machine-semantics papers, so they do not directly give a quotient-geometry theorem for our state space. They do, however, justify treating wrapped arithmetic as first-class semantics instead of as a hidden integer approximation.
 - Use here: `PolySAT 2024` remains the primary recent reference for `Q5`; `Graham-Lengrand et al. 2020` are the key foundational support; [MoXIchecker (2024)](https://arxiv.org/abs/2407.15551) and [Btor2-Cert (2024)](https://www.sosy-lab.org/research/btor2-cert/) remain workflow support rather than arithmetic anchors.
 
-### 2.6 Smaller Topics in More Detail
+### 2.6 Q6: Shrink the Lean-to-Verilog semantic gap
+
+The current repository is explicit that its strongest results are not yet a single end-to-end theorem from mathematics to Verilog.
+
+There are really two closely related gaps:
+
+- the handwritten `rtl/` branch depends on a non-formal correspondence between the Lean `step` / `timedStep` model and the checked-in SystemVerilog
+- the `rtl-formalize-synthesis/` branch proves refinement down to the Sparkle Signal DSL semantics, but still trusts the DSL-to-Verilog lowering path and wrapper reconstruction below that proof boundary
+
+So the open problem is not just "add more validation." It is to replace part of the current trust boundary with a formally defined bridge for a carefully delimited synthesizable RTL subset close to the code this repository actually handwrites and emits.
+
+The next step would be to define:
+
+- a formal semantics for the concrete synthesizable RTL constructs that the repository actually uses
+- an observational equivalence or trace semantics at the concrete `mlp_core` boundary
+- a simulation or refinement theorem from Lean-side machine traces to RTL traces, or from Sparkle DSL traces to emitted RTL traces, for that restricted subset
+- a proof-producing or independently checkable translation story for generated RTL, together with a separate account of what remains trusted in handwritten wrappers and backend lowering
+
+Why this matters:
+
+- it directly targets the repository's largest remaining trust boundary
+- it would sharpen what the current Lean/SMT/simulation combination proves versus what it only corroborates
+- it is the clearest route from "strong evidence" to a narrower and more honest end-to-end semantic claim
+- it ties the repository's current practical limitation to a live research problem rather than to a documentation accident
+
+Concrete binding in this repository:
+
+- the handwritten gap is between `formalize/src/MlpCore/Defs/MachineCore.lean`, `formalize/src/MlpCore/Defs/TemporalCore.lean`, and the checked-in RTL under `rtl/results/canonical/sv/`
+- the generated gap is between `rtl-formalize-synthesis/src/MlpCoreSparkle/*.lean` and the emitted `rtl-formalize-synthesis/results/canonical/sv/sparkle_mlp_core.sv`
+- the stable-wrapper gap is the bit-slicing reconstruction in `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`
+- the current `smt/` checks and branch-comparison workflows are implementation-side cross-checks, not semantics-preservation theorems
+
+References:
+
+- What these references provide: [Meredith, Katelman, Meseguer, and Rosu (2010)](https://experts.illinois.edu/en/publications/a-formal-executable-semantics-of-verilog) provide a foundational executable semantics of Verilog and explicitly position it as a rigorous starting point rather than a final word on the language; [Lööw and Myreen (2019)](https://2019.icse-conferences.org/details/Formalise-2019-papers/11/A-Proof-Producing-Translator-for-Verilog-Development-in-HOL) provide a proof-producing translator from HOL circuit descriptions to a targeted Verilog subset together with a semantics meant to support automated and interactive reasoning; [Lööw (2025)](https://arxiv.org/abs/2502.19348) sharpens the current state of the problem by arguing that previous formalizations still failed to support real-world hardware designs cleanly, and by repairing the semantics enough to execute such designs.
+- Connection to this repository: these works justify treating `Q6` as a semantics-and-translation problem for a deliberately small HDL subset, not as a claim that one should first formalize all of Verilog or SystemVerilog. They are most directly relevant to the repository's generated branch and to any future effort to give a precise trace semantics to the RTL boundary.
+- What carries over and what does not: the papers support a realistic strategy of "pick the subset first, then prove refinement for that subset." They do not by themselves identify the correspondence between the repository's Lean machine model and its handwritten SystemVerilog, nor do they close the remaining gap across wrapper reconstruction and downstream elaboration.
+- Use here: `Lööw 2025` is the best current framing reference for why this remains a live problem; `Lööw/Myreen 2019` are the clearest proof-producing precedent; `Meredith et al. 2010` remain the foundational executable-semantics anchor.
+
+### 2.7 Smaller Topics in More Detail
 
 The first three questions are the ones more tightly tied to the repository's current artifacts:
 
@@ -230,7 +270,7 @@ The first three questions are the ones more tightly tied to the repository's cur
 
 For that reason, it is useful to spell out what those topics would require in a bit more detail.
 
-#### 2.6.1 Q1 in detail: from sheaf-flavored rhetoric to literal local-to-global mathematics
+#### 2.7.1 Q1 in detail: from sheaf-flavored rhetoric to literal local-to-global mathematics
 
 Minimal mathematical objects:
 
@@ -262,7 +302,7 @@ Main risk:
 - a weakly chosen site or coverage can make the construction look artificial
 - the burden is therefore to show that the chosen local objects are dictated by the proof architecture rather than retrofitted to the theorem
 
-#### 2.6.2 Q2 in detail: from one active window to compositional transaction semantics
+#### 2.7.2 Q2 in detail: from one active window to compositional transaction semantics
 
 Minimal mathematical objects:
 
@@ -294,7 +334,7 @@ Main risk:
 - the active-window theorem may not scale cleanly if environment assumptions are underspecified
 - the semantics of overlap and restart conditions must therefore be made explicit very early
 
-#### 2.6.3 Q3 in detail: abstraction theory between theorem proving and synthesis
+#### 2.7.3 Q3 in detail: abstraction theory between theorem proving and synthesis
 
 Minimal mathematical objects:
 
@@ -327,12 +367,17 @@ Main risk:
 - the best abstraction for synthesis may not match the cleanest abstraction for proof
 - the project may therefore need to prove a comparison theorem between two abstractions rather than forcing a single canonical one
 
-#### 2.6.4 Other smaller questions
+#### 2.7.4 Other smaller questions
 
 `Q4` and `Q5` are still important, but they are less directly grounded in the repository's current proof objects:
 
 - `Q4` becomes more concrete once the repository actually contains data-dependent control
 - `Q5` becomes more concrete once overflow is promoted from excluded corner case to first-class semantic behavior
+
+`Q6` is also already concrete, but in a different way:
+
+- the trust boundary between Lean, handwritten RTL, Sparkle DSL semantics, and emitted RTL is already explicit in the repository's main verification documents
+- unlike `Q1`-`Q3`, however, progress on `Q6` depends less on reorganizing existing local proof objects and more on importing or developing a workable formal semantics for a practical RTL subset
 
 In both cases, the mathematics may become deeper, but the immediate empirical grounding inside the repository is currently weaker than for `Q1`-`Q3`.
 
@@ -400,6 +445,7 @@ Smaller topics, closer to the current repository artifacts:
 - a literal local-to-global theorem for the current proof decomposition
 - a compositional transaction semantics for `run` and `rtlTrace`
 - an abstraction theorem relating `controlOf` and the TLSF-side Boolean reduction
+- a semantics-preserving bridge that reduces the current Lean-to-RTL trust gap
 
 Larger topics, which become more concrete as the repository evolves:
 
@@ -510,3 +556,22 @@ Current trend:
 Repository relevance:
 
 - for this repository, arithmetic semantics and certification should be treated as related but distinct agendas: `PolySAT` and `Graham-Lengrand et al.` for overflow-active reasoning, `MoXIchecker`, `Btor2-Cert`, and `Froleyks et al.` for checkable proof infrastructure
+
+### 5.6 Verilog semantics and proof-producing translation
+
+Selected references:
+
+- [Patrick Meredith, Michael Katelman, Jose Meseguer, and Grigore Rosu, *A formal executable semantics of Verilog* (MEMOCODE 2010)](https://experts.illinois.edu/en/publications/a-formal-executable-semantics-of-verilog). This is the foundational executable-semantics reference for the language side of the repository's trust-boundary problem.
+- [Andreas Lööw and Magnus O. Myreen, *A Proof-Producing Translator for Verilog Development in HOL* (FormaliSE 2019)](https://2019.icse-conferences.org/details/Formalise-2019-papers/11/A-Proof-Producing-Translator-for-Verilog-Development-in-HOL). This is the clearest proof-producing precedent for linking higher-order logic artifacts to a targeted Verilog subset.
+- [Andreas Lööw, *The Simulation Semantics of Synthesisable Verilog* (2025)](https://arxiv.org/abs/2502.19348). This is the strongest current signal that the semantics problem remains active: it revisits the most complete prior formalization, repairs it, and emphasizes the gap between mathematical definitions and real-world executable hardware models.
+
+Current trend:
+
+- executable and proof-oriented formalizations of Verilog do exist, but they remain highly sensitive to the chosen subset and to whether the semantics is rich enough to cover real synthesizable designs
+- the hard part is not only defining syntax and small-step rules, but aligning those rules with actual simulation behavior well enough to support reasoning over practical hardware examples
+- proof-producing translation is a realistic route for generated artifacts when the source language is already disciplined, but it does not automatically solve handwritten RTL, wrapper logic, or backend lowering
+
+Repository relevance:
+
+- this is the literature most directly connected to the repository's largest trust boundary: the distance between Lean machine semantics, Sparkle DSL semantics, emitted RTL, and handwritten SystemVerilog
+- it suggests a narrower and more defensible `Q6`: define a workable semantics for the exact synthesizable constructs used here, then prove refinement or translation results at that boundary instead of claiming a full HDL semantics all at once
