@@ -182,20 +182,7 @@ stateDiagram-v2
     DONE --> IDLE : start low
 ```
 
-Each hidden neuron takes 8 cycles:
-- 4 MAC cycles (one per input)
-- 1 guard cycle (index has reached terminal value, no MAC, advance FSM)
-- 1 BIAS_HIDDEN cycle
-- 1 ACT_HIDDEN cycle (ReLU + store)
-- 1 NEXT_HIDDEN cycle (advance to next neuron or switch phase)
-
-The output stage takes 11 cycles:
-- 8 MAC cycles (one per hidden activation)
-- 1 guard cycle
-- 1 BIAS_OUTPUT cycle (add b2, register out_bit)
-- 1 DONE cycle (result externally visible)
-
-Total: 1 (LOAD_INPUT) + 64 (hidden) + 11 (output) = 76 cycles.
+Total: 1 (LOAD_INPUT) + 64 (hidden: 8 neurons × 8 cycles) + 11 (output: 8 MAC + guard + bias + done) = 76 cycles. For the detailed per-phase cycle breakdown, guard cycle structure, and mermaid diagrams, see [`temporal-verification-of-reactive-hardware.md` §2](temporal-verification-of-reactive-hardware.md).
 
 ### The Handshake Contract
 
@@ -213,14 +200,7 @@ These are the properties that the temporal proofs and SMT checks must capture.
 
 ### Guard Cycles
 
-The MAC states include one guard cycle after the last useful multiply. After the fourth hidden MAC, `input_idx` becomes 4. The next cycle stays in MAC_HIDDEN but `do_mac_hidden` is gated off (`input_idx < INPUT_NEURONS` is false). The FSM advances to BIAS_HIDDEN.
-
-This matters because:
-- off-by-one errors typically appear at these boundaries
-- a missing or extra MAC operation changes the accumulated result
-- an out-of-range read could access garbage weight or activation data
-
-The guard cycle is where most controller bugs hide. That is why the formalization, the testbench, and the SMT checks all treat boundary transitions as first-class verification targets.
+Each MAC phase includes one guard cycle after the last useful multiply — a cycle where the index has reached the terminal value, the MAC enable is gated off, and the FSM advances to the next phase. Guard cycles are where most controller bugs hide (off-by-one, stale accumulator, out-of-range ROM reads). The formalization, testbench, and SMT checks all treat them as first-class verification targets. For the detailed guard cycle proofs (no-computation, no-out-of-range-access, boundary completeness), see [`temporal-verification-of-reactive-hardware.md` §6](temporal-verification-of-reactive-hardware.md).
 
 ## 5. The Proof Layers
 
@@ -373,22 +353,11 @@ The temporal theorems prove timing properties over `rtlTrace`:
 
 The boundary theorems prove that guard cycles are safe — no spurious MAC, no out-of-range access, and correct phase transitions at every counter boundary.
 
-The full temporal theorem surface also covers hold/release behavior, idle cleanup, phase ordering, and index safety. For the complete treatment — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md).
+The full temporal theorem surface also covers hold/release behavior, idle cleanup, phase ordering, and index safety. For the complete treatment — including the two-model bridge, active window lemma, control projection technique, and Grothendieck construction — see [`docs/temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md). For the underlying category theory — Grothendieck construction, Cartesian fibrations, presheaf semantics, and their connection to hardware design concepts — see [`docs/hardware-mathematics.md`](hardware-mathematics.md).
 
 ### Index Safety
 
-The `IndexInvariant` defines legal index ranges per phase:
-
-```lean
-def IndexInvariant (s : State) : Prop :=
-  match s.phase with
-  | .macHidden  => s.hiddenIdx < 8 ∧ s.inputIdx ≤ 4
-  | .biasHidden => s.hiddenIdx < 8 ∧ s.inputIdx = 4
-  | .macOutput  => s.hiddenIdx = 0 ∧ s.inputIdx ≤ 8
-  -- ...
-```
-
-This is proved preserved by `step`, `run`, and `timedStep`. It guarantees that the ROM reads and hidden-register accesses in §4's architecture never use out-of-range indices, regardless of the environment's behavior.
+The `IndexInvariant` defines legal index ranges per phase — the allowed (hiddenIdx, inputIdx) pairs differ for each FSM state. It is proved preserved by `step`, `run`, and `timedStep`, guaranteeing that ROM reads and register accesses never use out-of-range indices regardless of environment behavior. For the full definition, Grothendieck construction interpretation, and preservation proofs, see [`temporal-verification-of-reactive-hardware.md` §7](temporal-verification-of-reactive-hardware.md).
 
 ## 6. Trust Boundaries
 
@@ -509,7 +478,7 @@ This is stronger than the retired controller-only wrapper experiment at the inte
 
 The generated artifact now covers the full `mlp_core` boundary, including controller and datapath state. The repository no longer maintains a separate controller-only Sparkle flow.
 
-The proof boundary is still below the emitted full-core RTL in the Lean theorem itself: the Lean refinement stops at Signal DSL semantics. The emitted-RTL story is strengthened separately by the subset-scoped verified Sparkle lowering/backend claim, while wrapper bus mapping and downstream integration remain validation-backed surfaces. See [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md) for that boundary.
+The proof boundary is still below the emitted full-core RTL in the Lean theorem itself: the Lean refinement stops at Signal DSL semantics. The emitted-RTL story is strengthened separately by the subset-scoped verified Sparkle lowering/backend claim, while wrapper bus mapping and downstream integration remain validation-backed surfaces. For the full Signal DSL model, refinement proof chain, and emission pipeline, see [`docs/generated-rtl.md` Part II](generated-rtl.md). For the design spec boundary, see [`specs/rtl-formalize-synthesis/design.md`](../specs/rtl-formalize-synthesis/design.md).
 
 ## 10. The Verification Surface
 
@@ -568,47 +537,78 @@ The Lean formalization addresses all four at the model level. The simulation val
 
 For the architectural distinction between `smt/` (external solver evidence on real Verilog) and `formalize-smt/` (Lean-internal SMT tactics), see [`docs/solver-backed-verification.md` §6](solver-backed-verification.md).
 
-## 11. Seeing the Hardware
+## 11. Three Shapes of the Same Machine
 
-The RTL source files describe the circuit in text. To see the actual hardware structure — gates, registers, muxes, and their connections — we synthesize the design with Yosys and render it as a schematic via netlistsvg.
+The repository maintains three RTL implementations of `mlp_core`. They look different internally but are compared at the same top-level port interface. The structural differences reflect different generation strategies and trust models.
 
-### Top-Level: mlp_core
+### Hand-Written Baseline (`rtl`)
 
-![mlp_core](assets/mlp_core.svg)
+```mermaid
+graph TD
+    subgraph mlp_core
+        CTRL["controller<br/>9-state FSM<br/>4-bit state encoding"]
+        MAC["mac_unit<br/>16×8→32 MAC"]
+        RELU["relu_unit<br/>32→16 ReLU"]
+        ROM["weight_rom<br/>case-statement ROM"]
+        HREG["hidden_regs<br/>8×16-bit register file"]
 
-The top-level wiring. The controller drives the datapath, the weight ROM feeds the MAC unit, and the ReLU output connects back to the hidden register file. This is the hardware equivalent of the Python reference model's loop structure — flattened into parallel, clocked components.
+        CTRL -->|"control signals"| MAC
+        CTRL -->|"control signals"| RELU
+        ROM -->|"weight data"| MAC
+        MAC -->|"accumulator"| RELU
+        RELU -->|"activation"| HREG
+        HREG -->|"hidden values"| MAC
+    end
+```
 
-### Controller
+Layered design. Each submodule (`controller`, `mac_unit`, `relu_unit`, `weight_rom`) is a separate review and debug unit. The controller drives the datapath through explicit control signals. The Lean model mirrors this structure: `step` matches the controller, `acc32` matches the MAC, `relu16` matches the ReLU.
 
-![controller](assets/controller.svg)
+### Reactive Synthesis (`rtl-synthesis`)
 
-The FSM. The state register (flip-flops) holds the current phase. The combinational cloud around it computes next-state and control signals (`do_mac_hidden`, `do_mac_output`, etc.). The guard cycle logic is visible as gating conditions on the MAC enable signals.
+```mermaid
+graph TD
+    subgraph mlp_core
+        subgraph "controller (replaced)"
+            ADAPT["controller_spot_compat<br/>predicate extraction<br/>+ reset bridging<br/>+ state reconstruction"]
+            CORE["controller_spot_core<br/>synthesized Boolean FSM<br/>one-hot phase outputs"]
+            ADAPT -->|"boolean predicates"| CORE
+            CORE -->|"one-hot phases"| ADAPT
+        end
+        MAC["mac_unit<br/>(symlink to baseline)"]
+        RELU["relu_unit<br/>(symlink to baseline)"]
+        ROM["weight_rom<br/>(symlink to baseline)"]
 
-### MAC Unit
+        ADAPT -->|"control signals"| MAC
+        ADAPT -->|"control signals"| RELU
+        ROM --> MAC
+        MAC --> RELU
+    end
+```
 
-![mac_unit](assets/mac_unit.svg)
+Same datapath, different controller. The synthesized core sees only boolean predicates (not counter buses). The adapter layer translates between synthesis semantics (one-hot, synchronous reset) and RTL reality (4-bit state, async reset). The datapath modules are unchanged symlinks.
 
-The multiplier and accumulator. The parameterized widths (A=16, B=8, ACC=32) determine the physical size of the multiply and add logic.
+### Sparkle Generation (`rtl-formalize-synthesis`)
 
-### ReLU Unit
+```mermaid
+graph TD
+    subgraph mlp_core["mlp_core (wrapper)"]
+        RST["reset inversion<br/>rst_n → rst"]
+        SPARKLE["MlpCore_sparkleMlpCorePacked<br/>monolithic generated core<br/>5,585 lines<br/>299-bit packed output"]
+        UNPACK["bundle unpacking<br/>packed_out[298:0] →<br/>state, control, registers"]
 
-![relu_unit](assets/relu_unit.svg)
+        RST -->|"rst"| SPARKLE
+        SPARKLE -->|"packed_out[298:0]"| UNPACK
+    end
+```
 
-The activation function. A comparator checks whether the input is negative, a mux selects zero or the input, and truncation narrows the result from 32 bits to 16 bits.
+No preserved layer boundaries. The entire design — controller, MAC, ReLU, weight ROM, hidden registers — is a single monolithic module generated from the Lean Signal DSL. The wrapper reconstructs the familiar `mlp_core` interface by unpacking a 299-bit bus. There is no separate controller or MAC unit to inspect.
 
-### Weight ROM
+### What the Structural Difference Means
 
-![weight_rom](assets/weight_rom.svg)
+The three designs implement the same function at the `mlp_core` boundary but optimize for different concerns:
 
-The frozen contract weights synthesized into combinational logic. Each case-statement entry becomes a lookup path from the address inputs to the data output.
+- **Baseline** optimizes for layered clarity — each module is directly auditable
+- **Reactive synthesis** optimizes for a narrow claim — only the controller changed, datapath untouched
+- **Sparkle** optimizes for proof alignment — the generated core matches the Signal DSL that the refinement theorems reason about
 
-### How This Connects to Verification
-
-The schematics show what Yosys _thinks_ the design means after synthesis. Comparing the schematic against the spec catches structural misunderstandings:
-
-- Is the accumulator actually 32 bits?
-- Does the ReLU truncate to 16 bits?
-- Are the weight ROM outputs signed?
-- Is the controller generating the right number of control signals?
-
-These are the same questions the Lean formalization answers mathematically and the SMT checks answer formally. The schematic answers them visually.
+For the full analysis of how these structural differences affect trust, failure diagnosis, and verification strategy, see [`docs/generated-rtl.md`](generated-rtl.md) Part III.

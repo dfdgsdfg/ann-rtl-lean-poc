@@ -134,14 +134,7 @@ theorem mlpFixed_eq_mlpSpec (input : Input8) :
     mlpFixed input = mlpSpec (toMathInput input)
 ```
 
-**Model-theoretic reading.** The MLP computation is a term in the first-order theory of integer linear arithmetic. It can be evaluated in two models:
-
-| Model | Domain | Arithmetic |
-|-------|--------|-----------|
-| **ℤ** (spec) | Unbounded integers | Standard |
-| **ℤ/2ⁿℤ** (fixed-point) | Bounded bitvectors | Modular (wrap at each step) |
-
-The bridge theorem says: for the specific constants determined by the frozen weights, the two evaluations agree. The verified intermediate bounds show that for all `int8` inputs, no intermediate value escapes the representable range. The quotient map `ℤ → ℤ/2ⁿℤ` is injective on `[-2^(n-1), 2^(n-1) - 1]`, so wrapping is a no-op. In the language of abstract interpretation, the abstract computation (bounded bitvectors) is an _exact_ — not over-approximate — representative of the concrete computation (ℤ), but this exactness is _instance-specific_: it holds only for these frozen weights.
+**Model-theoretic reading.** The bridge theorem says: for the frozen weights, the MLP computation evaluates identically in unbounded ℤ and in the quotient ring ℤ/2ⁿℤ — the quotient map is injective on the actual computation range, so wrapping is a no-op. This exactness is instance-specific: it holds only for these frozen weights. For the full two-model analysis, the quotient geometry, and the QF_BV wide-sum checks that confirm this at the bitvector level, see [`from-ann-to-proven-hardware.md` §5](from-ann-to-proven-hardware.md) and [`solver-backed-verification.md` §5](solver-backed-verification.md).
 
 ### The Reactive Model: `timedStep` / `rtlTrace`
 
@@ -519,7 +512,7 @@ The two approaches are complementary:
 - Synthesis produces a correct-by-construction controller but requires the temporal specification to be complete and the abstraction to be sound.
 - Verification proves properties of an existing controller but requires the Lean model to faithfully represent the RTL.
 
-Both leave a trust gap. Synthesis trusts the spec-to-implementation chain (TLSF → AIGER → Verilog). Verification trusts the model-to-implementation correspondence (Lean `step` → SystemVerilog `controller.sv`). The SMT formal checks and simulation regression help close both gaps empirically, but neither is formally bridged in this repository.
+Both leave a trust gap. Synthesis trusts the spec-to-implementation chain (TLSF → AIGER → Verilog). Verification trusts the model-to-implementation correspondence (Lean `step` → SystemVerilog `controller.sv`). The SMT formal checks and simulation regression help close both gaps empirically, but neither is formally bridged in this repository. For the full reactive synthesis pipeline — predicate abstraction, adapter design, and dual validation strategy — see [`docs/generated-rtl.md`](generated-rtl.md).
 
 **Type-theoretic connection.** The temporal theorems are universally quantified over the sample stream `samples : ℕ → CtrlSample`. Each theorem is an element of a dependent product:
 
@@ -569,3 +562,5 @@ These elements compose into a theorem surface that covers liveness, safety, stab
 | Guard cycle boundary proofs | Fiber transition maps | Correct cross-fiber index evolution |
 | `∀ samples, ...` quantification | Dependent product / game quantifier | Property holds against all environments |
 | `AllowedPhaseTransition` | Graph morphism / transition system | Phase dynamics as a directed graph |
+
+For a self-contained treatment of the category theory behind these correspondences — Grothendieck construction, Cartesian fibrations, presheaf semantics, quotient ring geometry, topos-theoretic internal logic, and their connection to combinational/sequential logic, Moore/Mealy machines, and HDL — see [`docs/hardware-mathematics.md`](hardware-mathematics.md).

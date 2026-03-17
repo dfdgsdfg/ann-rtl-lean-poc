@@ -76,7 +76,7 @@ This is _not_ induction. An inductive proof would establish that if the property
 
 The four mlp_core property families are not an arbitrary partition of "things to check." Each family exists because it addresses a specific class of bug that the other verification methods handle differently or not at all.
 
-**boundary_behavior** — Guard cycles are the single most error-prone feature of sequential MAC-reuse architectures. A guard cycle is a clock edge where the FSM is nominally in a MAC state but the MAC enable is gated off because the index counter has reached its terminal value. The Lean formalization proves guard-cycle safety (`hiddenGuard_no_mac_work`, `outputGuard_no_mac_work`) over the Lean model. The boundary_behavior family proves the same structural properties directly on the elaborated Verilog — confirming that the actual RTL guard cycles match the Lean model's account of them.
+**boundary_behavior** — Guard cycles are the single most error-prone feature of sequential MAC-reuse architectures. A guard cycle is a clock edge where the FSM is nominally in a MAC state but the MAC enable is gated off because the index counter has reached its terminal value. The Lean formalization proves guard-cycle safety (`hiddenGuard_no_mac_work`, `outputGuard_no_mac_work`) over the Lean model. The boundary_behavior family proves the same structural properties directly on the elaborated Verilog — confirming that the actual RTL guard cycles match the Lean model's account of them. In the Grothendieck construction that the temporal verification layer uses (see [`temporal-verification-of-reactive-hardware.md`](temporal-verification-of-reactive-hardware.md) §7), guard cycles are fiber transitions: the index pair moves from one fiber (e.g., `F(macHidden)` where `inputIdx ≤ 4`) to another (e.g., `F(biasHidden)` where `inputIdx = 4`). The boundary_behavior family is the SMT analogue of those fiber transition proofs, applied to the actual Verilog rather than the Lean model.
 
 | Property | What it says |
 |----------|-------------|
@@ -85,7 +85,7 @@ The four mlp_core property families are not an arbitrary partition of "things to
 | Output guard cycle | At `input_idx == 8`, the FSM takes one guard cycle with no MAC work, then enters BIAS_OUTPUT |
 | Completion | BIAS_OUTPUT applies the output bias and enters DONE with the correct final indices |
 
-**range_safety** — An out-of-range ROM read or selector miss would produce garbage data that propagates silently through the accumulator. Simulation catches this only if the specific test vector triggers the boundary. The range_safety family proves, for all inputs, that MAC enables imply in-range indices and that guard cycles drive the multiplier input to zero.
+**range_safety** — An out-of-range ROM read or selector miss would produce garbage data that propagates silently through the accumulator. Simulation catches this only if the specific test vector triggers the boundary. The range_safety family proves, for all inputs, that MAC enables imply in-range indices and that guard cycles drive the multiplier input to zero. This is the implementation-level counterpart of the Lean `IndexInvariant` — the phase-dependent predicate that defines legal index ranges per FSM state. The Lean formalization treats this as a Grothendieck total space ∫F over the phase category; the range_safety family checks membership in the same total space, but against the actual Verilog wires rather than the Lean model.
 
 | Property | What it says |
 |----------|-------------|
@@ -148,7 +148,7 @@ The `rtl-synthesis` branch replaces the hand-written controller with a synthesiz
 
 Solver evidence on this branch proves that the _mixed assembly_ — synthesized controller driving hand-written datapath — exhibits the same mlp_core-level behavior (boundary transitions, range safety, transaction capture, exact latency) as the baseline. This is the key claim: different controller implementation, same observable behavior at the `mlp_core` boundary.
 
-This branch runs the four shared `mlp_core` families only.
+This branch runs the four shared `mlp_core` families only. For the full synthesis pipeline, predicate abstraction, and dual validation strategy, see [`docs/generated-rtl.md`](generated-rtl.md).
 
 ### The Sparkle Full-Core Branch (`rtl-formalize-synthesis`)
 
@@ -214,7 +214,9 @@ The 8 overflow checks in the contract track prove the bitvector-level analogue:
 
 The wide-sum checks deserve particular attention. They construct a 64-bit "wide" accumulator alongside the 32-bit contract accumulator and prove that the two agree for all `int8` inputs. If they agree, the 32-bit modular arithmetic never actually wraps — the two's-complement model is _declared but inactive_. This is the QF_BV counterpart of the Lean bridge theorem: both establish that wrapping is a no-op for these specific weights, but they establish it at different levels (Lean model vs. bitvector encoding).
 
-The model-theoretic reading from `from-ann-to-proven-hardware.md` applies here directly. The MLP computation is a term in integer linear arithmetic. The contract evaluates it in the quotient ring ℤ/2³²ℤ. The wide-sum checks confirm that for all inputs in [-128, 127]⁴, the canonical representative in ℤ/2³²ℤ lies within [-2³¹, 2³¹-1], so the quotient map is injective on the actual range. Wraparound is an explicit part of the model but never an active part of the computation.
+**Arithmetic decidability.** The MLP forward pass with frozen weights is a _linear_ function of the inputs: each intermediate value is a fixed affine combination of the `int8` input vector. The weights are constants, so `w × x` is not free multiplication but a fixed linear map. This means the overflow question — does every intermediate value stay within its declared width? — reduces to bounding a fixed affine map on a bounded domain `[-128, 127]⁴`. This is decidable. The QF_BV encoding exploits this: quantifier-free bitvector arithmetic is the hardware-width analogue of Presburger arithmetic (the first-order theory of integers with addition), extended with bounded multiplication by constants. Z3's bit-blasting decision procedure is complete for this fragment. The solver does not search heuristically — it decides the question.
+
+**Quotient geometry.** The same two-model framework from [`from-ann-to-proven-hardware.md` §5](from-ann-to-proven-hardware.md) applies here at the bitvector level. The wide-sum checks confirm that for all inputs in `[-128, 127]⁴`, the canonical representative in ℤ/2³²ℤ lies within `[-2³¹, 2³¹-1]`, so the quotient map is injective on the actual range — wraparound is declared but never active. The frozen weights are the specific instance for which this holds; change the weights, and the injectivity argument must be re-established. For the categorical treatment of quotient ring geometry and the Grothendieck construction that organizes phase-dependent invariants, see [`docs/hardware-mathematics.md`](hardware-mathematics.md).
 
 ### Arithmetic Equivalence and the Two-View Miter
 
@@ -237,6 +239,8 @@ graph TD
 ```
 
 Each layer assumes the previous layer's equivalence, then proves the current layer matches. This compositional structure means a failure at any layer pinpoints exactly where the two views diverge. It also means the trust is compositional: the out_bit equivalence depends on every layer below it.
+
+The miter has a fibered reading. Each layer operates at a different bit width — 16-bit products, 32-bit accumulators, 24-bit output products — and the equivalence at each layer is an agreement between two different quotient maps ℤ → ℤ/2ⁿℤ for different _n_. The compositional structure ensures that the quotient maps compose correctly: if the 16-bit hidden products agree, and the 32-bit accumulation of those products agrees, then the quotient geometry is preserved through the entire forward pass. The tower collapses to a single fact at the top: `out_bit` (1-bit) is the same under both views.
 
 The hidden-activation equivalence (layer C) is the most interesting. Signed-saturating ReLU and non-negative-truncation ReLU are different functions in general. For a 32-bit input _x_:
 
@@ -289,6 +293,8 @@ The two layers prove overlapping facts about different objects:
 When both layers prove the same fact — say, "done at cycle 76" — the results are _independent_. The Lean proof does not depend on the SMT result, and the SMT check does not depend on the Lean model. If one fails while the other passes, the discrepancy reveals either a transcription error in the Lean model or a Verilog bug that the model does not reproduce. This independence is the source of the combination's strength.
 
 The layers do not prove the same thing in the same sense. Lean's `acceptedStart_eventually_done` is quantified over all environment strategies (`∀ samples : ℕ → CtrlSample`). The SMT bounded_latency check is quantified over all inputs at each cycle but only within an 82-step unrolling under specific assumptions (single transaction, no mid-transaction reset). The Lean result is strictly stronger in scope but operates on a different object.
+
+**Two models of one theory.** The arithmetic overlap between Lean and SMT has a precise structure. Both layers prove that wrapping does not change the result, but they prove it in different models of integer arithmetic. Lean works in ℤ (the bridge theorem `mlpFixed_eq_mlpSpec` shows fixed-point equals unbounded). SMT works in ℤ/2ⁿℤ (the wide-sum checks show 32-bit matches 64-bit). They meet at the same mathematical fact — the quotient map ℤ → ℤ/2ⁿℤ is injective on the computation range — approached from opposite sides. Lean descends from unbounded to bounded; SMT ascends from narrow-width to wide-width. The frozen contract weights are the specific instance that makes both directions converge.
 
 ### The formalize-smt Distinction
 
