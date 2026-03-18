@@ -10,7 +10,7 @@ Hand-writing the Verilog and hoping it matches the model is the baseline approac
 
 **Reactive synthesis** works _outside-in_. You write a temporal specification (TLSF) that describes the controller's behavior in LTL, and a synthesis tool (ltlsynt) constructs an implementation that satisfies it. This is a direct descendant of Amir Pnueli's program: Pnueli introduced temporal logic for reasoning about reactive systems (1977), and his later work with Rosner (1989) posed the synthesis problem — given a temporal specification, automatically construct a system that satisfies it against all environment behaviors. The shift from _verification_ ("given this system, prove it correct") to _synthesis_ ("given this spec, construct a correct system") is the conceptual foundation of this branch. The generated controller is plugged into the existing datapath and validated against the hand-written baseline. The trust flows from the specification inward: if the spec is complete and the tool is sound, the controller is correct by construction.
 
-**Sparkle code generation** works _inside-out_. You re-implement the design in a hardware DSL hosted inside Lean, prove that it refines the same `rtlTrace` that the temporal and correctness proofs reason about, then emit Verilog from the DSL. The trust flows from the proof outward: the refinement theorems are kernel-checked, and the remaining gap is the DSL-to-Verilog lowering path. The formal viewpoint here is different from Pnueli's game-theoretic framework: it is based on a Lean-hosted signal model together with refinement theorems back to the repository's existing machine semantics.
+**Sparkle code generation** works _inside-out_. You re-implement the design in a hardware DSL hosted inside Lean, prove that it refines the same `rtlTrace` that the temporal and correctness proofs reason about, then emit Verilog from the DSL. The trust flows from the proof outward: the refinement theorems are checked by Lean under an explicit trust profile, and the remaining gaps below the theorem boundary are the DSL-to-Verilog lowering path and wrapper reconstruction. The formal viewpoint here is different from Pnueli's game-theoretic framework: it is based on a Lean-hosted signal model together with refinement theorems back to the repository's existing machine semantics.
 
 Neither approach alone eliminates the gap. Reactive synthesis can only handle the controller (not arithmetic), and its connection to the Lean proofs is indirect. Sparkle covers the full core with direct proof connection, but trusts the code generator. Together, they provide independent evidence from different directions against the same baseline.
 
@@ -22,7 +22,7 @@ graph TB
         MIX --> EQ["equivalence check<br/>against baseline"]
     end
     subgraph "Inside-Out: Sparkle Generation"
-        DSL["Lean Signal DSL<br/>(same model as proofs)"] --> REF["refinement theorems<br/>(kernel-checked)"]
+        DSL["Lean Signal DSL<br/>(same model as proofs)"] --> REF["refinement theorems<br/>(Lean-checked under explicit trust profile)"]
         DSL --> EMIT["Sparkle backend"] --> FULL["generated full core"]
         FULL --> WRAP["wrapper → stable mlp_core"]
         WRAP --> VAL["simulation + SMT<br/>against baseline"]
@@ -375,7 +375,7 @@ The output is a monolithic module `MlpCore_sparkleMlpCorePacked` with a 299-bit 
 
 ### Why a Packed Bus
 
-Sparkle's current backend emits a single output bundle. Rather than fighting this constraint, the pipeline embraces it: the packed bus is the raw artifact, and a stable wrapper reconstructs the familiar `mlp_core` interface. The packing order is fixed by the Lean packing definitions and backend payload theorem, so the wrapper's bit-slicing is mechanically derivable even though the wrapper itself remains a validation surface.
+Sparkle's current backend emits a single output bundle. Rather than fighting this constraint, the pipeline embraces it: the packed bus is the raw artifact, and a stable wrapper reconstructs the familiar `mlp_core` interface. The packing order is fixed by the Lean packing definitions and backend payload theorem, and the checked-in wrapper is kept in sync by artifact-consistency checks even though the wrapper itself remains a validation surface.
 
 ## 13. The Wrapper
 
@@ -406,7 +406,7 @@ The wrapper also exposes `FORMAL` ports for SMT verification — the same observ
 
 - **Reset inversion**: converts active-low `rst_n` to Sparkle's active-high `rst`
 - **Port renaming**: maps Sparkle's synthetic names (`_gen_start`, `_gen_in0`) to canonical names
-- **Bundle unpacking**: extracts fields from the 299-bit packed output using theorem-verified bit ranges
+- **Bundle unpacking**: extracts fields from the 299-bit packed output using bit ranges derived from the Lean packing definitions and checked by wrapper-regeneration consistency
 - **FORMAL exports**: exposes state, indices, control signals, and register contents for SMT harnesses
 
 ### What the Wrapper Does NOT Do
@@ -457,7 +457,7 @@ The hand-written baseline (`rtl/`) is a layered design. The controller, MAC unit
 
 The reactive synthesis branch (`rtl-synthesis/`) keeps the same layered datapath but replaces the controller with a generated core behind an adapter. Below the `mlp_core` boundary, the MAC unit, ReLU, and weight ROM are identical symlinks to the baseline. The controller path is different: a synthesized Boolean state machine wrapped by `controller_spot_compat.sv`. The internal review unit is now the adapter, not the controller itself.
 
-The Sparkle branch (`rtl-formalize-synthesis/`) changes the implementation shape most aggressively. The raw generated artifact is a monolithic 5,585-line module with no internal layer boundaries. The `mlp_core` interface is recovered through a wrapper that unpacks a 299-bit packed bus. There is no separate controller or MAC unit to inspect — the entire design is a single flattened circuit.
+The Sparkle branch (`rtl-formalize-synthesis/`) changes the implementation shape most aggressively. The raw generated artifact is a monolithic module with no internal layer boundaries. The `mlp_core` interface is recovered through a wrapper that unpacks a 299-bit packed bus. There is no separate controller or MAC unit to inspect — the entire design is a single flattened circuit.
 
 This asymmetry is intentional. The three branches optimize for different things:
 
@@ -517,7 +517,7 @@ The arithmetic foundation makes this possible. The bridge theorem `mlpFixed_eq_m
 
 The same principle extends to the generated branches. The Sparkle branch does not preserve the baseline's `controller`, `mac_unit`, `relu_unit`, `weight_rom` layer split. It exports a monolithic core. But the monolithic core computes the same function at the `mlp_core` boundary — proved by refinement theorems above the DSL, validated by simulation and SMT below it. The encode/decode bridge in §10 must preserve both arithmetic range expectations and the expected control-state layout.
 
-The formalization makes these structural differences reviewable. Without it, a monolithic 5,585-line generated module would be a black box. With it, the Signal DSL model is readable Lean code, the refinement theorems are machine-checked, and the verification manifest records exactly which features and fingerprints are in play.
+The formalization makes these structural differences reviewable. Without it, a large monolithic generated module would be a black box. With it, the Signal DSL model is readable Lean code, the refinement theorems are checked by Lean under the declared trust profile, and the verification manifest records exactly which features and fingerprints are in play.
 
 ## 21. Seeing the Difference
 
@@ -537,7 +537,7 @@ The **hand-written baseline** provides the reference implementation and the most
 
 **Reactive synthesis** provides independence. The TLSF spec was written to describe the controller's behavior, not to mirror the Lean model. ltlsynt is a separate tool with separate internals. If both the synthesized controller and the baseline satisfy the same closed-loop behavior, that is independent evidence from an independent tool chain. This independence is valuable precisely because it does not share failure modes with the Lean proof chain.
 
-**Sparkle generation** provides proof depth. The refinement theorems are kernel-checked and cover the full core. The proof connection to `rtlTrace` is direct, not mediated by an equivalence check. If the pure proofs establish that `rtlTrace` computes the correct output at cycle 76, the refinement theorems extend that guarantee to the Signal DSL model without bounded-depth limitations.
+**Sparkle generation** provides proof depth. The refinement theorems cover the full core at the Signal DSL level and are checked by Lean under the explicit trust profile recorded in the verification manifest. The proof connection to `rtlTrace` is direct, not mediated by an equivalence check. If the pure proofs establish that `rtlTrace` computes the correct output at cycle 76, the refinement theorems extend that guarantee to the Signal DSL model without bounded-depth limitations.
 
 Neither generated approach can replace the other:
 - Sparkle cannot provide independence (it shares the Lean model and proof infrastructure)
