@@ -1,6 +1,6 @@
 [archive]
 root = "build/papers"
-updated = "2026-03-17"
+updated = "2026-03-18"
 format_version = 1
 
 [[paper]]
@@ -276,6 +276,91 @@ verdict = "supporting"
 notes = "Best hardware-proof workflow reference among the RQ5 candidates, but not a direct paper on overflow-active arithmetic semantics."
 
 [[paper]]
+id = "meredith-katelman-meseguer-rosu-2010-verilog-semantics"
+title = "A Formal Executable Semantics of Verilog"
+authors = ["Patrick Meredith", "Michael Katelman", "Jose Meseguer", "Grigore Rosu"]
+year = 2010
+primary_rq = "rq6"
+secondary_rqs = []
+topic = "verilog-semantics"
+source_url = "https://www.ideals.illinois.edu/items/17155"
+pdf_path = "build/papers/rq6/meredith-katelman-meseguer-rosu-2010-formal-executable-semantics-of-verilog.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Foundational executable-semantics anchor; explicitly framed by the authors as a starting point rather than a final semantics for all of Verilog."
+
+[[paper]]
+id = "loow-myreen-2019-proof-producing-translator-verilog-hol"
+title = "A Proof-Producing Translator for Verilog Development in HOL"
+authors = ["Andreas Loow", "Magnus O. Myreen"]
+year = 2019
+primary_rq = "rq6"
+secondary_rqs = []
+topic = "proof-producing-translation"
+source_url = "https://www.doc.ic.ac.uk/~aloow/papers/formalise19.pdf"
+pdf_path = "build/papers/rq6/loow-myreen-2019-proof-producing-translator-verilog-hol.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "foundational"
+verdict = "supporting"
+notes = "Closest proof-producing precedent for generating a correspondence theorem from an in-logic hardware description down to a small Verilog subset."
+
+[[paper]]
+id = "chen-zhang-wang-tan-xu-ma-li-2023-essence-of-verilog"
+title = "The Essence of Verilog: A Tractable and Tested Operational Semantics for Verilog"
+authors = ["Qinlin Chen", "Nairen Zhang", "Jinpeng Wang", "Tian Tan", "Chang Xu", "Xiaoxing Ma", "Yue Li"]
+year = 2023
+primary_rq = "rq6"
+secondary_rqs = []
+topic = "core-verilog-semantics"
+source_url = "https://cs.nju.edu.cn/tiantan/papers/oopsla2023.pdf"
+pdf_path = "build/papers/rq6/chen-et-al-2023-the-essence-of-verilog.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "high"
+representativeness = "recent_representative"
+verdict = "supporting"
+notes = "Best core-language precedent for carving a tractable Verilog semantics before attempting larger deductive or proof-producing verification stories."
+
+[[paper]]
+id = "loow-2025-simulation-semantics-synthesisable-verilog"
+title = "The Simulation Semantics of Synthesisable Verilog"
+authors = ["Andreas Loow"]
+year = 2025
+primary_rq = "rq6"
+secondary_rqs = []
+topic = "verilog-simulation-semantics"
+source_url = "https://arxiv.org/abs/2502.19348"
+pdf_path = "build/papers/rq6/loow-2025-simulation-semantics-of-synthesisable-verilog.pdf"
+source_kind = "arxiv"
+status = "downloaded"
+relevance = "high"
+representativeness = "frontier"
+verdict = "primary"
+notes = "Best current framing reference for why synthesizable-Verilog semantics remains a live research problem and how earlier formalizations fail on real-world designs."
+
+[[paper]]
+id = "choi-kim-kang-2025-revamping-verilog-semantics"
+title = "Revamping Verilog Semantics for Foundational Verification"
+authors = ["Joonwon Choi", "Jaewoo Kim", "Jeehoon Kang"]
+year = 2025
+primary_rq = "rq6"
+secondary_rqs = []
+topic = "deductive-verilog-semantics"
+source_url = "https://doi.org/10.1145/3763084"
+pdf_path = ""
+source_kind = "doi_only"
+status = "metadata_only"
+relevance = "high"
+representativeness = "frontier"
+verdict = "supporting"
+notes = "Most direct recent signal for replacing raw scheduling semantics with a deductive-friendly, least-fixpoint-based equivalent semantics for synthesizable Verilog; local PDF not archived due access restrictions."
+
+[[paper]]
 id = "cosler-hahn-omar-schmitt-2024-neurosynt"
 title = "NeuroSynt: A Neuro-symbolic Portfolio Solver for Reactive Synthesis"
 authors = ["Matthias Cosler", "Christopher Hahn", "Ayham Omar", "Frederik Schmitt"]
@@ -308,6 +393,23 @@ relevance = "medium"
 representativeness = "recent_representative"
 verdict = "supporting"
 notes = "Useful support for certificate-oriented preprocessing in hardware verification."
+
+[[paper]]
+id = "cui-chen-zhan-tan-li-2026-chisa"
+title = "ChiSA: Static Analysis for Lightweight Chisel Verification"
+authors = ["Jiacai Cui", "Qinlin Chen", "Zhongsheng Zhan", "Tian Tan", "Yue Li"]
+year = 2026
+primary_rq = "background"
+secondary_rqs = ["rq6"]
+topic = "generator-native-verification"
+source_url = "https://www.cuijiacai.com/assets/pdf/popl26/chisa-paper.pdf"
+pdf_path = "build/papers/background/cui-et-al-2026-chisa-static-analysis-lightweight-chisel-verification.pdf"
+source_kind = "open_pdf"
+status = "downloaded"
+relevance = "medium"
+representativeness = "recent_signal"
+verdict = "supporting"
+notes = "Current signal that some verification pressure is moving upward into generator-native IRs and analyses rather than exclusively into flattened Verilog."
 
 [[paper]]
 id = "bryant-tan-heule-2025-certifying-projected-knowledge-compilation"

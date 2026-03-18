@@ -358,6 +358,8 @@ The proof uses `sparkleMlpCoreStateSynth_refines_rtlTrace` to rewrite the synth-
 
 **Backend payload refinement.** The packed 299-bit output bundle matches the pure trace outputs. The actual emit declaration theorem is `sparkleMlpCorePacked_refines_rtlTrace`; the manifest-facing endpoint is the alias `sparkleMlpCoreBackendPayload_refines_rtlTrace`. Together they connect the synth-path Signal DSL outputs to the actual bit layout that the Sparkle backend emits.
 
+**Scope note.** These theorems quantify over all input traces `samples : Nat → CtrlSample` and all times `t`, so they are not limited to one regression vector or one concrete testbench run. But they are still specialized to this checked-in branch instance: the 4-input / 8-hidden state shape, the frozen weight and bias tables in `ContractData.lean`, the packed 299-bit payload layout, and the documented `MlpCoreSparkle.Emit` entrypoint are all fixed. The repository does not currently expose one parametric theorem that ranges over arbitrary MLP sizes, arbitrary learned parameters, or arbitrary Sparkle programs.
+
 ## 12. The Emission Pipeline
 
 ```mermaid
@@ -431,6 +433,8 @@ This manifest is the traceability record. It answers "what was proved, by whom, 
 ### What Is Proved (Machine-Checked)
 
 The refinement theorems are checked by Lean against the branch's declared trust profile. The checked-in synth-path chain currently relies on two explicit axioms recorded in the verification manifest: vendored Sparkle's `Signal.loop_unfold` and the local bridge `nextState_pure_eq_timedStep`. Within that explicit trust profile, the proof chain is: pure temporal correctness → synth-state refinement → synth-view refinement → backend payload refinement.
+
+This proved slice is universal over external inputs, but specialized to the checked-in `mlp_core` instance. It should be read as "for this emitted MLP core, for all input traces" rather than "for arbitrary MLPs" or "for arbitrary Sparkle designs".
 
 ### What Is Trusted (Verified Elsewhere)
 

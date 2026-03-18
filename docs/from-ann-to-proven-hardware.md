@@ -458,6 +458,8 @@ graph LR
 
 These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the actual Sparkle `Signal.loop` full-core state, sampled observables, and packed emit payload used by the generated design. Helper theorems over `sparkleMlpCoreState`, `sparkleMlpCoreView`, and `canonicalMlpCoreView_refines_rtlTrace` remain available for the pure trace-wrapper presentation of the same model.
 
+The quantification is over all input traces for this branch's checked-in design, not over arbitrary MLP architectures. The current proof fixes the 4-input / 8-hidden state shape, the frozen contract weights and biases, the packed 299-bit payload layout, and the documented `MlpCoreSparkle.Emit` entrypoint.
+
 ### What Is Verified vs. Validated
 
 For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `MlpCoreSparkle` sources and documented emission entrypoint. Within Lean itself, the synth-path proof chain is checked under the explicit trust profile recorded in the verification manifest.

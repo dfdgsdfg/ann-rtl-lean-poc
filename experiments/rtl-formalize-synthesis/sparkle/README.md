@@ -48,6 +48,7 @@ Boundary and trust profile:
 - comparable schematic boundary: `mlp_core.svg`
 - implementation-detail schematic boundary: `sparkle_mlp_core.svg`
 - proof boundary: the actual synth/emit path is covered by `sparkleMlpCoreStateSynth_refines_rtlTrace`, `sparkleMlpCoreViewSynth_refines_rtlTrace`, and the manifest-facing packed endpoint `sparkleMlpCoreBackendPayload_refines_rtlTrace`; helper theorems over `sparkleMlpCoreState` / `sparkleMlpCoreView` remain available for the pure trace wrapper. The Lean theorem itself stops at Signal DSL semantics and uses the explicit trust profile recorded in `verification_manifest.json`
+- proof generality: the refinement theorems quantify over all external input traces, but they are specialized to this checked-in MLP instance and emit path. The branch does not currently expose one parametric proof that ranges over arbitrary network sizes, arbitrary learned parameters, or arbitrary Sparkle programs
 - backend boundary: the Sparkle lowering/backend is treated as verified only for the committed emitted subset exercised by this branch's checked-in sources and emission entrypoint
 - RTL validation: shared `mlp_core` vector regression, branch-comparison summaries, branch-aware SMT checks, QoR characterization, and downstream synthesis flows
 
