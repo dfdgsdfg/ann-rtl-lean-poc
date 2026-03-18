@@ -283,3 +283,16 @@ Vendor/tool bootstrap helpers remain under `scripts/`, for example:
 - The repository treats the selected trained result as the source of truth for downstream implementation.
 - Do not edit generated contract weights by hand; re-freeze them from an ANN run.
 - The generated RTL branches are experiment tracks. The canonical implementation baseline is still `rtl/`.
+
+## Community
+
+Enjoy Math Community
+
+- Discord: <https://discord.gg/tRrHCcJQ>
+- YouTube: <https://www.youtube.com/@enjoyingmath9346> [Playlist](https://www.youtube.com/playlist?list=PL4m4z_pFWq2pNtpQ576evJQZGeQ8FAxAB)
+
+This effort is recorded here as having started from (Discord ID):
+
+- `geonheecho`
+- `incompleteness6016`
+- `choi5804`
