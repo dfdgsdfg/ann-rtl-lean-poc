@@ -290,7 +290,7 @@ A `Signal dom α` represents a time-indexed stream of values of type `α`. The k
 
 The full-core model is built by composing these primitives into a `Signal dom MlpCoreState` that represents the complete hardware state at every cycle.
 
-A `Signal dom α` can be read operationally as a time-indexed signal. The full-core model carries the complete hardware state at each cycle: phase, indices, registers, and accumulator. The refinement theorem `sparkleMlpCoreState_refines_rtlTrace` (§11) establishes state-by-state agreement between this Signal DSL model and the encoded `rtlTrace` view on the checked interface.
+A `Signal dom α` can be read operationally as a time-indexed signal. The full-core model carries the complete hardware state at each cycle: phase, indices, registers, and accumulator. The synth-path refinement theorem `sparkleMlpCoreStateSynth_refines_rtlTrace` (§11) establishes state-by-state agreement between the actual `Signal.loop` implementation and `encodeState (rtlTrace ...)`. The helper theorem `sparkleMlpCoreState_refines_rtlTrace` remains available for the pure trace-wrapped view used in some explanatory proofs.
 
 ### Controller and Datapath Composition
 
@@ -328,35 +328,35 @@ The encoding must respect the Grothendieck structure of the state space. The pur
 
 ## 11. The Refinement Theorems
 
-The proof chain in `Refinement.lean` (1,676 lines) connects the pure Lean semantics to the Signal DSL:
+The proof chain in `Refinement.lean` connects the pure Lean semantics to the Signal DSL:
 
 ```mermaid
 graph TB
-    A["sparkleMlpCoreState_refines_rtlTrace<br/>Signal DSL state = encodeState (rtlTrace samples t)"]
-    B["sparkleMlpCoreView_refines_rtlTrace<br/>sampled outputs = mlpCoreOutputsOfState (rtlTrace samples t)"]
-    C["sparkleMlpCoreBackendPayload_refines_rtlTrace<br/>packed bundle matches rtlTrace outputs"]
+    A["sparkleMlpCoreStateSynth_refines_rtlTrace<br/>actual synth state = encodeState (rtlTrace samples t)"]
+    B["sparkleMlpCoreViewSynth_refines_rtlTrace<br/>actual synth view = mlpCoreOutputsOfState (rtlTrace samples t)"]
+    C["sparkleMlpCoreBackendPayload_refines_rtlTrace<br/>actual packed emit payload matches rtlTrace outputs"]
     A --> B --> C
 ```
 
-**State refinement.** At every cycle `t`, the Signal DSL state equals the encoded pure state:
+**State refinement.** At every cycle `t`, the actual synth-path Signal DSL state equals the encoded pure state:
 
 ```lean
-theorem sparkleMlpCoreState_refines_rtlTrace (samples : Nat → CtrlSample) (t : Nat) :
-    (sparkleMlpCoreState ...).atTime t = encodeState (rtlTrace samples t)
+theorem sparkleMlpCoreStateSynth_refines_rtlTrace (samples : Nat → CtrlSample) (t : Nat) :
+    (sparkleMlpCoreStateSynth ...).atTime t = encodeState (rtlTrace samples t)
 ```
 
-This is proved by induction on `t`. The base case shows that the initial Signal DSL state equals `encodeState idleState`. The inductive step shows that one cycle of the Signal DSL model produces the same result as encoding one step of the pure model.
+This is proved by induction on `t` under the branch's declared trust profile. The base case shows that the initial synth-path state equals `encodeState idleState`. The inductive step shows that one cycle of the synth-path model produces the same result as encoding one step of the pure model.
 
-**View refinement.** Sampling the observable outputs from the Signal DSL model produces the same values as extracting outputs from the pure state:
+**View refinement.** Sampling the observable outputs from the actual synth-path Signal DSL model produces the same values as extracting outputs from the pure state:
 
 ```lean
-theorem sparkleMlpCoreView_refines_rtlTrace (samples : Nat → CtrlSample) (t : Nat) :
-    (sparkleMlpCoreView ...).sample t = mlpCoreOutputsOfState (rtlTrace samples t)
+theorem sparkleMlpCoreViewSynth_refines_rtlTrace (samples : Nat → CtrlSample) (t : Nat) :
+    (sparkleMlpCoreViewSynth ...).sample t = mlpCoreOutputsOfState (rtlTrace samples t)
 ```
 
-The proof uses `sparkleMlpCoreState_refines_rtlTrace` to rewrite the Signal DSL state, then shows that output extraction commutes with encoding.
+The proof uses `sparkleMlpCoreStateSynth_refines_rtlTrace` to rewrite the synth-path Signal DSL state, then shows that output extraction commutes with encoding. Helper theorems over `sparkleMlpCoreState` and `sparkleMlpCoreView` remain in the file as pure trace-wrapper views, but they are not the main public synth-path boundary.
 
-**Backend payload refinement.** The packed 299-bit output bundle matches the pure trace outputs. This theorem connects the Signal DSL outputs to the actual bit layout that the Sparkle backend will emit.
+**Backend payload refinement.** The packed 299-bit output bundle matches the pure trace outputs. The actual emit declaration theorem is `sparkleMlpCorePacked_refines_rtlTrace`; the manifest-facing endpoint is the alias `sparkleMlpCoreBackendPayload_refines_rtlTrace`. Together they connect the synth-path Signal DSL outputs to the actual bit layout that the Sparkle backend emits.
 
 ## 12. The Emission Pipeline
 
@@ -366,7 +366,7 @@ graph LR
     EMIT --> ELAB["Sparkle.Compiler.Elab<br/>synthesizeHierarchical"]
     ELAB --> IR["Sparkle.IR.AST.Design<br/>typed backend IR"]
     IR --> RENDER["Sparkle.Backend.Verilog<br/>toVerilogDesign"]
-    RENDER --> SV["sparkle_mlp_core.sv<br/>5,585 lines"]
+    RENDER --> SV["sparkle_mlp_core.sv<br/>monolithic emitted RTL"]
 ```
 
 The emission entrypoint is `MlpCoreSparkle.Emit`, which produces `sparkleMlpCorePacked` — a single Lean definition that Sparkle's compiler elaborates into a typed IR and then renders as SystemVerilog.
@@ -375,7 +375,7 @@ The output is a monolithic module `MlpCore_sparkleMlpCorePacked` with a 299-bit 
 
 ### Why a Packed Bus
 
-Sparkle's current backend emits a single output bundle. Rather than fighting this constraint, the pipeline embraces it: the packed bus is the raw artifact, and a stable wrapper reconstructs the familiar `mlp_core` interface. The packing order is theorem-verified (`packMlpCoreView_sample_bundle`), so the wrapper's bit-slicing is mechanically derivable.
+Sparkle's current backend emits a single output bundle. Rather than fighting this constraint, the pipeline embraces it: the packed bus is the raw artifact, and a stable wrapper reconstructs the familiar `mlp_core` interface. The packing order is fixed by the Lean packing definitions and backend payload theorem, so the wrapper's bit-slicing is mechanically derivable even though the wrapper itself remains a validation surface.
 
 ## 13. The Wrapper
 
@@ -430,7 +430,7 @@ This manifest is the traceability record. It answers "what was proved, by whom, 
 
 ### What Is Proved (Machine-Checked)
 
-The refinement theorems are Lean kernel-checked. They establish that the Signal DSL model computes the same function as the pure `rtlTrace` for all inputs and all environment behaviors. No sorry, no axioms, no external oracles. The proof chain is: pure temporal correctness → state refinement → view refinement → backend payload refinement.
+The refinement theorems are checked by Lean against the branch's declared trust profile. The checked-in synth-path chain currently relies on two explicit axioms recorded in the verification manifest: vendored Sparkle's `Signal.loop_unfold` and the local bridge `nextState_pure_eq_timedStep`. Within that explicit trust profile, the proof chain is: pure temporal correctness → synth-state refinement → synth-view refinement → backend payload refinement.
 
 ### What Is Trusted (Verified Elsewhere)
 

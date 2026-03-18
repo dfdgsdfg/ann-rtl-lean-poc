@@ -1550,7 +1550,7 @@ hw_cond          ↔  case split on a condition
 view extraction  ↔  read-only projection of signal state
 ```
 
-The refinement theorem `sparkleMlpCoreState_refines_rtlTrace` says something more concrete and weaker than a monad-algebra statement: at each time index, the Signal DSL state agrees with `encodeState (rtlTrace ...)`. That pointwise state correspondence is the formal content used by the repository.
+The synth-path refinement theorem `sparkleMlpCoreStateSynth_refines_rtlTrace` says something more concrete and weaker than a monad-algebra statement: at each time index, the actual Sparkle `Signal.loop` state agrees with `encodeState (rtlTrace ...)`. That pointwise state correspondence is the formal content used by the repository.
 
 ### 19.3 Synthesis and Place & Route
 
@@ -1666,7 +1666,7 @@ graph TB
 | ∀/∃ over datapath | General adjoint-triple background `Σ_f ⊣ f* ⊣ Π_f` | Dependent-type semantics |
 | Winning strategy | Game-semantic lens on synthesis | ltlsynt controller construction |
 | Realizability | Existence of a controller satisfying the spec | ltlsynt `--realizability` check |
-| Refinement | Pointwise state correspondence | `sparkleMlpCoreState_refines_rtlTrace` |
+| Refinement | Pointwise state correspondence | `sparkleMlpCoreStateSynth_refines_rtlTrace` |
 
 ### 20.3 How Everything Connects
 

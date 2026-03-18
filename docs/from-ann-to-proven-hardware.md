@@ -448,18 +448,19 @@ graph LR
 
 ### What Is Proved
 
-[`Refinement.lean`](../rtl-formalize-synthesis/src/MlpCoreSparkle/Refinement.lean) now exposes both the controller bridge and the direct full-core Sparkle theorems:
+[`Refinement.lean`](../rtl-formalize-synthesis/src/MlpCoreSparkle/Refinement.lean) now exposes both the controller bridge and the direct full-core Sparkle synth-path theorems:
 
 - `controllerPhaseNextComb_refines_timedControlStep`
 - `canonicalControllerView_refines_timedControlTrace`
-- `sparkleMlpCoreState_refines_rtlTrace`
-- `sparkleMlpCoreView_refines_rtlTrace`
+- `sparkleMlpCoreStateSynth_refines_rtlTrace`
+- `sparkleMlpCoreViewSynth_refines_rtlTrace`
+- `sparkleMlpCoreBackendPayload_refines_rtlTrace`
 
-These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the actual Sparkle Signal DSL full-core state and sampled observables used by the generated design. `canonicalMlpCoreView_refines_rtlTrace` remains available as a helper theorem over the canonical repackaging of the same pure trace.
+These theorems connect the pure Lean machine and temporal semantics in `formalize/` to the actual Sparkle `Signal.loop` full-core state, sampled observables, and packed emit payload used by the generated design. Helper theorems over `sparkleMlpCoreState`, `sparkleMlpCoreView`, and `canonicalMlpCoreView_refines_rtlTrace` remain available for the pure trace-wrapper presentation of the same model.
 
 ### What Is Verified vs. Validated
 
-For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `MlpCoreSparkle` sources and documented emission entrypoint.
+For the committed `rtl-formalize-synthesis/` emission path, the repository's claim is no longer blanket trust in Sparkle code generation. Instead, the Sparkle lowering/backend is treated as verified for the declared emitted subset exercised by the checked-in `MlpCoreSparkle` sources and documented emission entrypoint. Within Lean itself, the synth-path proof chain is checked under the explicit trust profile recorded in the verification manifest.
 
 That claim does not automatically extend to wrapper reconstruction logic, unexercised Sparkle/backend features, or downstream integration artifacts. The generated wrapper bit slicing that reconstructs the stable `mlp_core` boundary from the raw packed Sparkle output bus remains a direct validation surface.
 
@@ -593,7 +594,7 @@ Same datapath, different controller. The synthesized core sees only boolean pred
 graph TD
     subgraph mlp_core["mlp_core (wrapper)"]
         RST["reset inversion<br/>rst_n → rst"]
-        SPARKLE["MlpCore_sparkleMlpCorePacked<br/>monolithic generated core<br/>5,585 lines<br/>299-bit packed output"]
+        SPARKLE["MlpCore_sparkleMlpCorePacked<br/>monolithic generated core<br/>299-bit packed output"]
         UNPACK["bundle unpacking<br/>packed_out[298:0] →<br/>state, control, registers"]
 
         RST -->|"rst"| SPARKLE

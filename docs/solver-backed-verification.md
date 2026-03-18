@@ -152,7 +152,7 @@ This branch runs the four shared `mlp_core` families only. For the full synthesi
 
 ### The Sparkle Full-Core Branch (`rtl-formalize-synthesis`)
 
-The `rtl-formalize-synthesis` branch generates the entire `mlp_core` — controller and datapath — from a Lean-hosted Signal DSL via Sparkle. The Lean refinement theorems (`sparkleMlpCoreState_refines_rtlTrace`, `sparkleMlpCoreView_refines_rtlTrace`) connect the pure Lean machine semantics to the Sparkle Signal DSL, but the proof boundary stops at DSL semantics. The emitted Verilog and the wrapper that reconstructs the stable `mlp_core` interface from Sparkle's packed output bus are below the proof boundary.
+The `rtl-formalize-synthesis` branch generates the entire `mlp_core` — controller and datapath — from a Lean-hosted Signal DSL via Sparkle. The actual synth-path refinement theorems (`sparkleMlpCoreStateSynth_refines_rtlTrace`, `sparkleMlpCoreViewSynth_refines_rtlTrace`) plus the manifest-facing packed endpoint (`sparkleMlpCoreBackendPayload_refines_rtlTrace`) connect the pure Lean machine semantics to the Sparkle Signal DSL, but the proof boundary still stops at DSL semantics. The emitted Verilog and the wrapper that reconstructs the stable `mlp_core` interface from Sparkle's packed output bus are below that proof boundary.
 
 The trust gap here is:
 
