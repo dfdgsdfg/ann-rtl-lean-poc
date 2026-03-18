@@ -593,3 +593,10 @@ Repository relevance:
 
 - this is the literature most directly connected to the repository's largest trust boundary: the distance between Lean machine semantics, Sparkle DSL semantics, emitted RTL, and handwritten SystemVerilog
 - it suggests a narrower and more defensible `Q6`: define a workable semantics for the exact synthesizable constructs used here, then prove refinement or translation results at that boundary instead of claiming a full HDL semantics all at once
+
+Comparison with larger Sparkle examples:
+
+- upstream Sparkle already ships much larger Signal-DSL examples than this repository's checked-in `MlpCoreSparkle` branch, including a BitNet accelerator and a larger SoC-scale example. That matters because it weakens the objection that `Q6` is blocked merely by the small scale of the present MLP core.
+- in other words, the repository's remaining generated-RTL problem is not primarily "can Lean-hosted Signal DSL express realistic hardware?" The upstream examples are strong evidence that it can.
+- what those larger examples do not automatically settle is this repository's more specific trust-boundary question: whether the particular Sparkle fragment, backend lowering path, packed-output convention, and wrapper reconstruction used here admit a precise end-to-end refinement story down to emitted RTL.
+- that is why the current repository can be simultaneously smaller in hardware scale and sharper in proof focus: it concentrates on actual synth-path refinement for one fixed emitted MLP core, under an explicit trust profile, rather than trying to infer end-to-end RTL theorems from the mere existence of larger Signal-DSL case studies.
