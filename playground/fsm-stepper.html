@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FSM Stepper — Temporal Verification Explorer</title>
+<style>
+:root {
+  --bg: #0f172a; --panel: #1e293b; --border: #334155;
+  --text: #e2e8f0; --dim: #94a3b8; --muted: #64748b;
+  --accent: #7c3aed; --teal: #2dd4bf; --green: #22c55e;
+  --yellow: #facc15; --red: #f87171; --blue: #60a5fa;
+  --orange: #fb923c; --pink: #f472b6; --cyan: #22d3ee;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+code, .mono { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+/* Header */
+header { display: flex; align-items: center; gap: 16px; padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+header h1 { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.ctrl-group { display: flex; align-items: center; gap: 6px; }
+.ctrl-group label { font-size: 11px; color: var(--dim); }
+button { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.1s; }
+button:hover { border-color: var(--accent); }
+button:active { background: var(--accent); }
+button.active { background: var(--accent); border-color: var(--accent); }
+.cycle-display { font-size: 14px; font-weight: 700; min-width: 90px; text-align: center; }
+.cycle-display span { color: var(--accent); }
+.scenario-btns { display: flex; gap: 4px; }
+.scenario-btns button { font-size: 10px; padding: 3px 8px; }
+.scenario-btns button.active { background: var(--teal); border-color: var(--teal); color: #000; }
+
+/* Timeline */
+.timeline-wrap { padding: 8px 20px; background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.timeline { display: flex; gap: 1px; height: 22px; }
+.tcell { flex: 1; min-width: 0; border-radius: 2px; cursor: pointer; position: relative; transition: all 0.1s; opacity: 0.6; }
+.tcell:hover { opacity: 1; transform: scaleY(1.3); }
+.tcell.current { opacity: 1; outline: 2px solid #fff; outline-offset: 1px; z-index: 2; border-radius: 3px; }
+.tcell.future { opacity: 0.25; }
+
+/* Main */
+main { flex: 1; display: grid; grid-template-columns: 1fr 60px 1fr; gap: 0; overflow-y: auto; min-height: 0; }
+.model-col { padding: 16px 20px; overflow-y: auto; }
+.model-col h2 { font-size: 13px; margin-bottom: 4px; }
+.model-col h2 small { font-size: 11px; color: var(--dim); font-weight: 400; }
+.op-col { border-right: 1px solid var(--border); }
+.rx-col { border-left: 1px solid var(--border); }
+.match-col { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); font-size: 10px; color: var(--dim); padding: 8px 0; gap: 4px; }
+.match-indicator { writing-mode: vertical-rl; font-weight: 700; letter-spacing: 0.1em; font-size: 11px; }
+.match-indicator.match { color: var(--green); }
+.match-indicator.diverge { color: var(--red); }
+.field-cmp { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.field-cmp.eq { background: var(--green); opacity: 0.5; }
+.field-cmp.ne { background: var(--red); }
+
+/* State display */
+.state-block { margin-top: 12px; }
+.phase-flow { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 12px; }
+.phase-tag { font-size: 9px; padding: 3px 6px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid transparent; white-space: nowrap; }
+.phase-tag.active { font-weight: 700; color: #fff; border-color: currentColor; }
+.phase-tag.idle.active   { color: var(--blue); background: rgba(96,165,250,0.15); }
+.phase-tag.loadInput.active { color: var(--blue); background: rgba(96,165,250,0.15); }
+.phase-tag.macHidden.active { color: var(--accent); background: rgba(124,58,237,0.15); }
+.phase-tag.biasHidden.active { color: var(--teal); background: rgba(45,212,191,0.15); }
+.phase-tag.actHidden.active { color: var(--orange); background: rgba(251,146,60,0.15); }
+.phase-tag.nextHidden.active { color: var(--cyan); background: rgba(34,211,238,0.15); }
+.phase-tag.macOutput.active { color: var(--accent); background: rgba(124,58,237,0.15); }
+.phase-tag.biasOutput.active { color: var(--teal); background: rgba(45,212,191,0.15); }
+.phase-tag.done.active { color: var(--green); background: rgba(34,197,94,0.15); }
+
+.field-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.field-label { color: var(--dim); min-width: 80px; font-size: 11px; }
+.field-value { font-family: 'SF Mono', monospace; font-size: 13px; }
+.field-value.changed { color: var(--yellow); font-weight: 700; }
+.arr-cells { display: flex; gap: 3px; }
+.arr-cell { width: 32px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 3px; font-family: 'SF Mono', monospace; font-size: 11px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+.arr-cell.active-idx { border-color: var(--accent); background: rgba(124,58,237,0.15); }
+.arr-cell.changed { color: var(--yellow); font-weight: 700; }
+.output-bit { display: inline-block; padding: 2px 10px; border-radius: 3px; font-weight: 700; font-family: monospace; }
+.output-bit.true { background: rgba(34,197,94,0.2); color: var(--green); }
+.output-bit.false { background: rgba(248,113,113,0.15); color: var(--red); }
+
+/* Sample controls */
+.sample-ctrl { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; }
+.sample-ctrl.ignored { opacity: 0.4; }
+.sample-ctrl h3 { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+.sample-ctrl .ignored-note { font-size: 10px; color: var(--orange); margin-top: 4px; }
+.toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.toggle { width: 36px; height: 20px; background: var(--border); border-radius: 10px; cursor: pointer; position: relative; transition: background 0.2s; }
+.toggle.on { background: var(--green); }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.toggle.on::after { transform: translateX(16px); }
+.input-row { display: flex; gap: 4px; align-items: center; }
+.input-row input { width: 44px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 3px 4px; border-radius: 3px; font-family: monospace; font-size: 12px; text-align: center; }
+.input-row label { font-size: 11px; color: var(--dim); min-width: 50px; }
+
+/* Bottom panels */
+.bottom-panels { flex-shrink: 0; border-top: 1px solid var(--border); }
+.op-log { padding: 8px 20px; background: var(--panel); font-size: 12px; border-bottom: 1px solid var(--border); min-height: 32px; display: flex; gap: 16px; }
+.op-log .log-label { color: var(--muted); font-size: 10px; text-transform: uppercase; flex-shrink: 0; padding-top: 1px; }
+.op-log .log-text { font-family: 'SF Mono', monospace; font-size: 11px; line-height: 1.5; }
+.op-log .log-text .op-detail { color: var(--yellow); }
+.op-log .log-text .guard-detail { color: var(--pink); }
+.annotation { padding: 8px 20px; background: rgba(124,58,237,0.05); font-size: 11px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; }
+.annotation .ann-label { color: var(--accent); font-size: 10px; text-transform: uppercase; flex-shrink: 0; }
+.annotation .ann-theorem { font-family: monospace; color: var(--teal); margin-top: 2px; font-size: 10px; }
+.prompt-bar { padding: 8px 20px; background: var(--panel); display: flex; align-items: flex-start; gap: 12px; }
+.prompt-bar .prompt-text { flex: 1; font-family: monospace; font-size: 11px; color: var(--dim); line-height: 1.5; max-height: 60px; overflow-y: auto; }
+.copy-btn { background: var(--accent); color: #fff; border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.copy-btn:hover { filter: brightness(1.2); }
+.copy-btn.copied { background: var(--green); }
+
+.op-input-field { width: 40px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FSM Stepper</h1>
+  <div class="ctrl-group">
+    <button onclick="reset()" title="Reset to cycle 0 (r)">Reset</button>
+    <button onclick="stepBack()" title="Previous cycle (Left / h)">&#9664;</button>
+    <div class="cycle-display">Cycle <span id="cycleNum">0</span> / 76</div>
+    <button onclick="stepForward()" title="Next cycle (Right / l)">&#9654;</button>
+    <button id="playBtn" onclick="togglePlay()" title="Play/Pause (Space)">Play</button>
+  </div>
+  <div class="ctrl-group">
+    <label>Op input:</label>
+    <input id="opIn0" class="op-input-field" type="number" value="1" min="-128" max="127" onchange="onOpInputChange()">
+    <input id="opIn1" class="op-input-field" type="number" value="2" min="-128" max="127" onchange="onOpInputChange()">
+    <input id="opIn2" class="op-input-field" type="number" value="3" min="-128" max="127" onchange="onOpInputChange()">
+    <input id="opIn3" class="op-input-field" type="number" value="4" min="-128" max="127" onchange="onOpInputChange()">
+  </div>
+  <div class="ctrl-group scenario-btns">
+    <label>Scenarios:</label>
+    <button class="active" onclick="setScenario('normal')">Normal</button>
+    <button onclick="setScenario('diffInput')">Diff Inputs</button>
+    <button onclick="setScenario('noStart')">No Start</button>
+    <button onclick="setScenario('release')">Release</button>
+  </div>
+</header>
+
+<div class="timeline-wrap">
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<main>
+  <div class="model-col op-col" id="opCol"></div>
+  <div class="match-col" id="matchCol"></div>
+  <div class="model-col rx-col" id="rxCol"></div>
+</main>
+
+<div class="bottom-panels">
+  <div class="op-log" id="opLog"></div>
+  <div class="annotation" id="annotation"></div>
+  <div class="prompt-bar">
+    <div class="prompt-text" id="promptText"></div>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// Constants — exact values from formalize/src/MlpCore/Generated/Contract.lean
+// ═══════════════════════════════════════════
+const W1 = [
+  [0,0,0,0],[0,0,0,-1],[2,1,1,-1],[0,0,0,-1],
+  [-1,0,0,0],[-1,1,-1,1],[0,-1,1,-1],[1,2,0,0]
+];
+const B1 = [0,0,1,1,0,2,1,-1];
+const W2 = [0,0,1,0,-1,-1,1,-1];
+const B2 = -1;
+const INPUT_COUNT = 4;
+const HIDDEN_COUNT = 8;
+const TOTAL_CYCLES = 76;
+const MAX_CYCLES = 86;
+
+const PHASES = ['idle','loadInput','macHidden','biasHidden','actHidden','nextHidden','macOutput','biasOutput','done'];
+const PHASE_COLORS = {
+  idle:'#60a5fa', loadInput:'#60a5fa',
+  macHidden:'#7c3aed', biasHidden:'#2dd4bf', actHidden:'#fb923c', nextHidden:'#22d3ee',
+  macOutput:'#7c3aed', biasOutput:'#2dd4bf', done:'#22c55e'
+};
+const PHASE_SHORT = {
+  idle:'IDLE', loadInput:'LOAD', macHidden:'MAC_H', biasHidden:'BIAS_H',
+  actHidden:'ACT_H', nextHidden:'NEXT_H', macOutput:'MAC_O', biasOutput:'BIAS_O', done:'DONE'
+};
+
+// ═══════════════════════════════════════════
+// Arithmetic — faithful to Defs/FixedPointCore.lean
+// ═══════════════════════════════════════════
+function wrap32(x) { return x | 0; }
+function wrap16(x) { let v = ((x % 65536) + 65536) % 65536; return v >= 32768 ? v - 65536 : v; }
+function relu(x) { return x < 0 ? 0 : x; }
+function relu16(x) { return wrap16(relu(x)); }
+function acc32(acc, term) { return wrap32(acc + term); }
+
+// ═══════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════
+function mkState(phase, regs, hidden, acc, hIdx, iIdx, output) {
+  return { phase, regs:[...regs], hidden:[...hidden], accumulator:acc, hiddenIdx:hIdx, inputIdx:iIdx, output };
+}
+function cloneState(s) { return mkState(s.phase, s.regs, s.hidden, s.accumulator, s.hiddenIdx, s.inputIdx, s.output); }
+function initialState(input) { return mkState('idle', input, [0,0,0,0,0,0,0,0], 0, 0, 0, false); }
+function idleState() { return mkState('idle', [0,0,0,0], [0,0,0,0,0,0,0,0], 0, 0, 0, false); }
+
+function statesEqual(a, b) {
+  return a.phase === b.phase && a.hiddenIdx === b.hiddenIdx && a.inputIdx === b.inputIdx
+    && a.accumulator === b.accumulator && a.output === b.output
+    && a.regs.every((v,i) => v === b.regs[i])
+    && a.hidden.every((v,i) => v === b.hidden[i]);
+}
+
+// ═══════════════════════════════════════════
+// step — exact match to Defs/MachineCore.lean:41-88
+// ═══════════════════════════════════════════
+function step(s) {
+  switch (s.phase) {
+    case 'idle':
+      return { ...cloneState(s), phase: 'loadInput' };
+    case 'loadInput':
+      return { ...cloneState(s), hidden:[0,0,0,0,0,0,0,0], accumulator:0, hiddenIdx:0, inputIdx:0, output:false, phase:'macHidden' };
+    case 'macHidden':
+      if (s.inputIdx < INPUT_COUNT) {
+        const term = s.regs[s.inputIdx] * W1[s.hiddenIdx][s.inputIdx];
+        return { ...cloneState(s), accumulator: acc32(s.accumulator, term), inputIdx: s.inputIdx + 1 };
+      }
+      return { ...cloneState(s), phase: 'biasHidden' };
+    case 'biasHidden':
+      return { ...cloneState(s), accumulator: acc32(s.accumulator, B1[s.hiddenIdx]), phase: 'actHidden' };
+    case 'actHidden': {
+      const ns = cloneState(s);
+      ns.hidden[s.hiddenIdx] = relu16(s.accumulator);
+      ns.accumulator = 0;
+      ns.inputIdx = 0;
+      ns.phase = 'nextHidden';
+      return ns;
+    }
+    case 'nextHidden':
+      if (s.hiddenIdx + 1 < HIDDEN_COUNT)
+        return { ...cloneState(s), hiddenIdx: s.hiddenIdx + 1, phase: 'macHidden' };
+      return { ...cloneState(s), hiddenIdx: 0, inputIdx: 0, phase: 'macOutput' };
+    case 'macOutput':
+      if (s.inputIdx < HIDDEN_COUNT) {
+        const term = s.hidden[s.inputIdx] * W2[s.inputIdx];
+        return { ...cloneState(s), accumulator: acc32(s.accumulator, term), inputIdx: s.inputIdx + 1 };
+      }
+      return { ...cloneState(s), phase: 'biasOutput' };
+    case 'biasOutput': {
+      const finalAcc = acc32(s.accumulator, B2);
+      return { ...cloneState(s), accumulator: finalAcc, output: finalAcc > 0, phase: 'done' };
+    }
+    case 'done':
+      return cloneState(s);
+  }
+}
+
+// ═══════════════════════════════════════════
+// timedStep — exact match to Defs/TemporalCore.lean:100-122
+// ═══════════════════════════════════════════
+function timedStep(sample, s) {
+  switch (s.phase) {
+    case 'idle':
+      if (sample.start) return { ...cloneState(s), phase: 'loadInput' };
+      return { ...cloneState(s), hiddenIdx: 0, inputIdx: 0 };
+    case 'loadInput':
+      return { ...cloneState(s), regs:[...sample.inputs], hidden:[0,0,0,0,0,0,0,0], accumulator:0, hiddenIdx:0, inputIdx:0, output:false, phase:'macHidden' };
+    case 'done':
+      if (sample.start) return cloneState(s);
+      return { ...cloneState(s), phase: 'idle' };
+    default:
+      return step(s);
+  }
+}
+
+// ═══════════════════════════════════════════
+// Trace management
+// ═══════════════════════════════════════════
+let opInput = [1, 2, 3, 4];
+let samples = [];
+let opTrace = [];
+let rxTrace = [];
+let currentCycle = 0;
+let playing = false;
+let playTimer = null;
+let currentScenario = 'normal';
+let observations = new Set();
+
+function defaultSample() { return { start: true, inputs: [...opInput] }; }
+
+function initSamples() {
+  samples = [];
+  for (let i = 0; i <= MAX_CYCLES; i++) samples.push(defaultSample());
+}
+
+function recompute() {
+  opTrace = [initialState(opInput)];
+  rxTrace = [idleState()];
+  for (let i = 0; i < MAX_CYCLES; i++) {
+    opTrace.push(step(opTrace[i]));
+    rxTrace.push(timedStep(samples[i], rxTrace[i]));
+  }
+}
+
+// ═══════════════════════════════════════════
+// Scenarios
+// ═══════════════════════════════════════════
+function setScenario(name) {
+  currentScenario = name;
+  initSamples();
+  switch (name) {
+    case 'normal': break;
+    case 'diffInput':
+      samples[1] = { start: true, inputs: [10, 20, 30, 40] };
+      break;
+    case 'noStart':
+      samples[0] = { start: false, inputs: [...opInput] };
+      break;
+    case 'release':
+      for (let i = TOTAL_CYCLES; i <= MAX_CYCLES; i++)
+        samples[i] = { start: false, inputs: [...opInput] };
+      break;
+  }
+  recompute();
+  currentCycle = 0;
+  observations.clear();
+  render();
+  document.querySelectorAll('.scenario-btns button').forEach(b => b.classList.remove('active'));
+  const labels = { normal:'Normal', diffInput:'Diff Inputs', noStart:'No Start', release:'Release' };
+  document.querySelectorAll('.scenario-btns button').forEach(b => {
+    if (b.textContent === labels[name]) b.classList.add('active');
+  });
+}
+
+// ═══════════════════════════════════════════
+// Operation description — shows actual computation with real numbers
+// ═══════════════════════════════════════════
+function describeOp(prev, curr, sample, isReactive) {
+  if (!prev) return 'Initial state.';
+  const p = prev.phase;
+
+  if (p === 'idle') {
+    if (isReactive) {
+      if (sample.start) return 'start=true \u2192 advance to LOAD_INPUT.';
+      return '<span class="guard-detail">start=false \u2192 stay IDLE, clean indices to 0.</span>';
+    }
+    return 'step(idle) \u2192 LOAD_INPUT. <em>Unconditional \u2014 no external signal check.</em>';
+  }
+
+  if (p === 'loadInput') {
+    if (isReactive) return `Capture inputs from environment: [${sample.inputs.join(', ')}]. Reset hidden, acc, indices \u2192 MAC_HIDDEN.`;
+    return 'Reset hidden, acc, indices. Registers already set by initialState. \u2192 MAC_HIDDEN.';
+  }
+
+  if (p === 'macHidden') {
+    if (prev.inputIdx < INPUT_COUNT) {
+      const i = prev.inputIdx, h = prev.hiddenIdx;
+      const r = prev.regs[i], w = W1[h][i], term = r * w;
+      return `<span class="op-detail">MAC: acc += regs[${i}] \u00d7 w1[${h}][${i}] = ${r} \u00d7 ${w} = ${term >= 0 ? '+' : ''}${term}</span> \u2192 acc = ${curr.accumulator}`;
+    }
+    return `<span class="guard-detail">Guard: inputIdx = ${prev.inputIdx} = inputCount. No computation. SameDataFields preserved.</span> \u2192 BIAS_HIDDEN`;
+  }
+
+  if (p === 'biasHidden') {
+    const b = B1[prev.hiddenIdx];
+    return `<span class="op-detail">BIAS: acc += b1[${prev.hiddenIdx}] = ${b >= 0 ? '+' : ''}${b}</span> \u2192 acc = ${curr.accumulator}. \u2192 ACT_HIDDEN`;
+  }
+
+  if (p === 'actHidden') {
+    const val = curr.hidden[prev.hiddenIdx];
+    return `<span class="op-detail">ACT: hidden[${prev.hiddenIdx}] = relu(${prev.accumulator}) = ${val}</span>. Acc reset to 0. \u2192 NEXT_HIDDEN`;
+  }
+
+  if (p === 'nextHidden') {
+    if (prev.hiddenIdx + 1 < HIDDEN_COUNT)
+      return `NEXT: hiddenIdx ${prev.hiddenIdx} \u2192 ${prev.hiddenIdx + 1}. Loop back to MAC_HIDDEN for neuron ${prev.hiddenIdx + 1}.`;
+    return 'NEXT: All 8 hidden neurons complete. Reset indices. \u2192 MAC_OUTPUT (output layer).';
+  }
+
+  if (p === 'macOutput') {
+    if (prev.inputIdx < HIDDEN_COUNT) {
+      const i = prev.inputIdx, h = prev.hidden[i], w = W2[i], term = h * w;
+      return `<span class="op-detail">MAC: acc += hidden[${i}] \u00d7 w2[${i}] = ${h} \u00d7 ${w} = ${term >= 0 ? '+' : ''}${term}</span> \u2192 acc = ${curr.accumulator}`;
+    }
+    return `<span class="guard-detail">Guard: inputIdx = ${prev.inputIdx} = hiddenCount. No computation.</span> \u2192 BIAS_OUTPUT`;
+  }
+
+  if (p === 'biasOutput') {
+    return `<span class="op-detail">BIAS: acc += b2 = ${B2}</span> \u2192 acc = ${curr.accumulator}. Output = (${curr.accumulator} > 0) = ${curr.output}. \u2192 DONE`;
+  }
+
+  if (p === 'done') {
+    if (isReactive) {
+      if (sample.start) return 'DONE + start=true \u2192 <em>hold entire state (identity)</em>. timedStep returns s.';
+      return 'DONE + start=false \u2192 <em>release to IDLE</em>.';
+    }
+    return 'DONE \u2192 DONE. <em>Fixed point: step(done) = done.</em>';
+  }
+  return '';
+}
+
+function getAnnotation(cycle) {
+  const op = opTrace[cycle], rx = rxTrace[cycle];
+  const match = statesEqual(op, rx);
+  if (cycle === 0) return { text: 'Both models start at IDLE. The operational model always advances (step has no external inputs). The reactive model checks sample.start.', theorem: '', zone: 'interface' };
+  if (cycle === 1) {
+    if (rx.phase === 'idle') return { text: 'Reactive model stayed IDLE (start was false at cycle 0). Operational model advanced to LOAD_INPUT. Models diverge.', theorem: '', zone: 'diverge' };
+    return { text: 'LOAD_INPUT. Operational: regs from initialState. Reactive: captures (samples 1).inputs \u2014 this is capturedInput.', theorem: 'capturedInput samples = (samples 1).inputs', zone: 'interface' };
+  }
+  if (cycle >= 2 && cycle <= 75) {
+    let extra = '';
+    if (cycle > 0) {
+      const prev = opTrace[cycle - 1];
+      if (prev.phase === 'macHidden' && prev.inputIdx >= INPUT_COUNT)
+        extra = ' Previous step was a guard cycle \u2014 hiddenGuard_no_mac_work confirms SameDataFields.';
+      if (prev.phase === 'macOutput' && prev.inputIdx >= HIDDEN_COUNT)
+        extra = ' Previous step was an output guard cycle \u2014 same no-computation guarantee.';
+    }
+    return {
+      text: `Active window (cycle ${cycle}/75). timedStep delegates to step \u2014 environment ignored.${extra}${match ? '' : ' Data diverged because different inputs were captured at LOAD_INPUT.'}`,
+      theorem: match ? 'rtlTrace_matches_run_after_loadInput' : 'Control flow matches (active window) but data diverges (different capturedInput)',
+      zone: 'active'
+    };
+  }
+  if (cycle === 76) {
+    return { text: 'Liveness achieved: DONE in exactly totalCycles = 76 steps. Output is valid and stable while done persists.', theorem: 'acceptedStart_eventually_done + acceptedStart_capturedInput_correct', zone: 'done' };
+  }
+  return { text: 'Post-transaction. Operational: fixed point (step(done)=done). Reactive: hold (start=true) or release to idle (start=false).', theorem: 'done_hold_while_start_high / done_to_idle_when_start_low', zone: 'post' };
+}
+
+// ═══════════════════════════════════════════
+// Rendering
+// ═══════════════════════════════════════════
+function renderTimeline() {
+  const el = document.getElementById('timeline');
+  el.innerHTML = '';
+  for (let i = 0; i <= MAX_CYCLES; i++) {
+    const s = opTrace[i];
+    const div = document.createElement('div');
+    div.className = 'tcell' + (i === currentCycle ? ' current' : '') + (i > currentCycle ? ' future' : '');
+    let color = PHASE_COLORS[s.phase] || '#334155';
+    // Guard cycle indicator: color pink if the PREVIOUS step was a guard
+    if (i > 0) {
+      const prev = opTrace[i - 1];
+      if ((prev.phase === 'macHidden' && prev.inputIdx >= INPUT_COUNT) ||
+          (prev.phase === 'macOutput' && prev.inputIdx >= HIDDEN_COUNT)) {
+        color = '#f472b6';
+      }
+    }
+    div.style.background = color;
+    div.title = `Cycle ${i}: ${PHASE_SHORT[s.phase]} (h=${s.hiddenIdx}, i=${s.inputIdx})`;
+    div.onclick = () => { currentCycle = i; render(); };
+    el.appendChild(div);
+  }
+}
+
+function renderStateCol(colEl, state, prevState, label, sublabel, sample, isReactive) {
+  const prev = prevState;
+  const changed = (field) => prev && state[field] !== prev[field];
+  const arrChanged = (arr, i) => prev && state[arr][i] !== prev[arr][i];
+
+  let html = `<h2>${label}<br><small>${sublabel}</small></h2>`;
+
+  // Phase flow
+  html += '<div class="phase-flow">';
+  PHASES.forEach(p => {
+    html += `<div class="phase-tag ${p} ${state.phase === p ? 'active' : ''}">${PHASE_SHORT[p]}</div>`;
+  });
+  html += '</div><div class="state-block">';
+
+  // Indices
+  html += `<div class="field-row"><span class="field-label">hiddenIdx</span><span class="field-value ${changed('hiddenIdx') ? 'changed' : ''}">${state.hiddenIdx}</span>`;
+  if (state.phase === 'macHidden' || state.phase === 'biasHidden' || state.phase === 'actHidden')
+    html += `<span style="font-size:10px;color:var(--dim);margin-left:4px">(neuron ${state.hiddenIdx})</span>`;
+  html += '</div>';
+
+  html += `<div class="field-row"><span class="field-label">inputIdx</span><span class="field-value ${changed('inputIdx') ? 'changed' : ''}">${state.inputIdx}</span>`;
+  if (state.phase === 'macHidden' && state.inputIdx >= INPUT_COUNT)
+    html += '<span style="font-size:10px;color:var(--pink);margin-left:4px">(= inputCount, guard)</span>';
+  if (state.phase === 'macOutput' && state.inputIdx >= HIDDEN_COUNT)
+    html += '<span style="font-size:10px;color:var(--pink);margin-left:4px">(= hiddenCount, guard)</span>';
+  html += '</div>';
+
+  // Accumulator
+  html += `<div class="field-row"><span class="field-label">accumulator</span><span class="field-value ${changed('accumulator') ? 'changed' : ''}">${state.accumulator}</span></div>`;
+
+  // Registers
+  html += '<div class="field-row"><span class="field-label">regs[4]</span><div class="arr-cells">';
+  for (let i = 0; i < 4; i++) {
+    const isActive = state.phase === 'macHidden' && state.inputIdx === i;
+    html += `<div class="arr-cell ${isActive ? 'active-idx' : ''} ${arrChanged('regs', i) ? 'changed' : ''}">${state.regs[i]}</div>`;
+  }
+  html += '</div></div>';
+
+  // Hidden
+  html += '<div class="field-row"><span class="field-label">hidden[8]</span><div class="arr-cells">';
+  for (let i = 0; i < 8; i++) {
+    const isBeingComputed = (state.phase === 'macHidden' || state.phase === 'biasHidden' || state.phase === 'actHidden') && state.hiddenIdx === i;
+    const isOutActive = state.phase === 'macOutput' && state.inputIdx === i;
+    html += `<div class="arr-cell ${isBeingComputed || isOutActive ? 'active-idx' : ''} ${arrChanged('hidden', i) ? 'changed' : ''}">${state.hidden[i]}</div>`;
+  }
+  html += '</div></div>';
+
+  // Output
+  html += `<div class="field-row"><span class="field-label">output</span><span class="output-bit ${state.output}">${state.output}</span></div>`;
+
+  html += '</div>';
+
+  // Sample controls (reactive only)
+  if (isReactive && sample) {
+    const isActiveWindow = state.phase !== 'idle' && state.phase !== 'done' && state.phase !== 'loadInput';
+    html += `<div class="sample-ctrl ${isActiveWindow ? 'ignored' : ''}">`;
+    html += `<h3>Environment sample at cycle ${currentCycle}</h3>`;
+    html += '<div class="toggle-row"><label style="font-size:11px;color:var(--dim);min-width:50px">start</label>';
+    html += `<div class="toggle ${sample.start ? 'on' : ''}" onclick="toggleStart()"></div>`;
+    html += `<span style="font-size:11px;font-family:monospace">${sample.start}</span></div>`;
+    html += '<div class="input-row"><label>inputs</label>';
+    for (let i = 0; i < 4; i++) {
+      html += `<input type="number" value="${sample.inputs[i]}" min="-128" max="127" onchange="onSampleInputChange(${i}, this.value)">`;
+    }
+    html += '</div>';
+    if (isActiveWindow) html += '<div class="ignored-note">Ignored: timedStep delegates to step during active computation</div>';
+    html += '</div>';
+  }
+
+  colEl.innerHTML = html;
+}
+
+function renderMatchCol() {
+  const el = document.getElementById('matchCol');
+  const op = opTrace[currentCycle], rx = rxTrace[currentCycle];
+  const match = statesEqual(op, rx);
+
+  let html = `<div class="match-indicator ${match ? 'match' : 'diverge'}">${match ? '\u2550 MATCH \u2550' : '\u2260 DIVERGE \u2260'}</div>`;
+
+  const fields = [
+    ['phase', op.phase === rx.phase],
+    ['hIdx', op.hiddenIdx === rx.hiddenIdx],
+    ['iIdx', op.inputIdx === rx.inputIdx],
+    ['acc', op.accumulator === rx.accumulator],
+    ['regs', op.regs.every((v, i) => v === rx.regs[i])],
+    ['hidden', op.hidden.every((v, i) => v === rx.hidden[i])],
+    ['output', op.output === rx.output],
+  ];
+  fields.forEach(([name, eq]) => {
+    html += `<div class="field-cmp ${eq ? 'eq' : 'ne'}" title="${name}: ${eq ? 'equal' : 'different'}"></div>`;
+  });
+
+  el.innerHTML = html;
+
+  // Track observations
+  if (!match) {
+    if (currentCycle >= 2 && currentCycle <= 75) observations.add('data-diverge-active');
+    else observations.add('diverge');
+  }
+  if (currentCycle >= 2 && currentCycle <= 75 && match) observations.add('match-active');
+  if (currentCycle === 76) observations.add('liveness');
+  if (currentCycle > 76) observations.add('post-done');
+  if (currentCycle > 0) {
+    const prevOp = opTrace[currentCycle - 1];
+    if ((prevOp.phase === 'macHidden' && prevOp.inputIdx >= INPUT_COUNT) ||
+        (prevOp.phase === 'macOutput' && prevOp.inputIdx >= HIDDEN_COUNT))
+      observations.add('guard');
+  }
+}
+
+function renderOpLog() {
+  const el = document.getElementById('opLog');
+  if (currentCycle === 0) {
+    el.innerHTML = '<span class="log-label">State</span><div class="log-text">Cycle 0. Both models at initial state.</div>';
+    return;
+  }
+  const sample = samples[currentCycle - 1];
+  const opDesc = describeOp(opTrace[currentCycle - 1], opTrace[currentCycle], null, false);
+  const rxDesc = describeOp(rxTrace[currentCycle - 1], rxTrace[currentCycle], sample, true);
+
+  el.innerHTML = `
+    <span class="log-label">Last step</span>
+    <div class="log-text">
+      <div><strong style="color:var(--blue)">Op:</strong> ${opDesc}</div>
+      <div><strong style="color:var(--teal)">Rx:</strong> ${rxDesc}</div>
+    </div>`;
+}
+
+function renderAnnotation() {
+  const el = document.getElementById('annotation');
+  const ann = getAnnotation(currentCycle);
+  const zoneColors = { interface: 'var(--blue)', active: 'var(--accent)', done: 'var(--green)', post: 'var(--dim)', diverge: 'var(--red)' };
+  el.innerHTML = `
+    <span class="ann-label" style="color:${zoneColors[ann.zone] || 'var(--dim)'}">Insight</span>
+    <div>
+      <div>${ann.text}</div>
+      ${ann.theorem ? `<div class="ann-theorem">${ann.theorem}</div>` : ''}
+    </div>`;
+}
+
+function updatePrompt() {
+  const parts = ['I stepped through a 76-cycle reactive hardware FSM (Lean 4 formalization of a 4\u21928\u21921 MLP inference accelerator).'];
+  if (observations.has('match-active')) parts.push('I observed that the operational (step/run) and reactive (timedStep/rtlTrace) models produce identical states during the active window [2,75].');
+  if (observations.has('data-diverge-active')) parts.push('I saw that with different inputs captured at LOAD_INPUT, the control flow matches but datapath values diverge \u2014 the bridge theorem connects traces only when capturedInput matches.');
+  if (observations.has('guard')) parts.push('I saw guard cycles where inputIdx reaches the terminal value and no MAC computation occurs (SameDataFields preserved).');
+  if (observations.has('liveness')) parts.push('I reached cycle 76 (DONE) \u2014 liveness achieved in exactly totalCycles steps.');
+  if (observations.has('post-done')) parts.push('I explored post-transaction behavior: the reactive model holds state with start=true or releases to idle with start=false.');
+  if (observations.has('diverge')) parts.push('I observed divergence between the two models at the interface phases (idle/loadInput/done) where the reactive model responds to external signals.');
+  if (observations.size === 0) parts.push('I have not yet explored any cycles. Step forward to begin.');
+  parts.push('\nPlease explain the proof techniques that establish these properties, especially the control projection and how native_decide handles the finite control space.');
+  document.getElementById('promptText').textContent = parts.join(' ');
+}
+
+function render() {
+  document.getElementById('cycleNum').textContent = currentCycle;
+  renderTimeline();
+  const prevOp = currentCycle > 0 ? opTrace[currentCycle - 1] : null;
+  const prevRx = currentCycle > 0 ? rxTrace[currentCycle - 1] : null;
+  renderStateCol(document.getElementById('opCol'), opTrace[currentCycle], prevOp, 'Operational Model', 'step / run \u2014 closed system', null, false);
+  renderStateCol(document.getElementById('rxCol'), rxTrace[currentCycle], prevRx, 'Reactive Model', 'timedStep / rtlTrace \u2014 open system', samples[currentCycle], true);
+  renderMatchCol();
+  renderOpLog();
+  renderAnnotation();
+  updatePrompt();
+}
+
+// ═══════════════════════════════════════════
+// Controls
+// ═══════════════════════════════════════════
+function stepForward() { if (currentCycle < MAX_CYCLES) { currentCycle++; render(); } }
+function stepBack() { if (currentCycle > 0) { currentCycle--; render(); } }
+function reset() { currentCycle = 0; observations.clear(); render(); }
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('playBtn').classList.toggle('active', playing);
+  document.getElementById('playBtn').textContent = playing ? 'Pause' : 'Play';
+  if (playing) {
+    playTimer = setInterval(() => {
+      if (currentCycle >= MAX_CYCLES) { togglePlay(); return; }
+      stepForward();
+    }, 300);
+  } else {
+    clearInterval(playTimer);
+  }
+}
+
+function toggleStart() {
+  samples[currentCycle].start = !samples[currentCycle].start;
+  recompute();
+  render();
+}
+
+function onSampleInputChange(idx, val) {
+  samples[currentCycle].inputs[idx] = Math.max(-128, Math.min(127, parseInt(val) || 0));
+  recompute();
+  render();
+}
+
+function onOpInputChange() {
+  opInput = [
+    parseInt(document.getElementById('opIn0').value) || 0,
+    parseInt(document.getElementById('opIn1').value) || 0,
+    parseInt(document.getElementById('opIn2').value) || 0,
+    parseInt(document.getElementById('opIn3').value) || 0,
+  ];
+  if (currentScenario === 'normal') {
+    samples.forEach(s => s.inputs = [...opInput]);
+  }
+  recompute();
+  render();
+}
+
+function copyPrompt() {
+  const btn = document.getElementById('copyBtn');
+  navigator.clipboard.writeText(document.getElementById('promptText').textContent).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1200);
+  });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'l') stepForward();
+  if (e.key === 'ArrowLeft' || e.key === 'h') stepBack();
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'r') reset();
+});
+
+// ═══════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════
+initSamples();
+recompute();
+render();
+</script>
+</body>
+</html>
