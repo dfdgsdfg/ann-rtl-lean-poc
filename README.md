@@ -57,10 +57,12 @@ flowchart LR
   contract --> rtlsynth["rtl-synthesis<br/>generated controller branch<br/>rtl-synthesis/results/canonical/"]
   contract --> formalize["formalize<br/>Lean model + proof"]
   formalize --> sparkle["rtl-formalize-synthesis<br/>Lean/Sparkle generated full-core RTL<br/>rtl-formalize-synthesis/results/canonical/"]
+  contract --> hls4ml["rtl-hls4ml<br/>hls4ml generated full-core RTL<br/>rtl-hls4ml/results/canonical/"]
 
   rtl --> sim["simulations<br/>shared executable regression"]
   rtlsynth --> sim
   sparkle --> sim
+  hls4ml --> sim
 
   rtl --> smt["smt<br/>shared top-level solver-backed checks"]
   rtlsynth --> smt
@@ -69,6 +71,7 @@ flowchart LR
   rtl --> experiments["experiments<br/>branch compare / QoR / post-synth"]
   rtlsynth --> experiments
   sparkle --> experiments
+  hls4ml --> experiments
 
   rtl --> asic["asic<br/>synthesis / physical-design inputs"]
   rtlsynth --> asic
@@ -91,15 +94,16 @@ flowchart LR
 
 ### RTL Branches
 
-The repository intentionally keeps three RTL implementation styles:
+The repository intentionally keeps four RTL implementation styles:
 
 | Branch | Style | Canonical surface | Purpose |
 | --- | --- | --- | --- |
 | `rtl` | layered baseline RTL | `rtl/results/canonical/{sv,blueprint}/` | canonical implementation baseline |
 | `rtl-synthesis` | generated controller + reused datapath | `rtl-synthesis/results/canonical/{sv,blueprint}/` | controller-synthesis experiment |
 | `rtl-formalize-synthesis` | monolithic generated full-core + stable wrapper | `rtl-formalize-synthesis/results/canonical/{sv,blueprint}/` | Lean/Sparkle full-core generation experiment |
+| `rtl-hls4ml` | hls4ml generated full-core RTL | `rtl-hls4ml/results/canonical/{sv,blueprint}/` | hls4ml generation comparison experiment |
 
-The common comparison contract is the branch-local `mlp_core` surface, not a forced 3-way per-layer symmetry.
+The common comparison contract is the branch-local `mlp_core` surface, not a forced per-layer symmetry.
 
 For simple whole-circuit visual comparison, each branch also exposes `results/canonical/blueprint/blueprint.svg` as a flattened top-level overview artifact. The stable comparable boundary remains `blueprint/mlp_core.svg`.
 
@@ -131,6 +135,9 @@ Every supported RTL branch is expected to pass:
   - wrapper regeneration / freshness
   - wrapper structural validation
   - raw-core review artifact
+- `rtl-hls4ml`
+  - wrapper generation from frozen contract
+  - canonical SV freshness check
 
 ### Branch Comparison
 
@@ -194,6 +201,11 @@ python3 rtl-formalize-synthesis/runners/emit.py --emit --proof-lane smt
 python3 rtl-formalize-synthesis/runners/blueprint.py
 python3 simulations/runners/run.py --branch rtl-formalize-synthesis --profile shared --simulator all
 
+# rtl-hls4ml
+python3 rtl-hls4ml/runners/emit.py --emit
+python3 rtl-hls4ml/runners/blueprint.py
+python3 simulations/runners/run.py --branch rtl-hls4ml --profile shared --simulator all
+
 # experiments
 python3 experiments/runners/run.py --family branch-compare
 python3 experiments/runners/run.py --family qor
@@ -208,6 +220,7 @@ Checked-in canonical artifacts live under each domain or branch:
 - `rtl/results/canonical/`
 - `rtl-synthesis/results/canonical/`
 - `rtl-formalize-synthesis/results/canonical/`
+- `rtl-hls4ml/results/canonical/`
 
 For `rtl-formalize-synthesis`, the checked-in `verification_manifest.json` now records the selected Lean proof lane under `proof_lane` and downstream simulation/SMT/experiment summaries surface the same provenance. The default emitted lane remains vanilla; use `make rtl-formalize-synthesis-emit ARGS="--proof-lane smt"` or the equivalent runner flag to switch to `MlpCoreSmt`.
 
@@ -261,6 +274,7 @@ Vendor/tool bootstrap helpers remain under `scripts/`, for example:
 - `rtl/`: baseline canonical RTL
 - `rtl-synthesis/`: controller-synthesis branch
 - `rtl-formalize-synthesis/`: Lean/Sparkle RTL-generation branch
+- `rtl-hls4ml/`: hls4ml RTL-generation branch
 - `formalize/`: Lean proof baseline
 - `formalize-smt/`: optional SMT-backed Lean proof lane
 - `simulations/`: shared benches and simulation runners

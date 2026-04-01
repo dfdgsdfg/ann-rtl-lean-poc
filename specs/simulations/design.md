@@ -37,6 +37,7 @@ Its branch-specific executable add-ons are:
 - `rtl/`: internal observability replay over the layered baseline internals
 - `rtl-synthesis`: mixed-path internal observability replay when the controller adapter boundary must be inspected
 - `rtl-formalize-synthesis`: no additional executable add-on required while the shared wrapper-level `mlp_core` bench remains the right boundary
+- `rtl-hls4ml`: no additional executable add-on required; validated through the shared `mlp_core` bench
 
 This domain does not own:
 
@@ -66,6 +67,7 @@ Branch-specific simulation entry points should remain separate from the canonica
 - `make sim`: full-core regression for the hand-written `rtl/` implementation
 - `make rtl-synthesis-sim`: mixed-path regression that swaps in the synthesized controller while keeping the hand-written datapath semantics and shared vectors, but resolves the compared assembly through `rtl-synthesis/results/canonical/sv/`
 - `make rtl-formalize-synthesis-sim`: shared full-core regression for the Sparkle-generated `rtl-formalize-synthesis` wrapper at the `mlp_core` boundary
+- `make rtl-hls4ml-sim`: shared full-core regression for the hls4ml-generated `rtl-hls4ml` modules at the `mlp_core` boundary
 
 The simulation layer must say plainly what the branch generates, how it is integrated, and where it is validated:
 
@@ -78,6 +80,7 @@ It should also say which normalized branch-local export tree is being simulated:
 - `rtl/results/canonical/sv/`
 - `rtl-synthesis/results/canonical/sv/`
 - `rtl-formalize-synthesis/results/canonical/sv/`
+- `rtl-hls4ml/results/canonical/sv/`
 
 The user should not need to manually copy weights or hand-edit vectors after training.
 
@@ -85,11 +88,12 @@ Vector generation should synthesize dedicated positive, zero, and negative score
 
 ## 5. Supported RTL Branches
 
-The simulation design supports three RTL implementation tracks with different current scopes:
+The simulation design supports four RTL implementation tracks with different current scopes:
 
 - `rtl/`: the canonical full-core implementation and the source of the shared vector-driven regression bench
 - `rtl-synthesis`: a controller-generated flow that is simulated as a mixed path by reusing the baseline datapath semantics and replacing the controller module boundary, while still presenting a branch-local full comparable export tree
 - `rtl-formalize-synthesis`: a Sparkle-generated full-core path that is simulated at the shared `mlp_core` boundary
+- `rtl-hls4ml`: an hls4ml-generated full-core path that is simulated at the shared `mlp_core` boundary, validation-backed only
 
 This split is intentional as long as the scope is declared in commands, summaries, and experiment notes.
 
@@ -133,7 +137,7 @@ Once the datapath is stable, the regression suite can expand to random sweeps an
 
 For multi-branch support, each regression result should also record:
 
-- implementation branch: `rtl/`, `rtl-synthesis`, or `rtl-formalize-synthesis`
+- implementation branch: `rtl/`, `rtl-synthesis`, `rtl-formalize-synthesis`, or `rtl-hls4ml`
 - generation scope, integration scope, and validation scope
 - bench identity: shared vector bench or branch-local comparison bench
 - contract/vector provenance shared across the compared branches
@@ -150,7 +154,7 @@ This avoids maintaining duplicate weight definitions by hand.
 
 The generated vector file should remain plain text, but it should carry enough information for the bench to distinguish positive, zero, and negative expected scores instead of only the final class bit.
 
-The frozen contract and generated vectors are the common semantic anchor for `rtl/`, `rtl-synthesis`, and `rtl-formalize-synthesis`.
+The frozen contract and generated vectors are the common semantic anchor for `rtl/`, `rtl-synthesis`, `rtl-formalize-synthesis`, and `rtl-hls4ml`.
 
 ## 9. Recommended Layout
 
@@ -175,6 +179,7 @@ Layout rules:
 - the baseline full-core bench should stay distinct from controller-scoped comparison benches
 - `rtl-synthesis` should reuse the shared full-core bench when it is only swapping the controller boundary
 - `rtl-formalize-synthesis` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
+- `rtl-hls4ml` should reuse the shared full-core bench when it preserves the `mlp_core` boundary
 - branch-local simulation files should be named so their scope is obvious from the path alone
 - branch-local compared RTL should resolve through aligned `*/sv/` trees rather than through hidden cross-branch source references
 - each branch should pair the compared RTL tree with at least `blueprint/mlp_core.svg`

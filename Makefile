@@ -2,7 +2,7 @@
        formalize formalize-check-tools formalize-smt formalize-smt-check-tools verify \
        vendor-tools-prepare vendor-synthesis-tools-prepare vendor-openlane-prepare \
        sim sim-internal sim-check-tools sim-iverilog sim-verilator sim-internal-iverilog sim-internal-verilator clean-sim sim-vectors rtl-blueprint \
-       smt smt-check-tools smt-rtl-control smt-rtl-synthesis smt-rtl-formalize-synthesis \
+       smt smt-check-tools smt-rtl-control smt-rtl-synthesis smt-rtl-formalize-synthesis smt-rtl-hls4ml \
        smt-contract-assumptions smt-contract-overflow smt-contract-equivalence clean-smt \
        experiments experiments-artifact-consistency experiments-semantic-closure \
        experiments-branch-compare experiments-qor experiments-post-synth clean-experiments \
@@ -11,7 +11,9 @@
        rtl-synthesis-verilator rtl-synthesis-internal-iverilog rtl-synthesis-internal-verilator clean-rtl-synthesis \
        rtl-formalize-synthesis-prepare rtl-formalize-synthesis-emit rtl-formalize-synthesis-emit-full-core \
        rtl-formalize-synthesis-build rtl-formalize-synthesis-blueprint rtl-formalize-synthesis-canonical rtl-formalize-synthesis-sim rtl-formalize-synthesis-iverilog \
-       rtl-formalize-synthesis-verilator rtl-formalize-synthesis-sim-check-tools clean-rtl-formalize-synthesis
+       rtl-formalize-synthesis-verilator rtl-formalize-synthesis-sim-check-tools clean-rtl-formalize-synthesis \
+       rtl-hls4ml rtl-hls4ml-emit rtl-hls4ml-check rtl-hls4ml-blueprint rtl-hls4ml-canonical \
+       rtl-hls4ml-sim rtl-hls4ml-iverilog rtl-hls4ml-verilator clean-rtl-hls4ml
 
 ANN_CLI := python3 ann/runners/main.py
 CONTRACT_FREEZE_RUNNER := python3 contract/runners/freeze.py
@@ -51,6 +53,13 @@ RTL_SYNTHESIS_CANONICAL_BLUEPRINT_DIR := $(RTL_SYNTHESIS_CANONICAL_DIR)/blueprin
 RTL_FORMALIZE_CANONICAL_DIR := rtl-formalize-synthesis/results/canonical
 RTL_FORMALIZE_CANONICAL_SV_DIR := $(RTL_FORMALIZE_CANONICAL_DIR)/sv
 RTL_FORMALIZE_CANONICAL_BLUEPRINT_DIR := $(RTL_FORMALIZE_CANONICAL_DIR)/blueprint
+RTL_HLS4ML_EMIT_RUNNER := python3 rtl-hls4ml/runners/emit.py
+RTL_HLS4ML_BLUEPRINT_RUNNER := python3 rtl-hls4ml/runners/blueprint.py
+RTL_HLS4ML_BUILD_ROOT := $(BUILD_ROOT)/rtl-hls4ml
+RTL_HLS4ML_REPORT_ROOT := $(REPORTS_ROOT)/rtl-hls4ml
+RTL_HLS4ML_CANONICAL_DIR := rtl-hls4ml/results/canonical
+RTL_HLS4ML_CANONICAL_SV_DIR := $(RTL_HLS4ML_CANONICAL_DIR)/sv
+RTL_HLS4ML_CANONICAL_BLUEPRINT_DIR := $(RTL_HLS4ML_CANONICAL_DIR)/blueprint
 
 # --- ANN targets ---
 
@@ -277,6 +286,33 @@ rtl-formalize-synthesis-verilator: contract-preflight rtl-formalize-synthesis-si
 clean-rtl-formalize-synthesis:
 	rm -rf $(RTL_FORMALIZE_BUILD_ROOT) $(RTL_FORMALIZE_REPORT_ROOT)
 
+# --- rtl-hls4ml targets ---
+
+rtl-hls4ml: rtl-hls4ml-emit
+
+rtl-hls4ml-emit:
+	$(RTL_HLS4ML_EMIT_RUNNER) --emit
+
+rtl-hls4ml-check:
+	$(RTL_HLS4ML_EMIT_RUNNER) --check
+
+rtl-hls4ml-blueprint:
+	$(RTL_HLS4ML_BLUEPRINT_RUNNER)
+
+rtl-hls4ml-canonical: rtl-hls4ml-emit rtl-hls4ml-blueprint
+
+rtl-hls4ml-sim: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-hls4ml --profile shared --simulator all --build-root $(RTL_HLS4ML_BUILD_ROOT) --report-root $(RTL_HLS4ML_REPORT_ROOT)
+
+rtl-hls4ml-iverilog: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-hls4ml --profile shared --simulator iverilog --build-root $(RTL_HLS4ML_BUILD_ROOT) --report-root $(RTL_HLS4ML_REPORT_ROOT)
+
+rtl-hls4ml-verilator: contract-preflight sim-check-tools
+	$(SIM_RUNNER) --branch rtl-hls4ml --profile shared --simulator verilator --build-root $(RTL_HLS4ML_BUILD_ROOT) --report-root $(RTL_HLS4ML_REPORT_ROOT)
+
+clean-rtl-hls4ml:
+	rm -rf $(RTL_HLS4ML_BUILD_ROOT) $(RTL_HLS4ML_REPORT_ROOT)
+
 rtl-synthesis-check-tools:
 	@if ! command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1; then $(MAKE) vendor-synthesis-tools-prepare; fi
 	@command -v $(RTL_SYNTHESIS_LTLSYNT) >/dev/null 2>&1 || { echo "missing required tool: $(RTL_SYNTHESIS_LTLSYNT)"; exit 1; }
@@ -344,6 +380,9 @@ smt-rtl-synthesis:
 
 smt-rtl-formalize-synthesis: rtl-formalize-synthesis-emit
 	$(SMT_RTL_RUNNER) --branch rtl-formalize-synthesis --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
+
+smt-rtl-hls4ml: smt-check-tools
+	$(SMT_RTL_RUNNER) --branch rtl-hls4ml --yosys $(SMT_YOSYS) --smtbmc $(SMT_SMTBMC) --solver $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)
 
 smt-contract-overflow:
 	$(SMT_CONTRACT_OVERFLOW_RUNNER) --z3 $(SMT_Z3) --build-root $(SMT_BUILD_ROOT) --report-root $(SMT_REPORT_ROOT)

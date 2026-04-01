@@ -32,11 +32,13 @@ BRANCH_BLUEPRINTS = {
     "rtl": ROOT / "rtl" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
     "rtl-synthesis": ROOT / "rtl-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
     "rtl-formalize-synthesis": ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
+    "rtl-hls4ml": ROOT / "rtl-hls4ml" / "results" / "canonical" / "blueprint" / "mlp_core.svg",
 }
 BRANCH_EXPORT_TREES = {
     "rtl": ROOT / "rtl" / "results" / "canonical" / "sv",
     "rtl-synthesis": ROOT / "rtl-synthesis" / "results" / "canonical" / "sv",
     "rtl-formalize-synthesis": ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv",
+    "rtl-hls4ml": ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv",
 }
 BRANCH_SCOPES = {
     "rtl": {
@@ -62,17 +64,26 @@ BRANCH_SCOPES = {
             "shared": "shared_full_core_mlp_core_regression",
         },
     },
+    "rtl-hls4ml": {
+        "generation_scope": "hls4ml_generated_full_core_rtl",
+        "integration_scope": "full_core_mlp_core",
+        "validation_scopes": {
+            "shared": "shared_full_core_mlp_core_regression",
+        },
+    },
 }
 
 BRANCH_BUILD_ROOTS = {
     "rtl": ROOT / "build" / "rtl",
     "rtl-synthesis": ROOT / "build" / "rtl-synthesis",
     "rtl-formalize-synthesis": ROOT / "build" / "rtl-formalize-synthesis",
+    "rtl-hls4ml": ROOT / "build" / "rtl-hls4ml",
 }
 BRANCH_REPORT_ROOTS = {
     "rtl": ROOT / "reports" / "rtl",
     "rtl-synthesis": ROOT / "reports" / "rtl-synthesis",
     "rtl-formalize-synthesis": ROOT / "reports" / "rtl-formalize-synthesis",
+    "rtl-hls4ml": ROOT / "reports" / "rtl-hls4ml",
 }
 BRANCH_SOURCES = {
     "rtl": [
@@ -94,6 +105,13 @@ BRANCH_SOURCES = {
     "rtl-formalize-synthesis": [
         ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
         ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv",
+    ],
+    "rtl-hls4ml": [
+        ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mac_unit.sv",
+        ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "relu_unit.sv",
+        ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "controller.sv",
+        ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "weight_rom.sv",
+        ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mlp_core.sv",
     ],
 }
 SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
@@ -363,6 +381,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.profile == "internal" and args.branch == "rtl-formalize-synthesis":
         raise SystemExit("internal simulation profile is unsupported for rtl-formalize-synthesis")
+    if args.profile == "internal" and args.branch == "rtl-hls4ml":
+        raise SystemExit("internal simulation profile is unsupported for rtl-hls4ml")
 
     ensure_tools(args.simulator, iverilog=args.iverilog, vvp=args.vvp, verilator=args.verilator)
     validate_canonical_contract_bundle()

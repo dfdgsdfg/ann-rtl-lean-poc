@@ -98,6 +98,14 @@ SPARKLE_LEAN_TOOLCHAIN = SPARKLE_PROJECT_DIR / "lean-toolchain"
 SPARKLE_LAKE_MANIFEST = SPARKLE_PROJECT_DIR / "lake-manifest.json"
 SPARKLE_FULL_CORE_RTL = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv"
 SPARKLE_FULL_CORE_WRAPPER = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv"
+HLS4ML_CANONICAL_RTL = [
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "weight_rom.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mlp_core.sv",
+]
+HLS4ML_BLUEPRINT = ROOT / "rtl-hls4ml" / "results" / "canonical" / "blueprint" / "mlp_core.svg"
 SPARKLE_VERIFICATION_MANIFEST = (
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 )
@@ -1543,6 +1551,32 @@ def prepare_sparkle_branch(branch_root: Path) -> BranchManifest:
     return manifest
 
 
+def prepare_hls4ml_branch(branch_root: Path) -> BranchManifest:
+    ensure_dir(branch_root)
+    manifest = BranchManifest(
+        branch="rtl-hls4ml",
+        artifact_kind="hls4ml_generated_full_core_rtl",
+        assembly_boundary="full_core_mlp_core",
+        evidence_boundary=TOP_LEVEL_BENCH_KIND,
+        evidence_method="dual_simulator_regression",
+        experiment_status=SOFT_GATE_EXPERIMENT,
+        claim_scope="shared mlp_core top-level comparison between baseline RTL and hls4ml-generated full-core RTL",
+        source_paths=list(HLS4ML_CANONICAL_RTL),
+        artifacts={"blueprint_mlp_core": HLS4ML_BLUEPRINT},
+        provenance={
+            "source_kind": "hls4ml_generated_full_core_rtl",
+            "emit_command": "make rtl-hls4ml-emit",
+            "canonical_rtl_exists": all(path.exists() for path in HLS4ML_CANONICAL_RTL),
+        },
+        simulation_profile=make_simulation_profile(
+            bench_kind=TOP_LEVEL_BENCH_KIND,
+            required_simulators=["iverilog", "verilator"],
+        ),
+    )
+    write_json(branch_root / "manifest.json", manifest.summary())
+    return manifest
+
+
 def prepare_branch_manifests(
     args: argparse.Namespace,
     build_root: Path,
@@ -1556,6 +1590,7 @@ def prepare_branch_manifests(
         "rtl": prepare_baseline_branch(branch_root / "rtl"),
         "rtl-synthesis": prepare_rtl_synthesis_branch(branch_root / "rtl-synthesis", args, branch_report_root / "rtl-synthesis"),
         "rtl-formalize-synthesis": prepare_sparkle_branch(branch_root / "rtl-formalize-synthesis"),
+        "rtl-hls4ml": prepare_hls4ml_branch(branch_root / "rtl-hls4ml"),
     }
     return manifests
 

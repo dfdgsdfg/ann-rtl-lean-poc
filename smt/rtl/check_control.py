@@ -22,6 +22,7 @@ DEFAULT_SUMMARIES = {
     "rtl": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl" / "summary.json",
     "rtl-synthesis": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-synthesis" / "summary.json",
     "rtl-formalize-synthesis": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-formalize-synthesis" / "summary.json",
+    "rtl-hls4ml": ROOT / "reports" / "smt" / "canonical" / "rtl" / "rtl-hls4ml" / "summary.json",
 }
 
 BASELINE_RTL_SOURCES = [
@@ -44,6 +45,13 @@ SPARKLE_RTL_SOURCES = [
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "mlp_core.sv",
     ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "sv" / "sparkle_mlp_core.sv",
 ]
+HLS4ML_RTL_SOURCES = [
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "controller.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mac_unit.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "mlp_core.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "relu_unit.sv",
+    ROOT / "rtl-hls4ml" / "results" / "canonical" / "sv" / "weight_rom.sv",
+]
 SPARKLE_VERIFICATION_MANIFEST = ROOT / "rtl-formalize-synthesis" / "results" / "canonical" / "verification_manifest.json"
 
 COMMON_SPEC_SOURCES = [
@@ -59,6 +67,10 @@ BRANCH_SPEC_SOURCES = {
     "rtl-formalize-synthesis": [
         "specs/rtl-formalize-synthesis/requirement.md",
         "specs/rtl-formalize-synthesis/design.md",
+    ],
+    "rtl-hls4ml": [
+        "specs/rtl-hls4ml/requirement.md",
+        "specs/rtl-hls4ml/design.md",
     ],
 }
 
@@ -227,6 +239,12 @@ def formal_jobs(branch: str) -> list[FormalJob]:
             description_prefix="RTL-synthesis mixed-path",
         )
 
+    if branch == "rtl-hls4ml":
+        return mlp_core_jobs(
+            HLS4ML_RTL_SOURCES,
+            description_prefix="hls4ml-generated",
+        )
+
     if branch == "rtl-formalize-synthesis":
         return [
             FormalJob(
@@ -284,6 +302,8 @@ def branch_rtl_sources(branch: str) -> list[Path]:
         return RTL_SYNTHESIS_RTL_SOURCES
     if branch == "rtl-formalize-synthesis":
         return SPARKLE_RTL_SOURCES
+    if branch == "rtl-hls4ml":
+        return HLS4ML_RTL_SOURCES
     return BASELINE_RTL_SOURCES
 
 

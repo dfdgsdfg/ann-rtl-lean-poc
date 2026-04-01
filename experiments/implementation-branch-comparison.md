@@ -16,7 +16,7 @@ The current repository does **not** have a direct Lean-to-SystemVerilog backend.
 
 ## Recommended Scope
 
-Split the work into two distinct experiment tracks:
+Split the work into three distinct experiment tracks:
 
 1. **Generated RTL from Lean-adjacent sources**
 
@@ -32,13 +32,18 @@ This means generating only the controller/FSM from a temporal or GR(1)-style spe
 
 The arithmetic datapath should stay anchored to the frozen contract. Reactive synthesis is a plausible experiment for the controller; it is not a practical replacement for the full ANN datapath flow in this repository.
 
+3. **HLS-based full-core generation experiments**
+
+This means generating full-core RTL from the frozen contract using ML-to-hardware tools such as hls4ml. The generated output is wrapped behind the standard `mlp_core` interface and validated purely through simulation regression. This track has no formal proof story; its value is as a comparison point against the baseline and the formally-backed branches.
+
 ## Guardrails
 
 - Do not overwrite `rtl/results/canonical/sv/*.sv` with generated outputs.
-- Keep generated candidates in clearly separate branch-owned paths such as `experiments/rtl-formalize-synthesis/<tool-or-variant>/` or `experiments/rtl-synthesis/<tool-or-variant>/`.
+- Keep generated candidates in clearly separate branch-owned paths such as `rtl-formalize-synthesis/`, `rtl-synthesis/`, or `rtl-hls4ml/`.
 - Treat `contract/results/canonical/weights.json` as the shared semantic anchor for all implementation variants.
 - Treat `formalize/` as the semantic/proof anchor until a trustworthy generator exists.
 - Treat reactive synthesis as controller-generated unless there is a precise story for arithmetic and ROM integration.
+- Treat hls4ml-generated RTL as validation-backed only; it has no formal proof connection to the Lean models.
 
 ## Comparison Matrix
 

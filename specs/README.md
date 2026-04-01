@@ -18,6 +18,7 @@ Each domain may contain:
 - `smt`: solver-backed verification outside Lean
 - `rtl-formalize-synthesis`: Lean Signal-DSL hardware generation via Sparkle
 - `rtl-synthesis`: reactive controller synthesis from temporal specifications
+- `rtl-hls4ml`: hls4ml-based RTL generation for comparison
 - `simulations`: shared executable validation for branch-local RTL exports
 - `experiments`: comparison, characterization, and reporting over validated branches
 - `asic`: synthesis and physical-design flow
@@ -32,6 +33,9 @@ Optional controller-synthesis branch:
 
 Optional Lean-generated RTL branch:
 `ann -> contract -> formalize -> rtl-formalize-synthesis -> simulations + smt -> asic`
+
+Optional hls4ml-generated RTL branch:
+`ann -> contract -> rtl-hls4ml -> simulations -> asic`
 
 Cross-branch comparison and characterization complement:
 `rtl branches -> experiments`
@@ -58,6 +62,7 @@ Step four applies to every supported RTL branch, not only to the baseline. The s
 - `rtl/results/canonical/sv/mlp_core.sv`
 - `rtl-synthesis/results/canonical/sv/mlp_core.sv`
 - `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`
+- `rtl-hls4ml/results/canonical/sv/mlp_core.sv`
 
 ## Verification Status Vocabulary
 
@@ -75,14 +80,15 @@ The `simulations`, `smt`, and `experiments` specs should state the generation, i
 - `rtl/`: full-core generation, full-core integration, and full-core validation at `mlp_core`
 - `rtl-synthesis`: controller generation with mixed-path `mlp_core` integration unless a wider generated replacement is declared; however, its branch-local export surface must still materialize a full comparable `mlp_core` tree
 - `rtl-formalize-synthesis`: full-core generation with full-core `mlp_core` integration and validation, or another explicitly declared generated scope
+- `rtl-hls4ml`: full-core generation with full-core `mlp_core` integration and validation, validation-backed only (no formal proofs)
 
 They should also prefer a branch-first layout:
 
 - `experiments/` should use branch folders directly
 - `simulations/` should keep shared assets separate from branch-local benches
 - `smt/` should distinguish shared top-level families from branch-owned required formal add-ons
-- branch-local comparable RTL exports should align on `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`
-- branch-local blueprint exports should align on `rtl/results/canonical/blueprint/`, `rtl-synthesis/results/canonical/blueprint/`, and `rtl-formalize-synthesis/results/canonical/blueprint/`
+- branch-local comparable RTL exports should align on `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, `rtl-formalize-synthesis/results/canonical/sv/`, and `rtl-hls4ml/results/canonical/sv/`
+- branch-local blueprint exports should align on `rtl/results/canonical/blueprint/`, `rtl-synthesis/results/canonical/blueprint/`, `rtl-formalize-synthesis/results/canonical/blueprint/`, and `rtl-hls4ml/results/canonical/blueprint/`
 
 The specs should distinguish between domain source trees and comparable export trees:
 
@@ -94,15 +100,16 @@ The specs should distinguish between domain source trees and comparable export t
 
 ## RTL Branch Styles
 
-The repository intentionally does not force the three RTL branches into one internal decomposition style. The common comparison contract is the branch-local `mlp_core` surface; deeper internal review artifacts may differ by branch.
+The repository intentionally does not force the four RTL branches into one internal decomposition style. The common comparison contract is the branch-local `mlp_core` surface; deeper internal review artifacts may differ by branch.
 
 | Branch | Internal style | Stable comparable surface | Main pros | Main cons | Repository position |
 | --- | --- | --- | --- | --- | --- |
 | `rtl` | layered full-core RTL | explicit `controller/mac/relu/weight_rom/mlp_core` modules | inspectable, direct per-module review, good baseline for reuse | verbose manual coordination across module boundaries | accepted; baseline clarity and debuggability matter more than minimizing module count |
-| `rtl-synthesis` | adapter-based mixed path | generated controller core plus compatibility wrapper plus reused baseline datapath | generation scope stays narrow, mixed-path proof target is explicit, existing datapath benches remain usable | internal layers are not uniformly 3-way comparable, adapter logic becomes a semantic bridge | accepted; the branch is judged primarily at the mixed-path `mlp_core` boundary, not by per-layer symmetry |
+| `rtl-synthesis` | adapter-based mixed path | generated controller core plus compatibility wrapper plus reused baseline datapath | generation scope stays narrow, mixed-path proof target is explicit, existing datapath benches remain usable | internal layers are not uniformly comparable, adapter logic becomes a semantic bridge | accepted; the branch is judged primarily at the mixed-path `mlp_core` boundary, not by per-layer symmetry |
 | `rtl-formalize-synthesis` | monolithic raw full-core plus stable wrapper | raw emitted full-core module plus stable `mlp_core` adapter | proof/emission target aligns with full-core semantics, fewer human-imposed internal boundaries | per-layer comparison is weak, wrapper packing/reset contract must be documented and checked, localized debug is harder | accepted; this branch optimizes for full-core semantic alignment rather than for per-layer structural parity |
+| `rtl-hls4ml` | layered full-core RTL generated from contract | explicit `controller/mac/relu/weight_rom/mlp_core` modules matching baseline decomposition | direct comparison with baseline, familiar module structure, no wrapper complexity | no formal proof story, validation-backed only | accepted; this branch provides an hls4ml comparison point with the simplest trust model |
 
-The specs should therefore not require a uniform 3-way per-layer comparison across all RTL branches. The mandatory common comparison surface is:
+The specs should therefore not require a uniform per-layer comparison across all RTL branches. The mandatory common comparison surface is:
 
 - `*/results/canonical/sv/mlp_core.sv`
 - `*/results/canonical/blueprint/mlp_core.svg`

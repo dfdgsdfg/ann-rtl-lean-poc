@@ -6,13 +6,15 @@ The Lean formalization proves that a model of the FSM computes the correct outpu
 
 Hand-writing the Verilog and hoping it matches the model is the baseline approach, and it works. But the correspondence is maintained by design discipline, not by a theorem. The two generation approaches in this repository are different strategies for narrowing that gap.
 
-## Two Strategies, Two Directions
+## Three Strategies, Three Directions
 
 **Reactive synthesis** works _outside-in_. You write a temporal specification (TLSF) that describes the controller's behavior in LTL, and a synthesis tool (ltlsynt) constructs an implementation that satisfies it. This is a direct descendant of Amir Pnueli's program: Pnueli introduced temporal logic for reasoning about reactive systems (1977), and his later work with Rosner (1989) posed the synthesis problem — given a temporal specification, automatically construct a system that satisfies it against all environment behaviors. The shift from _verification_ ("given this system, prove it correct") to _synthesis_ ("given this spec, construct a correct system") is the conceptual foundation of this branch. The generated controller is plugged into the existing datapath and validated against the hand-written baseline. The trust flows from the specification inward: if the spec is complete and the tool is sound, the controller is correct by construction.
 
 **Sparkle code generation** works _inside-out_. You re-implement the design in a hardware DSL hosted inside Lean, prove that it refines the same `rtlTrace` that the temporal and correctness proofs reason about, then emit Verilog from the DSL. The trust flows from the proof outward: the refinement theorems are checked by Lean under an explicit trust profile, and the remaining gaps below the theorem boundary are the DSL-to-Verilog lowering path and wrapper reconstruction. The formal viewpoint here is different from Pnueli's game-theoretic framework: it is based on a Lean-hosted signal model together with refinement theorems back to the repository's existing machine semantics.
 
-Neither approach alone eliminates the gap. Reactive synthesis can only handle the controller (not arithmetic), and its connection to the Lean proofs is indirect. Sparkle covers the full core with direct proof connection, but trusts the code generator. Together, they provide independent evidence from different directions against the same baseline.
+**hls4ml generation** works _model-down_. You take the frozen contract weights, construct an hls4ml model matching the MLP architecture, and generate HLS output. A wrapper adapts the result to the repository's standard `mlp_core` interface. The trust model is the simplest of the three: there are no formal proofs and no temporal specifications. All correctness claims are backed entirely by simulation regression against the shared test vectors. The value is as a comparison point: how does an ML-focused generation tool compare to hand-written RTL in area, timing, and readability?
+
+No single approach eliminates the model-to-hardware gap. Reactive synthesis handles only the controller. Sparkle covers the full core with proof connection but trusts the code generator. hls4ml provides fast generation but no formal guarantees. Together, they provide independent evidence from different directions against the same baseline.
 
 ```mermaid
 graph TB
@@ -26,6 +28,11 @@ graph TB
         DSL --> EMIT["Sparkle backend"] --> FULL["generated full core"]
         FULL --> WRAP["wrapper → stable mlp_core"]
         WRAP --> VAL["simulation + SMT<br/>against baseline"]
+    end
+    subgraph "Model-Down: hls4ml Generation"
+        CONTRACT["frozen contract weights"] --> HLS["hls4ml model"] --> HLSGEN["HLS project"]
+        CONTRACT --> WRAPPER["wrapper generator"] --> MLPCORE["stable mlp_core"]
+        MLPCORE --> SIMVAL["simulation regression<br/>against baseline"]
     end
 ```
 
@@ -463,11 +470,14 @@ The reactive synthesis branch (`rtl-synthesis/`) keeps the same layered datapath
 
 The Sparkle branch (`rtl-formalize-synthesis/`) changes the implementation shape most aggressively. The raw generated artifact is a monolithic module with no internal layer boundaries. The `mlp_core` interface is recovered through a wrapper that unpacks a 299-bit packed bus. There is no separate controller or MAC unit to inspect — the entire design is a single flattened circuit.
 
-This asymmetry is intentional. The three branches optimize for different things:
+The hls4ml branch (`rtl-hls4ml/`) mirrors the baseline decomposition most closely. It generates the same layered `controller/mac_unit/relu_unit/weight_rom/mlp_core` module set from the frozen contract. The resulting RTL is structurally identical to the baseline, with its value being the demonstration of an alternative generation path rather than a novel implementation strategy.
+
+This asymmetry is intentional. The four branches optimize for different things:
 
 - `rtl` optimizes for layered clarity
 - `rtl-synthesis` optimizes for a narrow generated-controller claim with minimal datapath disruption
 - `rtl-formalize-synthesis` optimizes for a full-core generated claim aligned with the proof/emission boundary
+- `rtl-hls4ml` optimizes for an hls4ml comparison point with the simplest trust model
 
 The comparison is meaningful not because the branches look similar internally, but because they preserve the same top-level machine contract through different implementation strategies.
 
@@ -479,7 +489,9 @@ When something breaks, the location of the mismatch tells you different things d
 
 - A mismatch in `rtl-formalize-synthesis` is more likely to be about **generation scope, wrapper packing/reset adaptation, or proof-to-emission boundary drift**. There is no preserved per-layer boundary to isolate the failure to a specific submodule.
 
-- A mismatch in the hand-written `rtl` that the other two branches do not reproduce points to a **transcription bug** — the Lean model and the SystemVerilog disagree.
+- A mismatch in `rtl-hls4ml` points to a **contract-to-wrapper generation bug**. Since the branch mirrors the baseline decomposition, the failure can usually be isolated to a specific module (controller schedule, weight ROM constants, or arithmetic unit behavior).
+
+- A mismatch in the hand-written `rtl` that the other branches do not reproduce points to a **transcription bug** — the Lean model and the SystemVerilog disagree.
 
 ## 17. Trust Flows in Opposite Directions
 
@@ -530,10 +542,11 @@ The synthesized circuit schematics show the structural asymmetry directly:
 - baseline: ![rtl blueprint](../rtl/results/canonical/blueprint/blueprint.svg)
 - controller-synthesis: ![rtl-synthesis blueprint](../rtl-synthesis/results/canonical/blueprint/blueprint.svg)
 - Lean/Sparkle: ![rtl-formalize-synthesis blueprint](../rtl-formalize-synthesis/results/canonical/blueprint/blueprint.svg)
+- hls4ml: ![rtl-hls4ml blueprint](../rtl-hls4ml/results/canonical/blueprint/blueprint.svg)
 
-`rtl` shows the manually layered full-core structure. `rtl-synthesis` shows the same shell with a controller replacement path. `rtl-formalize-synthesis` shows the stable wrapper boundary, not the raw generated internal structure.
+`rtl` shows the manually layered full-core structure. `rtl-synthesis` shows the same shell with a controller replacement path. `rtl-formalize-synthesis` shows the stable wrapper boundary, not the raw generated internal structure. `rtl-hls4ml` mirrors the baseline layered structure generated from the frozen contract.
 
-## 22. Why Three Approaches, Not One
+## 22. Why Four Approaches, Not One
 
 Each approach covers ground the others cannot.
 
@@ -543,13 +556,16 @@ The **hand-written baseline** provides the reference implementation and the most
 
 **Sparkle generation** provides proof depth. The refinement theorems cover the full core at the Signal DSL level and are checked by Lean under the explicit trust profile recorded in the verification manifest. The proof connection to `rtlTrace` is direct, not mediated by an equivalence check. If the pure proofs establish that `rtlTrace` computes the correct output at cycle 76, the refinement theorems extend that guarantee to the Signal DSL model without bounded-depth limitations.
 
-Neither generated approach can replace the other:
+**hls4ml generation** provides a practical ML-toolchain comparison point. It demonstrates how an industry-standard ML-to-hardware tool handles the same frozen contract. With no formal proofs and no temporal specifications, its trust model is the simplest in the repository — purely simulation-backed. This simplicity is itself informative: when the hls4ml branch passes the same regression as the formally-verified branches, it confirms that the test vectors exercise the contract-critical behavior effectively.
+
+No single generated approach can replace the others:
 - Sparkle cannot provide independence (it shares the Lean model and proof infrastructure)
 - Reactive synthesis cannot provide proof depth for the datapath (GR(1) cannot express arithmetic)
-- Neither can replace the hand-written baseline as the primary auditable reference
+- hls4ml cannot provide any formal guarantees (validation-backed only)
+- None can replace the hand-written baseline as the primary auditable reference
 
-The two approaches also draw on distinct formalisms. The reactive synthesis path uses temporal logic (Pnueli) to specify the controller, game theory (GR(1)) to construct it, and bounded model checking to validate the result. The Sparkle path uses a Lean-hosted signal semantics together with the same phase-indexed invariants and fixed-width arithmetic model used elsewhere in the repository. The hand-written baseline is the artifact where both lines of work meet: Lean proofs cover the model, SMT checks cover the emitted or hand-written RTL, and simulation checks the shared `mlp_core` boundary.
+The approaches draw on distinct traditions. The reactive synthesis path uses temporal logic (Pnueli) to specify the controller, game theory (GR(1)) to construct it, and bounded model checking to validate the result. The Sparkle path uses a Lean-hosted signal semantics together with the same phase-indexed invariants and fixed-width arithmetic model used elsewhere in the repository. The hls4ml path uses ML framework integration (Keras/TensorFlow) to construct the model and HLS compilation to generate hardware. The hand-written baseline is the artifact where all lines of work meet: Lean proofs cover the model, SMT checks cover the emitted or hand-written RTL, and simulation checks the shared `mlp_core` boundary.
 
-The repository does not force these traditions into a single formal framework. It lets each operate where it is strongest — temporal logic for control specification, dependent types for invariant maintenance, quotient arithmetic for width safety — and connects them at the shared `mlp_core` boundary. The combination gives the repository three-way cross-checking: a failure in any one path that the other two do not reproduce is a strong signal of a localized bug rather than a systemic error.
+The repository does not force these traditions into a single formal framework. It lets each operate where it is strongest — temporal logic for control specification, dependent types for invariant maintenance, quotient arithmetic for width safety, ML-framework integration for rapid prototyping — and connects them at the shared `mlp_core` boundary. The combination gives the repository four-way cross-checking: a failure in any one path that the others do not reproduce is a strong signal of a localized bug rather than a systemic error.
 
 For optional mathematical commentary on these constructions, see [`docs/hardware-mathematics.md`](hardware-mathematics.md).

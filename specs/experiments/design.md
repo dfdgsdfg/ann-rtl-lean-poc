@@ -11,7 +11,7 @@ The design should favor:
 - Low setup overhead
 - Traceability back to committed inputs
 - Clear separation between canonical implementation artifacts and experimental generated variants
-- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, and `rtl-synthesis`
+- Explicit comparison across implementation branches such as `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, and `rtl-hls4ml`
 - Explicit declaration of generation, integration, and validation scopes for each branch under comparison
 - Explicit separation between required verification and experiment/reporting surfaces
 
@@ -84,6 +84,7 @@ Compare the committed hand-written RTL against alternative implementation paths 
 - translated controller artifacts from the `rtl-synthesis` domain
 - reactive-synthesis-generated FSM candidates
 - mixed-path implementations such as a synthesized controller paired with the hand-written datapath
+- hls4ml-generated full-core RTL from the `rtl-hls4ml` domain
 
 These experiments should keep the comparison honest:
 
@@ -98,6 +99,7 @@ Current branch conventions should be recorded as part of the experiment design:
 - `rtl/`: full-core generation, full-core integration, full-core validation
 - `rtl-synthesis`: controller generation, mixed-path integration, mixed-path-primary validation by swapping only the controller and reusing the baseline datapath, while still exporting a branch-local full comparable `sv/` tree
 - `rtl-formalize-synthesis`: full-core generation, full-core integration, full-core validation once the emitted `mlp_core` path is materialized and validated
+- `rtl-hls4ml`: full-core generation, full-core integration, full-core validation, validation-backed only (no formal proofs)
 
 ### 2.8 RTL-Formalize-Synthsis Studies
 
@@ -153,6 +155,8 @@ experiments/
     ...
   rtl-formalize-synthesis/
     ...
+  rtl-hls4ml/
+    ...
 ```
 
 Comparable RTL inputs should come from the aligned branch export surfaces:
@@ -160,12 +164,14 @@ Comparable RTL inputs should come from the aligned branch export surfaces:
 - `rtl/results/canonical/sv/`
 - `rtl-synthesis/results/canonical/sv/`
 - `rtl-formalize-synthesis/results/canonical/sv/`
+- `rtl-hls4ml/results/canonical/sv/`
 
 Comparable top-level diagrams should come from:
 
 - `rtl/results/canonical/blueprint/mlp_core.svg`
 - `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`
 - `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`
+- `rtl-hls4ml/results/canonical/blueprint/mlp_core.svg`
 
 Within each branch folder, the experiment files should separate:
 
@@ -185,7 +191,7 @@ Layout rules:
 
 1. Select the experiment family: semantic closure, artifact consistency, implementation characterization, flow-stage validation, or generated implementation comparison
 2. Export a fixed parameter set
-3. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or a mixed path
+3. Select the implementation branch to compare: `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, `rtl-hls4ml`, or a mixed path
 4. Declare the generation, integration, and validation scopes for that branch
 5. Generate vectors or consistency inputs
 6. Materialize the candidate implementation variant
@@ -207,4 +213,4 @@ For implementation-branch comparisons, the summary should include:
 
 ## 6. Success Signal
 
-The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthesis` path, and the `rtl-synthesis` path and understand what changed without reverse-engineering the repository.
+The experiment layer is doing its job when someone can rerun a comparison between the hand-written RTL, the `rtl-formalize-synthesis` path, the `rtl-synthesis` path, and the `rtl-hls4ml` path and understand what changed without reverse-engineering the repository.

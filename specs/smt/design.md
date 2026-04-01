@@ -68,6 +68,7 @@ In this repository that means the same shared top-level family should exist for:
 - `rtl/results/canonical/sv/mlp_core.sv`
 - `rtl-synthesis/results/canonical/sv/mlp_core.sv`
 - `rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`
+- `rtl-hls4ml/results/canonical/sv/mlp_core.sv`
 
 The branch-specific formal add-ons below are extensions beyond that shared family, not substitutes for it.
 
@@ -78,6 +79,7 @@ Additional formal checks may live near the SMT infrastructure without becoming p
 - `rtl/`: controller-interface properties over [`rtl/results/canonical/sv/controller.sv`](../../rtl/results/canonical/sv/controller.sv)
 - `rtl-synthesis`: controller-only equivalence plus mixed-path closed-loop equivalence, on top of the shared `mlp_core` SMT family over the branch-local mixed-path export tree
 - `rtl-formalize-synthesis`: wrapper-structure checks around the raw emitted core and wrapper boundary
+- `rtl-hls4ml`: shared `mlp_core` SMT family only; no branch-specific formal extensions (validation-backed branch with no formal proof story beyond SMT)
 
 Those checks remain `branch-specific required` only when the relevant branch spec says so.
 

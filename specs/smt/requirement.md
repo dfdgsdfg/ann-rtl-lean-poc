@@ -43,11 +43,12 @@ The SMT domain must target the same frozen arithmetic and control contract used 
 
 The `common required` SMT core is the shared top-level `mlp_core` family. It is intentionally narrower than "all formal work in the repository," but it is still required for every supported RTL branch that exposes the normalized `mlp_core` boundary.
 
-Normatively, the shared SMT core must run against all three branch-local canonical top levels:
+Normatively, the shared SMT core must run against all four branch-local canonical top levels:
 
 - [`rtl/results/canonical/sv/mlp_core.sv`](../../rtl/results/canonical/sv/mlp_core.sv)
 - [`rtl-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-synthesis/results/canonical/sv/mlp_core.sv)
 - [`rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv`](../../rtl-formalize-synthesis/results/canonical/sv/mlp_core.sv)
+- [`rtl-hls4ml/results/canonical/sv/mlp_core.sv`](../../rtl-hls4ml/results/canonical/sv/mlp_core.sv)
 
 Required shared-core verification targets:
 

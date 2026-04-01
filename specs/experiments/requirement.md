@@ -7,7 +7,7 @@ This document defines the experiment and reporting layer for the Tiny Neural Inf
 The `experiments` domain covers:
 
 - common experiments such as semantic closure, branch comparison, QoR, and post-synthesis characterization
-- branch-specific experiments and reports attached to `rtl/`, `rtl-synthesis`, or `rtl-formalize-synthesis`
+- branch-specific experiments and reports attached to `rtl/`, `rtl-synthesis`, `rtl-formalize-synthesis`, or `rtl-hls4ml`
 - orchestration and summary surfaces that report experiment outcomes without redefining the verification core on their own
 
 ## 2. Experiment Scope
@@ -70,12 +70,14 @@ This family compares the baseline against alternative implementation paths witho
 - Controller-generated reactive synthesis from `rtl-synthesis` versus `rtl/results/canonical/sv/controller.sv`
 - Mixed-path experiments, such as a synthesized controller paired with the hand-written datapath
 - Scope-staged `rtl-formalize-synthesis` experiments: controller-only, primitive path, or full core
+- hls4ml-generated RTL from `rtl-hls4ml` versus hand-written `rtl/`
 
-The experiment domain must treat the three RTL implementation branches as distinct generation/integration/validation profiles:
+The experiment domain must treat the four RTL implementation branches as distinct generation/integration/validation profiles:
 
 - `rtl/`: full-core generation, full-core integration, full-core validation
 - `rtl-synthesis`: controller generation with mixed-path integration unless it explicitly replaces more than the controller, but branch-local comparison still happens through a full comparable export tree
 - `rtl-formalize-synthesis`: full-core generated branch or other declared generated scope, but never implicitly baseline-equivalent
+- `rtl-hls4ml`: full-core generated branch, validation-backed only, no formal proof connection
 
 Experiment families should be labeled with one of these statuses:
 
@@ -113,18 +115,19 @@ Experiment results should produce at least one of the following:
 - Lean/RTL equivalence reports or explicitly scoped comparison logs
 - Contract-to-ROM consistency reports
 - Implementation-comparison reports with baseline and candidate artifact paths
-- Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthesis`, or `rtl-synthesis`
+- Branch-comparison reports that identify whether the result comes from `rtl/`, `rtl-formalize-synthesis`, `rtl-synthesis`, or `rtl-hls4ml`
 - Post-synthesis simulation logs when the compared artifact is synthesized
 - Scope notes that identify the generation scope, integration scope, validation scope, and validation method for the recorded evidence
 - Experiment status notes that identify whether the record is `soft-gate` or `advisory/optional`
-- Branch-local artifact paths that resolve to `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, or `rtl-formalize-synthesis/results/canonical/sv/` rather than undocumented cross-branch source paths
-- Branch-local diagram paths that resolve to `rtl/results/canonical/blueprint/mlp_core.svg`, `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`, or `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`
+- Branch-local artifact paths that resolve to `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, `rtl-formalize-synthesis/results/canonical/sv/`, or `rtl-hls4ml/results/canonical/sv/` rather than undocumented cross-branch source paths
+- Branch-local diagram paths that resolve to `rtl/results/canonical/blueprint/mlp_core.svg`, `rtl-synthesis/results/canonical/blueprint/mlp_core.svg`, `rtl-formalize-synthesis/results/canonical/blueprint/mlp_core.svg`, or `rtl-hls4ml/results/canonical/blueprint/mlp_core.svg`
 
 The experiment directory structure should default to branch-first organization:
 
 - `experiments/rtl/`
 - `experiments/rtl-synthesis/`
 - `experiments/rtl-formalize-synthesis/`
+- `experiments/rtl-hls4ml/`
 
 Tool-specific or generator-specific subfolders are acceptable underneath those branch folders when needed.
 
@@ -141,10 +144,10 @@ The `experiments` domain is complete when:
 5. At least one implementation metric is measured, such as cycles, area, or timing.
 6. The command path from source inputs to recorded outputs is documented.
 7. Post-synthesis simulation is documented and reproducible once synthesized netlists are part of the active flow.
-8. Any `rtl-formalize-synthesis` or `rtl-synthesis` experiment records both provenance and comparison against the committed `rtl/` baseline.
+8. Any `rtl-formalize-synthesis`, `rtl-synthesis`, or `rtl-hls4ml` experiment records both provenance and comparison against the committed `rtl/` baseline.
 9. Any generated implementation experiment states its declared generation scope, such as controller, primitive path, or full core.
 10. Any generated implementation experiment states its integration scope, validation scope, validation method, and experiment status.
 11. Cross-branch experiment records also state the branch generation, integration, and validation scopes rather than collapsing them into a single support label.
 12. The directory structure makes branch identity visible without requiring the reader to infer it from tool names alone.
-13. Cross-branch experiment inputs resolve through `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, and `rtl-formalize-synthesis/results/canonical/sv/`.
+13. Cross-branch experiment inputs resolve through `rtl/results/canonical/sv/`, `rtl-synthesis/results/canonical/sv/`, `rtl-formalize-synthesis/results/canonical/sv/`, and `rtl-hls4ml/results/canonical/sv/`.
 14. Each compared branch exposes at least `blueprint/mlp_core.svg` as a normalized top-level diagram artifact.

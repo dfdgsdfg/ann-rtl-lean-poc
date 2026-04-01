@@ -38,3 +38,4 @@ See:
 - `implementation-branch-comparison.md`
 - `rtl-formalize-synthesis/sparkle/README.md`
 - `rtl-synthesis/spot/README.md`
+- `../rtl-hls4ml/README.md`
