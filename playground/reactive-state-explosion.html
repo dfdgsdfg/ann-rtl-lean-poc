@@ -294,6 +294,32 @@ function reactiveCycleCount() {
   return n;
 }
 
+// Format 2^exp as an actual number string with commas
+function pow2Str(exp) {
+  if (exp === 0) return '1';
+  if (exp <= 52) return (2 ** exp).toLocaleString();
+  try {
+    const s = (2n ** BigInt(exp)).toString();
+    if (s.length <= 30) return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return s[0] + '.' + s.slice(1, 4) + ' \u00D7 10^' + (s.length - 1);
+  } catch { return '2^' + exp; }
+}
+
+// Short version for tight spaces (canvas labels, tree)
+function pow2Short(exp) {
+  if (exp === 0) return '1';
+  if (exp <= 20) return (2 ** exp).toLocaleString();
+  if (exp <= 52) {
+    const n = 2 ** exp;
+    if (n < 1e9) return n.toLocaleString();
+    return n.toExponential(1);
+  }
+  try {
+    const s = (2n ** BigInt(exp)).toString();
+    return s[0] + '.' + s.slice(1, 3) + 'e' + (s.length - 1);
+  } catch { return '2^' + exp; }
+}
+
 // ====================================================================
 //  RENDERING — DOM
 // ====================================================================
@@ -347,7 +373,7 @@ function renderMarbles() {
   const note = document.createElement('div');
   note.className = 'marble-note';
   note.innerHTML = total > 0
-    ? `your trace = 1 path out of 2<sup>${total}</sup> possible input histories`
+    ? `your trace = 1 path out of ${pow2Str(total)} possible input histories`
     : 'fully deterministic \u2014 only 1 possible trace';
   area.appendChild(note);
 }
@@ -367,15 +393,19 @@ function renderMetrics() {
   const ctrlFinal = cl[cl.length - 1];
   const rxCycles = reactiveCycleCount();
   const actCycles = S.cyc - rxCycles;
-  const ratio = totalLog > 0 ? `2^${totalLog} / ${ctrlFinal}` : '1';
+  const actualFull = pow2Str(totalLog);
+  const ratioNum = totalLog <= 52
+    ? Math.floor((2 ** totalLog) / ctrlFinal).toLocaleString()
+    : pow2Short(totalLog) + ' / ' + ctrlFinal;
 
   document.getElementById('metrics').innerHTML = `
     <div class="mrow"><span class="k">Reactive cycles</span><span class="v">${rxCycles}</span></div>
     <div class="mrow"><span class="k">Active cycles</span><span class="v">${actCycles}</span></div>
     <div class="mrow"><span class="k">Branch/reactive cycle</span><span class="v">\u00D7${1 << S.sig}</span></div>
-    <div class="mrow"><span class="k">Full reachable</span><span class="v boom">2<sup>${totalLog}</sup>${totalLog > 40 ? ' \u26A0' : ''}</span></div>
+    <div class="mrow"><span class="k">Full reachable</span><span class="v boom">${actualFull}</span></div>
+    <div class="mrow"><span class="k"></span><span class="v" style="color:var(--muted);font-size:10px">= 2<sup>${totalLog}</sup> states</span></div>
     <div class="mrow"><span class="k">Control projection</span><span class="v ok">${ctrlFinal}</span></div>
-    <div class="mrow"><span class="k">Compression</span><span class="v">${ratio}</span></div>
+    <div class="mrow"><span class="k">Compression</span><span class="v">${ratioNum}\u00D7</span></div>
   `;
 }
 
@@ -422,7 +452,7 @@ function renderChart() {
     ctx.beginPath(); ctx.moveTo(pL, yy); ctx.lineTo(W - pR, yy); ctx.stroke();
     ctx.fillStyle = '#484f58'; ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
     ctx.textAlign = 'right';
-    ctx.fillText('2^' + p, pL - 5, yy + 3);
+    ctx.fillText(pow2Short(p), pL - 5, yy + 3);
   }
 
   // Full reachable — area fill
@@ -466,9 +496,9 @@ function renderChart() {
   const flEnd = fl[fl.length - 1];
   const clEnd = cl[cl.length - 1];
   ctx.fillStyle = '#58a6ff';
-  ctx.fillText(`Full: 2^${flEnd}`, x(S.cyc) + 6, Math.max(y(flEnd) + 4, pT + 12));
+  ctx.fillText(pow2Short(flEnd), x(S.cyc) + 6, Math.max(y(flEnd) + 4, pT + 12));
   ctx.fillStyle = '#3fb950';
-  ctx.fillText(`Ctrl: ${clEnd}`, x(S.cyc) + 6, Math.min(yCtrl(clEnd) + 4, pT + ch - 2));
+  ctx.fillText(`${clEnd}`, x(S.cyc) + 6, Math.min(yCtrl(clEnd) + 4, pT + ch - 2));
 
   // X-axis
   ctx.fillStyle = '#484f58'; ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
@@ -646,10 +676,11 @@ function renderTree() {
     ctx.textAlign = 'left';
     const countColor = n > NODE_CAP ? '#f85149' : (n > 1 ? (isRx ? '#58a6ff' : '#d4a843') : '#8b949e');
     ctx.fillStyle = countColor;
+    // Use the log2 to get actual number via pow2Short
+    const log2n = fullLog2(S.cyc)[lv] || 0;
     let label;
-    if (n === Infinity) label = '\u221E';
-    else if (n > 1e9) label = '2^' + Math.log2(n).toFixed(0);
-    else if (n > 9999) label = n.toExponential(0);
+    if (n === Infinity) label = pow2Str(log2n);
+    else if (n > 9999) label = pow2Short(log2n);
     else label = n.toLocaleString();
     ctx.fillText(label, W - pR + 6, yy + 3);
   }
