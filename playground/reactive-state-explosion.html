@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reactive State Explosion — Why FSM Graphs Lie</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --border: #30363d;
+  --text: #c9d1d9; --dim: #8b949e; --muted: #484f58;
+  --teal: #58d1c9; --teal-bg: #1a3a4a; --teal-border: #2a5a6a;
+  --amber: #d4a843; --amber-bg: #3a2a1a; --amber-border: #5a4a2a;
+  --blue: #58a6ff; --green: #3fb950; --red: #f85149;
+  --mono: 'SF Mono', 'Fira Code', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+#app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+#sidebar {
+  grid-row: 1 / 3;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h1 { font-size: 15px; font-weight: 600; color: #e6edf3; line-height: 1.3; }
+h1 small { display: block; font-size: 11px; font-weight: 400; color: var(--dim); margin-top: 2px; }
+
+.ctrl { display: flex; flex-direction: column; gap: 3px; }
+.ctrl-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ctrl-head label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.4px; }
+.ctrl-head .val { font-family: var(--mono); font-size: 12px; color: var(--blue); }
+input[type="range"] { width: 100%; accent-color: var(--blue); height: 16px; }
+.ctrl-hint { font-size: 10px; color: var(--muted); }
+
+.sep { border: none; border-top: 1px solid #21262d; margin: 4px 0; }
+
+.presets { display: flex; flex-direction: column; gap: 5px; }
+.preset-btn {
+  background: #21262d; border: 1px solid var(--border); color: var(--text);
+  padding: 7px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;
+  text-align: left; transition: background 0.15s;
+}
+.preset-btn:hover { background: var(--border); }
+.preset-btn.on { border-color: var(--blue); background: #1a2332; }
+.preset-btn .tag { font-size: 10px; color: var(--dim); display: block; margin-top: 1px; }
+
+.metrics { background: var(--bg); border-radius: 6px; padding: 10px; }
+.mrow { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+.mrow .k { color: var(--dim); }
+.mrow .v { font-family: var(--mono); color: #e6edf3; }
+.mrow .v.boom { color: var(--red); }
+.mrow .v.ok { color: var(--green); }
+
+.info { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* ===== MAIN ===== */
+#main {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px 20px 12px;
+  min-height: 0;
+}
+
+.section-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+/* Phase strip */
+#phase-strip { display: flex; gap: 1px; height: 32px; flex-shrink: 0; }
+.ph {
+  flex: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; font-family: var(--mono); position: relative;
+  transition: background 0.12s;
+}
+.ph.reactive { background: var(--teal-bg); color: var(--teal); border: 1px solid var(--teal-border); }
+.ph.active   { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+
+/* Branching factor strip */
+#branch-strip { display: flex; gap: 1px; height: 18px; flex-shrink: 0; }
+.bf {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-family: var(--mono);
+}
+.bf.hot { color: var(--red); font-weight: 600; }
+.bf.cold { color: var(--muted); }
+
+/* Marble lanes */
+#marble-area { flex-shrink: 0; overflow: hidden; }
+.marble-row {
+  display: flex; gap: 1px; height: 20px; align-items: center;
+}
+.marble-row .lane-label {
+  width: 18px; font-size: 9px; font-family: var(--mono); color: var(--muted);
+  text-align: right; padding-right: 4px; flex-shrink: 0;
+}
+.marble-cell {
+  flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.marble-cell .dot {
+  width: 10px; height: 10px; border-radius: 50%; transition: all 0.12s;
+}
+.marble-cell .dot.on  { background: var(--teal); box-shadow: 0 0 4px var(--teal); }
+.marble-cell .dot.off { background: var(--border); }
+.marble-cell.dimmed .dot.on  { background: var(--amber); opacity: 0.3; box-shadow: none; }
+.marble-cell.dimmed .dot.off { opacity: 0.15; }
+
+.marble-note { font-size: 10px; color: var(--muted); margin-top: 2px; text-align: center; font-family: var(--mono); }
+
+/* Legend */
+.legend { display: flex; gap: 14px; font-size: 11px; flex-shrink: 0; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* Chart */
+#chart-wrap { flex: 1; min-height: 120px; position: relative; }
+#chart { width: 100%; height: 100%; display: block; }
+
+/* State tree */
+#tree-wrap { flex: 1.2; min-height: 160px; position: relative; overflow: hidden; }
+#tree { width: 100%; height: 100%; display: block; }
+
+/* ===== PROMPT BAR ===== */
+#prompt-bar {
+  grid-column: 2; background: var(--panel); border-top: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: flex-start; gap: 10px;
+}
+#prompt-text {
+  flex: 1; font-family: var(--mono); font-size: 11px; color: var(--dim);
+  white-space: pre-wrap; line-height: 1.5; max-height: 72px; overflow-y: auto;
+}
+#copy-btn {
+  background: #21262d; border: 1px solid var(--border); color: var(--text);
+  padding: 5px 14px; border-radius: 5px; cursor: pointer; font-size: 11px;
+  white-space: nowrap; transition: background 0.15s;
+}
+#copy-btn:hover { background: var(--border); }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== SIDEBAR ===== -->
+<div id="sidebar">
+  <h1>Reactive State Explosion<small>Why finite FSM graphs don't show the real state space</small></h1>
+
+  <div class="ctrl">
+    <div class="ctrl-head"><label>Input signals</label><span class="val" id="v-sig">2</span></div>
+    <input type="range" id="r-sig" min="1" max="6" value="2">
+    <div class="ctrl-hint">Boolean signals from environment — branch factor = 2<sup id="bf-exp">2</sup></div>
+  </div>
+
+  <div class="ctrl">
+    <div class="ctrl-head"><label>FSM phases</label><span class="val" id="v-ph">9</span></div>
+    <input type="range" id="r-ph" min="3" max="14" value="9">
+  </div>
+
+  <div class="ctrl">
+    <div class="ctrl-head"><label>Active window start</label><span class="val" id="v-aws">2</span></div>
+    <input type="range" id="r-aws" min="0" max="8" value="2">
+    <div class="ctrl-hint">First data-independent phase</div>
+  </div>
+
+  <div class="ctrl">
+    <div class="ctrl-head"><label>Active window length</label><span class="val" id="v-awl">6</span></div>
+    <input type="range" id="r-awl" min="0" max="8" value="6">
+    <div class="ctrl-hint">Phases where environment is irrelevant</div>
+  </div>
+
+  <div class="ctrl">
+    <div class="ctrl-head"><label>Cycles shown</label><span class="val" id="v-cyc">27</span></div>
+    <input type="range" id="r-cyc" min="6" max="54" value="27">
+  </div>
+
+  <hr class="sep">
+
+  <div class="ctrl">
+    <label style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">Presets</label>
+    <div class="presets">
+      <button class="preset-btn" data-p="repo">This repo's FSM<span class="tag">9 phases, 2 signals, active window [2..8)</span></button>
+      <button class="preset-btn" data-p="allrx">Fully reactive<span class="tag">No active window — worst-case explosion</span></button>
+      <button class="preset-btn" data-p="mostly">Mostly active<span class="tag">1 reactive phase per cycle — minimal branching</span></button>
+      <button class="preset-btn" data-p="wide">Wide protocol<span class="tag">4 signals, 6 phases — rich environment</span></button>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <div class="metrics" id="metrics"></div>
+
+  <p class="info">
+    Each <b style="color:var(--teal)">reactive</b> cycle multiplies the reachable state set by 2<sup>signals</sup> — the environment can send any combination.
+    <b style="color:var(--amber)">Active</b> cycles are data-independent: the FSM ignores inputs, so no branching.
+    The <b style="color:var(--green)">control projection</b> discards data, keeping only phase+indices — always bounded.
+  </p>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+  <div class="section-lbl">Phase timeline</div>
+  <div id="phase-strip"></div>
+  <div id="branch-strip"></div>
+
+  <div id="marble-area"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--teal-bg);border:1px solid var(--teal-border)"></div>Reactive</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:1px solid var(--amber-border)"></div>Active</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Full reachable (log<sub>2</sub>)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Control projection</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red);opacity:0.5"></div>Your trace = 1 path</div>
+  </div>
+
+  <div class="section-lbl">Reachable state space (log&#x2082; scale)</div>
+  <div id="chart-wrap"><canvas id="chart"></canvas></div>
+
+  <div class="section-lbl">State-to-state branching (each reactive cycle fans out)</div>
+  <div id="tree-wrap"><canvas id="tree"></canvas></div>
+</div>
+
+<!-- ===== PROMPT BAR ===== -->
+<div id="prompt-bar">
+  <pre id="prompt-text"></pre>
+  <button id="copy-btn">Copy</button>
+</div>
+
+</div>
+<script>
+// ====================================================================
+//  STATE
+// ====================================================================
+const S = {
+  sig: 2,        // boolean input signals
+  ph: 9,         // FSM phases
+  aws: 2,        // active window start (phase index)
+  awl: 6,        // active window length
+  cyc: 27,       // visible cycles
+  trace: [],     // user's marble trace: trace[cycle][signal] = 0|1
+};
+
+function ensureTrace() {
+  while (S.trace.length < S.cyc) {
+    S.trace.push(Array.from({ length: S.sig }, (_, i) => {
+      const c = S.trace.length;
+      // Deterministic-looking pattern per signal
+      return ((c * 7 + i * 13 + 3) % 5 < 3) ? 1 : 0;
+    }));
+  }
+  // Trim extra signals per row
+  for (let c = 0; c < S.trace.length; c++) {
+    while (S.trace[c].length < S.sig) S.trace[c].push(0);
+    S.trace[c].length = S.sig;
+  }
+}
+
+// ====================================================================
+//  COMPUTATION
+// ====================================================================
+const isActive = (phIdx) => phIdx >= S.aws && phIdx < S.aws + S.awl;
+const phaseAt  = (c) => c % S.ph;
+const reactive = (c) => !isActive(phaseAt(c));
+const bfAt     = (c) => reactive(c) ? S.sig : 0; // log2 of branching factor
+
+function fullLog2(n) {
+  // cumulative log2(reachable) after each cycle
+  const r = [0];
+  for (let c = 0; c < n; c++) r.push(r[r.length - 1] + bfAt(c));
+  return r;
+}
+
+function ctrlReachable(n) {
+  // control states grow slowly, saturate at S.ph
+  const r = [1];
+  let v = 1;
+  for (let c = 0; c < n; c++) {
+    if (reactive(c)) v = Math.min(v * 2, S.ph);
+    r.push(v);
+  }
+  return r;
+}
+
+function reactiveCycleCount() {
+  let n = 0;
+  for (let c = 0; c < S.cyc; c++) if (reactive(c)) n++;
+  return n;
+}
+
+// ====================================================================
+//  RENDERING — DOM
+// ====================================================================
+function renderPhaseStrip() {
+  const el = document.getElementById('phase-strip');
+  const br = document.getElementById('branch-strip');
+  el.innerHTML = ''; br.innerHTML = '';
+  for (let c = 0; c < S.cyc; c++) {
+    const act = isActive(phaseAt(c));
+    const d = document.createElement('div');
+    d.className = 'ph ' + (act ? 'active' : 'reactive');
+    d.textContent = act ? 'A' : 'R';
+    d.title = `Cycle ${c}  Phase ${phaseAt(c)}  ${act ? 'active (data-independent)' : 'reactive (environment matters)'}`;
+    el.appendChild(d);
+
+    const b = document.createElement('div');
+    const logB = bfAt(c);
+    b.className = 'bf ' + (logB > 0 ? 'hot' : 'cold');
+    b.textContent = logB > 0 ? `\u00D7${1 << logB}` : '\u00D71';
+    br.appendChild(b);
+  }
+}
+
+function renderMarbles() {
+  ensureTrace();
+  const area = document.getElementById('marble-area');
+  area.innerHTML = '';
+  for (let s = 0; s < S.sig; s++) {
+    const row = document.createElement('div');
+    row.className = 'marble-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'lane-label';
+    lbl.textContent = `s${s}`;
+    row.appendChild(lbl);
+    for (let c = 0; c < S.cyc; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'marble-cell' + (isActive(phaseAt(c)) ? ' dimmed' : '');
+      const dot = document.createElement('div');
+      dot.className = 'dot ' + (S.trace[c][s] ? 'on' : 'off');
+      cell.appendChild(dot);
+      cell.dataset.c = c;
+      cell.dataset.s = s;
+      cell.addEventListener('click', toggleMarble);
+      row.appendChild(cell);
+    }
+    area.appendChild(row);
+  }
+  // Note
+  const fl = fullLog2(S.cyc);
+  const total = fl[fl.length - 1];
+  const note = document.createElement('div');
+  note.className = 'marble-note';
+  note.innerHTML = total > 0
+    ? `your trace = 1 path out of 2<sup>${total}</sup> possible input histories`
+    : 'fully deterministic \u2014 only 1 possible trace';
+  area.appendChild(note);
+}
+
+function toggleMarble(e) {
+  const c = +e.currentTarget.dataset.c;
+  const s = +e.currentTarget.dataset.s;
+  S.trace[c][s] ^= 1;
+  const dot = e.currentTarget.querySelector('.dot');
+  dot.className = 'dot ' + (S.trace[c][s] ? 'on' : 'off');
+}
+
+function renderMetrics() {
+  const fl = fullLog2(S.cyc);
+  const cl = ctrlReachable(S.cyc);
+  const totalLog = fl[fl.length - 1];
+  const ctrlFinal = cl[cl.length - 1];
+  const rxCycles = reactiveCycleCount();
+  const actCycles = S.cyc - rxCycles;
+  const ratio = totalLog > 0 ? `2^${totalLog} / ${ctrlFinal}` : '1';
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="mrow"><span class="k">Reactive cycles</span><span class="v">${rxCycles}</span></div>
+    <div class="mrow"><span class="k">Active cycles</span><span class="v">${actCycles}</span></div>
+    <div class="mrow"><span class="k">Branch/reactive cycle</span><span class="v">\u00D7${1 << S.sig}</span></div>
+    <div class="mrow"><span class="k">Full reachable</span><span class="v boom">2<sup>${totalLog}</sup>${totalLog > 40 ? ' \u26A0' : ''}</span></div>
+    <div class="mrow"><span class="k">Control projection</span><span class="v ok">${ctrlFinal}</span></div>
+    <div class="mrow"><span class="k">Compression</span><span class="v">${ratio}</span></div>
+  `;
+}
+
+// ====================================================================
+//  RENDERING — CHART (canvas)
+// ====================================================================
+function renderChart() {
+  const canvas = document.getElementById('chart');
+  const wrap = document.getElementById('chart-wrap');
+  const dpr = devicePixelRatio || 1;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const fl = fullLog2(S.cyc);
+  const cl = ctrlReachable(S.cyc);
+  const maxLog = Math.max(fl[fl.length - 1], 4, 1);
+
+  const pL = 44, pR = 80, pT = 8, pB = 22;
+  const cw = W - pL - pR, ch = H - pT - pB;
+  const x = (c) => pL + (c / S.cyc) * cw;
+  const y = (logV) => pT + ch - (logV / maxLog) * ch;
+  const yCtrl = (v) => {
+    if (v <= 0) return pT + ch;
+    return pT + ch - (Math.log2(v) / maxLog) * ch;
+  };
+
+  // Phase background bands
+  for (let c = 0; c < S.cyc; c++) {
+    if (isActive(phaseAt(c))) {
+      ctx.fillStyle = 'rgba(212,168,67,0.04)';
+      ctx.fillRect(x(c), pT, x(c + 1) - x(c), ch);
+    }
+  }
+
+  // Grid
+  ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+  const gridStep = Math.max(1, Math.ceil(maxLog / 10));
+  for (let p = 0; p <= maxLog; p += gridStep) {
+    const yy = y(p);
+    ctx.beginPath(); ctx.moveTo(pL, yy); ctx.lineTo(W - pR, yy); ctx.stroke();
+    ctx.fillStyle = '#484f58'; ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'right';
+    ctx.fillText('2^' + p, pL - 5, yy + 3);
+  }
+
+  // Full reachable — area fill
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(0));
+  for (let c = 0; c <= S.cyc; c++) ctx.lineTo(x(c), y(fl[c]));
+  ctx.lineTo(x(S.cyc), pT + ch);
+  ctx.lineTo(x(0), pT + ch);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pT, 0, pT + ch);
+  grad.addColorStop(0, 'rgba(88,166,255,0.25)');
+  grad.addColorStop(1, 'rgba(88,166,255,0.01)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Full reachable — line
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(0));
+  for (let c = 0; c <= S.cyc; c++) ctx.lineTo(x(c), y(fl[c]));
+  ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Step markers at reactive cycles (show the jumps)
+  for (let c = 0; c < S.cyc; c++) {
+    if (reactive(c)) {
+      ctx.beginPath();
+      ctx.arc(x(c + 1), y(fl[c + 1]), 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#58a6ff';
+      ctx.fill();
+    }
+  }
+
+  // Control — dashed line
+  ctx.beginPath();
+  ctx.moveTo(x(0), yCtrl(1));
+  for (let c = 0; c <= S.cyc; c++) ctx.lineTo(x(c), yCtrl(cl[c]));
+  ctx.strokeStyle = '#3fb950'; ctx.lineWidth = 2;
+  ctx.setLineDash([5, 4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // End labels
+  ctx.font = '10px system-ui'; ctx.textAlign = 'left';
+  const flEnd = fl[fl.length - 1];
+  const clEnd = cl[cl.length - 1];
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillText(`Full: 2^${flEnd}`, x(S.cyc) + 6, Math.max(y(flEnd) + 4, pT + 12));
+  ctx.fillStyle = '#3fb950';
+  ctx.fillText(`Ctrl: ${clEnd}`, x(S.cyc) + 6, Math.min(yCtrl(clEnd) + 4, pT + ch - 2));
+
+  // X-axis
+  ctx.fillStyle = '#484f58'; ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'center';
+  const step = Math.max(1, Math.ceil(S.cyc / 16));
+  for (let c = 0; c <= S.cyc; c += step) ctx.fillText(c, x(c), H - 4);
+
+  // Gap annotation
+  if (flEnd > 6) {
+    const midC = Math.floor(S.cyc * 0.65);
+    const midFullY = y(fl[midC]);
+    const midCtrlY = yCtrl(cl[midC]);
+    if (midCtrlY - midFullY > 24) {
+      ctx.fillStyle = 'rgba(248,81,73,0.18)';
+      ctx.fillRect(x(midC) - 12, midFullY, 24, midCtrlY - midFullY);
+      ctx.fillStyle = '#f85149';
+      ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText('explosion', x(midC), (midFullY + midCtrlY) / 2 + 3);
+    }
+  }
+}
+
+// ====================================================================
+//  RENDERING — STATE TREE (canvas)
+// ====================================================================
+function renderTree() {
+  const canvas = document.getElementById('tree');
+  const wrap = document.getElementById('tree-wrap');
+  const dpr = devicePixelRatio || 1;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  if (W === 0 || H === 0) return;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const NODE_CAP = 4096;   // max individual nodes drawn
+  const pL = 32, pR = 56;
+  const usableW = W - pL - pR;
+
+  // Compute node count per level
+  const counts = [1];
+  for (let c = 0; c < S.cyc; c++) {
+    const prev = counts[counts.length - 1];
+    const bf = reactive(c) ? (1 << S.sig) : 1;
+    counts.push(prev * bf > 1e15 ? Infinity : prev * bf);
+  }
+
+  // How many levels fit on screen?
+  const maxLevels = Math.min(counts.length, Math.max(6, Math.floor((H - 8) / 16)));
+  const levelH = (H - 16) / Math.max(maxLevels - 1, 1);
+
+  // For each level: compute x positions (or null if aggregate)
+  function levelY(lv) { return 8 + lv * levelH; }
+
+  for (let lv = 0; lv < maxLevels; lv++) {
+    const n = counts[lv];
+    const yy = levelY(lv);
+    const isRx = lv > 0 && reactive(lv - 1);
+    const act = lv > 0 && !reactive(lv - 1);
+
+    // --- EDGES to this level from previous ---
+    if (lv > 0) {
+      const prevN = counts[lv - 1];
+      const bf = reactive(lv - 1) ? (1 << S.sig) : 1;
+      const prevY = levelY(lv - 1);
+
+      if (prevN <= NODE_CAP && n <= NODE_CAP) {
+        // Draw individual or bundled edges
+        const prevSpacing = prevN === 1 ? 0 : Math.min(usableW / (prevN - 1), 16);
+        const prevTotalW = (prevN - 1) * prevSpacing;
+        const prevStartX = pL + (usableW - prevTotalW) / 2;
+
+        const curSpacing = n === 1 ? 0 : Math.min(usableW / (n - 1), 16);
+        const curTotalW = (n - 1) * curSpacing;
+        const curStartX = pL + (usableW - curTotalW) / 2;
+
+        if (n <= 128) {
+          // Individual edges
+          ctx.lineWidth = Math.max(0.3, Math.min(1, 60 / n));
+          ctx.strokeStyle = isRx ? 'rgba(88,166,255,0.18)' : 'rgba(212,168,67,0.25)';
+          for (let p = 0; p < prevN; p++) {
+            const px = prevStartX + p * prevSpacing;
+            for (let j = 0; j < bf; j++) {
+              const ci = p * bf + j;
+              const cx = curStartX + ci * curSpacing;
+              ctx.beginPath();
+              ctx.moveTo(px, prevY + 3);
+              ctx.lineTo(cx, yy - 3);
+              ctx.stroke();
+            }
+          }
+        } else {
+          // Trapezoid bundle
+          const x0L = prevStartX - 2;
+          const x0R = prevStartX + prevTotalW + 2;
+          const x1L = curStartX - 2;
+          const x1R = curStartX + curTotalW + 2;
+          ctx.fillStyle = isRx ? 'rgba(88,166,255,0.06)' : 'rgba(212,168,67,0.06)';
+          ctx.beginPath();
+          ctx.moveTo(x0L, prevY + 3);
+          ctx.lineTo(x1L, yy - 3);
+          ctx.lineTo(x1R, yy - 3);
+          ctx.lineTo(x0R, prevY + 3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = isRx ? 'rgba(88,166,255,0.15)' : 'rgba(212,168,67,0.15)';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      } else if (prevN <= NODE_CAP && n > NODE_CAP) {
+        // Transition from individual to aggregate — fan into bar
+        const prevSpacing = prevN === 1 ? 0 : Math.min(usableW / (prevN - 1), 16);
+        const prevTotalW = (prevN - 1) * prevSpacing;
+        const prevStartX = pL + (usableW - prevTotalW) / 2;
+        const barW = usableW * 0.85;
+        const barX = pL + (usableW - barW) / 2;
+        ctx.fillStyle = isRx ? 'rgba(88,166,255,0.05)' : 'rgba(212,168,67,0.05)';
+        ctx.beginPath();
+        ctx.moveTo(prevStartX - 2, prevY + 3);
+        ctx.lineTo(barX, yy - 4);
+        ctx.lineTo(barX + barW, yy - 4);
+        ctx.lineTo(prevStartX + prevTotalW + 2, prevY + 3);
+        ctx.closePath();
+        ctx.fill();
+      }
+      // aggregate→aggregate: just draw a connecting rect
+      else if (prevN > NODE_CAP && n > NODE_CAP) {
+        const barW = usableW * 0.85;
+        const barX = pL + (usableW - barW) / 2;
+        ctx.fillStyle = isRx ? 'rgba(88,166,255,0.03)' : 'rgba(212,168,67,0.03)';
+        ctx.fillRect(barX, prevY + 4, barW, yy - prevY - 8);
+      }
+    }
+
+    // --- NODES at this level ---
+    if (n <= NODE_CAP) {
+      const spacing = n === 1 ? 0 : Math.min(usableW / (n - 1), 16);
+      const totalW = (n - 1) * spacing;
+      const startX = pL + (usableW - totalW) / 2;
+      const r = Math.max(1, Math.min(3.5, usableW / (n * 4)));
+
+      ctx.fillStyle = lv === 0 ? '#e6edf3' : isRx ? '#58a6ff' : '#d4a843';
+      for (let i = 0; i < n; i++) {
+        const xx = startX + i * spacing;
+        ctx.beginPath();
+        ctx.arc(xx, yy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Aggregate bar
+      const barW = usableW * 0.85;
+      const barH = 6;
+      const barX = pL + (usableW - barW) / 2;
+      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      const col = isRx ? '88,166,255' : '212,168,67';
+      grad.addColorStop(0, `rgba(${col},0.05)`);
+      grad.addColorStop(0.5, `rgba(${col},0.25)`);
+      grad.addColorStop(1, `rgba(${col},0.05)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(barX, yy - barH / 2, barW, barH);
+      ctx.strokeStyle = `rgba(${col},0.4)`;
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(barX, yy - barH / 2, barW, barH);
+    }
+
+    // --- LABELS ---
+    // Cycle number (left)
+    ctx.fillStyle = '#484f58'; ctx.font = '9px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(`c${lv}`, pL - 8, yy + 3);
+
+    // Node count (right)
+    ctx.textAlign = 'left';
+    const countColor = n > NODE_CAP ? '#f85149' : (n > 1 ? (isRx ? '#58a6ff' : '#d4a843') : '#8b949e');
+    ctx.fillStyle = countColor;
+    let label;
+    if (n === Infinity) label = '\u221E';
+    else if (n > 1e9) label = '2^' + Math.log2(n).toFixed(0);
+    else if (n > 9999) label = n.toExponential(0);
+    else label = n.toLocaleString();
+    ctx.fillText(label, W - pR + 6, yy + 3);
+  }
+
+  // Control projection column — one green dot per level, always just 1 state
+  for (let lv = 0; lv < maxLevels; lv++) {
+    const yy = levelY(lv);
+    ctx.fillStyle = '#3fb950';
+    ctx.beginPath();
+    ctx.arc(pL - 18, yy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Green connecting line
+  ctx.strokeStyle = 'rgba(63,185,80,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pL - 18, levelY(0) + 3);
+  ctx.lineTo(pL - 18, levelY(maxLevels - 1) - 3);
+  ctx.stroke();
+  // Label
+  ctx.fillStyle = '#3fb950'; ctx.font = '8px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('ctrl', pL - 18, levelY(0) - 8);
+  ctx.fillText('= 1', pL - 18, levelY(maxLevels - 1) + 14);
+
+  // Overflow indicator
+  if (maxLevels < counts.length) {
+    ctx.fillStyle = '#484f58'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(`\u2026 ${counts.length - maxLevels} more cycles`, W / 2, H - 2);
+  }
+}
+
+// ====================================================================
+//  PROMPT
+// ====================================================================
+function renderPrompt() {
+  const fl = fullLog2(S.cyc);
+  const cl = ctrlReachable(S.cyc);
+  const totalLog = fl[fl.length - 1];
+  const ctrlFinal = cl[cl.length - 1];
+  const rxCycles = reactiveCycleCount();
+  const awEnd = Math.min(S.aws + S.awl, S.ph);
+
+  const parts = [];
+  parts.push(`I'm studying how reactive hardware systems create exponential state spaces and why a simple FSM phase graph doesn't capture it.`);
+  parts.push(`\nSystem: ${S.sig} boolean input signals, ${S.ph} FSM phases, active (data-independent) window spanning phases [${S.aws}..${awEnd}).`);
+
+  if (rxCycles > 0) {
+    parts.push(`\nOver ${S.cyc} cycles: ${rxCycles} reactive cycles each multiply the reachable state set by ${1 << S.sig}. Full reachable: 2^${totalLog}. Control projection: only ${ctrlFinal} states.`);
+  } else {
+    parts.push(`\nAll cycles are active (data-independent) — no state explosion. The system behaves like a closed model.`);
+  }
+
+  if (totalLog > 20) {
+    parts.push(`The full space is already intractable for exhaustive checking, but the control projection collapses it to a decidable finite set.`);
+  }
+
+  parts.push(`\nExplain how the control/data separation (projecting State to ControlState, as in Lean's controlOf) makes verification tractable despite this explosion. How does the active window — where timedStep delegates to step regardless of the environment — enable this technique?`);
+
+  document.getElementById('prompt-text').textContent = parts.join('');
+}
+
+// ====================================================================
+//  UPDATE
+// ====================================================================
+function clampState() {
+  S.aws = Math.min(S.aws, S.ph - 1);
+  S.awl = Math.min(S.awl, S.ph - S.aws);
+  document.getElementById('r-aws').max = S.ph - 1;
+  document.getElementById('r-awl').max = S.ph - S.aws;
+}
+
+function syncSliders() {
+  document.getElementById('r-sig').value = S.sig;
+  document.getElementById('r-ph').value = S.ph;
+  document.getElementById('r-aws').value = S.aws;
+  document.getElementById('r-awl').value = S.awl;
+  document.getElementById('r-cyc').value = S.cyc;
+  document.getElementById('v-sig').textContent = S.sig;
+  document.getElementById('v-ph').textContent = S.ph;
+  document.getElementById('v-aws').textContent = S.aws;
+  document.getElementById('v-awl').textContent = S.awl;
+  document.getElementById('v-cyc').textContent = S.cyc;
+  document.getElementById('bf-exp').textContent = S.sig;
+}
+
+function updateAll() {
+  clampState();
+  syncSliders();
+  renderPhaseStrip();
+  renderMarbles();
+  renderChart();
+  renderTree();
+  renderMetrics();
+  renderPrompt();
+}
+
+// ====================================================================
+//  INTERACTION
+// ====================================================================
+const bind = (id, key) => {
+  document.getElementById(id).addEventListener('input', e => {
+    S[key] = +e.target.value;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('on'));
+    updateAll();
+  });
+};
+bind('r-sig', 'sig');
+bind('r-ph', 'ph');
+bind('r-aws', 'aws');
+bind('r-awl', 'awl');
+bind('r-cyc', 'cyc');
+
+// Presets
+const presets = {
+  repo:    { sig: 2, ph: 9,  aws: 2, awl: 6, cyc: 27 },
+  allrx:   { sig: 3, ph: 6,  aws: 0, awl: 0, cyc: 24 },
+  mostly:  { sig: 3, ph: 8,  aws: 1, awl: 7, cyc: 32 },
+  wide:    { sig: 4, ph: 6,  aws: 2, awl: 3, cyc: 24 },
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Object.assign(S, presets[btn.dataset.p]);
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    S.trace = []; // regenerate trace for new config
+    updateAll();
+  });
+});
+
+// Copy
+document.getElementById('copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('prompt-text').textContent).then(() => {
+    const b = document.getElementById('copy-btn');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy', 1200);
+  });
+});
+
+// Resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { renderChart(); renderTree(); }, 80);
+});
+
+// ====================================================================
+//  INIT
+// ====================================================================
+updateAll();
+// Activate the repo preset button visually
+document.querySelector('[data-p="repo"]').classList.add('on');
+</script>
+</body>
+</html>
